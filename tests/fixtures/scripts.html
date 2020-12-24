@@ -1,0 +1,29 @@
+<script src="//unpkg.com/somedom"></script>
+<script scoped>
+  import { Fragment } from 'jamrock';
+
+  const el = Fragment.for('...');
+</script>
+<script type="module">
+  import { truth } from './utils.js';
+
+  let x = 0;
+  if (x < 3) {
+    console.log(truth());
+  }
+  console.log(el);
+</script>
+<style scoped lang="less">
+  @color: blue;
+  li {
+    color: @color;
+
+    &::before {
+      content: '*';
+    }
+  }
+</style>
+<style>
+  * { margin: 0; }
+</style>
+<p>OK</p>

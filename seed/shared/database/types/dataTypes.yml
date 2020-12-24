@@ -1,0 +1,7 @@
+id: dataTypes
+
+definitions:
+  primaryKey:
+    type: integer
+    primaryKey: true
+    autoIncrement: true

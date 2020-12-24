@@ -1,0 +1,154 @@
+<script>
+  import ctx from 'jamrock/conn';
+  import Failure from 'jamrock/components/failure';
+  import { rmdir, unlink } from 'jamrock/utilities';
+
+  import { saveDir, userSession } from '~/shared/stores';
+  import { evaluate } from '~/shared/helpers';
+
+  function toArray(value) {
+    return !Array.isArray(value) && value ? [value] : value;
+  }
+
+  function getPort() {
+    return Math.round(8000 + Math.random() * (9999 - 8000));
+  }
+
+  if (!userSession.port) {
+    userSession = {
+      ...userSession,
+      port: getPort(),
+    };
+  }
+
+  let error;
+  try {
+    await evaluate(saveDir, userSession);
+  } catch (e) {
+    error = e;
+  }
+
+  function getFiles() {
+    return Object.entries(userSession.files)
+      .map(([name, body]) => ({ name, body }));
+  }
+
+  export default {
+    DELETE() {
+      rmdir(`${saveDir}/pages`);
+      ctx.put_session('profile', null);
+    },
+    async POST() {
+      const filenames = toArray(ctx.body_params.filenames);
+      const contents = toArray(ctx.body_params.contents);
+
+      if (ctx.body_params.path) {
+        userSession = {
+          ...userSession,
+          path: ctx.body_params.path,
+        };
+      } else {
+        if (ctx.body_params.rm) {
+          const offset = filenames.findIndex(x => x === ctx.body_params.rm);
+
+          unlink(`${saveDir}/${filenames[offset]}`);
+          filenames.splice(offset, 1);
+          contents.splice(offset, 1);
+        }
+
+        Object.keys(userSession.files).forEach(file => {
+          if (!filenames.includes(file)) {
+            unlink(`${saveDir}/${file}`);
+            delete userSession.files[file];
+          }
+        });
+
+        userSession = {
+          ...userSession,
+          files: filenames.reduce((memo, key, i) => {
+            memo[key] = contents[i];
+            return memo;
+          }, userSession.files),
+        };
+
+        error = null;
+        try {
+          await evaluate(saveDir, userSession);
+        } catch (e) {
+          error = e;
+        }
+      }
+    },
+    PUT() {
+      if (!Object.keys(userSession.files).length) {
+        userSession = {
+          ...userSession,
+          files: {
+            'pages/index.html': '<h1>It works</h1>',
+          },
+        };
+      } else {
+        userSession = {
+          ...userSession,
+          files: {
+            ...userSession.files,
+            [`pages/${Date.now()}.html`]: '<h1>{Date.now()}</h1>',
+          },
+        };
+      }
+    },
+    onError(e) {
+      error = e;
+    },
+  };
+</script>
+
+<main>
+  <section>
+    <form method="delete" @async>
+      <button test:id="editor.clear" name="action" value="clear" type="submit">Clear session</button>
+    </form>
+
+    <form method="put" @async>
+      <button test:id="editor.add" name="action" value="add" type="submit">Add file</button>
+    </form>
+
+    <form method="post" @async>
+      {#each getFiles() as x}
+        <fieldset test:id="editor.source">
+          <input type="text" name="filenames" value={x.name} />
+          <button type="submit" name="rm" value={x.name}>&times;</button>
+          <br />
+          <textarea name="contents" value={x.body} /><br />
+        </fieldset>
+      {/each}
+      <button test:id="editor.save" name="action" value="save" type="submit">Save</button>
+    </form>
+  </section>
+  <aside>
+    <form method="post" @async>
+      <input type="text" name="path" value={userSession.path} />
+      <button test:id="editor.go" type="submit">Go</button>
+    </form>
+    <iframe test:id="editor.preview" src="//localhost:{userSession.port}{userSession.path}?{Math.random()}"></iframe>
+    <Failure from={error} />
+  </aside>
+</main>
+
+<style scoped>
+  :global(html, body) {
+    height: 100%;
+  }
+  iframe, textarea {
+    width: 100%;
+    xheight: 100%;
+  }
+  main {
+    display: flex;
+    xheight: 100%;
+  }
+  section, aside {
+    height: 100%;
+    width: 50%;
+  }
+</style>

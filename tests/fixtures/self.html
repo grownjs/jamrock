@@ -1,0 +1,29 @@
+<script>
+  export const data = [{
+    label: 'a',
+    children: [{
+      label: 'b',
+      children: [{
+        label: 'c',
+        children: [],
+      }],
+    }],
+  }];
+
+  export let wait;
+  export let push;
+
+  await wait(100);
+  push($$props.data && $$props.data.length);
+</script>
+
+{#if data.length}
+  <ul>
+    {#each data as item}
+      <li>
+        {item.label}
+        <self data="{item.children}" {push} {wait} />
+      </li>
+    {/each}
+  </ul>
+{/if}

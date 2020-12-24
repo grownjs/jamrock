@@ -1,0 +1,12 @@
+
+<script>
+  import { session, put_session } from 'jamrock/conn';
+
+  export let value = session.name || 'world';
+
+  $: name = value.toUpperCase();
+  $: put_session('name', value);
+</script>
+
+<p>Hello, {name}.</p>
+<input bind:value />

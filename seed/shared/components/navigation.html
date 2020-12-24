@@ -1,0 +1,23 @@
+<script>
+  export let ordered;
+  export let items = [];
+
+  const type = ordered ? 'ol' : 'ul';
+</script>
+
+<style scoped>
+  ol, ul {
+    padding-left: 1em;
+  }
+</style>
+
+<tag use={type}>
+  {#each items as item}
+    <li>
+      <a href={item.url}>{item.label}</a>
+      {#if item.children.length > 0}
+        <self items={item.children} />
+      {/if}
+    </li>
+  {/each}
+</tag>

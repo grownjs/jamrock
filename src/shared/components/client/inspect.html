@@ -1,0 +1,102 @@
+<script>
+  import { useState } from 'jamrock';
+
+  export let data = [];
+  export let main;
+  export let title;
+  export let fields;
+
+  if (!fields) {
+    data = Object.entries(data);
+  } else {
+    fields = fields.split('|');
+  }
+
+  const [filtered, setData] = useState(data);
+
+  let t;
+  function filter(q) {
+    clearTimeout(t);
+    t = setTimeout(() => {
+      // this is needed, otherwise, some stuff does get duplicated...
+      // remove once somedom fixes this nuance...
+      setData([]);
+
+      // also, this call gets delayed due the same reason,
+      // this due both calls in the same tick are in conflict...
+      requestAnimationFrame(() => {
+        setData(data.filter(x => {
+          return (!Array.isArray(x) ? Object.values(x) : x)
+            .join('\t').toLowerCase().includes(q.toLowerCase());
+        }));
+      });
+    }, 120);
+  }
+</script>
+
+<style scoped>
+  div {
+    overflow: auto;
+    clear: both;
+    height: 150px;
+    border-bottom: 1px solid rgba(0, 0, 0, .1);
+  }
+  table {
+    width: 100%;
+  }
+  tr:nth-child(odd) {
+    background-color: #F8F8F9;
+  }
+  input {
+    padding: .2em;
+    border: 1px solid rgba(0, 0, 0, .1);
+  }
+  input:focus {
+    outline: none;
+  }
+  th, td, h4, small {
+    padding: 5px;
+  }
+  th {
+    white-space: nowrap;
+  }
+  h4 span {
+    flex: 1;
+  }
+  h4 {
+    display: flex;
+    align-items: center;
+    overflow: hidden;
+    border-top: 1px solid rgba(0, 0, 0, .1);
+    border-bottom: 1px solid rgba(0, 0, 0, .1);
+  }
+  td {
+    word-break: break-all;
+  }
+</style>
+
+<h4>
+  <span>{title}:</span>
+  <input :disabled type="search" oninput="{e => filter(e.target.value)}" />
+</h4>
+
+<div>
+  <table cellspacing="0">
+    {#each filtered as item}
+      <tr>
+        {#each fields as key}
+          {#if key === main}
+            <th align="right">{item[key]}</th>
+          {:else}
+            <td>{item[key]}</td>
+          {/if}
+        {:else}
+          <th align="left">{item[0]}</th>
+          <td>{item[1]}</td>
+        {/each}
+      </tr>
+    {/each}
+  </table>
+</div>
+
+<small><b>{data.length}</b> item{data.length === 1 ? '' : 's'} found</small>

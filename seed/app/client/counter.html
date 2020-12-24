@@ -1,0 +1,17 @@
+<script>
+  import { useEffect } from 'jamrock';
+  import { useLocal } from '~/shared/hooks';
+
+  const [value, setValue] = useLocal('counter', 0);
+
+  useEffect(() => {
+    const t = setInterval(() => setValue(x => x + 100), 1000);
+    return () => clearInterval(t);
+  });
+</script>
+
+<button disabled={!value} onclick="{() => value && setValue(0)}">&times;</button>
+<button :disabled onclick="{() => setValue(value + 1000)}">
+  [=> <b>{value}</b>] (NOW: {new Date().toISOString().substr(11, 8)})
+</button>
+<slot name="osom">...</slot>

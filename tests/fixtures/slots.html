@@ -1,0 +1,14 @@
+<script>
+  import Component from './component';
+  import Layout from './layout';
+</script>
+
+<Component>FOO</Component>
+<Component><span slot="before">X</span>BAR</Component>
+<Component><span slot="after">Y</span>BAZ</Component>
+<Component><span slot="before">X</span><span slot="after">y</span>Z</Component>
+
+<Layout>
+  <Component><template slot="before">x</template>BUZZ</Component>
+  <Component><template slot="before">_</template></Component>
+</Layout>

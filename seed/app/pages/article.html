@@ -1,0 +1,39 @@
+<script>
+  import Comments from '~/shared/components/comments';
+
+  const post = {
+    id: 1,
+    content: 'OSOM.',
+    comments: [
+      {
+        id: 2,
+        body: 'COOL',
+        msgs: [{ body: 'YEAH YEAH YEAHS!' }],
+        count: 1,
+      },
+    ],
+  };
+</script>
+
+<p>{post.content}</p>
+
+<style scoped>
+  :global(x-fragment) {
+    display: contents;
+  }
+  ul {
+    display: flex;
+    list-style-type: none;
+  }
+</style>
+
+<ul>
+  <li>A</li>
+  <fragment id="chunk">
+    <li>B</li>
+    <li>C</li>
+  </fragment>
+  <li>D</li>
+</ul>
+
+<Comments key={post.id} data={post.comments} />

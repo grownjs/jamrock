@@ -1,0 +1,17 @@
+{
+  "name": "seed",
+  "version": "1.0.0",
+  "description": "",
+  "main": "shared/server.js",
+  "keywords": [],
+  "author": "",
+  "license": "MIT",
+  "dependencies": {
+    "bcrypt": "^5.0.0",
+    "download": "^8.0.0",
+    "pocketbase": "^0.1.2",
+    "rand-token": "^1.0.1",
+    "sqlite3": "^5.0.3",
+    "therror": "^4.1.1"
+  }
+}

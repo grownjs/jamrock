@@ -1,0 +1,13 @@
+<script>
+  const value = 42;
+</script>
+
+<component src="./sample">FOO: {value}<b slot="other">OSOM: {value / 2}</b></component>
+
+||
+
+<component src="../fixtures/sample">BAR</component>
+
+||
+
+<component src="~/tests/fixtures/other">MAIN</component>

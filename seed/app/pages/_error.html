@@ -1,0 +1,20 @@
+<script>
+  import Debugger from 'jamrock/components/debugger';
+  import { env } from 'jamrock/conn';
+
+  import Layout from '_layout';
+
+  export const failure = null;
+  export const status = 501;
+</script>
+
+<Layout>
+  {#if env.NODE_ENV === 'development'}
+    <slot />
+    <Debugger {failure} />
+  {:else if status === 404}
+    <h2>Page not found.</h2>
+  {:else}
+    <h3>An error was found.</h3>
+  {/if}
+</Layout>

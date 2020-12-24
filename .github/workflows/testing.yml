@@ -1,0 +1,30 @@
+name: build
+
+on:
+  push:
+    branches:
+    - master
+  pull_request:
+    branches:
+    - master
+
+jobs:
+  build-test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+        with:
+          fetch-depth: 0
+
+      - run: cp seed/.env.example seed/.env
+
+      - run: echo "${{ secrets.ENV_OVERRIDES }}" >> seed/.env
+
+      - uses: actions/cache@v3
+        with:
+          path: '**/node_modules'
+          key: ${{ runner.os }}-${{ hashFiles('**/package.json') }}
+
+      - uses: tacoss/nodejs@v3
+        with:
+          args: make build source ci e2e CODECOV_TOKEN=${{ secrets.CODECOV_TOKEN }} BROWSER=chromium:headless

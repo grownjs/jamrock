@@ -1,0 +1,47 @@
+<script>
+  import {
+    method,
+  } from 'jamrock/conn';
+
+  export let value = 'world';
+
+  $: fixed = value.toUpperCase();
+</script>
+
+<div>
+
+  <h3>
+    Escribo el software que me gustaría usar, mantener y recomendar.
+  </h3>
+
+  <p>THIS WON'T CHANGE ({Date.now()} | {method}).</p>
+
+  <!--
+
+  ok... target seems to not load, but pick, from the response, based on the requested frame...
+  so, forms and links would ask for specific targets to be executed/rendered/loaded instead?
+
+  turbo-frame intercepts links inside... also forms, and treat them based on their turbo-target,
+  _top for the whole page, _self for the fragment itself, and any other value should match
+  an existing fragment, on the page...
+
+  we, can follow most rules, but instead of picking the frame on the page, we pick the changes
+  from the response.... man, is the same... we pick the results based on what fragment we need on the page!
+
+  -->
+
+  <fragment id="root">
+    <form @patch>
+      <p>Hello, {fixed}.</p>
+
+      <input bind:value />
+      <input type="submit" />
+    </form>
+
+    <a href="/patch">_self</a>
+    <a href="/ws" on="_top">_top</a>
+  </fragment>
+
+  <a href="/patch" on="root">reload</a>
+
+</div>

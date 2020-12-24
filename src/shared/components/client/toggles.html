@@ -1,0 +1,15 @@
+<script>
+  import { useState } from 'jamrock';
+
+  export const names = [];
+  export const prefix = 'check-';
+  export const checked = 0;
+
+  const [selected, setTab] = useState(checked);
+</script>
+
+{#each names as tab, i}
+  <li aria-current="{selected === i ? 'tab' : null}">
+    <label for="{prefix}{i}" onclick="{() => setTab(i)}">{tab}</label>
+  </li>
+{/each}

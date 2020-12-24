@@ -1,0 +1,234 @@
+<script>
+  import {
+    body_params, uploaded_files, method,
+  } from 'jamrock/conn';
+
+  import {
+    getContext,
+  } from 'jamrock/hooks';
+
+  import { File } from 'jamrock/utilities';
+  import Failure from 'jamrock/components/failure';
+
+  export let name;
+  export let label;
+  export let value;
+  export let checked;
+  export let options;
+  export let required;
+  export let validates;
+  export let type = 'text';
+
+  function toValue(input, group) {
+    if (!group) return input;
+    if (Array.isArray(input)) return input;
+    if (typeof input === 'string') return input.split('|');
+    return typeof input !== 'undefined' && input !== null ? [input] : [];
+  }
+
+  const form = getContext('current_form') || {};
+
+  const hasValidMethod = form.method === method.toLowerCase();
+  const currentForm = body_params['form-identifier'] === form.name;
+
+  const failures = [];
+  const choices = [];
+  const present = name in body_params;
+  const grouped = options && (type === 'radio' || type === 'checkbox');
+  const inputValue = toValue(hasValidMethod ? body_params[name] : value, grouped);
+
+  const fns = {
+    eq: (a, b) => a === b,
+    in: (a, ...b) => b.includes(a),
+    min: (a, b) => (type === 'number' ? a >= b : a.length >= b),
+    max: (a, b) => (type === 'number' ? a <= b : a.length <= b),
+    same: (a, b) => a === body_params[b],
+    grep: (a, b) => new RegExp(b).test(a),
+    match: (a, b) => new RegExp(`^${b.replace(/[/\\^$.|([{+}\])]/g, '\\$&').replace(/[*]/g, '.*?')}$`, 'i').test(a),
+  };
+
+  function hasValue(input) {
+    return present && (Array.isArray(inputValue) ? inputValue.includes(input) : inputValue === input);
+  }
+
+  function getFile(input) {
+    return present && input && input.path ? new File(input) : null;
+  }
+
+  async function check() {
+    if (!validates) {
+      if (required && !inputValue.length) {
+        failures.push({
+          name, fn: 'call', args: ['required'], value: inputValue,
+        });
+        return false;
+      }
+      return null;
+    }
+
+    if (typeof validates === 'function') {
+      const result = await validates(inputValue, body_params);
+
+      if (!result) {
+        failures.push({
+          name, fn: 'call', args: ['validates'], value: inputValue,
+        });
+      }
+      return result;
+    }
+
+    return validates.split(/\s+/).every(test => {
+      const [head, ...args] = test.split(':');
+      const fn = head.replace('!', '');
+
+      if (!fns[fn]) {
+        throw new Error(`Unknown '${fn}' validator, given '${test}'`);
+      }
+
+      const result = fns[fn] && fns[fn](inputValue, ...args);
+      const not = head.charAt() === '!';
+      const ok = not ? !result : result;
+
+      if (!ok) {
+        failures.push({
+          fn, not, args, name, value: inputValue,
+        });
+      }
+      return ok;
+    });
+  }
+
+  let error;
+  try {
+    if (!name) throw new ReferenceError(`Input requires a name, given '${name}'`);
+
+    if (grouped) {
+      if (Array.isArray(options)) {
+        choices.push(...options);
+      }
+      if (typeof options === 'string') {
+        choices.push(...options.split('|').map(opt => {
+          const [key, caption] = opt.split(':');
+
+          return {
+            label: caption || key,
+            value: key,
+          };
+        }));
+      }
+    }
+
+    let validated;
+    if (hasValidMethod && currentForm) {
+      validated = await check() !== false;
+    }
+
+    let fixedValue = inputValue;
+    if (!Array.isArray(inputValue)) {
+      if (type === 'checkbox') {
+        if (present) checked = String(value || 'on') === inputValue;
+        fixedValue = present && checked ? value || 'on' : null;
+      } else if (type === 'radio') {
+        if (present) checked = String(value) === inputValue;
+        fixedValue = present && checked ? value : null;
+      }
+
+      if (type === 'file') {
+        fixedValue = (uploaded_files && getFile(uploaded_files[name])) || null;
+      } else if (/^-?\d+(\.\d+)?$/.test(fixedValue)) {
+        fixedValue = parseFloat(fixedValue);
+      }
+    } else if (type === 'radio') {
+      fixedValue = fixedValue[0] || null;
+    } else if (!inputValue.length) {
+      fixedValue = null;
+    }
+
+    form.fields.push({
+      name, type, grouped, present, required, failures, validated, value: fixedValue,
+    });
+  } catch (e) {
+    error = e;
+  }
+</script>
+
+<style scoped lang="less">
+  .field {
+    gap: .5em;
+    display: flex;
+    align-items: center;
+  }
+  .label {
+    min-width: 8em;
+  }
+  input, textarea {
+    padding: 5px;
+  }
+  samp {
+    background-color: rgba(0, 0, 0, .1);
+  }
+  p {
+    padding-left: 8.5em;
+    color: red;
+  }
+  li {
+    + li {
+      margin-top: 20px;
+      padding-top: 1em;
+      border-top: 1px dashed silver;
+    }
+  }
+</style>
+
+<li test:id="form.{form.name}.elements.{name}" use:self>
+  {#if error}
+    <Failure from={error} />
+  {:else}
+    {#if grouped}
+      <div class="field">
+        {#if label}<span class="label">{label}</span>{/if}
+        {#each choices as choice}
+          <label>
+            <input {type} {name} checked={hasValue(choice.value)} value={choice.value} /> {choice.label}
+          </label>
+        {/each}
+      </div>
+    {:else}
+      <label class="field">
+        {#if label}<span class="label">{label}</span>{/if}
+        {#if type === 'textarea'}
+          <textarea id="{name}-field" {name} {value} {required} />
+        {:else if type === 'checkbox' || type === 'radio'}
+          <input id="{name}-field" {type} {name} {value} {checked} {required} />
+        {:else}
+          <input id="{name}-field" {type} {name} {value} {required} />
+        {/if}
+      </label>
+    {/if}
+    {#if failures.length}
+      <p test:id="form.{form.name}.failures.{name}">
+        {#each failures as failure}
+          {#if failure.fn === 'eq'}
+            This value {failure.not ? 'should not' : 'should'} be equal to <samp>{failure.args}</samp>
+          {:else if failure.fn === 'same'}
+            This value {failure.not ? 'should not' : 'should'} be the same as field <b>{failure.args}</b>
+          {:else if failure.fn === 'min'}
+            {#if type === 'number'}
+              This value {failure.not ? 'should not' : 'should'} be at least <samp>{failure.args}</samp> or more
+            {:else}
+              This value {failure.not ? 'should not' : 'should'} have a minimum length of <samp>{failure.args}</samp> characters
+            {/if}
+          {:else if failure.fn === 'in'}
+            This value {failure.not ? 'should not' : 'should'} be one of <samp>{failure.args.join(', ')}</samp>
+          {:else if failure.fn === 'grep'}
+            This value {failure.not ? 'should not' : 'should'} contain <samp>{failure.args[0]}</samp>
+          {:else if failure.fn === 'match'}
+            This value {failure.not ? 'should not' : 'should'} match <samp>{failure.args[0]}</samp>
+          {:else}
+            This value {failure.not ? 'did' : 'did not'} pass the <samp>{failure.fn}</samp> check, given <samp>{failure.args.join(', ')}</samp>
+          {/if}
+        {/each}
+      </p>
+    {/if}
+  {/if}
+</li>

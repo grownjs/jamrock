@@ -1,0 +1,6 @@
+tests/fixtures/broken
+tests/reactor.spec.js
+seed/node_modules
+generated
+build
+tmp

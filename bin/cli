@@ -1,0 +1,9 @@
+#!/bin/sh
+':' // ; exec "$(command -v nodejs || command -v node)" "$0" "$@"
+; // eslint-disable-line semi-style
+if (process.argv[2] === '-') {
+  const { spawn } = require('child_process');
+  spawn(require.resolve('logro/bin/cli'), process.argv.slice(3), { stdio: 'inherit' });
+} else {
+  require('./cli.js')(process.argv.slice(2)).main();
+}

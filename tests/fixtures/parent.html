@@ -1,0 +1,11 @@
+<script>
+  import { setContext, getContext } from 'jamrock/hooks';
+
+  setContext('root', {
+    children: [],
+  });
+</script>
+
+<slot />
+
+{getContext('root')}

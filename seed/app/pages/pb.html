@@ -1,0 +1,35 @@
+<script>
+  import { client } from '~/shared/client';
+  import Navigation from '~/shared/components/navigation';
+
+  function flattenLinks(map) {
+    return Object.values(map).reduce((memo, cur) => {
+      let children = [];
+      if (cur['@links']) {
+        children = flattenLinks(cur['@links']);
+      }
+      memo.push({ ...cur, children });
+      return memo;
+    }, []);
+  }
+
+  async function getLinks() {
+    const records = await client.Records.getFullList('navigation', 200, { sort: '-order' });
+    const tree = records.reduce((memo, cur) => {
+      if (cur.parent) {
+        if (!memo[cur.parent]) memo[cur.parent] = { '@links': {} };
+        memo[cur.parent]['@links'][cur.id] = cur;
+      } else {
+        if (!memo[cur.id]) memo[cur.id] = { ...cur, '@links': {} };
+        if (!memo[cur.id].id) memo[cur.id] = { ...memo[cur.id], ...cur };
+      }
+      return memo;
+    }, {});
+
+    return flattenLinks(tree);
+  }
+
+  const items = await getLinks();
+</script>
+
+<Navigation {items} />

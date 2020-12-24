@@ -1,0 +1,17 @@
+include ../mixins/helpers
+
+mjml
+  mj-head
+    block head
+
+    mj-style
+      include styles.css
+
+  mj-body(mj-class='body')
+    mj-wrapper(mj-class='wrapper')
+      include ../partials/header
+
+      mj-section(mj-class='content')
+        block body
+
+      include ../partials/footer

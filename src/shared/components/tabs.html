@@ -1,0 +1,51 @@
+<script>
+  export let checked = 0;
+  export let set;
+
+  const names = set
+    ? set.split('|')
+    : [];
+</script>
+
+<style scoped lang="less">
+  .active() {
+    font-weight: bold;
+    background-color: #FFF;
+  }
+
+  .check, .body > :global(*) {
+    display: none;
+  }
+  .head {
+    list-style-type: none;
+    display: flex;
+
+    & :global(label) {
+      display: block;
+      padding: 5px;
+    }
+  }
+  .tabs {
+    display: flex;
+    flex-direction: column-reverse;
+  }
+
+  .checks(@counter) when (@counter > 0) {
+    .checks((@counter - 1));
+    @selector: ~"nth-child(@{counter})";
+    .check:@{selector}:checked ~ .head > :global(*):@{selector} { .active; }
+    .check:@{selector}:checked ~ .body > :global(*):@{selector} { display: block; }
+  }
+
+  .checks(10);
+</style>
+
+<div class="tabs" use:self>
+  {#each names as tab, i}
+    <input class="check" type="radio" id="tab-{i}" name="tab" value={tab} checked="{i === checked}" />
+  {/each}
+  <component class="head" as="ul" src="./client/toggles" prefix="tab-" {names} {checked} />
+  <div class="body">
+    <slot />
+  </div>
+</div>

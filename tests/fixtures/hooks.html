@@ -1,0 +1,15 @@
+<script>
+  import { useCallback } from 'jamrock/hooks';
+  import { redirect } from 'jamrock/conn';
+
+  import Invoke from './invoke';
+
+  const callback = useCallback((...args) => {
+    return new Promise(ok => setTimeout(() => {
+      redirect(`/${args.join('/')}`);
+      ok();
+    }, 100));
+  });
+</script>
+
+<Invoke fn={callback} />

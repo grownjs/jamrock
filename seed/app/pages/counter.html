@@ -1,0 +1,35 @@
+<script>
+  import { session } from 'jamrock/store';
+  import { ref } from 'jamrock/conn';
+
+  const counter = session(ref('counter'), 0);
+
+  let count = counter;
+
+  function inc() {
+    count += 1;
+  }
+
+  function dec() {
+    count -= 1;
+  }
+
+  function reset() {
+    count = 0;
+  }
+</script>
+
+<style scoped>
+  div {
+    align-items: center;
+    display: flex;
+    gap: 5px;
+  }
+</style>
+
+<form @patch use:ref>
+  <button on:click={dec}>-</button>
+  <span>Count: {count}</span>
+  <button on:click={inc}>+</button>
+  <button on:click={reset}>&times;</button>
+</form>

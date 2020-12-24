@@ -1,0 +1,57 @@
+<script context="module">
+  function* doStuff() {
+    yield -42;
+  }
+</script>
+<script>
+  import { readable } from 'jamrock/store';
+  import Hello from './hello';
+
+  function* aGenerator() {
+    let count = 0;
+    while (true) {
+      yield count += 1;
+      if (count >= 15) break;
+    }
+  }
+
+  async function callback() {
+    await new Promise(ok => setTimeout(ok));
+    return 'OSOM';
+  }
+
+  async function* asyncGenerator() {
+    await new Promise(ok => setTimeout(() => ok(42), 20));
+    yield -1;
+  }
+
+  async function onChange() {
+    throw new Error('This should not happen!');
+  }
+
+  const time = readable(new Date(), function start(set) {
+    const interval = setInterval(() => {
+      set(new Date());
+    });
+
+    return function stop() {
+      clearInterval(interval);
+    };
+  });
+
+  const local = Promise.resolve('OSOM');
+</script>
+
+1. {#each asyncGenerator}{this}{/each}
+2. {#each aGenerator}{this}{/each}
+
+4. {doStuff}
+5. {local}
+
+{#each time}
+
+  {this}{/each}
+
+<button on:click={onChange} />
+
+<Hello name={callback()} />

@@ -1,0 +1,27 @@
+<script>
+  import { useState, useEffect } from 'jamrock';
+
+  export const messages = [];
+
+  const [msgs, setMsgs] = useState(messages);
+
+  function close(offset) {
+    setMsgs(msgs.filter((_, i) => i !== offset));
+  }
+
+  function pop() {
+    if (!msgs.length) return;
+    msgs.pop();
+    setMsgs(msgs);
+  }
+
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    const t = setInterval(pop, 5000);
+    return () => clearInterval(t);
+  });
+</script>
+
+{#each msgs as msg, i}
+  <p class="{msg.type}">{msg.value} <button onclick="{() => close(i)}">&times;</button></p>
+{/each}

@@ -1,0 +1,67 @@
+<script>
+  import { method, get_flash, csrf_token } from 'jamrock/conn';
+  import { isLogged, currentInfo } from '~/shared/stores';
+
+  let messages = null;
+  if (method === 'GET') {
+    messages = get_flash() || null;
+  }
+</script>
+
+<style lang="less">
+  noscript p {
+    background-color: red;
+    color: white;
+  }
+  .loading {
+    pointer-events: none;
+    position: relative;
+
+    &::after {
+      background-color: white;
+      position: absolute;
+      color: inherit;
+      content: '…';
+      right: 0;
+      top: 0;
+    }
+  }
+  *,
+  *::after,
+  *::before {
+    margin: 0;
+    padding: 0;
+  }
+  .profile {
+    display: inline-flex;
+  }
+  .profile img { margin-right: 5px; }
+</style>
+
+<head>
+  <meta name="csrf-token" content={csrf_token} />
+</head>
+
+<nav>
+  <ul>
+    <li>
+      <a href="/" target="_top">Home</a>
+      | {#if isLogged}
+        <span class="profile">
+          {#if currentInfo.picture}
+            <img src="/{currentInfo.picture}" width="16" />
+          {/if}
+          <span>{currentInfo.email}</span>
+        </span>
+      {:else}
+        <a href="/login">Log-in</a>
+      {/if}
+    </li>
+  </ul>
+</nav>
+
+<component key="notify" src="../client/notify" {messages} />
+
+<main>
+  <slot />
+</main>

@@ -1,0 +1,16 @@
+<script>
+  import Test from './objects';
+
+  export let test = null;
+  export let ref = null;
+
+  const value = 'OSOM';
+  const complex = {
+    value: 'OSOM',
+    other: /x/,
+  };
+
+  let cssClass = null;
+  export { cssClass as class };
+</script>
+<Test class={cssClass} {test} {complex} {value} object={ref}></Test>

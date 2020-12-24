@@ -1,0 +1,10 @@
+<script>
+  let value = 'world';
+  let count = 0;
+</script>
+<p>Hello, {value}.</p>
+
+<form @patch>
+  <input type="text" bind:value />
+  <input type="number" bind:value={count} />
+</form>

@@ -1,0 +1,36 @@
+<script>
+  import Styled from './styled';
+</script>
+
+<style scoped lang="less">
+  @color: blue;
+  :global(html, body) {
+    height: 100%;
+  }
+  li {
+    color: @color;
+
+    &::before {
+      content: '*';
+    }
+    > :global(.nested) {
+      font-size: 42px;
+    }
+  }
+</style>
+<style>
+  * { margin: 0; }
+</style>
+<p>OK</p>
+
+<script>
+  const color = 'red';
+  const test = true;
+  const x = '10px';
+</script>
+
+<h1 style:color style:fontSize={x}>OSOM</h1>
+<p class:test class:x={!test} class:y={!0}>CSS</p>
+<Styled />
+<Styled />
+<Styled />

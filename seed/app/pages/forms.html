@@ -1,0 +1,42 @@
+<script>
+  import { Form, Input } from 'jamrock/components';
+  import { useCallback } from 'jamrock/hooks';
+
+  const callme = useCallback(values => {
+    console.log({ values });
+  });
+
+  const options = [
+    { value: 'foo', label: 'Foo' },
+    { value: 'bar', label: 'BAR' },
+  ];
+</script>
+
+<Form name="user" method="post" resolve={callme} @async="select">
+  <Input required name="fullname" label="Name" />
+  <Input type="email" name="emailaddr" label="E-mail" validates="match:*@candy.bar" />
+  <Input type="textarea" name="description" label="Description" validates="min:20 !grep:asd" />
+  <Input type="number" name="number" label="Number" validates="min:3" />
+  <Input type="file" name="attachment" label="FILE" />
+  <p slot="before">
+    <button type="submit">Save</button>
+  </p>
+</Form>
+
+<hr />
+
+<Form name="test" method="post" resolve={callme} @async="select">
+  <Input name="input" label="InputX" required validates="eq:42" value="13" />
+  <Input name="a" label="A" validates="same:b" value="3" />
+  <Input name="b" label="B" validates="in:4:5" />
+  <Input name="c" label="C" type="checkbox" checked />
+  <Input name="d" label="D" value="nope" type="checkbox" />
+  <Input name="e" label="E I" value="1" type="radio" />
+  <Input name="e" label="E II" value="2" type="radio" />
+  <Input name="e" label="E III" value="" type="radio" checked />
+  <Input name="f" label="Group" value="bar" type="radio" {options} />
+  <Input name="g" label="Group II" value="foo" type="checkbox" options="a|b|c|d|e|f|g" />
+  <p slot="after">
+    <button type="submit">Save</button>
+  </p>
+</Form>

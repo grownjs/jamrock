@@ -1,0 +1,111 @@
+<script>
+  import {
+    redirect, routes, put_flash, path_info, body_params,
+  } from 'jamrock/conn';
+
+  import { Link, Failure } from 'jamrock/components';
+  import { PasswordMismatch } from '~/shared/errors';
+  import { User } from '~/shared/database:models';
+
+  let error = null;
+  let token = null;
+  let email = null;
+  let done = null;
+
+  if (path_info[0]) {
+    token = path_info[0];
+  }
+
+  export default {
+    async POST() {
+      const {
+        address, resend, a_password, b_password,
+      } = body_params;
+
+      email = address || null;
+
+      if (!token) {
+        await User.addUser(email, resend);
+      } else if (a_password) {
+        done = true;
+
+        if (a_password !== b_password) {
+          throw new PasswordMismatch('Passwords must match');
+        }
+
+        await User.update({ password: a_password, verified: true }, { where: { email } });
+
+        put_flash('success', 'Now you can login!');
+        redirect(routes.login_page());
+      } else {
+        await User.validateToken(email, token);
+      }
+      done = true;
+    },
+    GET() {},
+    onError(e) {
+      error = e;
+    },
+  };
+</script>
+
+<head>
+  <title>New user?</title>
+</head>
+
+{#if done}
+  <h3>Thank you!</h3>
+  {#if token}
+    <form method="post" @async>
+      <input type="hidden" name="address" value="{email}" />
+      <p>
+        <label>
+          Password:
+          <input type="password" name="a_password" required autofocus />
+        </label>
+      </p>
+      <p>
+        <label>
+          Confirm your password:
+          <input type="password" name="b_password" required />
+        </label>
+      </p>
+      <Failure from="{error}" />
+      <button type="submit">Continue</button>
+    </form>
+  {:else}
+    <p>Please confirm your e-mail address</p>
+  {/if}
+{:else}
+  {#if token}
+    <h3>Hey, it is you?</h3>
+    <form method="post" @async="select">
+      <p>
+        <label>
+          Confirm your e-mail:
+          <input type="email" name="address" required autofocus />
+        </label>
+      </p>
+      <Failure from="{error}" />
+      <button type="submit">Continue</button>
+    </form>
+  {:else}
+    <h3>Your info.</h3>
+    <form method="post" @async>
+      <p>
+        <label>
+          E-mail:
+          <input type="email" name="address" required autofocus />
+        </label>
+      </p>
+      <p>
+        <label>
+          Resend invitation
+          <input type="checkbox" name="resend" />
+        </label>
+      </p>
+      <Failure from="{error}" />
+      <button type="submit">Continue</button> or <Link to="/login">cancel</Link>.
+    </form>
+  {/if}
+{/if}
