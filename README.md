@@ -1,10 +1,51 @@
 <img src="https://github.com/grownjs/jamrock-guide/raw/master/docs/images/jamrock.svg" alt="Jamrock" width="200" height="50">
 
-> WIP: development in progress, stuff may change often.
+> WIP: development in progress, stuff may change.
 
 [![Build Status](https://github.com/grownjs/jamrock/workflows/build/badge.svg)](https://github.com/grownjs/jamrock/actions)
 [![codecov](https://codecov.io/gh/grownjs/jamrock/branch/master/graph/badge.svg)](https://codecov.io/gh/grownjs/jamrock)
 [![NPM version](https://badge.fury.io/js/jamrock.svg)](http://badge.fury.io/js/jamrock)
+
+
+# TODO
+
+- [ ] {expr} remain intact within syle: and class: tags
+- [ ] ctx.subscribe and such is missing from servers
+  - [x] nodejs
+  - [ ] deno
+  - [ ] bun
+
+- [ ] runtime (nodejs, deno, bun)
+  - [ ] server-side
+    - [ ] websockets
+          ^ adds `ctx.socket.emit/fail`
+          - [x] nodejs
+          - [ ] deno
+          - [ ] bun
+    - [-] web-server (lacks of ws!)
+      - [-] nodejs
+      - [-] deno
+      - [-] bun
+        ^^ make sure it's compliant, reuse APIs from Remix/Svelte, likely Request/Response objects
+  - [ ] client-side
+    - [ ] client components
+      - [ ] built-in runtime
+    - [ ] svelte components
+      - [ ] hydrate?
+- [ ] watcher/compiler
+      ^ nodejs only, use lib for runtime
+      ... actually the compiler runs on deno/bun,
+          so we could build sources on demand... or through a fs-watch?
+            ^ both deno/bun have a file-watcher mode built-in but only watches for imports...
+              so, unless we write the generated module it'll not reload... even worse,
+              the custom loader would not work either... so, we cannot leverage on this
+
+              ...instead, do a simple watcher in nodejs, run it, and fire bun/deno if desired apart... (HMR?)
+              btw, the cli could spawn the nodejs/deno/bun servers if needed...
+
+- himalaya is still fast? just compare!!
+  - https://github.com/taoqf/node-html-parser
+  - https://github.com/HenrikJoreteg/html-parse-stringify
 
 ## Server handler
 

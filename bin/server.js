@@ -87,7 +87,7 @@ function getServer(Grown, argv) {
     ]);
   }
 
-  Grown.use(require('../dist/jamrock'));
+  Grown.use(require('./jamrock.cjs'));
   server.plug(Grown.Jamrock);
 
   if (HAS_ROUTES) {

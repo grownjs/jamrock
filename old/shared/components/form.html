@@ -1,0 +1,111 @@
+<script>
+  import { existsSync, unlinkSync } from 'fs';
+
+  import {
+    onTeardown, getContext, setContext, useSlot,
+  } from 'jamrock/hooks';
+
+  import {
+    body_params, method as _method,
+  } from 'jamrock/conn';
+
+  import { File } from 'jamrock/utils';
+  import Failure from 'jamrock/components/failure';
+
+  export let id;
+  export let name;
+  export let label;
+  export let method;
+  export let reject;
+  export let resolve;
+
+  const renderChildren = useSlot('default');
+
+  const props = $$props['@@'];
+  const isAsync = $$props['@async'];
+  const forms = getContext('registered_forms') || [];
+
+  const hasValidMethod = method === _method.toLowerCase();
+  const currentForm = body_params['form-identifier'] === name;
+
+  let children;
+  let error;
+  try {
+    if (!name) {
+      throw new TypeError(`Form requires a name, given '${name}'`);
+    }
+    if (typeof resolve !== 'function') {
+      throw new TypeError(`Form requires a resolve callback, given '${resolve}'`);
+    }
+    if (forms.includes(name)) {
+      throw new ReferenceError(`Form with name '${name}' has been already declared`);
+    }
+
+    setContext('current_form', { name, method, fields: [] });
+    setContext('registered_forms', forms.concat(name));
+
+    children = await renderChildren();
+  } catch (e) {
+    error = e;
+  }
+
+  const ctx = getContext('current_form');
+  const files = [];
+  const payload = {};
+
+  onTeardown(() => {
+    files.forEach(file => {
+      if (existsSync(file)) unlinkSync(file);
+    });
+  });
+
+  async function getErrors() {
+    if (!hasValidMethod || !currentForm) return;
+    try {
+      let invalid = 0;
+      ctx.fields.forEach(input => {
+        if (input.value instanceof File) files.push(input.value.path);
+        if (input.value !== null) payload[input.name] = input.value;
+        if (input.validated === false) invalid += 1;
+      });
+
+      if (!invalid) {
+        await resolve(payload);
+        return;
+      }
+
+      if (reject) {
+        await reject();
+      }
+
+      throw new Error(`The submitted form '${name}' is not valid (${invalid} remaining)`);
+    } catch (e) {
+      return e;
+    }
+  }
+</script>
+
+<style scoped>
+  ul {
+    list-style-type: none;
+    padding: 0;
+    margin: 0;
+  }
+  .error {
+    color:  red;
+  }
+</style>
+
+<div {id} role="form" aria-label={label} use:self>
+  {#if error}
+    <Failure from={error} />
+  {:else}
+    <form {method} test:id="form.{name}.container" @async={isAsync} enctype="multipart/form-data">
+      <input name="form-identifier" type="hidden" value={name} />
+      <slot name="before" />
+      {@raw ['ul', props, children]}
+      <slot name="after" />
+    </form>
+    <Failure test:id="form.{name}" from={getErrors()} />
+  {/if}
+</div>

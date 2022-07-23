@@ -1,15 +1,14 @@
-const Store = require('./reactor').store;
-const factory = require('./jamrock');
-const transpile = require('./render/transpile');
+export const VERSION = process.env.VERSION;
 
-const { Template, Mortero } = require('./jamrock/template');
-const { JS_RUNTIME, LIVE_RELOAD } = require('./jamrock/reloader');
+export * as Store from './reactor/store.mjs';
+export * as Markup from './markup/index.mjs';
+export * as Render from './render/index.mjs';
+export * as Handler from './handler/index.mjs';
+export * as Reactor from './reactor/index.mjs';
+export * as Runtime from './client/runtime.mjs';
+export * as Compiler from './templ/compile.mjs';
 
-module.exports = Object.assign(factory, {
-  JS_RUNTIME,
-  LIVE_RELOAD,
-  transpile,
-  Template,
-  Mortero,
-  Store,
-});
+import * as _utils from './templ/index.mjs';
+import { Template as _template } from './templ/main.mjs';
+
+export const Template = Object.assign(_template, _utils);

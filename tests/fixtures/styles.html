@@ -4,7 +4,7 @@
 
 <style scoped lang="less">
   @color: blue;
-  :global(html, body) {
+  html {
     height: 100%;
   }
   li {
@@ -13,7 +13,7 @@
     &::before {
       content: '*';
     }
-    > :global(.nested) {
+    > .nested {
       font-size: 42px;
     }
   }

@@ -1,7 +1,25 @@
 <script>
   let value = 'OK';
+  const values = [1, 2, 3, 4, 5];
+  async function* infinity() {
+    let i = 0;
+    while (true) {
+      if (i > 120) break;
+      yield i;
+      i += 1;
+    }
+  }
 </script>
-<fragment id="test">
+<fragment name="test">
   <b>{value}</b>
 </fragment>
-<p id="chunk">OSOM</p>
+<fragment name="values" limit="3">
+  {#each values as x}
+    {x}
+  {/each}
+</fragment>
+<fragment name="infinity" interval="5">
+  {#each infinity as x}
+    {x}
+  {/each}
+</fragment>

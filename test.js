@@ -1,29 +1,24 @@
 const {
-  default: doc, tick, onError, useState, FragmentList,
+  tick, enable, disable,
 } = require('somedom/test');
 
-const {
-  useRef, useMemo, useEffect, createRender, registerComponent,
-} = require('.');
-
 module.exports = async cb => {
+  const {
+    Runtime: {
+      useRef, useMemo, useState, useEffect, onError, createRender, createContext, registerComponent,
+    },
+  } = await import('./dist/main.mjs');
+
   try {
-    doc.enable();
+    enable();
 
-    const { $, $$ } = createRender(FragmentList, props => {
-      if (props['@html'] && !(process.env.USE_JSDOM || process.env.HAPPY_DOM)) {
-        const div = document.createElement('div');
-
-        div.innerHTML = props['@html'];
-        return div;
-      }
-    });
+    const { $, $$ } = createRender();
 
     window.Jamrock = {
       components: Object.create(null),
       Browser: {
         _: {
-          $, $$, onError, useRef, useMemo, useState, useEffect, registerComponent,
+          $, $$, onError, useRef, useMemo, useState, useEffect, createContext, registerComponent,
         },
       },
     };
@@ -35,12 +30,11 @@ module.exports = async cb => {
 
       const Elem = window.Jamrock.components[key];
       const div = document.createElement('div');
-      const el = await Elem.mount(div, props);
 
-      return el;
+      return Elem.mount(div, props);
     });
     await tick();
   } finally {
-    doc.disable();
+    disable();
   }
 };

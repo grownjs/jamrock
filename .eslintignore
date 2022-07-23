@@ -1,6 +1,6 @@
 tests/fixtures/broken
-tests/reactor.spec.js
 seed/node_modules
+src/chalk.js
 generated
-build
+dist
 tmp

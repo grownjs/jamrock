@@ -32,7 +32,9 @@
   const time = readable(new Date(), function start(set) {
     const interval = setInterval(() => {
       set(new Date());
-    });
+    }, 10);
+
+    setTimeout(() => clearInterval(interval), 100);
 
     return function stop() {
       clearInterval(interval);
@@ -42,16 +44,14 @@
   const local = Promise.resolve('OSOM');
 </script>
 
-1. {#each asyncGenerator}{this}{/each}
-2. {#each aGenerator}{this}{/each}
-
+1. {#each asyncGenerator as i}{i}{/each}
+2. {#each aGenerator as i}{i}{/each}
 4. {doStuff}
 5. {local}
 
-{#each time}
-
-  {this}{/each}
+{#each time as t}
+  {t}
+{/each}
 
 <button on:click={onChange} />
-
-<Hello name={callback()} />
+<Hello name={callback} />

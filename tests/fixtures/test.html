@@ -1,0 +1,26 @@
+<script context="client">
+  import { useState } from 'jamrock';
+  import { truth } from './utils';
+
+  export const value = 42;
+
+  let cssClass = 'none';
+  export { cssClass as class };
+
+  export function noop() {
+    // nothing
+  }
+  export const fn = () => noop;
+
+  const [count, setCount] = useState(0);
+
+  function inc() {
+    setCount(count + 1);
+  }
+
+  // eslint-disable-next-line no-unused-vars
+  let ok = 'OK';
+</script>
+
+<p>Count: {count}({truth()})</p>
+<button onclick={inc}>+</button>

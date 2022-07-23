@@ -5,9 +5,11 @@ module.exports = [{
   run: ({
     dest, flags, register,
   }) => {
-    const { Template, transpile } = require('../dist/jamrock');
+    const { Template, Markup } = require('../dist/jamrock');
 
-    flags.rewrite = transpile.rewrite;
+    flags.rewrite = source => {
+      return source.replace(/\breturn (\$\$[\w]+) &&/g, 'with ($1) return');
+    };
 
     register(['jam', 'rock', 'html', 'htmlx'], async (params, done) => {
       const name = path.relative('.', params.filepath).replace(/\.\.?\//g, '');
@@ -16,7 +18,7 @@ module.exports = [{
       const isClient = params.filepath.includes('/client/');
 
       try {
-        const markup = transpile.parts(params.source, params.filepath);
+        const markup = Markup.parts(params.source, params.filepath);
 
         params.debug = false;
 
@@ -24,7 +26,7 @@ module.exports = [{
           params.source = markup.html.trim();
           params.extension = 'html';
         } else if (isClient) {
-          return transpile.render(markup, result => {
+          return Template.transpile(markup, result => {
             params._bundle = true;
             params.source = result.source;
             params.options.platform = 'browser';
@@ -33,7 +35,7 @@ module.exports = [{
             const src = `${name.replace(/\.\w+$/, '')}.js`;
             const out = flags.rename(src).replace('.js', '.bundle.js');
 
-            return Template.bundle(src, result.source, out, require.resolve('../dist/runtime')).then(done);
+            return Template.bundle(src, result.source, out, require.resolve('../dist/runtime'), flags.rewrite).then(done);
           });
         } else {
           const tpl = await Template.compile(name, params.filepath, {

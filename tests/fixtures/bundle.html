@@ -1,13 +1,26 @@
 <script>
+  // eslint-disable-next-line import/no-duplicates
+  import Sample from './sample';
+  // eslint-disable-next-line import/no-duplicates, import/no-useless-path-segments
+  import Sample2 from '../fixtures/sample';
+  import Sample3 from '~/tests/fixtures/sample';
+  import Osom from './osom';
+
   const value = 42;
 </script>
 
-<component src="./sample">FOO: {value}<b slot="other">OSOM: {value / 2}</b></component>
+<Sample>FOO: {value}<b slot="other">OSOM: {value / 2}</b></Sample>
 
 ||
 
-<component src="../fixtures/sample">BAR</component>
+<Sample2>BAR</Sample2>
 
 ||
 
-<component src="~/tests/fixtures/other">MAIN</component>
+<Sample3>MAIN</Sample3>
+
+||
+
+<Osom prefix="OSOM" @stuff={value}>
+  <h1>It works.</h1>
+</Osom>

@@ -11,6 +11,7 @@ index.toml
 templates.json
 package-lock.json
 node_modules
+src/chalk.js
 generated
 coverage
 build

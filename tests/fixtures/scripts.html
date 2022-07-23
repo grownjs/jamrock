@@ -5,15 +5,15 @@
   const el = Fragment.for('...');
 </script>
 <script type="module">
-  import { truth } from './utils.js';
+  import { truth } from './utils';
 
   let x = 0;
-  if (x < 3) {
+  if (x < 3 && typeof truth === 'function') {
     console.log(truth());
   }
   console.log(el);
 </script>
-<style scoped lang="less">
+<style global lang="less">
   @color: blue;
   li {
     color: @color;
@@ -26,4 +26,7 @@
 <style>
   * { margin: 0; }
 </style>
-<p>OK</p>
+<script>
+  import Test from './test';
+</script>
+<Test value={-2} />

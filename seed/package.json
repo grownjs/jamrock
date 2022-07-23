@@ -2,7 +2,7 @@
   "name": "seed",
   "version": "1.0.0",
   "description": "",
-  "main": "shared/server.js",
+  "main": "./shared/server.cjs",
   "keywords": [],
   "author": "",
   "license": "MIT",
