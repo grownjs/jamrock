@@ -1,0 +1,78 @@
+<script>
+  import {
+    redirect, session, flash, body_params,
+  } from 'jamrock:conn';
+
+  // <Link /> is trolling because of `<link />`
+  // and it seems we cannot change that... so,
+  // we hould opt for renamig this thing...
+  import LinkTo from './components/link.html';
+  import Failure from './components/failure.html';
+
+  import { isLogged } from './stores.mjs';
+  import { User } from './models.mjs';
+
+  let error = null;
+  let auth = null;
+
+  $: if (auth) {
+    session.user = {
+      currentInfo: auth.user.record,
+      expirationDate: Date.now() + 864000,
+    };
+    flash('success', "You've been logged in!");
+    redirect('/login');
+  }
+
+  export default {
+    as: 'login_page',
+    body: true,
+
+    async POST() {
+      const { email, password } = body_params;
+      const user = await User.verifyAuth({ email, password, exception: true });
+
+      if (user) auth = { user };
+    },
+
+    async DELETE() {
+      flash('success', "You've been logged off!");
+      session.user = null;
+      redirect('/login');
+    },
+
+    onError(e) {
+      error = e;
+    },
+  };
+</script>
+
+<head>
+  <title>Log in</title>
+</head>
+
+
+{#if isLogged}
+  <h3>Glad you're back!</h3>
+  <form action="/login" @delete>
+    <button type="submit">Logout</button>
+  </form>
+{:else}
+  <h3>Please log in&hellip;</h3>
+  <form method="POST" @async>
+    <p>
+      <label>
+        <span>E-mail:</span>
+        <input type="email" name="email" value={body_params.email} autocomplete="current-email" autofocus required />
+      </label>
+    </p>
+    <p>
+      <label>
+        <span>Password:</span>
+        <input type="password" name="password" autocomplete="current-password" required />
+      </label>
+    </p>
+    <Failure from={error} />
+    <button type="submit">Login</button> or <LinkTo path="/new">create your account</LinkTo>.
+  </form>
+{/if}

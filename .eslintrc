@@ -17,6 +17,9 @@
     "ecmaVersion": "latest"
   },
   "rules" : {
+    "no-continue": 0,
+    "no-promise-executor-return": 0,
+    "no-setter-return": 0,
     "max-len": ["error", {
       "code": 150
     }]

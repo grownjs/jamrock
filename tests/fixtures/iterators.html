@@ -1,11 +1,11 @@
 <script context="module">
-  function* doStuff() {
+  export function* doStuff() {
     yield -42;
   }
 </script>
 <script>
-  import { readable } from 'jamrock/store';
-  import Hello from './hello';
+  import { readable } from 'jamrock:store';
+  import Hello from './hello.html';
 
   function* aGenerator() {
     let count = 0;
@@ -15,13 +15,8 @@
     }
   }
 
-  async function callback() {
-    await new Promise(ok => setTimeout(ok));
-    return 'OSOM';
-  }
-
   async function* asyncGenerator() {
-    await new Promise(ok => setTimeout(() => ok(42), 20));
+    yield new Promise(ok => setTimeout(() => ok(42), 20));
     yield -1;
   }
 
@@ -46,12 +41,9 @@
 
 1. {#each asyncGenerator as i}{i}{/each}
 2. {#each aGenerator as i}{i}{/each}
+3. {#each time as t}{t}{/each}
 4. {doStuff}
 5. {local}
 
-{#each time as t}
-  {t}
-{/each}
-
 <button on:click={onChange} />
-<Hello name={callback} />
+<Hello name={local} />

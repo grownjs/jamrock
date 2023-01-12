@@ -1,31 +1,36 @@
-import { pascalCase, realpath, identifier, isThenable, isObject, isArray } from '../utils.mjs';
+import { pascalCase, realpath, identifier, pick, merge, Is } from '../utils/server.mjs';
+import { serialize, scopify, rulify } from '../markup/html.mjs';
 import { streamify, decorate, consume } from './send.mjs';
-import { serialize, scopify } from '../markup/html.mjs';
-import { build, debug, highlight } from './utils.mjs';
-import { renderComponent } from '../render/ssr.mjs';
-import { renderAsync } from '../render/shared.mjs';
-import { resolve } from '../reactor/loop.mjs';
+import { serverComponent } from '../render/ssr.mjs';
+import { renderAsync } from '../render/async.mjs';
+import { resolver } from '../reactor/loop.mjs';
 import { reduce } from '../markup/utils.mjs';
-import { Expr } from '../markup/expr.mjs';
-import { transpile } from './bundle.mjs';
+import { ents } from '../render/hooks.mjs';
+import { Ref, Expr } from '../markup/expr.mjs';
+import { debug, highlight } from './utils.mjs';
+import { build, transpile } from './builder.mjs';
 import * as Store from '../reactor/store.mjs';
 
 const RE_SAFE_IMPORTS = /^(?:npm|node|file|https?):/;
 const RE_SAFE_NAME = /\/(.+?)(?:\/\+\w+)?\.\w+$/;
 
 export class Template {
-  constructor(name, block, callback) {
+  constructor(name, block, hooks, callback) {
+    this.generators = hooks;
     this.component = name;
     this.partial = block;
     this.build = callback;
   }
 
-  async transform(cb, bundle, parent, options, imported = []) {
+  async transform(cb, bundle, parent, options, isServer, imported = []) {
     const { markup, fragments } = this.partial;
     const target = this.partial.file;
+    const context = this.partial.context;
     const resources = { js: [], css: [] };
-    const scoped = identifier('jam').join('-');
-    const isAsync = !(bundle || this.partial.context === 'client');
+    const scope = identifier('jam', target).join('-');
+
+    const isAsync = !(bundle || context === 'client');
+    const isStatic = context === 'static';
 
     const tasks = [];
     const mod = [];
@@ -40,18 +45,24 @@ export class Template {
 
     for (const c of this.partial.children) {
       if (c.found) {
-        // eslint-disable-next-line no-continue
+        // FIXME: I think they can interoperate, but only as static markup...
+        // so if we render a Svelte component it should be pre-rendered only,
+        // and on client-side it should be skipped?
+
+        if (!isAsync && c.found.includes('.svelte')) {
+          throw new ReferenceError(`Svelte component '${c.found}' cannot be used in '${target}'`);
+        }
+
         if (imported.includes(c.found)) continue;
 
         imported.push(c.found);
 
         if (c.found.includes('.svelte')) {
           tasks.push(cb({
-            content: `import c from '${c.found}';
-            const { registerComponent: r } = window.Jamrock.Browser._;
-            r('${c.found}', { component: c })`,
-            filepath: target.replace('.html', '.bundle.js'),
+            filepath: c.found,
           }).then(result => {
+            result.content = Template.identify(result.content, c.found);
+
             mod.push({
               ...result,
               src: c.found,
@@ -71,6 +82,8 @@ export class Template {
               });
             }
 
+            result.content = Template.identify(result.content, c.found);
+
             mod.push({
               ...result,
               src: c.found,
@@ -79,7 +92,7 @@ export class Template {
           }));
         } else if (c.found.includes('.html')) {
           tasks.push(this.build(c.found, c.code, { sync: !isAsync })
-            .transform(cb, !isAsync, target, options, imported)
+            .transform(cb, !isAsync, target, options, isServer, imported)
             .then(result => mod.push(...result)));
         }
       } else {
@@ -91,23 +104,41 @@ export class Template {
       .filter(x => x.root || x.attributes.scoped || x.attributes.bundle || x.attributes.type === 'module'), 'js', null, options)
       .then(js => { resources.js = js.map(x => [x.params.type === 'module' || !x.params.bundle, x.content]); }));
 
-    this.partial.styles.forEach(css => {
-      tasks.push(cb(css, 'css', null, options).then(code => {
-        if (!css.attributes.global) {
-          resources.css.push(scopify(scoped, code.content, markup.content, `${css.identifier}.css`));
+    this.partial.styles.forEach(x => {
+      tasks.push(cb(x, 'css', null, options).then(code => {
+        if (!x.attributes.global) {
+          resources.css.push(scopify(scope, x.attributes.scoped, code.content, markup.content, `${x.identifier}.css`));
         } else {
-          resources.css.push(code.content);
+          resources.css.push(rulify(code.content, `${x.identifier}.css`));
         }
       }));
     });
 
     await Promise.all(tasks);
 
-    this.partial.sync();
+    this.partial.sync(options.props);
+
+    if (this.generators && this.generators.css) {
+      const { css } = await this.generators.css.generate(this.partial.rules.join(' '));
+
+      resources.css.push(rulify(css, target));
+    }
 
     let result;
-    if (!isAsync) {
-      result = await transpile(cb, this.partial, resources, options);
+    if (isStatic) {
+      result = {
+        content: [
+          `const __render = ${this.partial.render.toString().replace('(_, $$)', '({ $$$$slots, $$$$props }, $$$$)')};`,
+          `export default { src: '${target}', render: __render, stylesheet: ${JSON.stringify(resources.css)} };`,
+        ].join('\n'),
+      };
+      mod.push({
+        ...result,
+        src: target,
+        bundle: true,
+      });
+    } else if (!isAsync) {
+      result = transpile(this.partial, resources);
       mod.push({
         ...result,
         src: target,
@@ -119,14 +150,15 @@ export class Template {
         block: this.partial,
         assets: resources,
         templates: {
-          metadata: reduce(markup.metadata || { elements: [] }, true, [], 1),
+          metadata: reduce(markup.metadata || { elements: [] }, context, 1),
           document: Expr.props(markup.document || {}, '\t'),
           attributes: Expr.props(markup.attributes || {}, '\t'),
         },
         fragments: Object.keys(fragments).reduce((memo, key) => {
           memo.push({
             attributes: Expr.props(fragments[key].attributes, '\t'),
-            template: reduce(fragments[key].elements, true, [], 1),
+            template: reduce(fragments[key].elements, context, 1),
+            scope: fragments[key].scope,
             name: key,
           });
           return memo;
@@ -144,25 +176,220 @@ export class Template {
     return mod;
   }
 
+  static async finalize(e, self, chunk, mixins, component) {
+    const selectors = new Set();
+
+    await Promise.all([
+      serialize(chunk.body, null, (_, x) => decorate(self, _, x, selectors)),
+      serialize(chunk.head, null, (_, x) => decorate(self, _, x)),
+    ]);
+
+    chunk.doc = Object.assign({ ...chunk.doc }, ...mixins.map(x => x.doc));
+    chunk.attrs = Object.assign({ ...chunk.attrs }, ...mixins.map(x => x.attrs));
+    chunk.styles = Object.assign({ ...chunk.styles }, ...mixins.map(x => x.styles));
+    chunk.scripts = Object.assign({ ...chunk.scripts }, ...mixins.map(x => x.scripts));
+
+    chunk.head = (chunk.head || []).concat(mixins.map(x => x.head));
+    chunk.head.unshift(['base', { href: self.base_url || '/' }]);
+    chunk.head.unshift(['meta', { charset: 'utf-8' }]);
+
+    chunk.doc['data-location'] = process.env.NODE_ENV !== 'production' ? component.src : undefined;
+    chunk.status = e ? e.status : null;
+
+    const all = [...selectors];
+    const ids = all.filter(x => x.charAt() === '#').map(x => x.substr(1));
+    const tags = all.filter(x => x.charAt() === '!').map(x => x.substr(1));
+    const attrs = all.filter(x => x.charAt() === '@').map(x => x.substr(1));
+    const classes = all.filter(x => x.charAt() === '.').map(x => x.substr(1));
+
+    const regexes = []
+      .concat(ids.length > 0 ? `#(?:${ids.join('|')})\\b` : [])
+      .concat(tags.length > 0 ? `(?![[:#.])(?:${tags.join('|')})\\b` : [])
+      .concat(attrs.length > 0 ? `\\[(?:${attrs.join('|')})(?=[~|^$*=\\]])` : [])
+      .concat(classes.length > 0 ? `\\.(?:${classes.join('|')})\\b` : [])
+      .join('|');
+
+    const seen = new Set();
+    const used = new RegExp(regexes);
+
+    Object.entries(chunk.styles).forEach(([src, rules]) => {
+      chunk.styles[src] = Is.arr(rules) ? rules.reduce((memo, styles) => {
+        if (Is.arr(styles)) {
+          styles.forEach(style => {
+            if (Is.arr(style)) {
+              if (style[0].charAt() === '@') {
+                const css = [];
+
+                style[1].forEach(([k, v]) => {
+                  if (!seen.has(`@${k}`) && used.test(k)) {
+                    seen.add(`@${k}`);
+                    css.push(k + v);
+                  }
+                });
+
+                if (css.length > 0) {
+                  memo.push(`${style[0]}{${css.join('')}}`);
+                }
+              } else if (!seen.has(style[0]) && used.test(style[0])) {
+                memo.push(style.join(''));
+                seen.add(style[0]);
+              }
+            } else {
+              memo.push(style);
+            }
+          });
+          return memo;
+        }
+        return memo.concat(styles);
+      }, []).join('') : rules;
+    });
+
+    return chunk;
+  }
+
   static async resolve(component, filepath, context, props, cb) {
     const shared = {
       failure: null,
-      scripts: [],
-      styles: [],
+      scripts: {},
+      styles: {},
       attrs: {},
-      meta: [],
+      head: [],
       doc: {},
     };
 
-    const self = Object.assign(context || {}, { filepath, streams: Object.create(null), depth: 0 });
+    function invoke(ctx, chunk, payload, _component) {
+      const _render = async (_chunk, locals) => {
+        if (!Is.func(_chunk)) {
+          if (_chunk.stylesheet) {
+            shared.styles[_chunk.src] = _chunk.stylesheet;
+          }
 
-    if (self.conn && self.conn.sockets) {
+          if (_chunk.src && _chunk.render && !_chunk.resolve && !_chunk.$$render) {
+            const $$props = pick(merge(payload, locals || {}), _chunk._scope && _chunk._scope[0]);
+
+            const $$slots = Object.keys(_chunk._slots || {}).reduce((memo, key) => {
+              memo[key] = !!_chunk._slots[key];
+              return memo;
+            }, {});
+
+            return renderAsync(_chunk, { $$props, $$slots }, _render, ctx);
+          }
+
+          if (_chunk.$$render || _chunk.resolve) {
+            const scope = {
+              props: payload,
+              parent: _component,
+            };
+
+            return serverComponent(ctx, _chunk, locals, scope, _render, Template.load, shared.styles);
+          }
+
+          const result = await renderAsync(_chunk, pick(locals, _chunk.props), _render, ctx);
+
+          if (Is.plain(result)) {
+            result.name = `${result['@location'].split(':')[0]}/${_chunk.depth}/${result.name}`;
+          }
+          return result;
+        }
+
+        const key = identifier();
+        const state = pick(merge(payload, locals), _chunk.props);
+
+        ctx.chunks.set(key, Template.render(_chunk, invoke, state, ctx)
+          .then(result => {
+            shared.head.push(...(result.head || []));
+            Object.assign(shared.doc, result.doc);
+            Object.assign(shared.attrs, result.attrs);
+            Object.assign(shared.styles, result.styles);
+            Object.assign(shared.scripts, result.scripts);
+            return result.body;
+          }));
+
+        return Ref.from(key);
+      };
+      return chunk ? _render(chunk, payload) : _render;
+    }
+
+    const self = Object.assign(context || {}, {
+      filepath,
+      callbacks: [],
+      streams: new Map(),
+      chunks: new Map(),
+      depth: 0,
+      send: async (key, data, uuid, chunk, source, params, result) => {
+        try {
+          const children = await invoke(self, chunk, { ...result, [key]: data });
+
+          serialize(children, null, (_, x) => decorate(self, _, x));
+
+          if (self.socket.identity === uuid) {
+            self.socket.emit('update', source, params, children);
+          }
+        } catch (e) {
+          // ctx.socket.emit('error', e);
+          console.error('E_SEND', e);
+        }
+      },
+      emit: async (data, uuid, path, source, target) => {
+        if (self.streams.has(path)) {
+          const { locals, calls } = self.streams.get(path);
+          const handler = self.streams.get(`${path}?handler`);
+
+          if (calls[source]) {
+            const result = calls[source](data);
+            const depth = +path.split('/').pop();
+            const key = target || source;
+
+            let _props;
+            let chunk;
+            let name;
+            for (const frag in handler.fragments) {
+              if (handler.fragments[frag].scope && handler.fragments[frag].scope.includes(key)) {
+                _props = await invoke(self, { render: handler.fragments[frag].attributes, depth }, locals);
+                chunk = { slots: handler.component._slots, render: handler.fragments[frag].template };
+                name = frag;
+                break;
+              }
+            }
+
+            const push = item => self.send(key, [item], uuid, chunk, `${path}/${name}`, _props, locals);
+
+            if (Is.iterable(result)) {
+              for await (const item of result) await push(item);
+            } else {
+              await push(result);
+            }
+          }
+        }
+      },
+      accept: (src, key, _depth, _handler, _socket) => {
+        self.streams.set(`${src}/${_depth}?handler`, _handler);
+        self.streams.set(`${src}/${_depth}/${key}?socket`, _socket);
+
+        if (_socket.streams) _socket.streams.add(`${src}/${_depth}/${key}`);
+        if (!_socket.context) _socket.context = self;
+      },
+      connect: (src, key, _depth, _socket) => {
+        if (self.streams.has(`${src}/${_depth}/${key}`)) {
+          return self.streams.get(`${src}/${_depth}/${key}`).accept(_socket);
+        }
+      },
+      subscribe: (src, key, params, _depth) => {
+        self.streams.set(`${src}/${_depth}/${key}`, params);
+      },
+      unsubscribe: (src, key, _depth) => {
+        self.streams.delete(`${src}/${_depth}?handler`);
+        self.streams.delete(`${src}/${_depth}/${key}`);
+        self.streams.delete(`${src}/${_depth}/${key}?socket`);
+      },
+    });
+
+    if (Is.func(self.clients) && !self.socket) {
       let _socket;
       Object.defineProperty(self, 'socket', {
         get: () => {
-          // FIXME: identify by client uuid
-          if (!_socket) _socket = self.conn.sockets()[0];
-          return _socket;
+          // eslint-disable-next-line no-return-assign
+          return _socket || (_socket = self.clients().find(x => x.identity === self.uuid));
         },
         set: v => {
           _socket = v;
@@ -170,134 +397,191 @@ export class Template {
       });
     }
 
-    function invoke(ctx, chunk, payload) {
-      const _render = async (_chunk, locals) => {
-        if (typeof _chunk !== 'function') {
-          if (_chunk.$$render || _chunk.component) {
-            return renderComponent(_chunk, { ...locals, ...payload }, null, _render);
-          }
-
-          const result = await renderAsync(_chunk, { ...locals, ...payload }, _render);
-
-          if (isObject(result)) {
-            result.name += `.${_chunk.depth}`;
-          }
-          return result;
-        }
-
-        const result = await Template.render(_chunk, invoke, { ...locals, ...payload }, ctx, cb);
-
-        shared.meta.push(...(result.meta || []));
-        shared.styles.push(...(result.styles || []));
-        shared.scripts.push(...(result.scripts || []));
-        Object.assign(shared.doc, result.doc);
-        Object.assign(shared.attrs, result.attrs);
-        return result.body;
-      };
-      return chunk ? _render(chunk, payload) : _render;
-    }
+    self.base_url = self.conn && self.conn.base_url;
+    self.is_json = self.conn && self.conn.is_xhr;
 
     try {
       const result = await Template.render(component, invoke, props, self, cb);
 
-      serialize(result.body, null, (vnode, hooks) => decorate(self, vnode, hooks, component));
-      serialize(result.meta, null, (vnode, hooks) => decorate(self, vnode, hooks, component));
+      await Promise.all(self.callbacks.map(fn => fn(result)));
 
-      result.scripts.push(...new Set(shared.scripts));
-      result.styles.push(...new Set(shared.styles.filter(Boolean)));
-      result.meta = [...(result.meta || []), ...shared.meta];
-      result.doc = { ...result.doc, ...shared.doc };
-      result.attrs = { ...result.attrs, ...shared.attrs };
+      if (!(result instanceof Response)) {
+        if (self.route && self.route.layout) {
+          self.route.layout._slots = { default: result.body };
 
-      // FIXME: layout boundaries...
+          const layout = await Template.render(self.route.layout, invoke, props, self);
+
+          return Template.finalize(null, self, layout, [shared, result], component);
+        }
+        return Template.finalize(null, self, result, [shared], component);
+      }
       return result;
     } catch (e) {
-      shared.body = ['pre', {}, e.stack];
-      return shared;
+      if (self.route && self.route.error) {
+        // console.log(e.stack);
+        props = props || {};
+        props.failure = e;
+        props.failure.reason = e.message;
+        props.failure.source = props.failure.stack.split('\n')[0].split(' at ')[1];
+        props.failure.stack = props.failure.stack.split('\n').slice(1).join('\n');
+
+        const error = await Template.render(self.route.error, invoke, props, self);
+
+        return Template.finalize(e, self, error, [shared], component, true);
+      }
+      throw e;
     }
   }
 
-  static async render(component, invoke, props, ctx = {}, cb = null) {
-    const handler = await component(component.src, (...args) => {
-      if (args[0] === 'jamrock/conn') return ctx.conn;
-      if (args[0] === 'jamrock/hooks') return ctx.hooks;
-      if (args[0] === 'jamrock/store') return Store;
-      return Template.load(...args);
-    }, resolve, ctx.filepath || null);
-
-    const depth = ctx.depth++;
-
-    Object.assign(ctx, {
-      accept: (src, key, _handler, _socket) => {
-        ctx.streams[src][`${key}.${depth}`].socket = _socket;
-        _socket.on('close', () => {
-          delete ctx.streams[src][`${key}.${depth}`].socket;
-          _handler.cancel();
-        });
-      },
-      connect: (src, key, _socket) => {
-        return ctx.streams[src][`${key}.${depth}`].accept(_socket);
-      },
-      subscribe: (src, key, params) => {
-        ctx.streams[src] = ctx.streams[src] || Object.create(null);
-        ctx.streams[src][`${key}.${depth}`] = params;
-      },
-      unsubscribe: (src, key) => {
-        delete ctx.streams[src][`${key}.${depth}`];
-      },
-    });
-
-    let err;
-    let data = { ...props };
-    if (typeof handler === 'function' && invoke) {
-      const result = await handler(ctx.context || null, data, console, async payload => {
-        const handlers = payload.default || {};
-
-        for (const [k, v] of Object.entries(payload)) {
-          if (v && isThenable(v)) payload[k] = await v;
-        }
-
-        delete payload.default;
-        try {
-          if (typeof cb === 'function') {
-            ctx.file = component.src;
-            await cb(ctx, payload, handlers);
-          }
-        } catch (e) {
-          err = e;
-        }
-      });
-
-      // FIXME: error boundaries...
-      if (err) {
-        throw err;
-      }
-
-      await streamify(ctx, depth, result.data, invoke, handler, consume);
-      Object.assign(data, result.data);
-    } else if (typeof cb === 'function') {
-      await cb(ctx, data, {});
+  static async render(component, invoke, props, ctx, cb = null) {
+    if (!Is.func(component)) {
+      return { body: await invoke(ctx, component, props, component) };
     }
 
+    const depth = ++ctx.depth;
+    const reactor = resolver(ctx.conn);
+
+    const context = component._scope = {
+      onFinish: fn => ctx.callbacks.push(fn),
+
+      getContext: k => {
+        return component._parent ? (component._parent._scope && component._parent._scope[k]) : component._scope[k];
+      },
+      setContext: (k, v) => {
+        if (component._parent) {
+          component._parent._scope = component._parent._scope || component._scope;
+          component._parent._scope[k] = v;
+        } else {
+          component._scope[k] = v;
+        }
+      },
+
+      useSlot: async name => {
+        if (!component._slots[name]) {
+          throw new ReferenceError(`Missing slot '${name}' in ${component.src}`);
+        }
+
+        const children = await component._slots[name]();
+        component._slots[name] = () => children;
+        return children;
+      },
+    };
+
+    const handler = await component(component.src, (...args) => {
+      if (args[0] === 'jamrock:conn') return ctx.conn;
+      if (args[0] === 'jamrock:hooks') return context;
+      if (args[0] === 'jamrock:store') return Store;
+      return Template.load(...args);
+    }, reactor, component.destination || ctx.filepath);
+
+    const $$props = props ? pick(props, handler.props) : {};
+
+    let response;
+    let data = { ...props, $$props, $$slots: {} };
+    Object.keys(component._slots || {}).forEach(key => {
+      data.$$slots[key] = !!component._slots[key];
+    });
+
+    const _ref = `${component.src}/${ctx.depth}`;
+
+    const styles = {
+      [component.src]: handler.assets && handler.assets.styles.length > 0
+        ? handler.assets.styles
+        : [],
+    };
+
+    const scripts = {
+      [component.src]: handler.assets && handler.assets.scripts.length > 0
+        ? handler.assets.scripts.map(([k, v], i) => [k, `/* ${component.src}(${i}) */\n${v}`])
+        : [],
+    };
+
     try {
-      const exec = invoke ? invoke(ctx, null, data) : undefined;
-      const [doc, body, meta, attrs] = await Promise.all([
+      if (invoke && Is.func(handler)) {
+        const main = handler.bind({ filepath: ctx.filepath, module: component });
+        const result = await reactor.resolve(main, data, null, null, undefined, 0, async (_ctx, _data) => {
+          const locals = { ...handler.definitions, ..._data };
+          const calls = {};
+
+          Object.keys(locals).forEach(key => {
+            // FIXME: we could identify these methods somehow?
+            if (Is.func(locals[key])) calls[key] = locals[key];
+          });
+
+          ctx.streams.set(_ref, { locals, calls });
+
+          try {
+            if (Is.func(cb)) {
+              let _chunk = await cb(ctx, _data, _ctx.default || {});
+              if (Is.plain(_chunk)) {
+                const body = JSON.stringify(_chunk);
+
+                _chunk = new Response(body, {
+                  status: 200,
+                  headers: {
+                    'content-type': 'application/json',
+                    'content-length': body.length,
+                  },
+                });
+              }
+              if (Is.arr(_chunk)) {
+                _chunk = new Response(_chunk[1], { status: _chunk[0], headers: _chunk[2] });
+              }
+              if (Is.num(_chunk)) _chunk = new Response(null, { status: _chunk });
+              if (Is.str(_chunk)) _chunk = new Response(_chunk, { status: 200 });
+              if (_chunk instanceof Response) response = _chunk;
+            }
+
+            if (invoke
+              && !response
+              && ctx.conn
+              && ctx.conn.params
+              && ctx.conn.params._action
+              && ctx.conn.params._self === _ref
+              && Is.func(_data[ctx.conn.params._action])
+            ) response = await _data[ctx.conn.params._action](ctx.conn);
+          } catch (e) {
+            if (_ctx.default && Is.func(_ctx.default.onError)) {
+              response = await _ctx.default.onError(e);
+            } else {
+              throw e;
+            }
+          }
+        });
+
+        if (response) return response;
+        if (ctx.conn && ctx.conn.has_status) {
+          return new Response(ctx.conn.body, { status: ctx.conn.status_code, headers: ctx.conn.resp_headers });
+        }
+
+        await streamify(ctx, depth, result, invoke, handler, consume);
+        Object.assign(data, result, ctx.conn && ctx.conn.req ? ctx.conn.req.params : null);
+      }
+
+      const exec = invoke ? invoke(ctx, null, data, component) : undefined;
+      const [doc, body, head, attrs] = await Promise.all([
         renderAsync({ render: handler.document }, data),
-        renderAsync({ chunks: handler.fragments, slots: component._slots, render: handler.render, depth }, data, exec),
-        renderAsync({ chunks: handler.fragments, slots: component._slots, render: handler.metadata, depth }, data, exec),
+        renderAsync({ chunks: handler.fragments, slots: component._slots, render: handler.render, depth, component }, data, exec, ctx),
+        renderAsync({ chunks: handler.fragments, slots: component._slots, render: handler.metadata, depth, component }, data, exec, ctx),
         renderAsync({ render: handler.attributes }, data),
       ]);
 
       return {
-        ...handler.assets, attrs, meta, body, doc,
+        scripts, styles, attrs, head, body, doc,
       };
     } catch (e) {
-      console.log(e);
-      throw debug({
+      // console.log(e);
+      this.failure = debug({
         file: component.src,
-        html: ctx.template || '',
         code: component.toString(),
+        html: Template.exists(component.src)
+          ? Template.read(component.src)
+          : null,
       }, e);
+
+      if (ctx.route && ctx.route.error) throw this.failure;
+
+      return { scripts, styles, body: [['pre', {}, ents(this.failure.stack)]] };
     }
   }
 
@@ -319,8 +603,8 @@ export class Template {
       return Template.cache.get(resolved || id).module;
     }
 
-    if (resolved && resolved.includes('.html')) {
-      throw new Error(`Cannot import '${resolved}' template`);
+    if (resolved && (resolved.includes('.html') || resolved.includes('.svelte'))) {
+      throw new Error(`Cannot import '${resolved}' file as module`);
     }
 
     if (resolved && Template.exists(resolved)) {
@@ -337,7 +621,7 @@ export class Template {
   }
 
   static transpile(tpl) {
-    if (isArray(tpl)) {
+    if (Is.arr(tpl)) {
       return Promise.all(tpl.map(Template.transpile));
     }
 
@@ -347,6 +631,10 @@ export class Template {
       children: [],
       resources: [],
     });
+  }
+
+  static identify(code, filepath) {
+    return code.replace(/export default (\w+)/, (_, x) => `${_};\n${x}.src = "${filepath}"`);
   }
 
   static dirname(path) {
@@ -388,15 +676,17 @@ export class Template {
     else if (Template.exists(`node_modules/${mod.split(':')[0]}/package.json`)) return mod;
 
     for (let i = 0; i < paths.length; i += 1) {
-      if (Template.exists(paths[i])) return paths[i];
-      if (Template.exists(`${paths[i]}.html`)) return `${paths[i]}.html`;
-      if (Template.exists(`${paths[i]}.svelte`)) return `${paths[i]}.svelte`;
+      const subject = paths[i].replace(/\.(?:html|svelte)$/, '');
+
+      if (Template.exists(`${subject}.server.mjs`)) return `${subject}.server.mjs`;
+      if (Template.exists(`${subject}.client.mjs`)) return `${subject}.client.mjs`;
       if (Template.exists(`${paths[i]}/index.mjs`)) return `${paths[i]}/index.mjs`;
       if (Template.exists(`${paths[i]}/index.cjs`)) return `${paths[i]}/index.cjs`;
       if (Template.exists(`${paths[i]}/index.js`)) return `${paths[i]}/index.js`;
       if (Template.exists(`${paths[i]}.mjs`)) return `${paths[i]}.mjs`;
       if (Template.exists(`${paths[i]}.cjs`)) return `${paths[i]}.cjs`;
       if (Template.exists(`${paths[i]}.js`)) return `${paths[i]}.js`;
+      if (Template.exists(paths[i])) return paths[i];
     }
   }
 
@@ -408,6 +698,6 @@ export class Template {
       block.failure.stack = highlight(block.failure.stack, opts.html);
     }
 
-    return new Template(pascalCase(name), block, (src, code, _opts) => Template.from(compile, code, { ...opts, ..._opts, src }));
+    return new Template(pascalCase(name), block, opts.generators, (src, code, _opts) => Template.from(compile, code, { ...opts, ..._opts, src }));
   }
 }

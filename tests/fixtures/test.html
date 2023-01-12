@@ -10,7 +10,7 @@
   export function noop() {
     // nothing
   }
-  export const fn = () => noop;
+  export const fn = (() => noop);
 
   const [count, setCount] = useState(0);
 

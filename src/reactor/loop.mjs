@@ -1,128 +1,56 @@
-import { equals } from 'somedom';
-import { get, isStore } from './store.mjs';
+import { equals } from 'nohooks';
+import { Is } from '../utils/server.mjs';
 
-export function read(value) {
-  return isStore(value) ? get(value) : value;
+export async function peek(data, context, callback) {
+  for (const [k, v] of Object.entries(data)) {
+    if (Is.store(v)) {
+      if (v.reload) v.reload(context);
+      if (Is.func(callback)) callback(v);
+    }
+    data[k] = v;
+  }
+  return data;
 }
 
-export async function resolve($$, props, handler, callback) {
-  const $ = Object.keys(props);
-  const ctx = Object.create(null);
-  const data = Object.create(null);
+export function resolver(context) {
+  const calls = [];
+  const values = [];
 
-  const effs = [];
-  const seen = [];
-  const track = [];
-  const pending = [];
+  const fx = (fn, deps) => values.push({ fn, deps }) && fn();
 
-  Object.defineProperty(ctx, '_$', {
-    set: v => {
-      data.default = data.default || Object.create(null);
-      Object.assign(data.default, v);
-    },
-    get: () => data,
-  });
+  const sync = async () => {
+    for (const prop of values) {
+      const next = await peek(prop.deps(), context);
 
-  ctx.$def = (_, obj) => {
-    Object.assign(data, obj);
+      if (!equals(prop.value, next)) {
+        prop.value = next;
+        calls.push(prop.fn());
+      }
+    }
   };
 
-  let skip;
-  ctx.$get = (fn, deps) => {
-    effs.push({ fn, deps, values: [] });
-    skip = fn;
-    pending.push(fn());
-    skip = null;
+  const resolve = async (mod, props, source, filepath, importer, timeout, callback) => {
+    const { ctx, data } = await mod(props, source, filepath, fx, sync, importer);
+    const stores = [];
+
+    for (const prop of values) {
+      prop.value = await peek(prop.deps(), context);
+    }
+
+    const locals = await peek(data(), context, v => stores.push(new Promise(next => {
+      let t;
+      const off = v.subscribe(() => {
+        clearTimeout(t);
+        t = setTimeout(() => next(off()), timeout || 20);
+      });
+      t = setTimeout(off, timeout || 20);
+    })));
+
+    if (Is.func(callback)) await callback(ctx, locals);
+    await Promise.all(calls);
+    await Promise.all(stores);
+    return peek(data(), context);
   };
 
-  let keys = null;
-  ctx.$set = async fn => {
-    keys = { fn, deps: [], track: [] };
-    track.push(keys);
-    return fn();
-  };
-
-  $.forEach(k => {
-    Object.defineProperty(ctx, k, {
-      set: v => {
-        if (!(k in data)) {
-          v = typeof props[k] !== 'undefined' ? props[k] : v;
-        }
-
-        if (keys) {
-          keys.deps.push(k);
-        }
-
-        let dirty;
-        let err;
-        try {
-          if (isStore(data[k])) {
-            if (data[k].upgrade && !seen.includes(k)) {
-              data[k].upgrade($$);
-              seen.push(k);
-            }
-
-            if (!data[k].set) {
-              err = true;
-              throw new Error(`Store value for '${k}' is not writable`);
-            } else {
-              data[k].set(read(v));
-            }
-          } else {
-            data[k] = v;
-          }
-        } catch (e) {
-          if (err) throw e;
-          throw new ReferenceError(`Failed to set '${k}' as '${JSON.stringify(v)}' (${e.message})`);
-        }
-
-        track.filter(x => x.track.includes(k)).forEach(x => x.fn());
-
-        if (keys === null) {
-          effs.forEach(x => {
-            if (!x.deps.includes(k) || x.locked) return;
-
-            const n = x.deps.length && x.deps.map(_k => read(data[_k]));
-            if (!n || (!equals(n, x.values) && x.fn !== skip)) {
-              x.values = n;
-              x.locked = true;
-              dirty = true;
-              pending.push(x.fn());
-            }
-          });
-        }
-        effs.forEach(x => {
-          if (!dirty) delete x.locked;
-        });
-        keys = null;
-      },
-      get: () => {
-        if (keys) {
-          keys.track.push(k);
-        }
-
-        try {
-          const v = typeof data[k] === 'undefined' ? props[k] : data[k];
-
-          if (isStore(v) && v.upgrade) v.upgrade($$);
-          return read(v);
-        } catch (e) {
-          throw new ReferenceError(`Failed to get '${k}'\n${e.stack}`);
-        }
-      },
-    });
-  });
-
-  const next = await handler(ctx);
-
-  $.forEach(k => {
-    if (!(k in data)) data[k] = props[k];
-  });
-
-  if (typeof next === 'function') await next();
-
-  if (callback) await callback(data);
-  await Promise.all(pending);
-
-  return { data };
+  return { fx, sync, resolve };
 }

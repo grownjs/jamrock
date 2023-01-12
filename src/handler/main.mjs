@@ -1,68 +1,66 @@
-import { rematch, routify, routes } from './utils.mjs';
+import { rankify, routify, extract, rematch } from './utils.mjs';
 import { Template } from '../templ/main.mjs';
-import { flatten } from '../utils.mjs';
+import { set } from '../server/utils.mjs';
 import { req } from './match.mjs';
 
-const RE_BASENAME = /^(.+?)\.\w+$/;
+const RE_DEFAULT_NAME = /export\s+default\s*\{[^{};]*\bas\s*:\s*(["'])([\w.]+)\1/;
 
 export async function middleware(ctx, props, actions) {
-  if (ctx.file) {
-    ctx.conn.base_url = ctx.file.replace(ctx.cwd, '').match(RE_BASENAME)[1];
-  }
+  const { method, request_path, current_path, current_module } = ctx.conn;
+  const result = await req(ctx.conn, ctx.called, props, actions, ctx.shared);
 
-  const { res, method, request_path, current_module } = ctx.conn;
-  const [status, body, err] = await req(ctx.conn, ctx.called, props, actions, ctx.shared);
+  if (result === 404 || result instanceof Error) {
+    const E = new Error(result === 404
+      ? `Route '${method} ${request_path.replace(current_path, '') || '/'}' not found in ${current_module}`
+      : result.stack);
 
-  res.statusCode = status;
-
-  if (status === 404) {
-    throw new Error(`Route '${method} ${request_path.replace(ctx.conn.base_url, '') || '/'}' not found in ${current_module}`);
+    E.status = result instanceof Error ? result.status : result;
+    throw E;
   }
-  if (err) {
-    throw err;
-  }
-  return body;
+  return result;
 }
 
-export async function controllers(cwd, from) {
-  const main = [];
-  const all = await Promise.all(Template.glob(`${cwd}/${from}`).map(src => {
-    const paths = [];
+export function controllers(cwd, from) {
+  const { routes } = routify(from.map(x => x.replace(cwd, '')));
+  const collection = [];
 
-    let base = routify(src.replace(cwd, '').replace(/\.\w+$/, ''));
-    if (typeof base === 'object') {
-      if (base.kind !== 'page') return [];
+  for (const route of routes) {
+    const layout = route.get('layout');
+    const error = route.get('error');
 
-      const parts = base.path.split(/(?=\/[:*])/);
+    route.options.layout = layout ? cwd + layout.replace(cwd, '') : null;
+    route.options.error = error ? cwd + error.replace(cwd, '') : null;
+    route.options.src = cwd + route.options.page;
 
-      if (parts.length > 1) {
-        paths.push({ src, base: parts[0], kind: base.kind, path: parts.slice(1).join('') });
-      } else {
-        paths.push({ src, base: parts[0], kind: base.kind, path: '/' });
-      }
-      base = parts[0];
-    } else if (!main.some(x => x.base === base)) {
-      main.push({ src, base, kind: 'page', path: '/' });
-    }
+    delete route.options.page;
+    delete route.options.parent;
 
-    if (src.includes('.mjs') || src.includes('.cjs') || src.includes('.js')) {
-      return Template.import(src).then(result => (result.paths || []).map(x => ({ ...x, src, base })).concat(paths));
-    }
-    return routes(Template.read(src)).map(x => ({ ...x, src, base })).concat(paths);
-  })).then(result => flatten(result));
+    const code = Template.read(route.options.src);
+    const matches = extract(code);
 
-  main.forEach(route => {
-    if (!all.some(x => x.base === route.base)) all.push(route);
+    const key = code.match(RE_DEFAULT_NAME) || [];
+
+    route.options.name = route.options.name || key[2];
+
+    matches.forEach(subroute => {
+      const path = (route.options.path + subroute.path).replace(/\/$/, '');
+      const { depth, params } = rankify(path);
+
+      subroute.layout = route.options.layout;
+      subroute.error = route.options.error;
+      subroute.keys = params;
+      subroute.path = path;
+      subroute.lvl = depth;
+      subroute.src = route.options.src;
+      collection.push(rematch(subroute));
+    });
+
+    collection.push(rematch(route.options));
+  }
+
+  collection.forEach(route => {
+    set(collection, route.name, route);
   });
 
-  all.forEach(route => {
-    rematch(route);
-
-    if (all[route.name]) {
-      throw new Error(`Named route '${route.name}' already exists!`);
-    }
-
-    all[route.name] = route;
-  });
-  return Object.freeze(all);
+  return Object.freeze(collection.sort((a, b) => b.lvl - a.lvl));
 }

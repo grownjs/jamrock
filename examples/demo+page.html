@@ -1,0 +1,17 @@
+<script>
+  import { params } from 'jamrock:conn';
+
+  export default {
+    use: ['csrf'],
+    POST: true,
+  };
+</script>
+
+<h1>It works.</h1>
+
+<form @multipart>
+  <input type="text" name="f" />
+  <input type="submit" />
+</form>
+
+<pre>{JSON.stringify(params, null, 2)}</pre>

@@ -1,239 +1,127 @@
-import { defer, after, lookup } from './helpers.mjs';
-import { warn } from './debugger.mjs';
-import { isArray } from '../utils.mjs';
-import { Browser } from './browser.mjs';
+export class EventHub {
+  constructor(sockets) {
+    this.browser = sockets.browser;
+    this.sockets = sockets;
+    this.loaded = [];
 
-// FIXME: port this feature... to handle form validation feedback!
-// $('form').each(function allForms() {
-//   const button = $(this).find('button[type=submit]');
-
-//   $(this).change(function onChange(e) {
-//     if (e.target.checkValidity()) {
-//       $(e.target).parent().removeClass('invalid');
-//     } else {
-//       $(e.target).parent().addClass('invalid');
-//     }
-//     if (this.checkValidity()) {
-//       button.removeAttr('disabled');
-//     } else {
-//       button.attr('disabled', true);
-//     }
-//   });
-// });
-
-function handle(kind) {
-  return async e => {
-    if (e.altKey && kind === 'click') {
-      const ref = lookup('location', e.target);
-
-      if (ref) {
-        if (Browser.ws) {
-          Browser.send(`rpc:open ${ref.dataset.location}`);
-        } else {
-          fetch(`/__open?@=${ref.dataset.location}`);
-        }
+    this.lookup = (key, node) => {
+      let root = node;
+      while (root && root.parentNode) {
+        if (root === document.body) break;
+        if (key in root.dataset) return root;
+        if ('fragment' in root.dataset) break;
+        if (['FORM', 'X-FRAGMENT'].includes(root.tagName)) break;
+        root = root.parentNode;
       }
-      e.preventDefault();
-      return;
+    };
+  }
+
+  start() {
+    this.handle('submit', this.onSubmit());
+    this.handle('popstate', () => this.browser.reload());
+
+    ['click', 'input', 'change'].forEach(e => this.handle(e));
+  }
+
+  handle(e, cb) {
+    const listeners = this.listeners || (this.listeners = {});
+    const fn = cb || listeners[e] || (listeners[e] = this.onHandle(e));
+
+    removeEventListener(e, fn, false);
+    addEventListener(e, fn, false);
+  }
+
+  require(i, el, mod) {
+    if (!this.loaded.includes(i)) {
+      if (el && 'source' in el.dataset) el.classList.add('loading');
     }
+    return mod.then(result => {
+      if (!this.loaded.includes(i)) {
+        this.loaded.push(i);
+      }
+      return result;
+    });
+  }
 
-    if (['INPUT', 'SELECT'].includes(e.target.tagName) && kind === 'click') return;
-    if (!['A', 'INPUT', 'SELECT', 'BUTTON'].includes(e.target.tagName)) return;
-    if (e.target.tagName === 'SELECT' && kind === 'input') return;
-    if (e.target.tagName === 'INPUT' && kind === 'change') return;
-
-    if ('confirm' in e.target.dataset) {
-      if (!confirm(e.target.dataset.confirm)) return; // eslint-disable-line
-    }
-
-    if (
-      'put' in e.target.dataset
-      || 'post' in e.target.dataset
-      || 'patch' in e.target.dataset
-      || 'delete' in e.target.dataset
-    ) {
-      const _location = e.target.href
-        || e.target.dataset.put
-        || e.target.dataset.post
-        || e.target.dataset.patch
-        || e.target.dataset.delete;
-
-      let method = 'GET';
-      if (e.target.dataset.put) method = 'PUT';
-      if (e.target.dataset.post) method = 'POST';
-      if (e.target.dataset.patch) method = 'PATCH';
-      if (e.target.dataset.delete) method = 'DELETE';
-
-      e.preventDefault();
-      return Browser.load(e.target, null, null, method, null, _location);
-    }
-
-    if (e.target.tagName === 'A') {
+  onSubmit() {
+    return e => {
       if (
-        (e.metaKey || e.ctrlKey || e.button !== 0)
-        || e.target.protocol !== window.location.protocol
-        || e.target.host !== window.location.host
-        || e.target.hasAttribute('target')
-      ) return;
+        'confirm' in e.target.dataset
+        || 'async' in e.target.dataset
+        || 'trigger' in e.target.dataset
+      ) {
+        e.preventDefault();
+        this.require(0, e.target, import('./submit.mjs')).then(({ handleSubmit }) => handleSubmit.call(this, e));
+      }
+    };
+  }
 
-      e.preventDefault();
-      return Browser.load(e.target, e.target.dataset.url, null, 'GET', {
-        'request-type': 'link',
-      }, e.target.href);
-    }
+  onHandle(kind) {
+    return e => {
+      if (e.altKey && kind === 'click') {
+        let ref = this.lookup('location', e.target);
+        if (e.target === document.documentElement || e.target === document.body) {
+          ref = document.documentElement;
+        }
 
-    const keys = Object.keys(e.target.dataset);
-
-    let payload;
-    let headers;
-    for (let i = 0; i < keys.length; i += 1) {
-      if (kind === keys[i].substr(2).toLowerCase()) {
-        headers = { 'request-call': e.target.value };
-        break;
+        if (ref && ref.dataset && 'location' in ref.dataset) {
+          if (this.sockets.ready) {
+            this.sockets.send(`rpc:open ${ref.dataset.location}`);
+          } else {
+            fetch(`/__open?@=${encodeURIComponent(ref.dataset.location)}`);
+          }
+        }
+        e.preventDefault();
+        return;
       }
 
-      if (/^bind[A-Z]/.test(keys[i])) {
-        const prop = keys[i][4].toLowerCase() + keys[i].substr(5);
-        const param = e.target.dataset[keys[i]];
+      if (kind === 'change' && ['FORM', 'INPUT', 'SELECT', 'TEXTAREA'].includes(e.target.tagName)) {
+        const el = e.target.tagName === 'FORM' ? e.target : e.target.parentNode;
 
-        payload = new FormData();
-        if (e.target.type === 'file') {
-          for (const file of e.target.files) {
-            payload.append(param, file, file.name);
-          }
-          e.target.value = null;
+        if (e.target.checkValidity()) {
+          el.classList.remove('invalid');
         } else {
-          payload.append(param, e.target[prop]);
+          el.classList.add('invalid');
         }
-        break;
-      }
-    }
-
-    if (payload || headers) {
-      e.preventDefault();
-
-      const source = lookup('source', e.target);
-      const trigger = lookup('trigger', e.target);
-
-      if (source) {
-        headers = headers || {};
-        headers['request-from'] = source.dataset.source;
       }
 
-      if (trigger) {
-        const key = `on${kind}`;
-        const data = trigger.dataset;
+      if (kind === 'click' && (['BUTTON', 'INPUT'].includes(e.target.tagName) && e.target.type === 'submit') && e.target.form) return;
 
-        for (let prop in data) {
-          if (/^field[A-Z]/.test(prop)) {
-            payload = payload || new FormData();
-            payload.append(prop.substr(5), data[prop]);
-          }
-        }
+      if (['INPUT', 'SELECT'].includes(e.target.tagName) && kind === 'click') return;
+      if (!['A', 'INPUT', 'SELECT', 'BUTTON'].includes(e.target.tagName)) return;
+      if (e.target.tagName === 'SELECT' && kind === 'input') return;
+      if (e.target.tagName === 'INPUT' && kind === 'change') return;
 
-        const id = `#${Date.now().toString(13)}`;
-        const fn = (data[key] && !data[key].includes(key) ? data[key] : null) || data.trigger;
-        const frag = (source || trigger).dataset.source || '';
-
-        Browser.send(`rpc:trigger ${fn} ${id} ${frag}\t${JSON.stringify(payload)}`, () => {
-          if (!Browser.ws) return;
-          Browser.ws[id] = defer();
-          Browser.ws[id]
-            .catch(_e => _e && warn(_e, 'RPC Failure'))
-            .then(() => { delete Browser.ws[id]; });
-
-          setTimeout(() => {
-            if (Browser.ws[id]) {
-              Browser.ws[id].reject();
-              delete Browser.ws[id];
-            }
-          }, 1000);
-        });
-        return;
+      if (e.target.tagName === 'A') {
+        if ((e.metaKey || e.ctrlKey || e.button !== 0)
+          || e.target.protocol !== location.protocol
+          || e.target.host !== location.host
+          || e.target.hasAttribute('target')
+        ) return;
+        e.preventDefault();
       }
 
-      return Browser.load(e.target, null, payload, 'PATCH', {
-        'request-type': 'bind',
-        ...headers,
-      });
-    }
-  };
-}
+      if (e.target.closest('[data-component]')) return;
 
-const fns = {};
-function onHandle(e, cb) {
-  const fn = cb || fns[e] || (fns[e] = handle(e)); // eslint-disable-line
-  removeEventListener(e, fn, false);
-  addEventListener(e, fn, false);
-}
-function onSubmit(e) {
-  if (
-    'confirm' in e.target.dataset
-    || 'async' in e.target.dataset
-    || 'trigger' in e.target.dataset
-  ) {
-    e.preventDefault();
+      // this could be async?
+      if ('confirm' in e.target.dataset && !confirm(e.target.dataset.confirm)) return;
 
-    if (e.target.checkValidity()) {
-      const el = document.activeElement;
-      const data = new FormData(e.target);
-      const method = (e.target.getAttribute('method') || e.target.method).toUpperCase();
+      this.require(1, e.target, import('./handler.mjs')).then(({ handleEvent }) => handleEvent.call(this, e, kind));
+    };
+  }
 
-      if (el && el.form && el.name && (el.tagName === 'BUTTON' || el.type === 'submit')) {
-        data.set(el.name, el.value);
-      }
+  async loadURL(el, ...args) {
+    this.browser.pause();
+    try {
+      const { loadPage } = await import('./request.mjs');
 
-      if (e.target.dataset.trigger) {
-        const payload = {};
+      const wait = this.lookup('wait', el) || null;
+      const target = this.lookup('confirm', el) || el;
+      const fragment = this.lookup('fragment', el) || null;
 
-        data.forEach((value, key) => {
-          if (!(key in payload)) {
-            payload[key] = value;
-            return;
-          }
-          if (!isArray(payload[key])) {
-            payload[key] = [payload[key]];
-          }
-          payload[key].push(value);
-        });
-
-        const id = Date.now();
-        const fn = e.target.dataset.trigger;
-        const frag = e.target.dataset.source || '';
-
-        Browser.send(`rpc:trigger ${fn} ${id} ${frag}\t${JSON.stringify(payload)}`, () => {
-          after(lookup('confirm', e.target) || e.target, e.target.dataset.async);
-
-          if (!Browser.ws) return;
-
-          Browser.ws[id] = defer();
-          Browser.ws[id]
-            .catch(_e => _e && warn(_e, 'RPC Failure'))
-            .then(() => { delete Browser.ws[id]; });
-
-          setTimeout(() => {
-            if (Browser.ws[id]) {
-              Browser.ws[id].reject();
-              delete Browser.ws[id];
-            }
-          }, 1000);
-        });
-        return;
-      }
-
-      Browser.load(e.target, null, data, method, null, e.target.getAttribute('action'), _el => {
-        after(_el, e.target.dataset.async);
-      });
+      return loadPage.call(this, { el, wait, target, fragment }, ...args);
+    } finally {
+      this.browser.resume();
     }
   }
 }
-
-['click', 'input', 'change'].forEach(e => onHandle(e));
-
-onHandle('submit', onSubmit);
-onHandle('popstate', () => {
-  Browser.REQUEST_CALL = null;
-  Browser.reload();
-});
-
-window.onbeforeunload = () => Browser.end();

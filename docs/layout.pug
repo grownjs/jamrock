@@ -1,0 +1,85 @@
+doctype html
+script document.write(decodeURIComponent('%3Chtml theme='+(window.localStorage.theme||'dark')+'%3E')); // eslint-disable-line
+
+head
+  meta(charset='UTF-8')
+  link(rel='icon' type='image/svg+xml' href='/vite.svg')
+  meta(name='viewport' content='width=device-width, initial-scale=1.0')
+  title Jamrock &lt;3 Live!
+  link(rel='stylesheet' href='/styles.css' inline)
+  link(rel='stylesheet' href='https://fonts.googleapis.com/css?family=Sorts+Mill+Goudy')
+  link(rel='stylesheet' href='https://cdn.jsdelivr.net/npm/xterm@5.1.0/css/xterm.min.css' inline)
+  link(rel='stylesheet' href='https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.7.0/styles/github.min.css' inline)
+  link(rel='stylesheet' href='https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.7.0/styles/github-dark-dimmed.min.css' scope='html[theme=dark]' inline)
+  script(src='https://cdnjs.cloudflare.com/ajax/libs/ace/1.16.0/ace.js' integrity='sha512-Km4SIAd8d2xB73+j5NmOjzIxriadCWR9xapO/YARlvfwkgrWneSpV/6GeaRzVLNckFHzUn9Iv1oGbsDW/HtTZQ==' crossorigin='anonymous' referrerpolicy='no-referrer')
+
+body
+  include sprites.html
+
+  main.app
+    // rebuild with pug may be?
+    .flex
+      .pad
+        input#frame(type='checkbox')
+        .frame
+          .flex.icons
+            label(for='frame')
+              svg(width='16' height='16')
+                use.off(xlink:href='#left')
+                use.on(xlink:href='#right')
+            form#navigate.flex.search
+              input#urlbar(type='text' value='/' placeholder='/')
+              button#reload(type='button')
+                svg(width='16' height='16')
+                  use(xlink:href='#sync')
+              button
+                svg(width='16' height='16')
+                  use(xlink:href='#play')
+          iframe.preview(src='/loading.html')
+      .docs
+        != yield
+    .flex
+      .files
+        //- pre!= JSON.stringify(includes, null, 2)
+        ul
+          li
+            details(open='')
+              summary
+                svg(width='16' height='16')
+                  use(xlink:href='#folder')
+                span src/
+              ul
+                li
+                  label
+                    svg(width='16' height='16')
+                      use(xlink:href='#file')
+                    input(type='radio' name='file' value='/src/index+page.html' checked='')
+                    span index+page.html
+                li
+                  label
+                    svg(width='16' height='16')
+                      use(xlink:href='#file')
+                    input(type='radio' name='file' value='/src/loops+page.html')
+                    span loops+page.html
+          li
+            label
+              svg(width='16' height='16')
+                use(xlink:href='#file')
+              input(type='radio' name='file' value='/package.json')
+              span package.json
+          li
+            label
+              svg(width='16' height='16')
+                use(xlink:href='#file')
+              input(type='radio' name='file' value='/index.js')
+              span index.js
+      .editor
+        #input
+    details.status
+      #xterminal
+      summary.flex
+        svg(width='16' height='16')
+          use(xlink:href='#stdout')
+        pre.stdout Loading source code...
+
+  script(type='module' src='/sandbox.js')

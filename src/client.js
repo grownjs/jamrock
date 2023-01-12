@@ -1,46 +1,23 @@
-import {
-  onError, useRef, useMemo, useState, useEffect,
-} from 'somedom';
+export const generateClientCode = (state, immediate) => {
+  function main() {
+    const { href } = location;
+    const url = href.replace(/[&?]noscript(?:=[^&?=]*?)?/, '');
 
-import './client/events.mjs';
-
-import { Browser } from './client/browser.mjs';
-import { Fragment } from './client/fragment.mjs';
-import { LiveSocket } from './client/livesocket.mjs';
-import { registerComponent } from './client/component.mjs';
-
-const VERSION = process.env.VERSION;
-
-Browser._ = Object.freeze({
-  onError,
-  useRef,
-  useMemo,
-  useState,
-  useEffect,
-  registerComponent,
-});
-
-window.Jamrock = {
-  components: Object.create(null),
-  LiveSocket,
-  Fragment,
-  Browser,
-  VERSION,
-};
-
-function main() {
-  const { href } = location;
-  const url = href.replace(/[&?]noscript(?:=[^&?=]*?)?/, '');
-
-  if (url !== href) {
-    location.href = url;
-  } else if (window.req_uuid) {
-    Browser.init(LiveSocket.getInstance().ws);
+    if (url !== href) {
+      location.href = url;
+    } else if (typeof window.Jamrock === 'undefined') {
+      Promise.all([
+        import('./client/browser.mjs'),
+        import('./client/components.mjs'),
+      ]).then(([{ Browser }, { Components }]) => Browser.init(Components, process.env.VERSION, state));
+    } else {
+      window.Jamrock.Browser.csrf_token = state.csrf;
+    }
   }
-}
 
-if (['complete', 'loaded', 'interactive'].includes(document.readyState)) {
-  main();
-} else {
-  document.addEventListener('DOMContentLoaded', () => main());
-}
+  if (immediate || ['complete', 'loaded', 'interactive'].includes(document.readyState)) {
+    main();
+  } else {
+    document.addEventListener('DOMContentLoaded', () => main());
+  }
+};

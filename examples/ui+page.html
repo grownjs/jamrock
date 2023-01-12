@@ -1,0 +1,35 @@
+<script>
+  import { foo as bar } from './stuff.mjs';
+
+  import HTML from './components/static.html';
+  import Svelte from './components/test.svelte';
+  import Debugger from './components/debugger.html';
+  import Layout from './components/layout.svelte';
+  import Clock from './components/client/clock.html';
+
+  const value = '!!!';
+  const counter = 13;
+</script>
+
+<h3>Component support</h3>
+
+<Svelte {counter}>
+  <em>1</em>
+  <del>2</del>
+  <strong>{bar}</strong>
+  <b slot="after">{value}</b>
+</Svelte>
+
+<HTML r={Math.random()}>OSOM</HTML>
+
+<hr />
+
+<Clock />
+
+<hr />
+
+<Layout>
+  <Clock />
+</Layout>
+
+<Debugger />

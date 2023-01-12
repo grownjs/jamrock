@@ -1,0 +1,8 @@
+#!/usr/bin/env node
+
+Promise.all([
+  import('../lib/nodejs/main.mjs'),
+  import('./cli.mjs'),
+]).then(([env, cli]) => {
+  cli.default(env.default, process.argv.slice(2));
+});

@@ -1,0 +1,108 @@
+<script>
+  import { existsSync, unlinkSync } from 'node:fs';
+
+  import {
+    onFinish, getContext, setContext, useSlot,
+  } from 'jamrock:hooks';
+
+  import {
+    body_params, method as _method,
+  } from 'jamrock:conn';
+
+  import Failure from './failure.html';
+
+  export let id;
+  export let name;
+  export let label;
+  export let method;
+
+  export const onerror = null;
+  export const onvalid = null;
+
+  const hasValidMethod = method === _method.toLowerCase();
+  const currentForm = body_params._form === name;
+
+  let children;
+  let error;
+  try {
+    if (!name) {
+      throw new TypeError(`Form requires a name, given '${name}'`);
+    }
+    if (typeof onvalid !== 'function') {
+      throw new TypeError(`Form requires a resolve callback, given '${onvalid}'`);
+    }
+
+    const forms = getContext('registered_forms') || [];
+
+    if (forms.includes(name)) {
+      throw new ReferenceError(`Form with name '${name}' has been already declared`);
+    }
+
+    setContext('current_form', { name, method, fields: [] });
+    setContext('registered_forms', forms.concat(name));
+
+    children = await useSlot('default');
+  } catch (e) {
+    error = e;
+  }
+
+  const ctx = getContext('current_form');
+  const files = [];
+  const payload = {};
+
+  onFinish(() => {
+    files.forEach(file => {
+      if (existsSync(file)) unlinkSync(file);
+    });
+  });
+
+  async function getErrors() {
+    if (!hasValidMethod || !currentForm) return;
+    try {
+      let invalid = 0;
+      ctx.fields.forEach(input => {
+        if (input.value instanceof File) files.push(input.value.path);
+        if (input.value !== null) payload[input.name] = input.value;
+        if (input.validated === false) invalid += 1;
+      });
+
+      if (!invalid) {
+        await onvalid(payload);
+        return;
+      }
+
+      if (typeof onerror === 'function') {
+        await onerror();
+      }
+
+      throw new Error(`The submitted form '${name}' is not valid (${invalid} remaining)`);
+    } catch (e) {
+      return e;
+    }
+  }
+</script>
+
+<style>
+  ul {
+    list-style-type: none;
+    padding: 0;
+    margin: 0;
+  }
+  .error {
+    color:  red;
+  }
+</style>
+
+<div {id} role="form" aria-label={label}>
+  {#if error}
+    <Failure from={error} />
+  {:else}
+    <form {method} test:id="form.{name}.container" @async={$$props['@async']} enctype="multipart/form-data">
+      <input name="_form" type="hidden" value={name} />
+      <slot name="before" />
+      <ul>{@html children}</ul>
+      <slot name="after" />
+    </form>
+    <Failure test:id="form.{name}" from="{await getErrors()}" />
+  {/if}
+</div>

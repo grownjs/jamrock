@@ -1,0 +1,50 @@
+<script context="client">
+  import { useState } from 'jamrock';
+
+  export const names = [];
+  export const prefix = 'check-';
+  export const checked = 0;
+
+  const [selected, setTab] = useState(checked);
+
+  async function selectThis(offset) {
+    await setTab(offset);
+    requestAnimationFrame(() => self.element.querySelector('[aria-selected=true]').focus());
+  }
+
+  // FIXME: otherwise, functions like this,
+  // are overriden on each state update... (see tabss/inspect)
+  // I think exported functions should be preserved anyways... at
+  // least for client-side components that are NOT stateless it's required!!
+
+  export function prevTab() {
+    if (selected > 0) selectThis(selected - 1);
+  }
+  export function nextTab() {
+    if (selected < names.length - 1) selectThis(selected + 1);
+  }
+  export function updateTab() {
+    requestAnimationFrame(() => {
+      const tabs = self.element.querySelectorAll('[role=tab]');
+      const tab = self.element.querySelector('[role=tab]:focus');
+
+      if (!tab) return;
+
+      let offset = 0;
+      for (let i = 0; i < tabs.length; i++) {
+        if (tabs[i] === tab) break;
+        offset++;
+      }
+      selectThis(offset);
+    });
+  }
+  export function selectTab() {
+    self.element.querySelector('[aria-selected=true] label').click();
+  }
+</script>
+
+{#each names as tab, i}
+  <li aria-selected="{selected === i ? 'true' : null}" role="tab" tabindex="0">
+    <label for="{prefix}{i}" on:click="{() => selectThis(i)}">{tab}</label>
+  </li>
+{/each}

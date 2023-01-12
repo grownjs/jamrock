@@ -1,12 +1,12 @@
-import { findAll } from 'somedom/ssr';
 import { parse, stringify } from 'css';
 
 import { Expr } from './expr.mjs';
 import { fixedAdapter } from './adapter.mjs';
-import { encode, enhance, extend } from './utils.mjs';
-import { isArray, isVNode, stack } from '../utils.mjs';
+import { enhance, extend } from './utils.mjs';
+import { str, ents } from '../render/hooks.mjs';
+import { Is, stack, findAll } from '../utils/server.mjs';
 
-const RE_QUOTES_REQUIRED = /[\t\n\f\r "'`=<>]/;
+const RE_QUOTES_REQUIRED = /[\s"'`=</_:>-]/;
 
 const SELF_CLOSE_TAGS = [
   'area', 'base', 'br', 'col', 'embed', 'hr', 'img', 'input', 'link', 'meta', 'param', 'source', 'track', 'wbr',
@@ -17,111 +17,176 @@ const UNSCOPED_ELEMENTS = ['head', 'meta', 'base', 'link', 'title', 'style', 'sc
 export function attrs(data) {
   if (!data) return '';
 
-  return Object.entries(data).reduce((memo, [key, value]) => {
+  const reset = [];
+  const props = Object.entries(data).reduce((memo, [key, value]) => {
     if (key === '@html') return memo;
 
     if (key.charAt() === '@') {
       key = key.replace('@', 'data-');
-      value = typeof value === 'string'
+      value = Is.str(value)
         ? value.replace('@', 'data-')
         : value;
     }
 
     if (key.charAt() === ':') {
       key = key.substr(1);
+      reset.push(key);
+      memo.push(` data-is:${key}`);
     }
 
     if (
-      (typeof value !== 'undefined' && value !== null && value !== false)
-      && !(typeof value === 'function' || (typeof value === 'object' && value !== null))
+      (!Is.not(value) && value !== false)
+      && !(Is.func(value) || Is.plain(value))
     ) {
-      const flag = !(value === 'true' || value === true || value === key);
-      const quoted = RE_QUOTES_REQUIRED.test(value)
-        ? `"${value.replace(/"/g, '&quot;')}"`
-        : value;
+      const truthy = value === true || value === 'true' || value === key;
+      const unsafe = value === '' || key.includes(':');
+      const quotes = RE_QUOTES_REQUIRED.test(value);
 
-      memo.push(` ${key}${flag ? `=${quoted === '' ? '""' : quoted}` : ''}`);
+      value = (truthy && (unsafe ? 'true' : key)) || String(value);
+      value = quotes || unsafe ? `"${value.replace(/"/g, '&quot;')}"` : value;
+      memo.push(` ${key}${!truthy || unsafe ? `=${value}` : ''}`);
     }
     return memo;
-  }, []).join('');
+  }, []);
+
+  if (reset.length > 0) {
+    props.unshift(' data-reset');
+  }
+  return props.join('');
 }
 
-export function specify(ref, value) {
+export function style(chunk, split) {
+  const css = stringify({ stylesheet: { rules: [chunk] } }, { compress: true });
+
+  if (split) {
+    return css.split(/(?=\{)/);
+  }
+  return css;
+}
+
+export function rulify(css, filepath) {
+  const ast = parse(css, { source: filepath });
+  const out = [];
+
+  ast.stylesheet.rules.forEach(chunk => {
+    if (chunk.type !== 'rule') {
+      if (chunk.rules) {
+        const rules = [];
+
+        chunk.rules.forEach(rule => {
+          rules.push(style(rule, true));
+        });
+
+        out.push([`@${chunk.type} ${chunk[chunk.type]}`, rules]);
+      } else {
+        out.push(style(chunk));
+      }
+      return;
+    }
+
+    out.push(style(chunk, true));
+  });
+  return out;
+}
+
+export function specify(ref, value, _class) {
   if (value.includes(']')) {
     const offset = value.lastIndexOf(']');
     const prefix = value.substr(0, offset + 1);
     const suffix = value.substr(offset + 1);
 
-    return `${prefix}.${ref}${suffix}`;
+    return _class ? `${prefix}.${ref}${suffix}` : `${prefix}:where(.${ref})${suffix}`;
   }
 
   const offset = value.indexOf(':');
 
   if (offset === -1) {
-    return `${value}.${ref}`;
+    return _class ? `${value}.${ref}` : `${value}:where(.${ref})`;
   }
 
   const prefix = value.substr(0, offset);
   const suffix = value.substr(offset);
 
-  return `${prefix}.${ref}${suffix}`;
+  return _class ? `${prefix}.${ref}${suffix}` : `${prefix}:where(.${ref})${suffix}`;
 }
 
-export function scopify(ref, styles, children, filepath) {
+export function classify(ref, _class, chunk, children) {
+  const rules = chunk.selectors || [];
+  const parents = rules.map(x => x.split(/[\s~+>]/)[0].split('::')[0]);
+  const subnodes = rules.map(x => x.split(/[\s~+>]/).pop().split('::')[0]);
+  const selectors = [...new Set(parents.concat(subnodes))];
+
+  selectors.forEach(rule => {
+    const matches = findAll(rule, children, fixedAdapter);
+
+    if (matches) {
+      chunk.selectors = chunk.selectors.map(selector => {
+        if (!selector.includes(ref) && matches.length > 0) {
+          const tokens = selector.split(' ');
+          const first = tokens.shift();
+          const last = tokens.pop();
+
+          [first, last].forEach((sel, i) => {
+            if (!sel) return;
+            sel = specify(ref, sel, _class);
+            if (i === 0) tokens.unshift(sel);
+            else tokens.push(sel);
+          });
+
+          if (_class && tokens.length === 1) {
+            tokens[0] = specify(ref, tokens[0], _class);
+          }
+          return tokens.join(' ');
+        }
+        return selector;
+      });
+      matches.forEach(node => {
+        if (node.matches) return;
+        if (!UNSCOPED_ELEMENTS.includes(node.name)) {
+          const classNames = node.attributes.class || '';
+
+          node.matches = true;
+
+          if (classNames instanceof Expr) {
+            classNames.concat(` ${ref}`);
+          } else {
+            node.attributes.class = `${node.attributes.class || ''} ${ref}`.trim();
+          }
+        }
+      });
+    }
+  });
+}
+
+export function scopify(ref, _class, styles, children, filepath) {
   const css = styles.trim();
 
   try {
     const ast = parse(css, { source: filepath });
+    const out = [];
 
     ast.stylesheet.rules.forEach(chunk => {
-      const rules = chunk.selectors || [];
-      const parents = rules.map(x => x.split(' ')[0].split('::')[0]);
-      const subnodes = rules.map(x => x.split(' ').pop().split('::')[0]);
-      const selectors = [...new Set(parents.concat(subnodes))];
+      if (chunk.type !== 'rule') {
+        if (chunk.rules) {
+          const rules = [];
 
-      selectors.forEach(rule => {
-        const matches = findAll(rule, children, fixedAdapter);
-
-        if (matches) {
-          chunk.selectors = chunk.selectors.map(selector => {
-            if (!selector.includes(ref)) {
-              const tokens = selector.split(' ');
-              const first = tokens.shift();
-              const last = tokens.pop();
-
-              [first, last].forEach((sel, i) => {
-                if (!sel) return;
-                sel = specify(ref, sel);
-                if (i === 0) tokens.unshift(sel);
-                else tokens.push(sel);
-              });
-
-              if (tokens.length === 1) {
-                tokens[0] = specify(ref, tokens[0]);
-              }
-              return tokens.join(' ');
-            }
-            return selector;
+          chunk.rules.forEach(rule => {
+            classify(ref, _class, rule, children);
+            rules.push(style(rule, true));
           });
-          matches.forEach(node => {
-            if (node.matches) return;
-            if (!UNSCOPED_ELEMENTS.includes(node.name)) {
-              const classNames = node.attributes.class || '';
 
-              node.matches = true;
-
-              if (classNames instanceof Expr) {
-                classNames.concat(` ${ref}`);
-              } else {
-                node.attributes.class = `${node.attributes.class || ''} ${ref}`.trim();
-              }
-            }
-          });
+          out.push([`@${chunk.type} ${chunk[chunk.type]}`, rules]);
+        } else {
+          out.push(style(chunk));
         }
-      });
+        return;
+      }
+
+      classify(ref, _class, chunk, children);
+      out.push(style(chunk, true));
     });
 
-    return stringify(ast);
+    return out;
   } catch (e) {
     if (e.filename) {
       e.message = `${e.reason} at ${e.filename}:${e.line}:${e.column}`;
@@ -132,17 +197,17 @@ export function scopify(ref, styles, children, filepath) {
 }
 
 export function taggify(vnode, callback) {
-  if (typeof vnode === 'undefined' || vnode === null) return;
-  if (!isArray(vnode)) {
-    return typeof callback === 'function' ? callback(encode(vnode, true)) : encode(vnode, true);
+  if (Is.not(vnode)) return;
+  if (!Is.arr(vnode)) {
+    return Is.func(callback) ? callback(str(vnode)) : str(vnode);
   }
-  if (isVNode(vnode)) {
+  if (Is.vnode(vnode)) {
     const props = { ...vnode[1] };
 
     let tagName = vnode[0];
     if (vnode[0] === 'fragment') {
       if ('@html' in props) {
-        if (typeof callback !== 'function') {
+        if (!Is.func(callback)) {
           return props['@html'];
         }
         callback(props['@html']);
@@ -168,7 +233,7 @@ export function taggify(vnode, callback) {
 
     if (vnode[0] === 'template') {
       if (vnode.length > 1) {
-        if (typeof callback !== 'function') {
+        if (!Is.func(callback)) {
           return taggify(vnode[2]);
         }
         taggify(vnode[2], callback);
@@ -188,7 +253,7 @@ export function taggify(vnode, callback) {
     if (SELF_CLOSE_TAGS.includes(tagName)) tag += ' />';
     else tag += '>';
 
-    if (typeof callback !== 'function') {
+    if (!Is.func(callback)) {
       return `${tag}${raw ? vnode[2] : taggify(vnode[2])}</${tagName}>`;
     }
     callback(tag);
@@ -200,21 +265,25 @@ export function taggify(vnode, callback) {
     if (!SELF_CLOSE_TAGS.includes(tagName)) callback(`</${tagName}>`);
     return;
   }
-  if (typeof callback !== 'function') {
-    return vnode.map(chunk => (typeof chunk === 'string'
-      ? encode(chunk, true) : taggify(chunk))).join('');
+  if (!Is.func(callback)) {
+    return vnode.map(chunk => (Is.str(chunk)
+      ? ents(chunk) : taggify(chunk))).join('');
   }
   vnode.forEach(chunk => {
-    if (typeof chunk === 'string') callback(encode(chunk, true));
+    if (Is.str(chunk)) callback(ents(chunk));
     else taggify(chunk, callback);
   });
 }
 
 export function serialize(vnode, parent, callback) {
-  if (isVNode(vnode)) {
-    const set = [];
+  if (Is.vnode(vnode)) {
+    const hooks = [];
     const name = vnode[0];
-    const props = vnode[1] = extend(vnode[1] || {}, set);
+    const props = vnode[1] = extend(vnode[0], { ...vnode[1] }, hooks);
+
+    if (Is.vnode(vnode[2])) {
+      vnode[2] = [vnode[2]];
+    }
 
     const children = name !== 'textarea'
       ? serialize(vnode[2], { name, props }, callback)
@@ -224,18 +293,16 @@ export function serialize(vnode, parent, callback) {
     vnode.length = 3;
 
     enhance(vnode, parent);
-    if (typeof callback === 'function') {
-      callback(vnode, set);
+    if (Is.func(callback)) {
+      callback(vnode, hooks);
     }
     return vnode;
   }
 
-  if (isArray(vnode)) {
+  if (Is.arr(vnode)) {
     return vnode.reduce((memo, cur) => {
-      if (isArray(cur) && !cur.length) return memo;
-      if (typeof cur !== 'undefined' && cur !== null && cur !== false) {
-        memo.push(serialize(cur, parent, callback));
-      }
+      if (Is.arr(cur) && !cur.length) return memo;
+      memo.push(serialize(cur, parent, callback));
       return memo;
     }, []);
   }

@@ -1,0 +1,8 @@
+#!/usr/bin/env bun
+
+Promise.all([
+  import('../lib/bun/main.mjs'),
+  import('./cli.mjs'),
+]).then(([env, cli]) => {
+  cli.default(env.default, Bun.argv.slice(2));
+});

@@ -7,45 +7,73 @@
 [![NPM version](https://badge.fury.io/js/jamrock.svg)](http://badge.fury.io/js/jamrock)
 
 
-# TODO
+# What is jamrock?
 
-- [ ] {expr} remain intact within syle: and class: tags
-- [ ] ctx.subscribe and such is missing from servers
-  - [x] nodejs
-  - [ ] deno
-  - [ ] bun
+views, data (send fast, resume later), ws/sse vs xhr calls?
+
+## RUN:
+
+```bash
+node jam
+bun run jam
+deno run jam
+```
+
+## LIVE PLAYGROUND
+
+we should be able to generate the static files includes all the fixtures and explanations,
+fine if they go as chapters, tutorials, etc. but the main question is, how to?
+
+using just mortero works, as for other static sites...
+
+- [x] syntax-highlighting
+- [x] sources/includes
+- [x] pug/markdown
+- [x] fn-helpers
+- [x] entries
+
+what else we'll need?
+
+# TODO (client-side runtime is imminent!!)
 
 - [ ] runtime (nodejs, deno, bun)
-  - [ ] server-side
-    - [ ] websockets
-          ^ adds `ctx.socket.emit/fail`
-          - [x] nodejs
-          - [ ] deno
-          - [ ] bun
-    - [-] web-server (lacks of ws!)
-      - [-] nodejs
-      - [-] deno
-      - [-] bun
-        ^^ make sure it's compliant, reuse APIs from Remix/Svelte, likely Request/Response objects
   - [ ] client-side
     - [ ] client components
       - [ ] built-in runtime
     - [ ] svelte components
       - [ ] hydrate?
+
+- [ ] triggers and ws bindings? (aka server-calls? OR ?/actions)
+
+- [ ] nested-components are not working on first-run!! (see uploads),
+      ^ seems like relative paths are always taken from the entry-file and
+        not from the resolved ancestor... e.g. components/debugger imports
+        ./tabs but it tries to resolve against upload+page and not through components/debugger!
+
+- [ ] consider id registerComponent and friends are still applicable,
+      ^ seems so... at least testing use them, so client shall too...
+
+still applicable? may be just for nodejs...
 - [ ] watcher/compiler
-      ^ nodejs only, use lib for runtime
-      ... actually the compiler runs on deno/bun,
-          so we could build sources on demand... or through a fs-watch?
-            ^ both deno/bun have a file-watcher mode built-in but only watches for imports...
-              so, unless we write the generated module it'll not reload... even worse,
-              the custom loader would not work either... so, we cannot leverage on this
+  - [x] compiler works on nodejs/deno/bun
+  - [x] watcher not planned yet... kinda works!
 
-              ...instead, do a simple watcher in nodejs, run it, and fire bun/deno if desired apart... (HMR?)
-              btw, the cli could spawn the nodejs/deno/bun servers if needed...
+ESM LEXER?
 
-- himalaya is still fast? just compare!!
-  - https://github.com/taoqf/node-html-parser
-  - https://github.com/HenrikJoreteg/html-parse-stringify
+```js
+// https://github.com/guybedford/es-module-lexer
+// FIXME: this would help to replace rewrite imports/exports ?
+import { parse } from 'es-module-lexer/js';
+async function main() {
+  try {
+    const t = await parse('import {x} from "y"; export const foo = 42');
+    console.log(t);
+  } catch (e) {
+    console.log(e);
+  }
+}
+main();
+```
 
 ## Server handler
 
@@ -67,7 +95,7 @@ Write a **pages/index.html** file to start working on some stuff:
 
 ```html
 <script>
-  import { session, put_session } from 'jamrock/conn';
+  import { session, put_session } from 'jamrock:conn';
 
   export let value = session.name || 'world';
 

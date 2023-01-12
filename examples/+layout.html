@@ -1,0 +1,64 @@
+<script>
+  import { method, flash } from 'jamrock:conn';
+  import { isLogged, currentInfo } from './stores.mjs';
+
+  import Notifications from './components/client/notifications.html';
+
+  let messages = [];
+  if (method === 'GET') {
+    messages = flash() || null;
+  }
+</script>
+
+<style global lang="less">
+  .loading {
+    pointer-events: none;
+    position: relative;
+
+    &::after {
+      background-color: rgba(255, 255, 255, .5);
+      position: absolute;
+      color: inherit;
+      content: '';
+      bottom: 0;
+      right: 0;
+      left: 0;
+      top: 0;
+    }
+  }
+  *,
+  *::after,
+  *::before {
+    margin: 0;
+    padding: 0;
+  }
+  .profile {
+    display: inline-flex;
+  }
+  .profile img { margin-right: 5px; }
+</style>
+
+<nav>
+  <ul>
+    <li>
+      <a href="/" target="_top">Home</a>
+      | {#if isLogged}
+        <span class="profile">
+          {#if currentInfo.picture}
+            <img src="/{currentInfo.picture}" width="16" />
+          {/if}
+          <a href="/login">{currentInfo.email}</a>
+        </span>
+      {:else}
+        <a href="/login">Log-in</a> or <a href="/new">Create account</a>
+      {/if}
+    </li>
+  </ul>
+</nav>
+
+<Notifications {messages} />
+
+<fieldset>
+  <legend>PAGE</legend>
+  <slot />
+</fieldset

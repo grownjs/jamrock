@@ -1,0 +1,59 @@
+<script>
+  import Comments from './components/comments.html';
+
+  const post = {
+    id: 1,
+    content: 'OSOM.',
+    comments: [
+      {
+        id: 2,
+        body: 'COOL',
+        msgs: [{
+          id: 3,
+          body: 'YEAH YEAH YEAHS!',
+          count: 1,
+          msgs: [{
+            id: 4,
+            body: 'MORE MORE!!',
+            count: 0,
+          }],
+        }],
+        count: 1,
+      },
+    ],
+  };
+
+  export default {
+    body: true,
+    use: ['csrf'],
+    ['GET /:slug'] as get.Article() {
+    },
+  };
+</script>
+
+<p>{post.content}</p>
+
+<style global>
+  x-fragment {
+    display: contents;
+  }
+</style>
+
+<style>
+  ol {
+    gap: 10px;
+    display: flex;
+    list-style-type: none;
+  }
+</style>
+
+<ol>
+  <li>A</li>
+  <fragment name="chunk">
+    <li>B</li>
+    <li>C</li>
+  </fragment>
+  <li>D</li>
+</ol>
+
+<Comments key={post.id} data={post.comments} />

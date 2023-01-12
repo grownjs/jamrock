@@ -1,0 +1,20 @@
+<script>
+  function fn1() {
+    console.log(1);
+    throw new Error(`Got: ${new Date()}`);
+  }
+  function fn2() {
+    console.log(2);
+    fn1();
+  }
+  function fn3() {
+    console.log(3);
+    fn2();
+  }
+</script>
+
+<button on:click={fn1}>🔥</button>
+<form on:submit={fn2}>
+  <button>🔥</button>
+  <button on:click={fn3}>💣</button>
+</form>

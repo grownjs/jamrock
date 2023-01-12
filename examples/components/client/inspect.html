@@ -1,0 +1,109 @@
+<script context="client">
+  import { useState } from 'jamrock';
+
+  export let data = [];
+  export let fields;
+
+  export const main = null;
+  export const title = null;
+
+  if (!fields) {
+    data = !Array.isArray(data) ? Object.entries(data) : data;
+  } else if (!Array.isArray(fields)) {
+    fields = fields.split('|');
+  }
+
+  const [{ filtered, query }, setState] = useState({ filtered: data, query: '' });
+
+  let t;
+  function filter(q) {
+    clearTimeout(t);
+    t = setTimeout(() => {
+      setState({
+        query: q,
+        filtered: data.filter(item => {
+          const subject = (!Array.isArray(item)
+            ? Object.entries(item).reduce((memo, [k, v]) => memo.concat(fields.includes(k) ? v : []), [])
+            : item).join('\t').toLowerCase();
+
+          return subject.includes(q.toLowerCase());
+        }),
+      });
+    }, 120);
+  }
+</script>
+
+<style>
+  div {
+    overflow: auto;
+    clear: both;
+    height: 150px;
+    border-bottom: 1px solid rgba(0, 0, 0, .1);
+  }
+  table {
+    width: 100%;
+  }
+  tr:nth-child(odd) {
+    background-color: #F8F8F9;
+  }
+  input {
+    padding: .2em;
+    border: 1px solid rgba(0, 0, 0, .1);
+  }
+  input::focus {
+    outline: none;
+  }
+  th, td, h4, small {
+    padding: 5px;
+  }
+  th {
+    white-space: nowrap;
+  }
+  h4 span {
+    flex: 1;
+  }
+  h4 {
+    margin: 0;
+    display: flex;
+    align-items: center;
+    overflow: hidden;
+    border-top: 1px solid rgba(0, 0, 0, .1);
+    border-bottom: 1px solid rgba(0, 0, 0, .1);
+  }
+  td {
+    word-break: break-all;
+  }
+</style>
+
+<h4>
+  <span>{title}:</span>
+  <input type="search" oninput="{e => filter(e.target.value)}" />
+</h4>
+
+<div>
+  <table cellspacing="0">
+    <tbody>
+      {#each filtered as item}
+        <tr>
+          {#each fields as key}
+            {#if key === main}
+              <th align="right">{item[key]}</th>
+            {:else}
+              <td>{item[key]}</td>
+            {/if}
+          {:else}
+            <th align="left">{item[0]}</th>
+            <td>{item[1]}</td>
+          {/each}
+        </tr>
+      {/each}
+    </tbody>
+  </table>
+</div>
+
+<small>
+  <b>{filtered.length}</b> item{filtered.length === 1 ? '' : 's'} found
+  {#if query.length > 0}
+    containing "{query}"
+  {/if}
+</small>

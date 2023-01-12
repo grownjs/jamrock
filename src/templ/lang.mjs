@@ -40,7 +40,7 @@ export function jamLang() {
         contains: [
           { begin: /\{/, end: /\}/, skip: true },
           {
-            begin: /([:#/@])(if|else|each|debug|html|raw)/,
+            begin: /([:#/@])(if|else|each|debug|const|html)/,
             className: 'keyword',
             relevance: 10,
           },

@@ -1,9 +1,0 @@
-mixin link(href, name)
-  mj-button(mj-class='link' href=href) #{name}
-
-mixin regards(message, about)
-  mj-text(mj-class='about')
-    span
-      | #{message || 'Best Regards'},
-      br
-    b= about || 'YourCompany.com'

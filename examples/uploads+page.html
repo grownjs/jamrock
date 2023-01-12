@@ -1,0 +1,35 @@
+<script>
+  import {
+    session, method, cookie, csrf_token, params,
+  } from 'jamrock:conn';
+
+  // import Debugger from './components/debugger';
+
+  if (method === 'POST') {
+    session.random = Math.random();
+    cookie('random', Math.random());
+  }
+
+  export default {
+    use: ['csrf'],
+    POST: true,
+  };
+</script>
+
+<form @multipart>
+  <input type="file" name="file" />
+  <input type="submit" />
+</form>
+
+<p>{method}: {csrf_token}</p>
+
+<!--<Debugger />-->
+
+{session.random}
+
+<!-- this is causing a syntax error -->
+
+{#if params.file}
+  <p>{params.file.type}</p>
+  <p>{params.file.size}</p>
+{/if}

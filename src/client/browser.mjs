@@ -1,229 +1,138 @@
-import { Fragment } from './fragment.mjs';
-
-const script = document.currentScript;
-
-window.req_uuid = window.req_uuid || script.getAttribute('src').split('/')[2];
-script.parentNode.removeChild(script);
-
-function isHTML(value) {
-  return value.substr(0, 100).trim().charAt() === '<';
-}
-
-function updatePage(title, url) {
-  if (url === location.href) return;
-  history.pushState(null, title, url);
-}
+import { toNodes, toAttrs } from '../utils/client.mjs';
+import { LiveSocket } from './livesocket.mjs';
+import { EventHub } from './events.mjs';
 
 export class Browser {
-  static get src() {
-    return script.getAttribute('src');
-  }
+  constructor(state, version) {
+    console.warn('check', state.patch, version);
 
-  static get uuid() {
-    return window.req_uuid;
-  }
+    this.paused = false;
+    this.version = version;
+    this.csrf_token = state.csrf;
+    this.request_uuid = state.uuid;
+    this.request_method = state.method;
 
-  static get failed() {
-    return Browser.$.request
-      && Browser.$.request.status >= 500;
-  }
+    this.warn = (e, msg) => import('./debugger.mjs').then(({ showDebug }) => showDebug(e, msg));
 
-  static reload(on) {
-    if (on === 'css') {
-      [].slice.call(document.getElementsByTagName('link')).forEach(elem => {
-        if (elem.href && String(elem.rel).toLowerCase() === 'stylesheet') {
-          const copy = elem.cloneNode();
-          const url = elem.href.replace(/(&|\?)nocache=\d+/, '');
-          copy.href = [url, (url.indexOf('?') >= 0 ? '&' : '?'), 'nocache=', Date.now()].join('');
-
-          document.head.insertBefore(copy, elem);
-          document.head.removeChild(elem);
-        }
+    this.attrs = (el, props) => {
+      if (!el) return console.log({ props });
+      el.getAttributeNames().forEach(name => {
+        el.removeAttribute(name);
       });
-    } else {
-      const nextUrl = location.href.replace(location.origin, '') || '/';
+      Object.entries(props).forEach(([key, value]) => {
+        el.setAttribute(key, value);
+      });
+    };
 
-      if ((Browser.ws && Browser.ws.__dirty) || Browser.failed) {
-        location.href = nextUrl;
-      } else {
-        const kind = window.__live && on ? 'live' : 'link';
+    this.patch = (el, vdom, force) => {
+      if (!el) return console.log({ vdom });
+      const { patchNode } = window.Jamrock.Runtime;
 
-        if (kind === 'live' && Browser.REQUEST_CALL) {
-          const headers = Browser.REQUEST_CALL[4] || {};
+      if (!el.__vnode && !force) {
+        while (el.firstChild
+          && el.firstChild.nodeType === 3
+          && !el.firstChild.nodeValue.trim()) el.removeChild(el.firstChild);
 
-          if (headers['request-type'] === 'bind') {
-            headers['request-type'] = 'live';
-          }
-          Browser.load(...Browser.REQUEST_CALL);
-          return;
-        }
-
-        Browser.load(null, null, null, 'GET', { 'request-type': kind }, nextUrl, () => {
-          updatePage(document.title, nextUrl);
-        });
+        el.__vnode = el.__vnode || this.children(el);
       }
-    }
-  }
 
-  static live() {
-    if ('WebSocket' in window && !window.__live) {
-      window.__live = new Date().toISOString();
+      return patchNode(el, !force ? el.__vnode : null, el.__vnode = vdom); // eslint-disable-line
+    };
 
-      const protocol = location.protocol === 'http:' ? 'ws://' : 'wss://';
-      const address = [protocol, location.host, location.pathname, '/ws'].join('');
-      const socket = new WebSocket(address);
+    this.scripts = js => {
+      if (Array.isArray(js)) {
+        return js.forEach(this.scripts);
+      }
 
-      console.debug('LIVE_RELOAD enabled');
+      const script = document.createElement('script');
 
-      socket.onmessage = msg => {
-        console.debug('LIVE_RELOAD', msg.data);
-        if (msg.data === 'reload') Browser.reload(true);
-        if (msg.data === 'refreshcss') Browser.reload('css');
-      };
-    }
-  }
+      script.textContent = js;
+      script.type = 'module';
 
-  static init(socket) {
-    Browser.$ = {};
-    Browser.ws = socket;
-
-    const csrf = document.querySelector('meta[name="csrf-token"]');
-    const token = csrf && csrf.getAttribute('content');
-
-    Object.defineProperty(Browser, 'csrf', {
-      get: () => (Browser.$.request && Browser.$.request.csrf) || token,
-    });
-  }
-
-  static send(...args) {
-    return Browser.ws
-      && Browser.ws.try
-      && Browser.ws.try(...args);
-  }
-
-  static req(url, data, method, headers) {
-    let multipart;
-    if (data instanceof FormData) {
-      data.forEach(value => {
-        if (value instanceof File) multipart = true;
+      requestAnimationFrame(() => {
+        try {
+          document.head.appendChild(script);
+        } finally {
+          document.head.removeChild(script);
+        }
       });
-    }
+    };
 
-    url = url || location.pathname;
-    data = data && !multipart ? new URLSearchParams(data) : data;
-
-    return fetch(url, {
+    this.fetch = (url, data, method, headers) => fetch(url, {
       body: (['POST', 'PUT', 'PATCH'].includes(method) && data) || undefined,
       method: method || 'GET',
-      redirect: 'follow',
       credentials: 'same-origin',
       headers: {
-        accept: 'text/plain,text/html,application/json',
         'cache-control': 'max-age=0, no-cache, no-store, must-revalidate, post-check=0, pre-check=0',
         'x-requested-with': 'XMLHttpRequest',
-        'csrf-Token': Browser.csrf,
-        ...(data && !multipart ? { 'content-type': 'application/x-www-form-urlencoded' } : null),
-        ...(Browser.uuid ? { 'request-uuid': Browser.uuid } : null),
+        'x-version': this.version,
+        'csrf-token': this.csrf_token,
+        'request-uuid': this.request_uuid,
         ...headers,
       },
-    }).then(async resp => {
-      const body = await resp.text();
-
-      if (resp.redirected && resp.url.includes(location.host)) {
-        updatePage('', resp.url.replace(location.origin, ''));
-      }
-
-      Browser.__dirty = resp.status === 404 || resp.status >= 500;
-      return body;
-    }).catch(e => {
-      e.message = `Could not reach '${method || 'GET'} ${
-        url.replace(location.origin, '')
-      }' (${e.message})`;
-      throw e;
     });
+
+    let block;
+    this.reload = (cb, replay) => {
+      if (block || this.paused) return setTimeout(() => cb && cb(), 120);
+      window.Jamrock.EventHub.loadURL(document.activeElement,
+        location.pathname,
+        undefined,
+        replay ? this.request_method : undefined,
+        undefined,
+        undefined,
+        cb);
+    };
+
+    this.attribs = node => toAttrs(node);
+    this.children = node => toNodes(node, true);
+
+    this.pause = () => {
+      this.paused = true;
+      if (window.Jamrock.Fragment) window.Jamrock.Fragment.teardown();
+    };
+    this.resume = () => {
+      this.paused = false;
+
+      clearTimeout(block);
+      block = setTimeout(() => { block = null; }, 260);
+
+      if (window.Jamrock.Fragment) window.Jamrock.Fragment.subscribe();
+    };
+
+    this.runtime = async () => {
+      if (!window.Jamrock.Runtime) {
+        const { createRender, createFragment } = await import('./elements.mjs');
+        const { patchNode, createElement, renderToElement } = createRender();
+
+        window.Jamrock.Fragment = createFragment({
+          browser: this,
+          patchNode,
+          createElement,
+        });
+
+        window.Jamrock.Runtime = {
+          renderToElement,
+          createElement,
+          patchNode,
+        };
+      }
+    };
   }
 
-  static load(el, url, data, method, headers, _location, _callback) {
-    if (window.__live) {
-      Browser.REQUEST_CALL = [...arguments];
-    }
+  static init(Components, version, state) {
+    const browser = new Browser(state, version);
+    const sockets = new LiveSocket(browser);
+    const events = new EventHub(sockets);
 
-    const fragment = Browser._.lookup('fragment', el) || null;
-    const target = Browser._.lookup('confirm', el) || el;
+    events.start();
+    sockets.start();
 
-    if (target
-      && method === 'DELETE'
-      && target.dataset.confirm
-      && !confirm(target.dataset.confirm)) return; // eslint-disable-line
-
-    Browser.end();
-    Fragment.stop();
-
-    if (el) el.classList.add('loading');
-
-    if (fragment) {
-      headers = headers || {};
-      headers['request-ref'] = fragment.dataset.fragment;
-    }
-
-    return Browser.req(url || _location, data, method, headers).then(async result => {
-      if (!(result.charAt() === '{' && result.substr(-1) === '}')) {
-        if (isHTML(result)) {
-          Browser.redraw(result);
-        } else if (result) {
-          throw new TypeError(result);
-        }
-        return _callback && _callback(target, result);
-      }
-
-      if (!(Browser.ws && Browser.ws.__ready)) {
-        const tpl = JSON.parse(result);
-
-        if (!Browser.$.markup) {
-          Object.assign(Browser.$, tpl);
-        }
-        await Browser.render(tpl);
-      }
-      return _callback && _callback(target, result);
-    }).then(() => {
-      if (el && method === 'GET') {
-        updatePage('', _location);
-        Browser.send(`rpc:request ${Browser.uuid}\t${_location}`);
-      }
-    }).catch(e => {
-      if (isHTML(e.message)) {
-        return Browser.redraw(e.message);
-      }
-      Browser.warn(e, 'Request Failure');
-    }).then(() => {
-      if (el) {
-        el.classList.remove('loading');
-      }
-    });
-  }
-
-  static redraw(html) {
-    document.open();
-    document.write(html);
-    document.close();
-  }
-
-  static render(data) {
-    console.debug('RENDER');
-    return Promise.all([
-      Browser._.js(data.scripts),
-      Browser._.set(data.markup.head, data.styles),
-      Browser._.dom(document.body, data.markup.body),
-    ]).then(() => {
-      Browser._.log(data.debug);
-    });
-  }
-
-  static warn(...args) {
-    Browser._.warn(...args);
-  }
-
-  static end() {
-    Browser.send(`rpc:disconnect ${Browser.uuid}`);
+    window.Jamrock = {
+      Browser: browser,
+      EventHub: events,
+      LiveSocket: sockets,
+      Components: new Components(browser),
+    };
   }
 }

@@ -1,7 +1,6 @@
-import { compile } from '../lib/nodejs/compiler.mjs';
+import env from '../lib/nodejs/main.mjs';
 
-compile({
-  glob: '*.html',
-  src: './generated',
+env({
   dest: './generated/output',
-});
+  src: process.env.CI ? './generated' : './examples',
+}).build();

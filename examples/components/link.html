@@ -1,0 +1,30 @@
+<script>
+  import { req, query_string } from 'jamrock:conn';
+
+  export let path = null;
+  export let exact = null;
+
+  let cssClass = null;
+  export { cssClass as class };
+
+  let active = null;
+  let url = null;
+
+  const query = query_string
+    ? `?${query_string}`
+    : '';
+
+  url = path.replace(/\/$/, '') || '/';
+  active = exact
+    ? url === req.url
+    : req.url.indexOf(url) === 0;
+  cssClass = `${cssClass || ''}${active ? ' active' : ''}`.trim() || null;
+</script>
+
+<style>
+  .active { font-weight: bold; }
+</style>
+
+<a class="{cssClass}" href="{url}{query}">
+  <slot>{url}{query}</slot>
+</a>

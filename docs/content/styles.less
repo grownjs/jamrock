@@ -1,0 +1,319 @@
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html, body {
+  height: 100%;
+}
+
+form {
+  margin: 0;
+}
+
+body {
+  margin: 0;
+  color: #3B3636;
+  background-color: #ECECEC;
+  font-family: 'Sorts Mill Goudy', serif;
+}
+
+pre .inserted { background-color: rgba(0, 255, 0, .15); }
+pre .deleted { background-color: rgba(255, 0, 0, .15); }
+
+html[theme=dark] {
+  pre .inserted { background-color: rgba(0, 255, 0, .2); }
+  pre .deleted { background-color: rgba(255, 0, 0, .2); }
+}
+
+pre {
+  position: relative;
+}
+pre > code[data-source]::before {
+  content: attr(data-source);
+  position: absolute;
+  display: block;
+  opacity: .5;
+  right: 0;
+  top: -15px;
+}
+
+.docs {
+  pre {
+    overflow: auto;
+    border-radius: 2px;
+    box-shadow: 0 2px 3px rgba(0, 0, 0, .1);
+  }
+}
+
+.debug {
+  outline: 1px dashed red;
+}
+
+.xterm .xterm-viewport {
+  overflow: hidden !important;
+  opacity: .87;
+}
+#xterminal {
+  transition: bottom .2s;
+  position: absolute;
+  overflow: hidden;
+  bottom: 0;
+  z-index: 5;
+  right: 0;
+  left: 0;
+}
+
+#input {
+  height: 310px;
+  opacity: 0;
+  transition: opacity 1s;
+}
+.app {
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+}
+.app > div:first-child {
+  flex: 1 0 auto;
+}
+.docs {
+  width: 100%;
+  padding-right: 50px;
+}
+.files {
+  color: #ECECEC;
+  width: 220px;
+  font-size: 12px;
+  background-color: #353030;
+  border-right: 1px solid rgba(0, 0, 0, .3);
+  font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', 'Consolas', 'source-code-pro', monospace;
+}
+.files ul {
+  margin: 0;
+  padding: 0;
+  list-style-type: none;
+}
+.files input {
+  opacity: 0;
+  position: absolute;
+}
+.files label,
+.files summary {
+  align-items: center;
+  cursor: pointer;
+  display: flex;
+  padding: 5px;
+  color: #A8A8A8;
+  gap: 5px;
+}
+.files summary:focus {
+  outline: none;
+}
+.files ul ul label {
+  padding-left: 16px;
+}
+.files label:hover,
+.files summary:hover {
+  color: #ECECEC;
+  background-color: rgba(255, 255, 255, .05);
+}
+.files summary:focus,
+.files label:has(input:focus) {
+  color: #ECECEC;
+}
+.files label:has(input:checked) {
+  background-color: rgba(0, 0, 0, .3);
+}
+.files svg {
+  fill: gray;
+}
+
+.editor {
+  width: 100%;
+  background-color: #2C2828;
+  border-left: 1px solid rgba(255, 255, 255, .1);
+}
+.preview {
+  width: 265px;
+  height: 100%;
+  border: none;
+  border-radius: 0 0 0 3px;
+  pointer-events: none;
+  opacity: .2;
+}
+.frame {
+  margin: 1em;
+  padding-top: 30px;
+  height: 380px;
+  border: 1px solid #3B3636;
+  background-color: #FFF;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, .3);
+  position: fixed;
+  width: 267px;
+  margin: auto;
+  z-index: 4;
+  top: 20px;
+  right: -242px;
+  transition: right .2s;
+  border-radius: 4px 0 0 4px;
+}
+.frame svg .on {
+  display: none;
+}
+#frame {
+  display: none;
+}
+#frame:checked + .frame {
+  right: -1px;
+}
+#frame:checked + .frame svg .on {
+  display: block;
+}
+#frame:checked + .frame svg .off {
+  display: none;
+}
+#frame:checked + .frame > .preview {
+  opacity: 1;
+  pointer-events: all;
+}
+.frame input,
+.frame button {
+  padding: 0;
+  border: none;
+  background-color: transparent;
+}
+.frame .icons {
+  background-color: #3B3636;
+  border-radius: 2px 0 0 0;
+  display: flex;
+  gap: 5px;
+  padding: 4px 3px;
+  align-items: center;
+  position: absolute;
+  font-size: 12px;
+  width: 100%;
+  color: gray;
+  top: 0;
+}
+.frame label {
+  cursor: pointer;
+}
+.frame svg {
+  fill: currentColor;
+}
+.search {
+  flex: 1 0 auto;
+  align-items: center;
+  position: relative;
+}
+.search button {
+  cursor: pointer;
+  color: #ACACAC;
+}
+.search button:focus {
+  outline: none;
+  color: #FFF;
+}
+.search button:hover {
+  color: #FFF;
+}
+.search input {
+  transition: all .2s;
+  padding: 3px 22px;
+  border-radius: 2px;
+  color: silver;
+  width: 100%;
+}
+.search input:focus {
+  color: gray;
+  outline: none;
+  background-color: #FFF;
+}
+.search input:focus ~ button {
+  color: silver;
+}
+.search input:focus ~ button:focus,
+.search input:focus ~ button:hover {
+  color: #3B3636;
+}
+.search > button {
+  position: absolute;
+  left: 2px;
+  top: 2px;
+}
+.search > button:last-child {
+  left: auto;
+  right: 5px;
+}
+
+.stdout {
+  margin: 0;
+  font-size: 12px;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+  overflow: hidden;
+}
+.status {
+  position: relative;
+}
+.status svg {
+  fill: gray;
+}
+.status summary {
+  background-color: #222;
+  padding: 5px;
+  color: #A8A8A8;
+  height: 26px;
+  gap: 5px;
+  z-index: 6;
+  cursor: default;
+  position: relative;
+}
+
+.ace_scrollbar::-webkit-scrollbar {
+  display: none;
+}
+.ace_scrollbar {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
+.flex {
+  display: flex;
+}
+.pad {
+  padding: 20px;
+}
+@media screen and (min-width: 960px) {
+  .frame {
+    position: sticky;
+    width: auto;
+    left: auto;
+    right: auto;
+  }
+  .frame {
+    border-radius: 4px;
+  }
+  .preview {
+    border-radius: 0 0 3px 3px;
+    pointer-events: all;
+    opacity: 1;
+  }
+  .frame .icons {
+    border-radius: 2px 2px 0 0;
+  }
+  .frame .icons > label {
+    display: none;
+  }
+}
+@media screen and (min-width: 1260px) {
+  .files {
+    width: 350px;
+    font-size: 14px;
+  }
+  .preview {
+    width: 325px;
+  }
+}

@@ -9,14 +9,18 @@ export {
   derived,
 } from 'svelte/store';
 
-export function isStore(value) {
-  return value && !!value.__store_value;
-}
+import { Is } from '../utils/server.mjs';
+import { set } from '../server/utils.mjs';
+
+const STORE_KEY = Symbol('@@store');
+
+Object.assign(Is, { store: v => v && !!v[STORE_KEY] });
 
 export function writable(...args) {
   const target = write(...args);
 
-  Object.defineProperty(target, '__store_value', { value: true });
+  Object.defineProperty(target, STORE_KEY, { value: true });
+  Object.defineProperty(target, 'valueOf', { value: () => target.current });
   Object.defineProperty(target, 'current', {
     get: () => peek(target),
     set: v => target.set(v),
@@ -27,8 +31,9 @@ export function writable(...args) {
 export function readable(...args) {
   const target = read(...args);
 
-  Object.defineProperty(target, '__store_value', { value: true });
+  Object.defineProperty(target, STORE_KEY, { value: true });
   Object.defineProperty(target, 'current', { get: () => peek(target) });
+  Object.defineProperty(target, 'valueOf', { value: () => target.current });
   return target;
 }
 
@@ -42,24 +47,23 @@ export function connect(update, callback) {
     });
   }
 
-  return Object.assign(store, {
-    upgrade: ctx => {
-      store.set(update(ctx));
-      _self = ctx;
+  return Object.freeze(Object.assign(store, {
+    reload: conn => {
+      store.set(update(conn));
+      _self = conn;
     },
-  });
+  }));
 }
 
 export function session(key, value) {
-  const store = connect(ctx => {
-    const temp = typeof ctx.session[key] !== 'undefined'
-      && ctx.session[key] !== null ? ctx.session[key] : null;
+  const root = key.split('.')[0];
+  const store = connect(conn => {
+    const temp = typeof conn.session[root] !== 'undefined'
+      && conn.session[root] !== null ? conn.session[root] : null;
 
-    if (typeof value === 'function') return value(temp);
+    if (Is.func(value)) return value(temp);
     return temp === null ? value : temp;
-  }, (ctx, _next) => {
-    ctx.put_session(key, _next);
-  });
+  }, (conn, _next) => set(conn.session, key, _next));
 
   return store;
 }

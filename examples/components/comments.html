@@ -1,0 +1,44 @@
+<script>
+  export const data = [];
+  export const key = 0;
+
+  function save({ params }) {
+    for (const msg of data) {
+      if (msg.id === +params.message_id) {
+        msg.count = msg.count || 0;
+        msg.count++;
+
+        msg.msgs = msg.msgs || [];
+        msg.msgs.unshift({ body: params.message });
+        break;
+      }
+    }
+  }
+</script>
+
+<style>
+  ul { list-style-type: none; padding-left: 20px }
+</style>
+
+<ul>
+  <fragment name="live-comments" key="comments:{key}">
+    {#each data as c}
+      <li>
+        <fieldset>
+          <p>{c.body}</p>
+          <details>
+            <summary>responds</summary>
+            <form @patch @async on:submit={save}>
+              <input type="hidden" name="message_id" value={c.id} />
+              <input type="text" name="message" />
+              <button on:click={save}>send</button>
+            </form>
+          </details>
+          {#if c.count > 0}
+            <self data={c.msgs} key="{key}.{c.id}" />
+          {/if}
+        </fieldset>
+      </li>
+    {/each}
+  </fragment>
+</ul>

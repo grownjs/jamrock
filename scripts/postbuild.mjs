@@ -3,9 +3,18 @@ import { exec } from 'node:child_process';
 
 exec('cp -r types/* dist/');
 
-const destFile = 'dist/main.mjs';
+const mainFile = 'dist/main.mjs';
 
-let code = readFileSync(destFile).toString();
-code = code.replace(/var resolved_promise[^]+?(?=\/\/ node_modules)/, '\n');
+let code = readFileSync(mainFile).toString();
+// eslint-disable-next-line max-len
+code = code.replace(/\/\/ node_modules\/svelte\/src\/runtime\/internal\/globals\.js[^]+?(?=\/\/ node_modules\/svelte\/src\/runtime\/store\/index\.js)/, '');
 
-writeFileSync(destFile, code);
+writeFileSync(mainFile, code);
+
+const serverFile = 'dist/server.mjs';
+
+code = readFileSync(serverFile).toString();
+code = code.replace(/"jamrock"/g, '"./main.mjs"');
+code = code.replace(/"jamrock\/client"/g, '"./client.mjs"');
+
+writeFileSync(serverFile, code);

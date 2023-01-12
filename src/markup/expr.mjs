@@ -1,12 +1,21 @@
-import { isArray } from '../utils.mjs';
+import { Is } from '../utils/server.mjs';
 
 const RE_AS_LOCAL = /\s+as\s+(.+?)$/;
-const RE_CLEAN_EXPR = /^\{+|\}+$/g;
+const RE_CLEAN_EXPR = /\{([^{}]+?)\}/g;
 const RE_CLEAN_BLOCKS = /[#:]((?:else\s+)?if|each)\s*/;
-const RE_ALL_EXPRESSIONS = /\{[:/#]?[^{}]*?\}/;
+const RE_ALL_EXPRESSIONS = /\{[:/#]?[^{}]+?\}/;
 const RE_EXPR_VALUE = /\{[^{}]+\}/;
 const RE_EXPR_STRICT = /^\{[^{}]+\}$/;
-const RE_COLON_FIX = /:/g;
+
+export class Ref {
+  constructor(key) {
+    this.$key = key;
+  }
+
+  static from(id) {
+    return new Ref(id);
+  }
+}
 
 export class Expr {
   constructor(value, position, callback) {
@@ -14,11 +23,20 @@ export class Expr {
     this.expr = [].concat(value);
 
     if (this.expr.length > 0 && ':#/@'.includes(this.expr[0].charAt(1))) {
+      this.tag = this.expr[0].substr(2, 2);
+      this.open = this.expr[0][1] === '#';
       this.block = true;
     }
 
     Object.defineProperty(this, 'token', { value: position });
     Object.defineProperty(this, 'locate', { value: callback });
+  }
+
+  toString() {
+    return this.expr
+      .filter(x => x.type === 'text')
+      .map(x => x.content)
+      .join('');
   }
 
   append(value) {
@@ -31,10 +49,16 @@ export class Expr {
     return this;
   }
 
-  wrap(prefix, isAsync, expression) {
+  wrap(prefix, isAsync, expression, tokenCallback) {
     const sep = expression || this.chunk ? ' +\n' : ',\n';
     const out = this.expr.map(token => {
       if (!token) return '';
+
+      if (tokenCallback
+        && token.type === 'code'
+        && token.content.tag !== 'el'
+        && token.content.block
+      ) tokenCallback(token, this.token);
 
       if (typeof token === 'object') {
         return `${token.type === 'text'
@@ -45,33 +69,33 @@ export class Expr {
       const _async = isAsync ? 'async ' : '';
       const _await = isAsync ? 'await ' : '';
 
-      let _ref = token[1] !== '/' && typeof this.locate === 'function'
+      let _ref = token[1] !== '/' && Is.func(this.locate)
         ? this.locate(this.token.index, token)
         : null;
 
-      let _expr = token.replace(RE_CLEAN_EXPR, '').trim();
+      let _expr = token.replace(RE_CLEAN_EXPR, '$1').trim();
       if (_expr.indexOf('#each') === 0) {
         const [subj, locals] = _expr.replace(RE_CLEAN_BLOCKS, '').split(RE_AS_LOCAL);
 
-        _expr = `${_await}$$.map(${_await}${subj}, ${_async}(${locals}) => { return [`;
+        _expr = `${_await}$$.map(${subj}, ${_async}(${locals}) => { return [`;
       } else if (_expr.indexOf('#if') === 0) {
         _expr = `${_await}$$.if(${_expr.replace(RE_CLEAN_BLOCKS, '')}, ${_async}() => { return [`;
       } else if (_expr.indexOf('/each') === 0) {
-        _expr = ']; }),';
+        _expr = ']; /*each*/ }),';
         _ref = null;
       } else if (_expr.indexOf('/if') === 0) {
-        _expr = ']; }),';
+        _expr = ']; /*if*/ }),';
         _ref = null;
       } else if (_expr.replace(/\s+/g, ' ').indexOf(':else if') === 0) {
-        _expr = `]; }, () => { if (${_expr.replace(RE_CLEAN_BLOCKS, '')}) return ${_async}() => [`;
+        _expr = `]; /*elseif*/ }, () => { if (${_expr.replace(RE_CLEAN_BLOCKS, '')}) return ${_async}() => [`;
       } else if (_expr.indexOf(':else') === 0) {
-        _expr = `]; }, ${isAsync ? 'async ' : ''}() => { return [`;
+        _expr = `]; /*else*/ }, ${isAsync ? 'async ' : ''}() => { return [`;
       } else if (_expr.indexOf('@debug ') === 0) {
         _expr = `$$.d({ ${_expr.substr(7)} })`;
+      } else if (_expr.indexOf('@const ') === 0) {
+        _expr = `(${_expr.substr(5)}, void 0)`;
       } else if (_expr.indexOf('@html ') === 0) {
         _expr = `$$.h(${_expr.substr(6)})`;
-      } else if (_expr.indexOf('@raw ') === 0) {
-        _expr = _expr.substr(5);
       }
 
       if (expression) {
@@ -81,7 +105,7 @@ export class Expr {
         this.token.index = _ref.offset[0];
       }
 
-      return `${prefix || ''}${_ref ? `/*!#${_ref.position.line}:${_ref.position.col}*/ ` : ''}${_expr}`;
+      return `${prefix || ''}${_ref ? `\n${prefix}/*!#${_ref.position.line}:${_ref.position.col}*/ ` : ''}${_expr}`;
     }).join(sep);
 
     if (this.raw.length > 0) {
@@ -99,10 +123,14 @@ export class Expr {
       if (!matches) break;
 
       if (matches.index > 0) {
-        chunks.push({
-          type: 'text',
-          content: tpl.substr(0, matches.index),
-        });
+        const chunk = tpl.substr(0, matches.index);
+
+        if (!Is.blank(chunk)) {
+          chunks.push({
+            type: 'text',
+            content: chunk,
+          });
+        }
       }
 
       const start = matches.index + matches[0].length;
@@ -115,7 +143,7 @@ export class Expr {
       });
     } while (true); // eslint-disable-line
 
-    if (tpl.length) {
+    if (!Is.blank(tpl)) {
       chunks.push({
         type: 'text',
         content: tpl,
@@ -132,7 +160,7 @@ export class Expr {
   static params(props, locate, tokenStart) {
     return props.reduce((memo, { key, value }) => {
       if (Expr.has(key, true)) {
-        key = key.replace(RE_CLEAN_EXPR, '');
+        key = key.replace(RE_CLEAN_EXPR, '$1');
 
         if (key.indexOf('...') === 0 && value === null) {
           if (memo.$ instanceof Expr) {
@@ -149,14 +177,14 @@ export class Expr {
         if (prefix === 'on') {
           memo[prefix + prop] = value ? Expr.from(value, tokenStart, locate) : true;
         } else if (prefix === 'bind') {
-          memo[key] = (value || prop).replace(RE_CLEAN_EXPR, '');
+          memo[key] = (value || prop).replace(RE_CLEAN_EXPR, '$1');
           memo[prop] = Expr.from(memo[key], tokenStart, locate);
         } else {
-          const fixed = !(prefix === 'style' || prefix === 'class')
-            ? `@${key.replace(RE_COLON_FIX, '-')}`
-            : key;
+          const fixed = !(prefix === 'style' || prefix === 'class') ? `@${key}` : key;
 
-          memo[fixed] = value || Expr.from(prop, tokenStart, locate);
+          memo[fixed] = Expr.has(value)
+            ? Expr.unwrap(value, tokenStart, locate)
+            : value || Expr.from(prop, tokenStart, locate);
         }
       } else if (value !== null && Expr.has(value)) {
         memo[key] = Expr.has(value, true)
@@ -178,7 +206,7 @@ export class Expr {
       }
 
       let val;
-      if (isArray(value[key])) {
+      if (Is.arr(value[key])) {
         val = value[key].map(x => (
           x.content instanceof Expr
             ? `\n${x.content.wrap(prefix)}`

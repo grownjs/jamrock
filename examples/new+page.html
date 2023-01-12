@@ -1,0 +1,75 @@
+<script>
+  import {
+    redirect, flash, body_params,
+  } from 'jamrock:conn';
+
+  import LinkTo from './components/link.html';
+  import Failure from './components/failure.html';
+
+  import { User } from './models.mjs';
+
+  let error = null;
+  let email = null;
+
+  export default {
+    body: true,
+
+    async POST() {
+      const {
+        address, resend, a_password, b_password,
+      } = body_params;
+
+      email = address || null;
+
+      if (!a_password) {
+        throw new Error('Password is missing');
+      }
+      if (a_password !== b_password) {
+        throw new Error('Passwords must match');
+      }
+
+      await User.addUser({ email, resend, password: a_password, passwordConfirmation: b_password });
+
+      flash('success', 'Now you can login!');
+      redirect('/login');
+    },
+
+    onError(e) {
+      error = e;
+    },
+  };
+</script>
+
+<head>
+  <title>New user?</title>
+</head>
+
+<h3>Your info.</h3>
+<form method="post" @async>
+  <p>
+    <label>
+      <span>E-mail:</span>
+      <input type="email" name="address" value={email} required autofocus autocomplete="email" />
+    </label>
+  </p>
+  <p>
+    <label>
+      <span>Password:</span>
+      <input type="password" name="a_password" autocomplete="current-password" required />
+    </label>
+  </p>
+  <p>
+    <label>
+      <span>Confirm password:</span>
+      <input type="password" name="b_password" autocomplete="password-confirmation" required />
+    </label>
+  </p>
+  <p>
+    <label>
+      <span>Resend invitation</span>
+      <input type="checkbox" name="resend" />
+    </label>
+  </p>
+  <Failure from={error} />
+  <button type="submit">Continue</button> or <LinkTo path="/login">cancel</LinkTo>.
+</form>

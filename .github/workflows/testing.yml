@@ -3,7 +3,7 @@ name: build
 on:
   push:
     branches:
-    - master
+    - next
   pull_request:
     branches:
     - master
@@ -11,20 +11,43 @@ on:
 jobs:
   build-test:
     runs-on: ubuntu-latest
+
+    services:
+      postgres:
+        image: postgres:latest
+        env:
+          POSTGRES_DB: postgres
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+        ports:
+          - 5432:5432
+        # Set health checks to wait until postgres has started
+        options: >-
+          --health-cmd "pg_isready -U postgres -d postgres"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+      backend:
+        image: augustodelg/pocketbase:latest
+        ports:
+          - "8090:8090"
+
     steps:
-      - uses: actions/checkout@v2
+      - name: Checkout
+        uses: actions/checkout@v3
+      - name: Deno setup
+        uses: denoland/setup-deno@v1
         with:
-          fetch-depth: 0
-
-      - run: cp seed/.env.example seed/.env
-
-      - run: echo "${{ secrets.ENV_OVERRIDES }}" >> seed/.env
-
-      - uses: actions/cache@v3
+          deno-version: 1.35.x
+      - name: Bun setup
+        uses: antongolub/action-setup-bun@v1
         with:
-          path: '**/node_modules'
-          key: ${{ runner.os }}-${{ hashFiles('**/package.json') }}
+          bun-version: 0.6.x
 
-      - uses: tacoss/nodejs@v3
-        with:
-          args: make build source ci e2e CODECOV_TOKEN=${{ secrets.CODECOV_TOKEN }} BROWSER=chromium:headless
+      - name: Configure pocketbase
+        run: |
+          docker exec ${{ job.services.backend.id }} sh -c 'pocketbase admin create yo@soypache.co Password.123'
+
+      - name: Run all tests
+        run: make ci DIST_TASK=dist:min CODECOV_TOKEN=${{ secrets.CODECOV_TOKEN }}

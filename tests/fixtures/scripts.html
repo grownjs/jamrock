@@ -5,7 +5,7 @@
   const el = Fragment.for('...');
 </script>
 <script type="module">
-  import { truth } from './utils';
+  import { truth } from './utils.mjs';
 
   let x = 0;
   if (x < 3 && typeof truth === 'function') {
@@ -27,6 +27,7 @@
   * { margin: 0; }
 </style>
 <script>
-  import Test from './test';
+  import Test from './test.html';
 </script>
 <Test value={-2} />
+<li>OK</li>

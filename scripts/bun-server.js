@@ -1,14 +1,7 @@
-import { createServer } from '../lib/bun/server.js';
+import env from '../lib/bun/main.mjs';
 
-async function main() {
-  const handler = await createServer({ dest: 'generated/output' });
-
-  /* global Bun */
-  const server = Bun.serve({
-    port: 8080,
-    fetch: handler,
-  });
-
-  console.log(`Listening on ${server.protocol}//${server.hostname}:${server.port}`);
-}
-main();
+env({
+  watch: true,
+  src: './examples',
+  dest: './generated/output',
+}).serve();

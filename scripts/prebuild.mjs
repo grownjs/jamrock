@@ -7,7 +7,7 @@ const _chalk = [
 
 let colors = '';
 _chalk.forEach(k => {
-  colors += `  '${k}': s => ${
+  colors += `  ${k}: s => ${
     JSON.stringify(chalk[k]('%').split('%')[0])
   } + s + ${
     JSON.stringify(chalk[k]('%').split('%')[1])

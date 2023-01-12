@@ -1,6 +1,7 @@
 tests/fixtures/broken
 seed/node_modules
-src/chalk.js
+src/chalk.mjs
 generated
+build
 dist
 tmp

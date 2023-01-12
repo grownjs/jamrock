@@ -1,29 +1,29 @@
 <script>
+  export const key = 0;
   export const data = [{
+    id: 1,
     label: 'a',
     children: [{
+      id: 2,
       label: 'b',
       children: [{
+        id: 3,
         label: 'c',
         children: [],
       }],
     }],
   }];
-
-  export let wait;
-  export let push;
-
-  await wait(100);
-  push($$props.data && $$props.data.length);
 </script>
 
 {#if data.length}
   <ul>
-    {#each data as item}
-      <li>
-        {item.label}
-        <self data="{item.children}" {push} {wait} />
-      </li>
-    {/each}
+    <fragment name="re" key="x:{key}">
+      {#each data as item}
+        <li>
+          {item.label}
+          <self data={item.children} key="{key}.{item.id}" />
+        </li>
+      {/each}
+    </fragment>
   </ul>
 {/if}

@@ -1,0 +1,83 @@
+<script>
+  import Toggles from './client/toggles.html';
+
+  export const checked = 0;
+  export const set = 'main';
+
+  const names = set
+    ? set.split('|')
+    : [];
+
+  // FIXME: this shit works... but, what else can we do?
+  // like importing shit and so? I mean, this easy shit can
+  // be inlined within the component... but man, proves a point!
+  // this shit is like in-place instantiation from remote code... edge?
+  function tabs() {
+    return node => {
+      function checkA11y(e) {
+        if (e.keyCode === 36 || e.keyCode === 37 || e.keyCode === 38) {
+          node.current.prevTab();
+        }
+        if (e.keyCode === 35 || e.keyCode === 39 || e.keyCode === 40) {
+          node.current.nextTab();
+        }
+        if (e.keyCode === 32 || e.keyCode === 13) {
+          node.current.selectTab();
+        }
+        if (e.keyCode === 9) {
+          node.current.updateTab();
+        }
+      }
+
+      node.addEventListener('keydown', checkA11y);
+      return () => node.removeEventListener('keydown', checkA11y);
+    };
+  }
+</script>
+
+<style global lang="less">
+  .active() {
+    font-weight: bold;
+    background-color: #FFF;
+  }
+
+  .check, .body > * {
+    display: none;
+  }
+  .head {
+    list-style-type: none;
+    display: flex;
+    padding: 0;
+    margin: 0;
+
+    label {
+      display: block;
+      padding: 5px;
+    }
+  }
+  .tabs {
+    display: flex;
+    flex-direction: column-reverse;
+  }
+
+  .checks(@counter) when (@counter > 0) {
+    .checks((@counter - 1));
+    @selector: ~"nth-child(@{counter})";
+    .check:@{selector}:checked ~ .head > *:@{selector} { .active; }
+    .check:@{selector}:checked ~ .body > *:@{selector} { display: block; }
+  }
+
+  .checks(10);
+</style>
+
+{#if $$slots.default}
+  <div class="tabs">
+    {#each names as tab, i}
+      <input hidden class="check" type="radio" id="tab-{i}" name="tab" value={tab} checked="{i === checked}" />
+    {/each}
+    <Toggles use:tabs on:interaction role="tablist" class="head" tag="ul" prefix="tab-" {names} {checked} />
+    <div class="body">
+      <slot />
+    </div>
+  </div>
+{/if}

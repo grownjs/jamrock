@@ -1,10 +1,11 @@
 <script>
   // eslint-disable-next-line import/no-duplicates
-  import Sample from './sample';
+  import Sample from './sample.html';
   // eslint-disable-next-line import/no-duplicates, import/no-useless-path-segments
-  import Sample2 from '../fixtures/sample';
-  import Sample3 from '~/tests/fixtures/sample';
-  import Osom from './osom';
+  import Sample2 from '../fixtures/sample.html';
+  import Sample3 from '~/tests/fixtures/sample.html';
+  import Osom from './osom.svelte';
+  import Markup from './static.html';
 
   const value = 42;
 </script>
@@ -21,6 +22,8 @@
 
 ||
 
-<Osom prefix="OSOM" @stuff={value}>
+<Osom prefix="OSOM" @stuff={value} on:interaction>
   <h1>It works.</h1>
 </Osom>
+
+[HTML: <Markup />]

@@ -1,168 +1,231 @@
-import { Fragment } from './fragment.mjs';
-import { Browser } from './browser.mjs';
+import { decode } from '../utils/client.mjs';
+
+const protocol = location.protocol === 'http:' ? 'ws' : 'wss';
 
 export class LiveSocket {
-  static getInstance() {
-    if (!Browser.src.includes('?')) return LiveSocket;
+  constructor(browser) {
+    Object.defineProperty(this, 'uuid', {
+      get: () => browser.request_uuid,
+    });
+
+    this.ready = false;
+    this.browser = browser;
+    this.location = location.pathname.split(this.uuid)[1] || location.pathname;
+
+    console.debug('connect', this.uuid, this.location);
 
     let interval = 100;
-    function timeout(msg) { // eslint-disable-line
+    function timeout(msg) {
       console.debug('RETRY', msg, interval);
       const ms = interval;
       interval *= 2;
       return ms;
     }
 
-    function connect(cb) {
-      return new Promise(ok => {
-        const protocol = location.protocol === 'http:' ? 'ws' : 'wss';
-        const url = `${protocol}://${location.host.split(':')[0]}:${Browser.src.split('?')[1] || 80}`;
+    function throttle(callback, time) {
+      if (callback.t) return;
+      callback.t = true;
+      setTimeout(() => {
+        callback();
+        callback.t = false;
+      }, time);
+    }
 
-        console.debug('CONNECT', url);
-        // ws = new WebSocket('ws://localhost:8080');
-        // ws.addEventListener('message', console.log);
-        LiveSocket.ws.addEventListener('open', () => {
-          LiveSocket.ws.send(`rpc:connect ${Browser.uuid}`);
-          console.debug('READY', Browser.uuid);
+    let ws;
+    this.send = (...args) => ws.try(...args);
+    this.close = () => {
+      this.ready = false;
+      if (ws) {
+        if (ws.readyState === ws.OPEN) ws.send(`rpc:disconnect ${this.uuid}`);
+        ws.close();
+        ws = null;
+      }
+    };
+
+    function defer() {
+      let resolve;
+      let reject;
+
+      const deferred = new Promise((res, rej) => {
+        resolve = res;
+        reject = rej;
+      });
+
+      deferred.resolve = resolve;
+      deferred.reject = reject;
+      return deferred;
+    }
+
+    // FIXME: try sending blob to ws...
+    this.submit = () => {
+      // function sendFile() {
+      //            var file = document.getElementById('filename').files[0];
+      //            var reader = new FileReader();
+      //            var rawData = new ArrayBuffer();
+      //            reader.loadend = function() {
+      //            }
+      //            reader.onload = function(e) {
+      //                rawData = e.target.result;
+      //                ws.send(rawData);
+      //                alert("the File has been transferred.")
+      //            }
+      //            reader.readAsArrayBuffer(file);
+      //        }
+    };
+
+    this.trigger = (e, kind, source, trigger, payload, callback) => {
+      e.preventDefault();
+
+      const call = trigger.dataset['ws:call'].replace(/\s+/g, '').replace('=>', ' ');
+      const id = `#${Date.now().toString(13)}`;
+
+      // how to deal with formData files?
+      const data = JSON.stringify(Object.fromEntries(payload));
+
+      this.send(`rpc:trigger ${this.uuid} ${source} ${call}\t${data}`, async () => {
+        if (callback) callback(trigger, 'rpc');
+        if (!this) return;
+
+        const timer = setTimeout(() => {
+          if (this[id]) {
+            this[id].reject();
+            delete this[id];
+          }
+        }, 1260);
+
+        try {
+          this[id] = await defer();
+        } catch (_e) {
+          this.warn(_e, 'RPC Failure');
+        } finally {
+          delete this[id];
+          clearTimeout(timer);
+        }
+      });
+    };
+
+    window.onbeforeunload = () => this.close() || null;
+
+    function connect(uuid, ready) {
+      return new Promise(ok => {
+        ws = new WebSocket(`${protocol}://${location.host}`);
+
+        ws.addEventListener('open', () => {
+          ws.send(`rpc:connect ${uuid}`);
           interval = 100;
-          cb(ok());
+          ready(uuid, ws, ok(ws));
         });
-        LiveSocket.ws.addEventListener('error', () => {
-          setTimeout(() => connect(cb).then(ok), timeout('connect'));
+
+        ws.addEventListener('error', () => {
+          setTimeout(() => connect(uuid, ready).then(ok), timeout('connect'));
         });
       });
     }
 
-    function detach(e, key) {
-      console.debug('E_PATCH', e, key);
-
-      LiveSocket.ws.__dirty = true;
-      LiveSocket.ws.try(`rpc:disconnect ${Browser.uuid}`);
-    }
-
-    function open() {
-      LiveSocket.ws.try = (msg, cb) => {
-        if (LiveSocket.ws.readyState !== LiveSocket.ws.OPEN) {
-          setTimeout(() => connect(open).then(() => LiveSocket.ws.try(msg, cb)), timeout('open'));
+    function open(uuid, socket) {
+      socket.try = (msg, cb) => {
+        if (socket.readyState !== socket.OPEN) {
+          setTimeout(() => connect(uuid, open).then(() => socket.try(msg, cb)), timeout('open'));
           return;
         }
-        LiveSocket.ws.send(msg);
-        if (cb) cb();
+        socket.send(msg);
+        if (cb) cb(socket);
       };
     }
-    connect(open).then(() => {
+
+    const queue = [];
+
+    let wait;
+    let ok;
+    const run = async () => {
+      if (this.browser.paused) {
+        clearTimeout(wait);
+        wait = setTimeout(run, 120);
+        return;
+      }
+
+      if (!ok) {
+        ok = true;
+        this.browser.paused = true;
+        await this.browser.runtime();
+        this.browser.paused = false;
+      }
+
+      requestAnimationFrame(() => queue.length > 0 && Promise.resolve(queue.shift()(window.Jamrock)).then(run));
+    };
+
+    this.next = _uuid => {
+      if (ws && ws.readyState === ws.OPEN) ws.send(`rpc:reconnect ${this.browser.request_uuid = _uuid}`);
+    };
+    this.start = () => (!ws || ws.readyState !== ws.OPEN) && connect(this.uuid, open).then(socket => {
+      this.ready = true;
+
       let t;
-      LiveSocket.ws.addEventListener('message', async e => {
+      socket.addEventListener('message', e => {
         clearTimeout(t);
         t = setTimeout(() => {
-          LiveSocket.ws.try('alive');
+          if (socket.readyState === socket.OPEN) socket.send('alive');
         }, Math.floor(Math.random() * (7500 - 6000)) + 6000);
 
-        if (e.data.indexOf('welcome ') === 0) {
-          LiveSocket.ws.__pending = false;
-          console.log(e.data);
-          return;
-        }
-
-        if (e.data.indexOf('@debug ') === 0) {
+        if (e.data === 'reload') {
+          // FIXME: here we should get a list of files changed... and then,
+          // we should remove them from the import-memory and such...
+          if (e.isTrusted) {
+            window.frames.top.Jamrock.Components.reload(e.data);
+            window.frames.top.Jamrock.Browser.reload(null, true);
+          } else {
+            window.Jamrock.Components.reload(e.data);
+            window.Jamrock.Browser.reload(null, true);
+          }
+        } else if (e.data.indexOf('welcome ') === 0) {
+          console.debug(e.data, this.location);
+        } else if (e.data.indexOf('@debug ') === 0) {
           const offset = e.data.indexOf('{');
           const [, kind, args] = e.data.substr(0, offset).split(' ');
 
           console[kind](...args);
-          return;
-        }
+        } else if (e.data.indexOf('rpc:') === 0) {
+          const payload = e.data.substr(4);
+          const body = payload.includes('\t')
+            ? payload.substr(0, payload.indexOf('\t'))
+            : payload;
 
-        if (e.data.indexOf('@html ') === 0) {
-          if (LiveSocket.ws.__dirty) {
-            console.log('Refusing to apply HTML, please reload the page...');
+          const chunk = payload.substr(body.length + 1);
+
+          let data = {};
+          if (!(chunk === 'null' || chunk === 'undefined')) {
+            data = JSON.parse(decode(chunk));
+          }
+
+          const [task, ...args] = body.split(/\s+/);
+
+          if (args[0] !== this.uuid) return;
+
+          if (task === 'failure') {
+            this.browser.warn(data, 'WebSocket Failure');
             return;
           }
 
-          LiveSocket.ws.__pending = true;
-
-          const offset = e.data.indexOf('{');
-          const [, kind, code] = e.data.substr(0, offset).split(' ');
-
-          console.debug('LIVE_SOCKET', kind, status);
-
-          Object.assign(Browser.$, JSON.parse(e.data.substr(offset)));
-          Object.assign(Browser.$.request, { type: kind, status: +code, initial: !LiveSocket.ws.__ready });
-
-          if (Browser.$.markup.head && Browser.$.styles) Browser._.set(Browser.$.markup.head, Browser.$.styles);
-
-          // FIXME: this should not be idempotent?
-          // try to ignore those from loops, in case there are...
-          if (!LiveSocket.ws.__ready || !Browser.$.markup.set.length) {
-            await Browser._.dom(document.body, Browser.$.markup.body, kind);
-          } else {
-            await Browser._.sync(Browser.$.markup.set);
+          if (task !== 'update') {
+            console.debug('RPC', task, args);
+            return;
           }
 
-          LiveSocket.ws.__pending = false;
-          LiveSocket.ws.__ready = true;
-
-          Browser._.js(Browser.$.scripts);
-          Browser._.log(Browser.$.debug);
-
-          if (Browser.__dirty) {
-            window.onpopstate = () => location.reload();
-          }
-          return;
-        }
-
-        if (e.data.indexOf('rpc:') !== 0) return;
-
-        const payload = e.data.substr(4);
-        const body = payload.includes('\t')
-          ? payload.substr(0, payload.indexOf('\t'))
-          : payload;
-
-        const data = JSON.parse(payload.substr(body.length + 1));
-        const [task, ...args] = body.split(/\s+/);
-
-        Promise.resolve()
-          .then(() => {
-            if (LiveSocket.ws[args[0]]) {
-              return LiveSocket.ws[args[0]][task === 'failure' ? 'reject' : 'resolve'](data);
-            }
-
-            if (task === 'failure') {
-              Browser._.warn(data, 'WebSocket Failure');
-            }
-          })
-          .then(() => {
-            if (LiveSocket.ws.__dirty) {
-              console.log('Refusing to patch document, please reload the page...');
-              return;
-            }
-            if (task === 'update') {
+          queue.push(({ Fragment }) => {
+            try {
               let direction = 0;
-              if (args[1] === 'append') direction = 1;
-              if (args[1] === 'prepend') direction = -1;
-              return Fragment.with(args[0], frag => frag.sync(data, direction)).catch(_e => detach(_e, args[0]));
-            }
-            if (task === 'append') {
-              return Fragment.with(args[0], frag => frag.append(data)).catch(_e => detach(_e, args[0]));
-            }
-            if (task === 'replace') {
-              return Fragment.with(args[0], frag => frag.patch(data)).catch(_e => detach(_e, args[0]));
+              if (args[2] === 'append') direction = 1;
+              if (args[2] === 'prepend') direction = -1;
+              if (args[0] !== this.uuid) return;
+
+              return Fragment.patch(args[1], data, direction);
+            } catch (_e) {
+              return this.browser.warn(_e, `Failed to ${task} fragment '${args[1]}'`);
             }
           });
+          throttle(run, 60);
+        }
       });
     });
-
-    return LiveSocket;
-  }
-
-  static ready(cb, retries = 0) {
-    if (!LiveSocket.ws || !LiveSocket.ws.__ready || LiveSocket.ws.__pending) {
-      if (retries++ > 150) {
-        throw new ReferenceError('LiveSocket is not ready yet!');
-      }
-
-      Browser._.raf(() => LiveSocket.ready(cb, retries + 1));
-    } else {
-      cb({ ...Browser.$.request, initial: false });
-    }
   }
 }

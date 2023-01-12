@@ -1,26 +1,27 @@
-import { markupAdapter } from 'somedom/ssr';
-
-import { isArray } from '../utils.mjs';
+import { markupAdapter } from '../utils/server.mjs';
 import { Expr } from './expr.mjs';
 
 function isTag(node) {
-  return node && node.type === 'element';
+  return node && (node.type === 'element' || node.type === 'fragment');
 }
 
 function getAttributeValue(node, name) {
   if (!this.isTag(node)) return;
+
+  let value;
   if (node.attributes[name] instanceof Expr) {
-    return node.attributes[name].raw.length > 0
-      ? node.attributes[name].raw.join('')
-      : undefined;
+    value = node.attributes[name].toString();
+  } else {
+    value = node.attributes[name];
   }
-  if (isArray(node.attributes[name])) {
-    return node.attributes[name]
-      .filter(x => x.type === 'text')
-      .map(x => x.content)
-      .join('');
+
+  if (name === 'class') {
+    return Object.keys(node.attributes)
+      .filter(x => x.includes('class:'))
+      .map(x => x.replace('class:', ''))
+      .concat(value)
+      .join(' ');
   }
-  return node.attributes[name];
 }
 
 function getName(node) {

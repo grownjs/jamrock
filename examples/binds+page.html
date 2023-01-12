@@ -1,0 +1,13 @@
+<script>
+import { params } from 'jamrock:conn';
+export let scope = { test: -1 };
+</script>
+<style global>
+.invalid{outline:1px dashed red}
+</style>
+<form @patch>
+  <input required autofocus bind:value={scope.test} />
+  <button>OK</button>
+</form>
+<p>Got: {scope.test}</p>
+<pre>{@debug params}</pre>

@@ -1,0 +1,101 @@
+<script context="module">
+  export let t = 420;
+  export let j = 0;
+  export function* sendMessage({ message, interval }) {
+    yield { v: +message, i: j++, o: '!!!' };
+    t = interval;
+  }
+</script>
+
+<script>
+  export let someValue;
+  export let otherValue;
+
+  function doStuff() {
+    console.log('this is called throug http', someValue, otherValue);
+  }
+
+  // import { reply } from 'jamrock/conn';
+
+  // FIXME: streams should be auto-prefixed with the component's key,
+  // so we can have several streams with the same source... PRETTY SIMILAR AS BINDINGS!!
+  async function* aGenerator() {
+    let i = 0;
+    while (true) {
+      if (i > 2500) break;
+      yield { v: Math.random() * 100 + j | 0, i: j++, o: '' };
+      if (i++ > 50 && t) await new Promise(ok => setTimeout(ok, Math.random() * t + 1));
+    }
+  }
+
+  let result;
+  export default {
+    doSomething(payload) {
+      // reply({
+      //   aGenerator: { v: 420, i: j++, o: '???' },
+      //   // FIXME: below is not working...
+      //   // target: { result: payload.sample },
+      // });
+      console.log('I was called server-side only!', payload);
+      // reply('target', { result: payload.sample });
+      // reply('aGenerator', {
+      //   aGenerator: { v: 420, i: j++, o: '???' },
+      //   // FIXME: below is not working...
+      //   // target: { result: payload.sample },
+      // });
+    },
+  };
+</script>
+
+<style>
+  ol {
+    overflow: auto;
+    height: 30em;
+    line-height: 1;
+  }
+  div {
+    display: flex;
+  }
+  .match {
+    background-color: rgba(0, 255, 0, .5);
+  }
+</style>
+
+<input type="checkbox" bind:checked={otherValue} />
+<fieldset>
+  <input type="text" bind:value={someValue} />
+</fieldset>
+<button on:click={doStuff}>OK</button> ({otherValue}.{someValue})
+
+<hr />
+
+<div>
+  <form ws:call="sendMessage => aGenerator" style="width:50%">
+    <p>Type a number below, as it matches the current offset you'll notice:</p>
+    Interval: <input type="number" name="interval" value={t} /><br />
+    Your guess: <input type="text" name="message" @reset />
+    <button :disabled>Send</button>
+  </form>
+  <form ws:call="doSomething">
+    <input type="text" name="sample" />
+    <button :disabled>OK</button>
+    <fragment name="target">
+      {#if result}
+        <p>Got: {result}</p>
+      {/if}
+    </fragment>
+  </form>
+</div>
+<p>Items:</p>
+<ol>
+  <li>BEFORE (make a game of this... right?)</li>
+  <li>MATH: each match scores, less distance between hits scores higher! they can be letters, numbers, emojis, etc.</li>
+  <fragment name="values" interval="0" mode="prepend">
+    {#each aGenerator as x}
+      <li class:match="{x.v === x.i}">
+        {x.v === x.i ? 'YES' : 'NO'}: {x.v} ({x.i}{x.o})
+      </li>
+    {/each}
+  </fragment>
+  <li>AFTER!!</li>
+</ol>

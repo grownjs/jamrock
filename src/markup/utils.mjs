@@ -1,86 +1,115 @@
-import { repeat, isArray, isUpper, isScalar } from '../utils.mjs';
 import { Expr } from './expr.mjs';
+import { ents } from '../render/hooks.mjs';
+import { Is, repeat, encodeText } from '../utils/server.mjs';
 
-export function decode(value) {
-  return value.replace(/&amp;/g, '&').replace(/&lt;/g, '<').replace(/&gt;/g, '>');
-}
+export const RE_JS_EXPR = /[[?:=+*!(/.-]/;
+export const RE_SAFE_PROPS = /^[$\w]+$/;
 
-export function encode(value, unsafe) {
-  if (!isScalar(value)) return Object.prototype.toString.call(value);
-  if (typeof value !== 'string') return value.toString();
-
-  return unsafe
-    ? value.replace(/</g, '&lt;').replace(/>/g, '&gt;')
-    : value.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+export function encode(value) {
+  return encodeText(value, { quotes: false, unsafe: true });
 }
 
 export function compact(chunk) {
   if (!chunk || typeof chunk !== 'object') return chunk;
-  if (isArray(chunk)) return chunk.map(compact);
+  if (Is.arr(chunk)) return chunk.map(compact);
   if (chunk.type === 'text') return chunk.content;
   return [chunk.name, chunk.attributes, compact(chunk.elements)];
 }
 
-export function reduce(tree, isAsync, children, indent = 0) {
-  if (isArray(tree)) {
-    return reduce({ elements: tree }, isAsync, children, indent);
+export function reduce(tree, context, indent = 0) {
+  if (Is.arr(tree)) {
+    return reduce({ elements: tree }, context, indent);
   }
+
+  const isAsync = context === 'module';
+  const isStatic = context === 'static';
 
   const _tabs = repeat('\t', indent + 1);
   const _async = isAsync ? 'async ' : '';
-  return tree.elements.reduce((memo, node) => {
-    const component = node.name && children.find(x => x.name.includes(node.name));
-    const isClient = component && component.client;
+  const _opened = [];
+
+  const result = tree.elements.reduce((memo, node) => {
     const _sync = isAsync ? 'async ' : '';
 
+    let scope = '[]';
     let slots = '';
     if (node.slots) {
+      scope = JSON.stringify([node.props, node.scope]);
       slots = Object.keys(node.slots).map(key => {
-        return `\n${_tabs}  '${key}': ${_sync}function ($$ctx, $$) {\nwith ($$ctx) return [${node.slots[key].template}]; } `;
+        return `\n${_tabs}  '${key}': ${_sync}() => [${node.slots[key].template}] /*slot*/`;
       }).join(',');
     }
 
     if (['element', 'fragment'].includes(node.type)) {
-      const body = node.elements ? `[${reduce(node, isAsync && !isClient, children, indent + 1).trim()}]` : '[]';
+      const body = node.elements && node.type !== 'fragment' ? `[${reduce(node, context, indent + 1).trim()}]` : '[]';
       const props = node.attributes ? `${Expr.props(node.attributes, `${_tabs}\t`)}\n${_tabs}` : '';
-      const prefix = node.offset ? `/*!#${node.offset.line + 1}:${node.offset.column + 1}*/` : '';
-      const found = component ? `'${component.found}'` : 'null';
+      const prefix = node.offset ? `\n/*!#${node.offset.start.line + 1}:${node.offset.start.column + 1}*/` : '';
       const _await = isAsync ? 'await ' : '';
 
       if (node.type === 'fragment') {
-        memo.push(`${_tabs}${prefix} $$.e('fragment', ${_await}$$.a(this, '${node.ref}'), ${_await}$$.fn(this.chunks['${node.ref}']))`);
-      } else if (isUpper(node.name)) {
-        memo.push(`${_tabs}${prefix} ${_await}$$.block(${node.name}, ${found}, {${props}}, {${slots}}, ${!isClient ? _async : ''}() => ${body})`);
+        if (node.attributes.frame) {
+          memo.push(`${_tabs}${prefix} $$.e('fragment', ${_await}$$.a(this, '${node.ref}'), [])`);
+        } else {
+          memo.push(`${_tabs}${prefix} $$.e('fragment', ${_await}$$.a(this, '${node.ref}'), ${_await}$$.fn(this, '${node.ref}'))`);
+        }
+      } else if (Is.upper(node.name)) {
+        // eslint-disable-next-line max-len
+        memo.push(`${_tabs}${prefix} ${_await}$$.block(${node.name}, '${node.name}', {${props}}, ${scope}, {${slots}}, ${body !== '[]' ? `${_async}() => ${body}` : 'null'} /* ${node.name} */)`);
       } else if (node.name === 'slot') {
-        memo.push(`${_tabs}${prefix} ${_await}$$.slot('${node.attributes.name || 'default'}', ${_async}() => ${body})`);
+        memo.push(isStatic
+          ? `${_tabs}${prefix} $$.slot('${node.attributes.name || 'default'}', () => ${body})`
+          : `${_tabs}${prefix} ${_await}$$.slot('${node.attributes.name || 'default'}', ${_async}() => ${body})`);
       } else if (node.name === 'self') {
         memo.push(`${_tabs}${prefix} ${_await}$$.self({${props}}, {${slots}}, ${_async}() => ${body})`);
       } else {
         memo.push(`${_tabs}${prefix} $$.e('${node.name}', {${props}}, ${body})`);
       }
+    } else if (node.type === 'text') {
+      if (node.content.trim().length > 0) memo.push(_tabs + JSON.stringify(node.content));
     } else if (node.type === 'code') {
       memo.push(node.content.wrap(_tabs, isAsync));
-    } else if (node.type === 'text') {
-      memo.push(_tabs + JSON.stringify(node.content));
     } else if (node instanceof Expr) {
-      memo.push(node.wrap(_tabs, isAsync));
+      memo.push(node.wrap(_tabs, isAsync, null, (token, position) => {
+        if (token.content.open) {
+          _opened.push([token.content.tag, position]);
+        } else if (_opened.length > 0) {
+          const [last, prev] = _opened.pop();
+          const end = (last === 'if' || last === 'el') ? '{/if}' : '{/each}';
+
+          if (token.type !== 'code' && last !== token.content.tag) {
+            throw new SyntaxError(`Unpaired ${end} after ${prev.line + 1}:${prev.column + 1} (given ${token.content.expr})`);
+          }
+        }
+      }));
     }
     return memo;
-  }, []).join(',\n');
+  }, []).join(',');
+
+  if (_opened.length > 0) {
+    const [last, token] = _opened[_opened.length - 1];
+    const end = (last === 'if' || last === 'el') ? '{/if}' : '{/each}';
+
+    throw new SyntaxError(`Unpaired ${end} after ${token.line + 1}:${token.column + 1}`);
+  }
+  return result;
 }
 
-export function extract(chunk, isAsync, children) {
-  if (!isArray(chunk)) {
-    return extract(chunk.elements || [], isAsync, children);
+export function extract(chunk, context, locations) {
+  if (!Is.arr(chunk)) {
+    return extract(chunk.elements || [], context, locations);
   }
 
   return chunk.reduce((frags, node) => {
-    if (node !== null) {
+    if (node !== null && !(node instanceof Expr)) {
+      if (context === 'static' && (node.name === 'self' || node.name === 'fragment' || Is.upper(node.name))) {
+        throw new ReferenceError(`Element '${node.name}' is not allowed on static components`);
+      }
+
       if (node.attributes && node.attributes.slot) {
         const name = node.attributes.slot;
 
         delete node.attributes.slot;
-        frags[name] = { children: compact(node), template: reduce([node], isAsync, children) };
+        frags[name] = { children: compact(node), template: reduce([node], context) };
 
         delete node.name;
         delete node.elements;
@@ -91,10 +120,19 @@ export function extract(chunk, isAsync, children) {
       }
 
       if (node.elements) {
-        if (isUpper(node.name)) {
-          node.slots = extract(node.elements, isAsync, children);
+        const isComponent = Is.upper(node.name);
+
+        if (isComponent || node.type === 'fragment') {
+          node.scope = [...new Set(locations
+            .filter(x => x.offset[0] > node.offset.close && x.offset[0] < node.offset.end)
+            .reduce((memo, k) => memo.concat(k.locals.map(u => u.name)), []))];
+        }
+
+        if (isComponent) {
+          node.slots = extract(node.elements, context, locations);
+          node.props = Object.keys(node.attributes).filter(k => RE_SAFE_PROPS.test(k));
         } else {
-          Object.assign(frags, extract(node.elements, isAsync, children));
+          Object.assign(frags, extract(node.elements, context, locations));
         }
       }
     }
@@ -104,14 +142,14 @@ export function extract(chunk, isAsync, children) {
 
 export function enhance(vnode, parent) {
   const props = vnode[1] = vnode[1] || {};
-  const tag = vnode[0];
+  const name = vnode[0];
 
-  if (tag === 'textarea' && props.value) {
-    props['@html'] = encode(props.value);
+  if (name === 'textarea' && props.value) {
+    props['@html'] = ents(props.value);
     delete props.value;
   }
 
-  if (tag === 'option' && parent) {
+  if (name === 'option' && parent) {
     parent.props = parent.props || {};
 
     const txt = [].concat(vnode[2] || []).join('');
@@ -124,47 +162,96 @@ export function enhance(vnode, parent) {
     if (value === test) props.selected = true;
   }
 
-  if (tag === 'form' && (props['@put'] || props['@patch'] || props['@delete'])) {
-    let method;
-    if (props['@put']) method = 'PUT';
-    if (props['@patch']) method = 'PATCH';
-    if (props['@delete']) method = 'DELETE';
+  if (name === 'form') {
+    if (props['@multipart']) {
+      props.enctype = 'multipart/form-data';
+      props.method = props.method || 'POST';
+
+      delete props['@multipart'];
+    }
+
+    if (props['@on:submit']) {
+      vnode[2].unshift(['input', { type: 'hidden', name: '_action', value: props['@on:submit'] }]);
+      props['@patch'] = true;
+      delete props['@on:submit'];
+    }
+
+    if (props['@put']) props.method = 'PUT';
+    if (props['@patch']) props.method = 'PATCH';
+    if (props['@delete']) props.method = 'DELETE';
 
     delete props['@put'];
     delete props['@patch'];
     delete props['@delete'];
 
-    props.method = 'POST';
-    vnode[2].push(['input', { type: 'hidden', name: '_method', value: method }]);
+    if (['PUT', 'PATCH', 'DELETE'].includes(props.method)) {
+      vnode[2].unshift(['input', { type: 'hidden', name: '_method', value: props.method }]);
+      props.method = 'POST';
+    }
   }
 
   if (props['@on:click']) {
-    props.name = props.name || '_cta';
+    props.name = props.name || '_action';
     props.value = props.value || props['@on:click'];
     props['@on:click'] = true;
   }
 
-  if (tag === 'input' && props.type === 'file') {
+  if (name === 'input' && props.type === 'file') {
     delete props.value;
   }
 
-  if (tag === 'tag') {
-    vnode[0] = props.use;
-    delete props.use;
+  if (name === 'fragment') {
+    if (props.tag) {
+      vnode[0] = props.tag;
+      props['@fragment'] = props.name;
+      props['@interval'] = props.interval;
+      props['@timeout'] = props.timeout;
+      props['@limit'] = props.limit;
+
+      delete props.interval;
+      delete props.timeout;
+      delete props.limit;
+      delete props.name;
+      delete props.tag;
+    }
+    if (props.name) {
+      vnode[0] = 'x-fragment';
+    }
+    if (props.frame) {
+      vnode[1]['@frame'] = Is.str(props.frame) ? props.frame : null;
+    }
+  } else if (props.key && name !== 'form') {
+    props['@key'] = props.key;
+    delete props.key;
+  }
+
+  if (name === 'element') {
+    vnode[0] = props.tag;
+    delete props.tag;
   }
 }
 
-export function extend(props, fn) {
+export function extend(tagName, props, fn) {
   const css = [];
+
   Object.keys(props).forEach(key => {
     if (key.indexOf('bind:') === 0) {
-      props[`data-${key.replace(':', '-')}`] = props[key];
+      if (!['form', 'input', 'select', 'textarea'].includes(tagName)) {
+        throw new TypeError(`Element ${tagName} does not support bindings`);
+      }
+
       props.name = props.name || props[key];
+      props[`@${key}`] = props[key];
+      props['@binding'] = true;
       delete props[key];
     }
 
+    if (key.indexOf('@ws:') === 0) {
+      props['@trigger'] = true;
+    }
+
     if (key.indexOf('class:') === 0) {
-      if (props[key]) {
+      if (props[key] && props[key] !== '0') {
         props.class = `${props.class || ''} ${key.substr(6)}`.trim();
       }
       delete props[key];
@@ -175,13 +262,13 @@ export function extend(props, fn) {
       delete props[key];
     }
 
-    if (key.indexOf('on') === 0 && typeof props[key] === 'function') {
-      props[`@${key.replace('on', 'on:')}`] = props[key].name;
+    if (key.indexOf('on') === 0 && (Is.func(props[key]) || !String(props[key]).match(RE_JS_EXPR))) {
+      props[`@${key.replace('on', 'on:')}`] = Is.func(props[key]) ? props[key].name : props[key];
       delete props[key];
     }
 
-    if (key.indexOf('data-use-') === 0 && typeof props[key] === 'function') {
-      fn.push([props[key], key.substr(9)]);
+    if (key.indexOf('@use:') === 0 && Is.func(props[key])) {
+      fn.push([props[key], key.substr(5)]);
       delete props[key];
     }
   });

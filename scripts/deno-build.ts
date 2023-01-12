@@ -1,7 +1,6 @@
-import { compile } from '../lib/deno/compiler.js';
+import env from '../lib/deno/main.mjs';
 
-compile({
-  glob: '*.html',
-  src: './tests/fixtures',
+env({
   dest: './generated/output',
-});
+  src: process.env.CI ? './generated' : './examples',
+}).build();

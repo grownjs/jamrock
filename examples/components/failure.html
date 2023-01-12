@@ -1,0 +1,62 @@
+<script>
+  let messages = [];
+  let fromError;
+  export { fromError as from };
+  export let caption;
+  export let debug;
+
+  const key = process.env.NODE_ENV === 'production' ? 'message' : 'stack';
+
+  if (Array.isArray(fromError)) {
+    messages.push(...fromError.map(x => x[key]));
+  }
+
+  if (fromError instanceof Error) {
+    debug = debug || fromError.sample;
+    caption = caption || fromError[key];
+    if (Array.isArray(fromError.errors)) {
+      messages.push(...fromError.errors.map(x => x[key]));
+    }
+  }
+
+  if (fromError && fromError.response) {
+    debug = (fromError.originalError || fromError).stack;
+    caption = fromError.message;
+    messages = fromError.response.data ? Object.entries(fromError.response.data).map(([k, v]) => `${k}: ${v.message}`) : [];
+  }
+
+  const enabled = messages.length || !!fromError || false;
+  const prefix = $$props['@test:id'] ? `${$$props['@test:id']}.` : '';
+
+  // FIXME: something like this...
+  function sources(output) {
+    return output.split('\n')
+      .filter(x => !/node:|dist\/main.mjs/.test(x))
+      .map(line => line.replace(/\?d=\d+/, '')
+        .replace(process.cwd(), '.').replace(/file:\/\/(.+?[\d:]+)/, '<data data-location="$1">$1</data>')).join('\n');
+  }
+</script>
+
+<style>
+  h3, li {
+    color: red;
+  }
+</style>
+
+{#if enabled}
+  <slot name="before" />
+  {#if caption}
+    <h3 test:id="{prefix}failure">{caption}</h3>
+  {/if}
+  {#if debug}
+    <pre>{@html sources(debug)}</pre>
+  {/if}
+  {#if messages.length}
+    <ul test:id="{prefix}failure.errors">
+      {#each messages as msg}
+        <li>{@html msg}</li>
+      {/each}
+    </ul>
+  {/if}
+  <slot name="after" />
+{/if}

@@ -1,0 +1,69 @@
+<script>
+  import ctx from 'jamrock:conn';
+
+  import Tabs from './tabs.html';
+  import Inspect from './client/inspect.html';
+
+  export const failure = null;
+
+  const status = failure ? failure.status : ctx.status_code;
+  const unsafe_headers = { ...ctx.headers };
+  const unsafe_env = { ...ctx.env };
+
+  function debug(stack) {
+    return (stack.trim()).replace(/[\w./]+:\d+:\d+/g, src => {
+      if (!src.includes(ctx.cwd)) return (src);
+      return `<span data-location=${(src)}>${(src)}</span>`;
+    });
+  }
+</script>
+
+<style lang="less">
+  details {
+    background-color: #E5E7EA;
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    width: 100%;
+  }
+  summary {
+    background-color: #EF4444;
+    padding: 5px;
+    color: #FFF;
+    cursor: default;
+  }
+  pre {
+    padding: 5px;
+    line-height: 1;
+    background-color: #f5f9ee;
+    max-height: 30em;
+    overflow: auto;
+  }
+</style>
+
+<style global lang="less">
+  pre [data-location] {
+    text-decoration: underline;
+    cursor: pointer;
+    opacity: .5;
+
+    &:hover {
+      opacity: 1;
+    }
+  }
+</style>
+
+<details open>
+  <summary>Error {status}</summary>
+
+  {#if failure}
+    <pre @html="{debug(failure.sample || failure.stack)}" />
+  {/if}
+
+  <Tabs set="request|headers|routes|env" checked="{status === 404 ? 2 : 0}">
+    <Inspect on:interaction data={ctx.toJSON()} title="Request input" />
+    <Inspect on:visible data={unsafe_headers} title="Request headers" />
+    <Inspect on:idle data={ctx.routes} title="Available routes" fields="verb|path|name|kind" main="verb" />
+    <Inspect data={unsafe_env} title="Environment variables" />
+  </Tabs>
+</details>
