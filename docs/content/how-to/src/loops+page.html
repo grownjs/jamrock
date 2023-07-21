@@ -1,0 +1,72 @@
+<script>
+function randomIntFromInterval(min, max) { // min and max included
+  return Math.floor(Math.random() * (max - min + 1) + min);
+}
+
+function createIterator(max, limit) {
+  const l = limit || randomIntFromInterval(3, 5);
+  const c = max || randomIntFromInterval(10, 15);
+
+  let i = 0;
+  const it = async function* loop() {
+    for (;;) {
+      yield i++;
+      if (i >= c) break;
+    }
+  };
+
+  return [it, l, c];
+}
+
+const [data, limit, count] = createIterator(10);
+</script>
+<style>ul{margin:0;display:flex;padding:0;list-style:none;flex-wrap:wrap} ul > .red{color:red}.odd{color:blue}</style>
+<style>
+.rev{display:flex;flex-wrap:wrap-reverse;flex-direction:row-reverse;}
+</style>
+
+<style global>
+@keyframes fade-in {
+  from { opacity: 0; }
+}
+
+@keyframes fade-out {
+  to { opacity: 0; }
+}
+
+@keyframes slide-from-right {
+  from { transform: translateX(30px); }
+}
+
+@keyframes slide-to-left {
+  to { transform: translateX(-30px); }
+}
+
+::view-transition-old(root) {
+  animation: 90ms cubic-bezier(0.4, 0, 1, 1) both fade-out,
+    300ms cubic-bezier(0.4, 0, 0.2, 1) both slide-to-left;
+}
+
+::view-transition-new(root) {
+  animation: 210ms cubic-bezier(0, 0, 0.2, 1) 90ms both fade-in,
+    300ms cubic-bezier(0.4, 0, 0.2, 1) both slide-from-right;
+}
+
+iframe {
+  outline: 1px dashed silver;
+  width: 100%;
+}
+</style>
+
+<textarea @wait=1200>STATIC &lt;b&gt;OSOM&lt;/b&gt;</textarea>
+
+<button onclick="Jamrock.Browser.reload()">Jamrock reload!</button>
+
+<a href="/loops" target="_self">Browser reload...</a>
+
+<p>{limit} - {count}</p>
+<fragment tag="ul" name="data" interval="20" limit={limit}>
+{#each data as x}
+  <li class:red="{x < limit}" class:odd="{x % 2 === 0}">{x + 1}{x < count - 1 ? ',' : ''}&nbsp;</li>
+{/each}
+</fragment>

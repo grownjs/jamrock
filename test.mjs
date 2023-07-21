@@ -1,7 +1,5 @@
 import { expect } from '@japa/expect';
-import { pathToFileURL } from 'node:url';
-import { specReporter } from '@japa/spec-reporter';
-import { processCliArgs, configure, test, run } from '@japa/runner';
+import { processCLIArgs, configure, test, run } from '@japa/runner';
 
 const _group = test.group;
 
@@ -34,13 +32,12 @@ if (!globalThis.ReadableStream) {
   globalThis.ReadableStream = ReadableStream;
 }
 
+processCLIArgs(process.argv.slice(2));
 configure({
-  ...processCliArgs(process.argv.slice(2)),
-  ...{
-    files: ['tests/**/*.spec.mjs'].concat(process.env.CI ? [] : 'examples/**/*.spec.mjs'),
-    plugins: [expect()],
-    reporters: [specReporter()],
-    importer: filePath => import(pathToFileURL(filePath).href),
-  },
+  files: process.argv.includes('--legacy')
+    ? ['tests/**/*.spec.mjs'].concat(process.env.CI ? [] : 'examples/**/*.spec.mjs')
+    : ['tests/**/*.test.mjs'],
+  plugins: [expect()],
+  bail: true,
 });
 run();

@@ -29,21 +29,24 @@ jobs:
           --health-retries 5
 
       backend:
-        image: augustodelg/pocketbase:latest
+        image: ghcr.io/muchobien/pocketbase:latest
         ports:
           - "8090:8090"
 
     steps:
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 23.1.0
       - name: Checkout
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
       - name: Deno setup
         uses: denoland/setup-deno@v1
         with:
-          deno-version: 1.35.x
+          deno-version: 2.0.4
       - name: Bun setup
         uses: antongolub/action-setup-bun@v1
         with:
-          bun-version: 0.6.x
+          bun-version: 1.1.34
 
       - name: Configure pocketbase
         run: |

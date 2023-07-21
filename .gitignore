@@ -18,8 +18,10 @@ logs
 dist
 tmp
 *.d.ts
+install
 pb_data
-deno.lock
+pocketbase
+screenshots
 package-lock.json
 !scripts/main.d.ts
 !tests/fixtures/node_modules

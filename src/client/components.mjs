@@ -121,7 +121,7 @@ export class Conditions {
 }
 
 export class Components {
-  constructor(browser) {
+  constructor(browser, callback) {
     this.browser = browser;
 
     this.observer = new MutationObserver(list => {
@@ -135,9 +135,12 @@ export class Components {
       }
     });
 
+    this.components = new Map();
     this.modules = new Map();
     this.imports = [];
     this.on();
+
+    requestAnimationFrame(callback);
   }
 
   async resolve(file) {
@@ -151,17 +154,22 @@ export class Components {
   }
 
   async import(url) {
-    if (!this.imports[url]) {
-      this.imports[url] = Date.now();
-      const mod = await import(url);
-      this.modules.set(url, mod);
-      // console.log('IMPORT', url);
+    const key = url.replace('.html:', '.html.');
+    if (!this.imports[key]) {
+      this.imports[key] = Date.now();
+      const mod = await import(key);
+      this.modules.set(key, { ...mod });
+      console.log('IMPORT', key);
     }
-    if (!this.modules.has(url)) {
+    if (!this.modules.has(key)) {
       return sleep().then(() => this.import(url));
     }
-    return this.modules.get(url);
+    return this.modules.get(key);
   }
+
+  // FIXME: one state to rule them all? istead of fetching individual state per-component
+  // we should have a central state that can be refreshed by repeating the request, if any
+  // on server... actually, we can sync between using a single SSE channel, right?
 
   async load(node, events) {
     node.__pending = null;
@@ -169,18 +177,20 @@ export class Components {
     if (node.dataset.component) {
       // FIXME: we should handle "sent" flag from here, as we have the initial
       // request for the used module we can tell to skip sending it again...
-      const flags = node.current ? '?data' : '';
+      // const flags = node.current ? '?k=data' : '';
       const [src] = node.dataset.component.split(':');
-      const mod = await this.import(`/@/${node.dataset.component}${flags}`);
+      const mod = await this.import(`/_/${node.dataset.component}`);
+      const state = this.components.get(node.dataset.component);
 
-      this.modules.set(src, mod);
+      // // this.modules.set(src, mod);
+      console.log('COMPONENT', { mod, state, events }, !!node.__update);
 
       try {
         if (node.__update) {
           // FIXME: state is good, but is not being calculated...
-          await node.__update(mod.__module || mod, mod.__state || {});
+          await node.__update(mod.__module, state);
         } else {
-          await this.attach(mod.__module || mod, node, mod.__state || {}, events, src);
+          await this.attach(mod.__module, node, state, events, src);
         }
       } catch (e) {
         console.warn(e.message);
@@ -220,14 +230,15 @@ export class Components {
       const [uuid, ...parts] = ev.params.source.split('/');
       const key = `${ev.params.name}.${uuid}@${parts.join('/')}`;
 
-      return this.import(`/@/${key}`).then(mod => {
-        if (mod.__hook) {
-          const off = mod.__hook(node, mod.__data);
+      return this.import(`/_/${key}`).then(mod => {
+        console.log('HOOK', mod, ev.params);
+        // if (mod.__hook) {
+        //   const off = mod.__hook(node, mod.__data);
 
-          if (Is.func(off)) {
-            node.__hooks.push(off);
-          }
-        }
+        //   if (Is.func(off)) {
+        //     node.__hooks.push(off);
+        //   }
+        // }
       });
     }));
   }
@@ -236,14 +247,26 @@ export class Components {
     console.log('HMR?', source);
     this.modules = new Map();
     this.imports = [];
-    this.elements.forEach(node => {
-      node.__pending = null;
-      this.delete(node);
-      this.refresh(node);
-    });
+
+    // FIXME: this causes problem... what should we do?
+    // this.elements.forEach(node => {
+    //   node.__pending = null;
+    //   this.delete(node);
+    //   this.refresh(node);
+    // });
   }
 
-  async attach(mod, node, state, events, filepath) {
+  async refetch() {
+    console.log('REFETCH');
+    await import(`/_/${this.browser.request_uuid}`);
+    this.reload();
+  }
+
+  define(ref, props, scope, slots) {
+    this.components.set(ref, { props, scope, slots });
+  }
+
+  attach(mod, node, state, events, filepath) {
     if (!(window.Jamrock.Runtime && window.Jamrock.Runtime.mountableComponent)) {
       return sleep().then(() => this.attach(mod, node, state, events, filepath));
     }
@@ -253,7 +276,7 @@ export class Components {
       hydrate: !node.__hydrated,
       load: id => {
         const url = new URL(id, `file://${filepath}`).href;
-        return this.import(`${url.replace('file://', '/@/')}:0`);
+        return this.import(url.replace('file://', '/_/'));
       },
       sync: async vdom => {
         await this.browser.patch(node, vdom);
@@ -262,7 +285,7 @@ export class Components {
     }, filepath);
 
     node.__hydrated = true;
-    await component.mount(node, state);
+    return component.mount(node, state);
   }
 
   append(node) {
@@ -298,8 +321,8 @@ export class Components {
       node.__hooks = null;
     }
 
-    if (node.__store) {
-      node.__store.clear();
+    if (node.__store && node.__store.state) {
+      node.__store.state.clear();
       node.__store = null;
     }
   }

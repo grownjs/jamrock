@@ -6,15 +6,15 @@ exec('cp -r types/* dist/');
 const mainFile = 'dist/main.mjs';
 
 let code = readFileSync(mainFile).toString();
-// eslint-disable-next-line max-len
-code = code.replace(/\/\/ node_modules\/svelte\/src\/runtime\/internal\/globals\.js[^]+?(?=\/\/ node_modules\/svelte\/src\/runtime\/store\/index\.js)/, '');
 
-writeFileSync(mainFile, code);
+// this makes the `process` object available cross-platform
+const fix = "import*as process from'node:process'";
+if (!code.includes(fix)) writeFileSync(mainFile, `${fix};${code.replace(/export\s?{/, '$&process,')}`);
 
 const serverFile = 'dist/server.mjs';
 
 code = readFileSync(serverFile).toString();
-code = code.replace(/"jamrock"/g, '"./main.mjs"');
+code = code.replace(/"jamrock\/core"/g, '"./main.mjs"');
 code = code.replace(/"jamrock\/client"/g, '"./client.mjs"');
 
 writeFileSync(serverFile, code);

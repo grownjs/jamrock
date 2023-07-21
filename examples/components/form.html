@@ -2,7 +2,7 @@
   import { existsSync, unlinkSync } from 'node:fs';
 
   import {
-    onFinish, getContext, setContext, useSlot,
+    onComplete, getContext, setContext,
   } from 'jamrock:hooks';
 
   import {
@@ -22,7 +22,8 @@
   const hasValidMethod = method === _method.toLowerCase();
   const currentForm = body_params._form === name;
 
-  let children;
+  const forms = getContext('registered_forms') || [];
+
   let error;
   try {
     if (!name) {
@@ -32,16 +33,12 @@
       throw new TypeError(`Form requires a resolve callback, given '${onvalid}'`);
     }
 
-    const forms = getContext('registered_forms') || [];
-
     if (forms.includes(name)) {
       throw new ReferenceError(`Form with name '${name}' has been already declared`);
     }
 
     setContext('current_form', { name, method, fields: [] });
     setContext('registered_forms', forms.concat(name));
-
-    children = await useSlot('default');
   } catch (e) {
     error = e;
   }
@@ -50,7 +47,10 @@
   const files = [];
   const payload = {};
 
-  onFinish(() => {
+  let content = await $$props.children?.();
+  content = await content?.();
+
+  onComplete(() => {
     files.forEach(file => {
       if (existsSync(file)) unlinkSync(file);
     });
@@ -99,9 +99,9 @@
   {:else}
     <form {method} test:id="form.{name}.container" @async={$$props['@async']} enctype="multipart/form-data">
       <input name="_form" type="hidden" value={name} />
-      <slot name="before" />
-      <ul>{@html children}</ul>
-      <slot name="after" />
+      {@render $$props.before?.()}
+      <ul>{@render content}</ul>
+      {@render $$props.after?.()}
     </form>
     <Failure test:id="form.{name}" from="{await getErrors()}" />
   {/if}

@@ -22,7 +22,9 @@
   if (fromError && fromError.response) {
     debug = (fromError.originalError || fromError).stack;
     caption = fromError.message;
-    messages = fromError.response.data ? Object.entries(fromError.response.data).map(([k, v]) => `${k}: ${v.message}`) : [];
+    messages = fromError.response.data
+      ? Object.entries(fromError.response.data).map(([k, v]) => `${k}: ${v.message}`)
+      : [];
   }
 
   const enabled = messages.length || !!fromError || false;
@@ -30,10 +32,13 @@
 
   // FIXME: something like this...
   function sources(output) {
-    return output.split('\n')
+    return output
+      .split('\n')
       .filter(x => !/node:|dist\/main.mjs/.test(x))
-      .map(line => line.replace(/\?d=\d+/, '')
-        .replace(process.cwd(), '.').replace(/file:\/\/(.+?[\d:]+)/, '<data data-location="$1">$1</data>')).join('\n');
+      .map(line => line
+        .replace(/\?d=\d+/, '')
+        .replace(process.cwd(), '.')
+        .replace(/file:\/\/(.+?[\d:]+)/, '<data data-location="$1">$1</data>')).join('\n');
   }
 </script>
 
@@ -43,20 +48,20 @@
   }
 </style>
 
-{#if enabled}
-  <slot name="before" />
-  {#if caption}
-    <h3 test:id="{prefix}failure">{caption}</h3>
-  {/if}
-  {#if debug}
-    <pre>{@html sources(debug)}</pre>
-  {/if}
-  {#if messages.length}
-    <ul test:id="{prefix}failure.errors">
-      {#each messages as msg}
-        <li>{@html msg}</li>
-      {/each}
-    </ul>
-  {/if}
-  <slot name="after" />
+{#if enabled} {@render $$props.before?.()} {#if caption}
+  <pre test:id="{prefix}failure">{caption}</pre>
 {/if}
+
+{#if debug}
+  <pre>{@html sources(debug)}</pre>
+{/if}
+
+{#if messages.length}
+  <ul test:id="{prefix}failure.errors">
+    {#each messages as msg}
+      <li>{@html msg}</li>
+    {/each}
+  </ul>
+{/if}
+
+{@render $$props.after?.()} {/if}

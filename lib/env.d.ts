@@ -85,7 +85,6 @@ export type Options = {
   redis?: boolean;
   watch?: boolean;
   unocss?: boolean;
-  fswatch?: boolean;
 };
 
 export type CSSChunk = string | string[];

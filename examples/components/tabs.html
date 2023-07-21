@@ -4,9 +4,7 @@
   export const checked = 0;
   export const set = 'main';
 
-  const names = set
-    ? set.split('|')
-    : [];
+  const names = set ? set.split('|') : [];
 
   // FIXME: this shit works... but, what else can we do?
   // like importing shit and so? I mean, this easy shit can
@@ -38,10 +36,11 @@
 <style global lang="less">
   .active() {
     font-weight: bold;
-    background-color: #FFF;
+    background-color: #fff;
   }
 
-  .check, .body > * {
+  .check,
+  .body > * {
     display: none;
   }
   .head {
@@ -63,21 +62,40 @@
   .checks(@counter) when (@counter > 0) {
     .checks((@counter - 1));
     @selector: ~"nth-child(@{counter})";
-    .check:@{selector}:checked ~ .head > *:@{selector} { .active; }
-    .check:@{selector}:checked ~ .body > *:@{selector} { display: block; }
+    .check:@{selector}:checked ~ .head > *:@{selector} {
+      .active;
+    }
+    .check:@{selector}:checked ~ .body > *:@{selector} {
+      display: block;
+    }
   }
 
   .checks(10);
 </style>
 
-{#if $$slots.default}
-  <div class="tabs">
-    {#each names as tab, i}
-      <input hidden class="check" type="radio" id="tab-{i}" name="tab" value={tab} checked="{i === checked}" />
-    {/each}
-    <Toggles use:tabs on:interaction role="tablist" class="head" tag="ul" prefix="tab-" {names} {checked} />
-    <div class="body">
-      <slot />
-    </div>
-  </div>
+{#if $$props.children}
+<div class="tabs">
+  {#each names as tab, i}
+  <input
+    hidden
+    class="check"
+    type="radio"
+    id="tab-{i}"
+    name="tab"
+    value="{tab}"
+    checked="{i === checked}"
+  />
+  {/each}
+  <Toggles
+    use:tabs
+    on:interaction
+    role="tablist"
+    class="head"
+    tag="ul"
+    prefix="tab-"
+    {names}
+    {checked}
+  />
+  <div class="body">{@render $$props.children()}</div>
+</div>
 {/if}

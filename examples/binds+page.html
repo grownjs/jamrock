@@ -1,13 +1,27 @@
 <script>
-import { params } from 'jamrock:conn';
-export let scope = { test: -1 };
+  import {
+    session, flash,
+  } from 'jamrock:conn';
+
+  export let scope = { test: -1 };
+
+  $: if (scope.value > 50) {
+    session.user = {
+      currentInfo: { email: 'foo@candy.bar' },
+      expirationDate: Date.now() + 864000,
+    };
+
+    flash('success', 'IT WORKED?');
+  } else {
+    session.user = null;
+  }
 </script>
 <style global>
-.invalid{outline:1px dashed red}
+  .invalid { outline: 2px dashed red; }
 </style>
-<form @patch>
+<form @live>
+  <input type="range" bind:value={scope.value} min="0" max="100" />
   <input required autofocus bind:value={scope.test} />
   <button>OK</button>
 </form>
-<p>Got: {scope.test}</p>
-<pre>{@debug params}</pre>
+<p>Got: {scope.test} ({scope.value})</p>

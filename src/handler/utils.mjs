@@ -1,5 +1,5 @@
 import { RE_MATCH_ROUTES } from 'eslint-plugin-jamrock/const.js';
-import { Is, camelCase } from '../utils/server.mjs';
+import { Is, camelCase, snakeCase } from '../utils/server.mjs';
 
 class Route {
   constructor(parent) {
@@ -10,6 +10,23 @@ class Route {
     const parent = this.options.parent;
     return typeof this.options[prop] !== 'undefined'
       ? this.options[prop] : ((parent && parent.get(prop)) || null);
+  }
+
+  all(prop, cb) {
+    const parent = this.options.parent;
+    const values = [];
+
+    if (this.options[prop]) {
+      values.push(cb(this.options[prop]));
+    }
+
+    if (parent) {
+      values.push(...parent.all(prop, cb));
+    } else if (this.options.all) {
+      values.push(...this.options.all);
+    }
+
+    return values;
   }
 }
 
@@ -46,10 +63,11 @@ export function rankify(route) {
 export function routify(set) {
   const tree = new Route(null);
   const routes = [];
+  const api = [];
 
   set.forEach(src => {
     // clean extensions and _hidden segments
-    let path = src.replace(/index|(?<=\/)_\w+|\.\w+$/g, '');
+    let path = src.replace(/index|(?<=\/)_\w+\/|\.\w+$/g, '');
 
     // replace sveltekit-like parameters
     path = path.replace(/\[\.\.\.(\w+)\]/g, '*$1');
@@ -60,8 +78,8 @@ export function routify(set) {
     // apply some stuff from remix-flat-routes
     path = path.replaceAll('.', '/');
     path = path.replace(/\$(\w+)/g, ':$1');
-    path = path.replace(/\((\w+)\)/g, ':$1?/');
-    path = path.replace(/\[\/(.+?)\]/g, '\\.$1/');
+    path = path.replace(/\(\$(\w+)\)/g, ':$1?/');
+    path = path.replace(/\[\/(\w+)\]/g, '\\.$1/');
 
     const parts = path.split('/').filter(x => x.length > 0);
 
@@ -70,11 +88,17 @@ export function routify(set) {
       const key = parts.shift();
 
       if (key.charAt() === '+') {
-        leaf.options[key.substr(1)] = src;
-        if (key === '+page') {
-          let route = path.replace(/\/?[_+]\w+/g, '');
-          route = route.charAt() !== '/' ? `/${route}` : route;
+        let route = path.replace(/\/\+\w+/g, '');
+        route = route.charAt() !== '/' ? `/${route}` : route;
 
+        if (key === '+server') {
+          leaf.options.middleware = src;
+          api.push({ src, route });
+        } else {
+          leaf.options[key.substr(1)] = src;
+        }
+
+        if (key === '+page') {
           const { depth, params } = rankify(route);
 
           leaf.options.keys = params;
@@ -91,7 +115,7 @@ export function routify(set) {
     }
   });
 
-  return { tree, routes };
+  return { api, tree, routes };
 }
 
 export function extract(code, modify) {
@@ -141,7 +165,9 @@ export function rematch(route) {
   route.params = route.keys.map(x => x.substr(1).replace('?', ''));
 
   if (!route.name) {
-    route.name = [route.verb.toLowerCase(), route.path === '/' ? 'Home' : camelCase(route.path.replace(/\W+/g, '-'))].join('');
+    const path = route.path === '/' ? 'Home' : camelCase(snakeCase(route.path));
+
+    route.name = [route.verb.toLowerCase(), path].join('');
     route.name += route.root ? 'Page' : '';
   }
   return route;

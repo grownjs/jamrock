@@ -4,5 +4,5 @@ env({
   uws: true,
   watch: true,
   src: './examples',
-  dest: './generated/output',
+  dest: './build/output',
 }).serve();

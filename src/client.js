@@ -9,7 +9,7 @@ export const generateClientCode = (state, immediate) => {
       Promise.all([
         import('./client/browser.mjs'),
         import('./client/components.mjs'),
-      ]).then(([{ Browser }, { Components }]) => Browser.init(Components, process.env.VERSION, state));
+      ]).then(([{ Browser }, { Components }]) => Browser.init(Components, process.env.VERSION, state, () => null));
     } else {
       window.Jamrock.Browser.csrf_token = state.csrf;
     }

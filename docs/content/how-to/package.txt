@@ -1,0 +1,12 @@
+{
+  "name": "example-app",
+  "main": "index.js",
+  "engines": {
+    "node": ">=18.12.1"
+  },
+  "type": "module",
+  "scripts": {
+    "start": "node .",
+    "prestart": "node . --build"
+  }
+}

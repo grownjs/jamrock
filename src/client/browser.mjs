@@ -14,6 +14,28 @@ export class Browser {
 
     this.warn = (e, msg) => import('./debugger.mjs').then(({ showDebug }) => showDebug(e, msg));
 
+    this.sync = (payload, callback) => {
+      window.Jamrock.LiveSocket.start();
+      window.Jamrock.Components.off();
+
+      return this.runtime().then(() => {
+        if (this.teardown) this.teardown();
+
+        // FIXME: patch fragments?
+        console.log('PATCH', payload.fragments);
+
+        this.patch(document.head, payload.head.concat([['style', null, Object.values(payload.styles).join('\n')]]));
+        this.attrs(document.documentElement, payload.doc);
+        this.attrs(document.body, payload.attrs);
+        this.scripts(Object.values(payload.scripts));
+
+        return callback(() => this.patch(document.body, payload.body));
+      }).then(() => {
+        window.Jamrock.Components.on();
+        window.Jamrock.Components.refetch();
+      });
+    };
+
     this.attrs = (el, props) => {
       if (!el) return console.log({ props });
       el.getAttributeNames().forEach(name => {
@@ -120,7 +142,7 @@ export class Browser {
     };
   }
 
-  static init(Components, version, state) {
+  static init(Components, version, state, cb) {
     const browser = new Browser(state, version);
     const sockets = new LiveSocket(browser);
     const events = new EventHub(sockets);
@@ -132,7 +154,7 @@ export class Browser {
       Browser: browser,
       EventHub: events,
       LiveSocket: sockets,
-      Components: new Components(browser),
+      Components: new Components(browser, cb),
     };
   }
 }
