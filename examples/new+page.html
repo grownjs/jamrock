@@ -1,27 +1,26 @@
 <script>
   import {
-    redirect, flash, body_params,
+    redirect, flash,
   } from 'jamrock:conn';
 
-  import LinkTo from './components/link.html';
+  import Route from './components/route.html';
   import Failure from './components/failure.html';
 
   import { User } from './models.mjs';
+
+  export let address;
+  export let resend;
+  export let a_password;
+  export let b_password;
 
   let error = null;
   let email = null;
 
   export default {
-    body: true,
-
     async POST() {
-      const {
-        address, resend, a_password, b_password,
-      } = body_params;
-
       email = address || null;
 
-      if (!a_password) {
+      if (!(a_password && b_password)) {
         throw new Error('Password is missing');
       }
       if (a_password !== b_password) {
@@ -34,7 +33,7 @@
       redirect('/login');
     },
 
-    onError(e) {
+    catch(e) {
       error = e;
     },
   };
@@ -71,5 +70,5 @@
     </label>
   </p>
   <Failure from={error} />
-  <button type="submit">Continue</button> or <LinkTo path="/login">cancel</LinkTo>.
+  <button type="submit">Continue</button> or <Route path="/login">cancel</Route>.
 </form>

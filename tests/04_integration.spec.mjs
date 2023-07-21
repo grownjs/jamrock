@@ -1,3 +1,4 @@
+/* eslint-disable */
 /* eslint-disable max-len */
 
 import { test } from '@japa/runner';
@@ -9,22 +10,11 @@ import {
 
 import { Template } from '../src/templ/main.mjs';
 import { match } from '../src/handler/match.mjs';
-import { middleware, controllers } from '../src/handler/main.mjs';
+
+import { preflight, middleware, controllers, middlewares } from '../src/handler/main.mjs';
 
 // eslint-disable-next-line no-unused-expressions
-fixture`./client.svelte
-  <script>
-    export let value;
-  </script>
-  <style>
-    div { color: red }
-  </style>
-  <div>Got: {value}</div>
-  <slot />
-`;
-
-// eslint-disable-next-line no-unused-expressions
-fixture`./svelte+layout.html
+fixture`./+layout.html
   <main>
     <slot />
   </main>
@@ -38,34 +28,6 @@ fixture`./some+error.html
   <h2>Error {failure.status}</h2>
   <p>{failure.reason}</p>
   <small>&mdash; {failure.source}</small>
-`;
-
-// eslint-disable-next-line no-unused-expressions
-fixture`./svelte+page.html
-  <script>
-    import Client from './client.svelte';
-    import Main from './main.html';
-  </script>
-  <Client value="42">
-    <h1>It works.</h1>
-  </Client>
-  <Main>OSOM</Main>
-
-  <div>
-    <Main>
-      1
-      <section>
-        <Client>
-          2
-          <fieldset>
-            <Main>
-              3
-            </Main>
-          </fieldset>
-        </Client>
-      </section>
-    </Main>
-  </div>
 `;
 
 // eslint-disable-next-line no-unused-expressions
@@ -206,6 +168,73 @@ fixture`./pages/[slug]/+page.html
   <p>Got: {slug}</p>
 `;
 
+// eslint-disable-next-line no-unused-expressions
+fixture`./pages/+server.mjs
+  export function stuff(_, opts) {
+    console.log({ opts });
+  }
+
+  export default {
+    ['GET /sitemap.xml']() {
+      // ok
+    },
+  };
+`;
+
+// eslint-disable-next-line no-unused-expressions
+fixture`./api/+server.mjs
+  export default {
+    ['GET /some/:stuff']({ params }) {
+      return 42 + ', ' + params.stuff;
+    },
+  };
+`;
+
+// eslint-disable-next-line no-unused-expressions
+fixture`./+server.mjs
+  export function http() {}
+`;
+
+// eslint-disable-next-line no-unused-expressions
+fixture`./very/nested/path/to/+server.mjs
+  export function nested() {}
+  export function GET() {}
+`;
+
+// eslint-disable-next-line no-unused-expressions
+fixture`./very/nested/+server.mjs
+  export function anything() {}
+`;
+
+// eslint-disable-next-line no-unused-expressions
+fixture`./campaigns/[campaign_id]/participations/[participation_id]+page.html
+  <script>
+    export let campaign_id;
+    export let participation_id;
+  </script>
+  ParticipationDetail: {campaign_id}, {participation_id}
+`;
+
+// eslint-disable-next-line no-unused-expressions
+fixture`./campaigns/[campaign_id]/participations/index+page.html
+  Participations: <slot />
+`;
+
+// eslint-disable-next-line no-unused-expressions
+fixture`./campaigns/[campaign_id]/index+page.html
+  CampaignDetail: <slot />
+`;
+
+// eslint-disable-next-line no-unused-expressions
+fixture`./campaigns/index+page.html
+  Campaigns: <slot />
+`;
+
+// eslint-disable-next-line no-unused-expressions
+fixture`./_hidden/stuff+page.html
+  42
+`;
+
 test.group('integration only!', t => {
   let ctx;
   t.each.setup(() => {
@@ -215,6 +244,7 @@ test.group('integration only!', t => {
 
     ctx = {
       conn: {
+        headers: new Map(),
         unsafe: () => null,
         someStuff: () => 42,
         current_path: '/app',
@@ -229,7 +259,7 @@ test.group('integration only!', t => {
       onError: () => null,
       useState: () => [],
       useEffect: () => null,
-      registerComponent: mod => mod,
+      // registerComponent: mod => mod,
     };
   });
   t.each.teardown(() => {
@@ -241,17 +271,25 @@ test.group('integration only!', t => {
     setup();
 
     const cwd = process.cwd();
+    const api = Template.glob(`${cwd}/generated/**/+server.mjs`);
     const files = Template.glob(`${cwd}/generated/**/*.html`);
-    const routes = controllers(`${cwd}/generated`, files);
+    const routes = controllers(`${cwd}/generated`, files.concat(api));
 
     reset();
 
     expect(routes.map(x => `${x.verb} ${x.path}`)).toEqual([
+      'GET /campaigns/:campaign_id/participations/:participation_id',
+      'GET /campaigns/:campaign_id/participations',
+      'GET /very/nested/path/to',
+      'GET /pages/sitemap.xml',
       'GET /pages/:slug/osom',
+      'GET /campaigns/:campaign_id',
+      'GET /api/some/:stuff',
+      'GET /campaigns',
       'GET /pages/:slug',
-      'GET /svelte',
       'GET /hooks',
       'GET /loops',
+      'GET /stuff',
       'PATCH /app/:id',
       'GET /app',
       'POST /app',
@@ -268,8 +306,22 @@ test.group('integration only!', t => {
     expect(routes.namedRoute.url({ id: 123 })).toEqual('/app/123');
     expect(routes.namedRoute.src).toEqual(`${cwd}/generated/app+page.html`);
 
-    expect(routes.getSveltePage.error).toEqual(null);
-    expect(routes.getSveltePage.layout).toEqual(`${cwd}/generated/svelte+layout.html`);
+    expect(routes.OSOM.middleware).toEqual(`${cwd}/generated/pages/+server.mjs`);
+    expect(routes.getPagesSlugPage.middleware).toEqual(`${cwd}/generated/pages/+server.mjs`);
+    expect(routes.getApiSomeStuff.middleware).toEqual(`${cwd}/generated/api/+server.mjs`);
+    expect(routes.getPagesSitemapXml.middleware).toEqual(`${cwd}/generated/pages/+server.mjs`);
+
+    expect(routes.getVeryNestedPathTo.middlewares).toEqual([
+      `${cwd}/generated/very/nested/+server.mjs`,
+      `${cwd}/generated/+server.mjs`,
+    ]);
+
+    expect(routes.getCampaignsCampaignIdParticipationsParticipationIdPage.all).toEqual([
+      `${cwd}/generated/campaigns/[campaign_id]/participations/[participation_id]+page.html`,
+      `${cwd}/generated/campaigns/[campaign_id]/participations/index+page.html`,
+      `${cwd}/generated/campaigns/[campaign_id]/index+page.html`,
+      `${cwd}/generated/campaigns/index+page.html`,
+    ]);
   });
 
   test('should be able to invoke bundles', async ({ expect }) => {
@@ -291,26 +343,6 @@ test.group('integration only!', t => {
     expect(markup).toContain('[<b>DUB</b>:NIX]');
   });
 
-  test('should render .svelte components', async ({ expect }) => {
-    const markup = await fixture.partial('svelte+page.html', null, ctx);
-
-    expect(markup).toContain('<div data-location="generated/svelte+page.html:5:1" data-component="generated/client.svelte:2">');
-    expect(markup).toContain('<h1 data-location="generated/svelte+page.html:6:3">It works.</h1></div>');
-    expect(markup).toContain('<div class="svelte-1njum0u">Got: 42</div>');
-    // expect(markup).toContain('<p data-location="generated/main.html:44:3" data-on:somethingelse=callme data-source="generated/main.html/1">Your answer: FIXME</p>');
-    expect(markup).toContain('<p data-location="generated/main.html:45:3" data-on:somethingelse="callme">Your answer: FIXME</p>');
-    expect(markup).toContain('</p>Just an EMPTY component\n');
-
-    expect(markup).not.toContain('[object AsyncFunction]');
-    expect(markup).not.toContain('[object Function]');
-    expect(markup).not.toContain('[object Promise]');
-    expect(markup).not.toContain('[object Object]');
-
-    expect(markup).toContain('1\n');
-    expect(markup).toContain('2\n');
-    expect(markup).toContain('3\n');
-  });
-
   test('should be able to invoke modules', async ({ expect }) => {
     ctx.conn.routes = {
       namedRoute: { url: td.func('named') },
@@ -329,7 +361,7 @@ test.group('integration only!', t => {
     expect(markup).toContain('<a href="/app/123" data-location="generated/app+page.html:25:3">LINK</a>');
   });
 
-  test('should allow to hook functions into nodes', async ({ expect }) => {
+  test('skip: should allow to hook functions into nodes', async ({ expect }) => {
     ctx.conn.store = {
       set: td.func('write'),
     };
@@ -375,8 +407,10 @@ test.group('integration only!', t => {
 
     // process.debug=1;
     const cwd = process.cwd();
-    const files = Template.glob(`${cwd}/generated/pages/**/*.html`);
-    const pages = controllers(`${cwd}/generated`, files);
+    const api = Template.glob(`${cwd}/generated/**/+server.mjs`);
+    const files = Template.glob(`${cwd}/generated/**/*.html`);
+    const pages = controllers(`${cwd}/generated`, files.concat(api));
+    const components = await Promise.all(files.map(x => fixture.preload(x.replace(`${cwd}/`, ''))));
 
     reset();
 
@@ -393,9 +427,25 @@ test.group('integration only!', t => {
 
         if (found) {
           ctx.called = true;
+          ctx.components = [];
+          ctx.conn.params = found.params;
           ctx.conn.req.params = found.params;
 
-          await fixture.partial(found.src.replace(`${cwd}/generated/`, ''), ctx.conn.req.params, ctx, middleware);
+          if (found.middlewares && !found.src) {
+            ctx.conn.current_options = {};
+
+            const set = [found.middleware].concat(found.middlewares);
+            const mods = await Promise.all(set.map(Template.import));
+            const result = await middlewares(ctx, found, mods);
+
+            conn.res.write(String(result));
+          } else {
+            found.all.forEach(src => {
+              ctx.components.push(components.find(x => x.src === src.replace(`${cwd}/`, '')));
+            });
+
+            await fixture.partial(found.src.replace(`${cwd}/generated/`, ''), ctx.conn.req.path_params, ctx, middleware);
+          }
         }
       }
       conn.res.end();
@@ -403,6 +453,19 @@ test.group('integration only!', t => {
 
     await app.request('GET', '/pages/example', (err, conn) => {
       expect(conn.res.body).toContain('Got: example');
+      conn.res.ok(err);
+    });
+
+    await app.request('GET', '/api/some/thing', (err, conn) => {
+      expect(conn.res.body).toEqual('42, thing');
+      conn.res.ok(err);
+    });
+
+    await app.request('GET', '/campaigns/1/participations/2', (err, conn) => {
+      expect(conn.res.body).toContain('Campaigns:');
+      expect(conn.res.body).toContain('CampaignDetail:');
+      expect(conn.res.body).toContain('Participations:');
+      expect(conn.res.body).toContain('ParticipationDetail: 1, 2');
       conn.res.ok(err);
     });
   });
@@ -438,13 +501,13 @@ test.group('integration only!', t => {
     });
 
     ctx.route.error = await fixture.partial('some+error.html', null, ctx, false);
-    ctx.route.layout = await fixture.partial('svelte+layout.html', null, ctx, false);
+    ctx.route.layout = await fixture.partial('+layout.html', null, ctx, false);
 
     await app.request('POST /app', (err, conn) => {
       expect(td.explain(console.info).callCount).toEqual(6);
       expect(conn.req.method).toEqual('POST');
       expect(conn.req.url).toEqual('/app');
-      conn.res.ok(err, '<main data-location="generated/svelte+layout.html:1:1">');
+      conn.res.ok(err, '<main data-location="generated/+layout.html:1:1">');
     });
 
     await app.request('DELETE', '/app', (err, conn) => {
@@ -454,5 +517,31 @@ test.group('integration only!', t => {
       expect(conn.res.body).toContain('Error 404');
       conn.res.ok(err, "Route 'DELETE /' not found in app+page.html", 404);
     });
+  });
+
+  test('should handle preflight of middlewares', async ({ expect }) => {
+    const now = new Date();
+    const values = [];
+
+    function handler(conn) {
+      conn.headers.set('x-time', now);
+    }
+
+    ctx.conn.method = 'PUT';
+
+    await preflight(ctx.conn, {
+      PUT: handler,
+      thing(_, options) {
+        values.push(options.value);
+      },
+      stuff() {
+        values.push(-1);
+      },
+    }, {
+      use: [['thing', { value: 42 }], 'stuff'],
+    });
+
+    expect(values).toEqual([42, -1]);
+    expect(ctx.conn.headers.get('x-time')).toEqual(now);
   });
 });

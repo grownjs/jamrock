@@ -13,6 +13,7 @@ if (process.env.DENO_DOM) {
     Window: class Window {
       constructor() {
         this.document = new DOMParser().parseFromString('', 'text/html');
+        this.Event = Event;
       }
     },
   };

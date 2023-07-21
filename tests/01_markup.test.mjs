@@ -1,11 +1,14 @@
 /* eslint-disable max-len */
 
 import { test } from '@japa/runner';
-import * as td from 'testdouble';
 
-import { load } from '../src/markup/index.mjs';
+import { Block } from '../src/markup/index.mjs';
 import { Expr } from '../src/markup/expr.mjs';
 import { Is } from '../src/utils/server.mjs';
+
+function load(code, file) {
+  return new Block(code, file || 'test.html');
+}
 
 test.group('vnodes', () => {
   test('should invalidate lists of scalars', ({ expect }) => {
@@ -36,20 +39,32 @@ test.group('Expr', () => {
   });
 
   test('should wrap given expressions', ({ expect }) => {
-    expect(Expr.from('{1+2}').wrap()).toEqual('1+2');
-    expect(Expr.from('{"abc"}').wrap()).toEqual('"abc"');
+    expect(Expr.from('{1+2}').wrap()).toEqual('$$.$(1+2)');
+    expect(Expr.from('{"abc"}').wrap()).toEqual('$$.$("abc")');
 
-    expect(Expr.from('{1+2}').append('3').wrap('')).toEqual('1+2,\n3');
-    expect(Expr.from('{1+2}').append('3').wrap('', null, true)).toEqual('$$.$(1+2) +\n$$.$(3)');
+    expect(Expr.from('{1+2}').append('3').wrap('')).toEqual('$$.$(1+2)\n,$$.$(3)');
+    expect(Expr.from('{1+2}').append('3').wrap('', false)).toEqual('1+2\n+3');
 
-    expect(Expr.from('{1+2}').concat('3').wrap('')).toEqual('1+2,\n"3"');
-    expect(Expr.from('{1+2}').concat('3').wrap('', null, true)).toEqual('$$.$(1+2) +\n"3"');
+    expect(Expr.from('{1+2}').concat('3').wrap('')).toEqual('$$.$(1+2)\n,"3"');
+    expect(Expr.from('{1+2}').concat('3').wrap('', false)).toEqual('1+2\n+"3"');
   });
 
   test('should handle object-merge syntax', ({ expect }) => {
     expect(Expr.props({
       $: Expr.from('...x').append('...y'),
-    }, '')).toEqual('\n...x,\n...y,');
+    }, '')).toEqual('\n...x\n,...y,');
+  });
+
+  test('should parse and compile snippets', ({ expect }) => {
+    expect(Expr.from('{#snippet sum(a, b)}')).toEqual({
+      args: ['a', 'b'],
+      block: true,
+      expr: ['{#snippet sum(a, b)}'],
+      name: 'sum',
+      open: true,
+      raw: [],
+      tag: '#snippet',
+    });
   });
 
   test('should parse and compile conditionals', ({ expect }) => {
@@ -79,22 +94,19 @@ test.group('Expr', () => {
   });
 });
 
-test.group('parsing', t => {
-  t.each.teardown(() => {
-    td.reset();
-  });
-
+test.group('parsing', () => {
   test('should validate some elements', ({ expect }) => {
     expect(() => load('<title />')).toThrow(/Element 'title' should appear within the 'head'/);
     expect(() => load('<page><body /></page>')).toThrow(/Element 'body' cannot be nested inside 'page'/);
   });
 
   test('should validate given fragments', ({ expect }) => {
-    expect(() => load('<fragment>x</fragment>')).toThrow(/Fragment requires an unique name/);
+    expect(() => load('<fragment>x</fragment>')).toThrow(/Fragment requires a name/);
     expect(load('<fragment name=x>y</fragment>', 'frag.html').fragments).toEqual({
       x: {
         attributes: { '@location': 'frag.html:1:1', name: 'x' },
-        elements: [{ chunk: true, expr: [{ content: 'y', type: 'text' }], raw: [] }],
+        elements: [{ expr: [{ content: 'y', type: 'text' }], raw: [] }],
+        snippets: {},
         offset: {
           start: { column: 0, line: 0, index: 0 },
           end: 29,
@@ -105,6 +117,28 @@ test.group('parsing', t => {
         type: 'fragment',
       },
     });
+  });
+
+  test('should validate snippets and other tags', ({ expect }) => {
+    expect(() => load(`
+      {#snippet valid()}
+        {#snippet nested()}
+          INVALID
+        {/snippet}
+      {/snippet}
+    `, 'invalid-snippets.html')).toThrow(/Unexpected snippet/);
+
+    expect(() => load(`
+      {#snippet valid()}
+        INVALID
+      {/each}
+    `, 'invalid-snippets.html')).toThrow(/Unexpected '\/each'/);
+
+    expect(() => load(`
+      {#each [1, 2, 3]}
+        INVALID
+      {/if}
+    `, 'invalid-snippets.html')).toThrow(/Unexpected '\/if'/);
   });
 
   test('should extract nested scripts and styles', ({ expect }) => {
@@ -118,7 +152,7 @@ test.group('parsing', t => {
         </script>
       </body>
     `, 'page.html')).toEqual({
-      fragments: {},
+      context: 'module',
       markup: {
         attributes: { '@location': 'page.html:5:7' },
         content: [],
@@ -136,6 +170,8 @@ test.group('parsing', t => {
         offset: { column: 16, index: 94, line: 5 },
         root: 'body',
       }],
+      fragments: {},
+      snippets: {},
       styles: [],
       rules: [],
     });
@@ -148,8 +184,116 @@ test.group('parsing', t => {
       </html>
       !
     `, 'source.html').markup).toEqual({
-      content: [{ chunk: true, expr: [{ content: '\n        ...\n      ', type: 'text' }], raw: [] }, { chunk: true, expr: [{ content: '\n      !\n    ', type: 'text' }], raw: [] }],
+      content: [{ expr: [{ content: '\n        ...\n      ', type: 'text' }], raw: [] }, { expr: [{ content: '\n      !\n    ', type: 'text' }], raw: [] }],
       document: { lang: 'es-MX' },
+    });
+  });
+
+  test('should invalidate unpaired-blocks', ({ expect }) => {
+    expect(() => load(`<p>x<p>
+      {#if true}
+        <p>{m.n}</p>
+      {/if}
+    `, 'invalid.html')).toThrow(/Unexpected '\/if' after 3:21/);
+  });
+
+  test('should wrap nodes within snippets', ({ expect }) => {
+    expect(load(`
+      {#snippet sum(a, b)}
+        <i>{a} + {b} = {a + b}</i>
+      {/snippet}
+    `, 'snippets.html')).toEqual({
+      context: 'static',
+      fragments: {},
+      snippets: {
+        sum: {
+          args: ['a', 'b'],
+          body: [
+            {
+              attributes: { '@location': 'snippets.html:3:9' },
+              elements: [
+                {
+                  expr: [
+                    { type: 'code', content: { expr: ['{a}'], raw: [] } },
+                    { type: 'text', content: ' + ' },
+                    { type: 'code', content: { expr: ['{b}'], raw: [] } },
+                    { type: 'text', content: ' = ' },
+                    { type: 'code', content: { expr: ['{a + b}'], raw: [] } },
+                  ],
+                  raw: [],
+                },
+              ],
+              name: 'i',
+              offset: { close: 38, end: 62, start: { column: 8, index: 36, line: 2 } },
+              snippets: {},
+              type: 'element',
+            },
+          ],
+        },
+      },
+      markup: {
+        content: [
+          { expr: [], raw: [] },
+          { expr: [], raw: [] },
+        ],
+      },
+      rules: [],
+      styles: [],
+      scripts: [],
+    });
+  });
+
+  test('should attach snippets to nodes', ({ expect }) => {
+    expect(load(`
+      {#snippet sum(a, b)}
+        {a} + {b} = {a + b}
+      {/snippet}
+      <body>
+        <Nested>
+          {#snippet bar()}FIXME{/snippet}
+        </Nested>
+      </body>
+    `, 'snippets.html')).toEqual({
+      context: 'static',
+      fragments: {},
+      snippets: {
+        sum: {
+          args: ['a', 'b'],
+          body: [
+            { type: 'code', content: { expr: ['{a}'], raw: [] } },
+            { type: 'text', content: ' + ' },
+            { type: 'code', content: { expr: ['{b}'], raw: [] } },
+            { type: 'text', content: ' = ' },
+            { type: 'code', content: { expr: ['{a + b}'], raw: [] } },
+          ],
+        },
+      },
+      markup: {
+        attributes: { '@location': 'snippets.html:5:7' },
+        content: [
+          { expr: [], raw: [] },
+          {
+            attributes: {
+              '@location': 'snippets.html:6:9',
+            },
+            elements: [
+              { expr: [], raw: [] },
+            ],
+            name: 'Nested',
+            offset: { close: 101, end: 162, start: { column: 8, index: 94, line: 5 } },
+            snippets: {
+              bar: {
+                args: [],
+                body: [{ content: 'FIXME', type: 'text' }],
+              },
+            },
+            type: 'element',
+          },
+        ],
+      },
+      rules: [],
+      styles: [],
+      scripts: [],
     });
   });
 
@@ -167,14 +311,17 @@ test.group('parsing', t => {
         h1 { color: red; }
       </style>
     `, 'markup.html')).toEqual({
+      context: 'module',
       fragments: {},
+      snippets: {},
       markup: {
         content: [
           {
             attributes: { '@location': 'markup.html:9:7' },
             elements: [
-              { chunk: true, expr: [{ content: 'Got: ', type: 'text' }, { content: { expr: ['{value}'], raw: [] }, type: 'code' }], raw: [] },
+              { expr: [{ content: 'Got: ', type: 'text' }, { content: { expr: ['{value}'], raw: [] }, type: 'code' }], raw: [] },
             ],
+            snippets: {},
             name: 'h1',
             type: 'element',
             offset: {
@@ -187,7 +334,8 @@ test.group('parsing', t => {
         doctype: { html: true },
         metadata: [{
           attributes: {},
-          elements: [{ chunk: true, expr: [{ content: 'OSOM', type: 'text' }], raw: [] }],
+          elements: [{ expr: [{ content: 'OSOM', type: 'text' }], raw: [] }],
+          snippets: {},
           offset: {
             start: { column: 8, line: 3, index: 44 },
             end: 63,

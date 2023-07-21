@@ -8,7 +8,7 @@ function createIterator(max, limit) {
   const c = max || randomIntFromInterval(10, 15);
 
   let i = 0;
-  const it = async function* loop() {
+  const it = async function* inc() {
     for (;;) {
       yield i++;
       if (i >= c) break;
@@ -65,7 +65,7 @@ iframe {
 <a href="/loops" target="_self">Browser reload...</a>
 
 <p>{limit} - {count}</p>
-<fragment tag="ul" name="data" interval="20" limit={limit}>
+<fragment tag="ul" name="loop" interval="20" limit={limit}>
 {#each data as x}
   <li class:red="{x < limit}" class:odd="{x % 2 === 0}">{x + 1}{x < count - 1 ? ',' : ''}&nbsp;</li>
 {/each}

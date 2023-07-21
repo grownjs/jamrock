@@ -1,6 +1,7 @@
-const RE_DASH_CASE = /-([a-z])/g;
+const RE_DASH_CASE = /[_-]([a-zA-Z])/g;
 const RE_CAMEL_CASE = /(?<=[a-z])[A-Z]/;
 const RE_FIXED_NAMES = /^[a-zA-Z][\w:-]*$/;
+const RE_TO_SNAKE_CASE = /[_\W]+/g;
 
 export class Is {
   static num(value) {
@@ -64,7 +65,7 @@ export function merge(target, ...objs) {
   return copy;
 }
 
-export function stack(source, line, col) {
+export function stack(source, line, col, ok) {
   const lines = source.split('\n');
   const idx = typeof line === 'undefined' ? lines.length : +line;
   const pos = typeof col === 'undefined' ? lines[lines.length - 1].length : +col;
@@ -75,7 +76,7 @@ export function stack(source, line, col) {
       const out = [i + 1 === idx ? '⚠' : ' ', num, `| ${x}`].join(' ');
       const length = pos + num.toString().length + 5;
 
-      return i === idx ? `${Array.from({ length }).join('~')}^\n${out}` : out;
+      return !ok && i === idx ? `${Array.from({ length }).join('~')}^\n${out}` : out;
     })
     .slice(Math.max(0, idx - 3), Math.max(3, Math.min(lines.length, idx + 3)))
     .join('\n');
@@ -101,12 +102,16 @@ export function dashCase(value) {
   return value.replace(RE_CAMEL_CASE, '-$&').toLowerCase();
 }
 
+export function snakeCase(value) {
+  return value.replace(RE_TO_SNAKE_CASE, '_').toLowerCase();
+}
+
 export function camelCase(value) {
   return value.replace(RE_DASH_CASE, (_, chunk) => chunk.toUpperCase());
 }
 
 export function pascalCase(value) {
-  return ucFirst(camelCase(value));
+  return ucFirst(camelCase(value.replace(/\W/g, '-')));
 }
 
 export function realpath(base, filepath) {

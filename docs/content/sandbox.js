@@ -1,11 +1,19 @@
-import { WebContainer } from 'https://cdn.skypack.dev/@webcontainer/api';
+import { WebContainer } from '@webcontainer/api';
 
-import xterm from 'https://cdn.skypack.dev/xterm';
-import AnsiUp from 'https://cdn.skypack.dev/ansi_up';
-import untar from 'https://cdn.skypack.dev/js-untar';
-import pako from 'https://cdn.skypack.dev/pako';
+import { AnsiUp } from 'ansi_up';
+import untar from 'js-untar';
+import xterm from 'xterm';
+import pako from 'pako';
 
-//  FIXME: generate these files through .html sources...
+let jamfiles;
+fetch('jamrock-0.0.0.tgz').then(res => res.arrayBuffer())
+  .then(pako.inflate)
+  .then(arr => arr.buffer)
+  .then(untar)
+  .then(_files => {
+    jamfiles = _files;
+  });
+
 const isDark = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
 
 let theme = window.localStorage.theme || '';
@@ -34,163 +42,28 @@ if (!theme) {
 }
 loadTheme();
 
-// we can build out this tree with pure js...
-const files = {
-  src: {
-    directory: {
-      'loops+page.html': {
-        file: {
-          contents: `<script>
-function randomIntFromInterval(min, max) { // min and max included
-  return Math.floor(Math.random() * (max - min + 1) + min);
-}
+const tree = document.querySelector('[data-tree="/"]');
+const selected = tree.dataset.selected;
+const files = {};
 
-function createIterator(max, limit) {
-  const l = limit || randomIntFromInterval(3, 5);
-  const c = max || randomIntFromInterval(10, 15);
+function walkNodes(root, parent) {
+  root.childNodes.forEach(node => {
+    if (node.tagName === 'LI') {
+      if (node.dataset.leaf) {
+        const contents = node.firstElementChild.querySelector('span').dataset.body;
 
-  let i = 0;
-  const it = async function* loop() {
-    for (;;) {
-      yield i++;
-      if (i >= c) break;
+        parent[node.dataset.leaf.split('/').pop()] = { file: { contents } };
+      } else {
+        const tree = node.firstElementChild.querySelector('details > ul[data-tree]');
+        const directory = {};
+
+        parent[tree.dataset.tree] = { directory };
+        walkNodes(tree, directory);
+      }
     }
-  };
-
-  return [it, l, c];
-}
-
-const [data, limit, count] = createIterator(10);
-</script>
-<style>ul{margin:0;display:flex;padding:0;list-style:none;flex-wrap:wrap} ul > .red{color:red}.odd{color:blue}</style>
-<style>
-.rev{display:flex;flex-wrap:wrap-reverse;flex-direction:row-reverse;}
-</style>
-
-<style global>
-@keyframes fade-in {
-  from { opacity: 0; }
-}
-
-@keyframes fade-out {
-  to { opacity: 0; }
-}
-
-@keyframes slide-from-right {
-  from { transform: translateX(30px); }
-}
-
-@keyframes slide-to-left {
-  to { transform: translateX(-30px); }
-}
-
-::view-transition-old(root) {
-  animation: 90ms cubic-bezier(0.4, 0, 1, 1) both fade-out,
-    300ms cubic-bezier(0.4, 0, 0.2, 1) both slide-to-left;
-}
-
-::view-transition-new(root) {
-  animation: 210ms cubic-bezier(0, 0, 0.2, 1) 90ms both fade-in,
-    300ms cubic-bezier(0.4, 0, 0.2, 1) both slide-from-right;
-}
-
-iframe {
-  outline: 1px dashed silver;
-  width: 100%;
-}
-</style>
-
-<textarea @wait=1200>STATIC &lt;b&gt;OSOM&lt;/b&gt;</textarea>
-
-<button onclick="Jamrock.Browser.reload()">Jamrock reload!</button>
-
-<a href="/loops" target="_self">Browser reload...</a>
-
-<p>{limit} - {count}</p>
-<fragment tag="ul" name="data" interval="20" limit={limit}>
-{#each data as x}
-  <li class:red="{x < limit}" class:odd="{x % 2 === 0}">{x + 1}{x < count - 1 ? ',' : ''}&nbsp;</li>
-{/each}
-</fragment>
-`,
-          },
-        },
-        'index+page.html': {
-          file: {
-            contents: `<script>
-  import { method, request } from 'jamrock:conn';
-
-  export let data;
-
-  export default {
-    use: ['csrf'],
-    POST: true,
-  };
-</script>
-
-<head>
-  <title>OSOM</title>
-</head>
-
-<form @multipart>
-  <input type="text" name="f" />
-  <input type="submit" />
-</form>
-
-<pre>{JSON.stringify(data,null,2)}</pre>
-
-<button onclick="Jamrock.Browser.reload()">Jamrock reload!</button>
-<button onclick="location.reload()">Browser reload!</button>
-`,
-          },
-        },
-      },
-    },
-
-    'package.json': {
-      file: {
-        contents: JSON.stringify({
-          name: 'example-app',
-          main: 'index.js',
-          engines: {
-            node: '>=18.12.1',
-          },
-          type: 'module',
-          scripts: {
-            start: 'node .',
-          },
-        }, null, 2),
-      },
-    },
-
-    'index.js': {
-      file: {
-        contents: `import env from 'jamrock/nodejs';
-
-env({
-  uws: false,
-  watch: true,
-  redis: false,
-  fswatch: false,
-  src: './src',
-  dest: './dist',
-}).serve();
-`.replaceAll('//cdn.skypack.dev/', ''),
-    },
-  },
-};
-
-// below, all this boilerplate can be done apart.. and then,
-// discover stuff from the actual page...
-
-let jamfiles;
-fetch('jamrock-0.0.0.tgz').then(res => res.arrayBuffer())
-  .then(pako.inflate)
-  .then(arr => arr.buffer)
-  .then(untar)
-  .then(_files => {
-    jamfiles = _files;
   });
+}
+walkNodes(tree, files);
 
 const editor = window.ace.edit('input');
 
@@ -198,13 +71,19 @@ editor.session.setTabSize(2);
 editor.setShowPrintMargin(false);
 editor.session.setUseWorker(false);
 
-editor.setValue(files.src.directory['index+page.html'].file.contents);
+editor.setValue(files[selected].file.contents);
 editor.clearSelection();
 editor.gotoLine(1);
 editor.focus();
 
 editor.setTheme('ace/theme/pastel_on_dark');
-editor.session.setMode('ace/mode/html');
+editor.session.setMode(selected.includes('.html')
+  ? 'ace/mode/html'
+  : selected.includes('.json')
+    ? 'ace/mode/json'
+    : selected.includes('.css')
+      ? 'ace/mode/css'
+      : 'ace/mode/javascript');
 
 let webcontainerInstance;
 
@@ -212,7 +91,7 @@ const src = document.querySelector('.files');
 const stdout = document.querySelector('.stdout');
 const iframeEl = document.querySelector('iframe');
 
-let current = './src/index+page.html';
+let current = `./${selected}`;
 src.addEventListener('click', e => {
   if (!current) return;
   if (e.target.tagName === 'INPUT') {
@@ -315,7 +194,7 @@ let appProcess;
 async function startDevServer() {
   if (appProcess) appProcess.kill();
 
-  appProcess = await webcontainerInstance.spawn('node', ['.']);
+  appProcess = await webcontainerInstance.spawn('npm', ['start']);
   appProcess.output.pipeTo(new WritableStream({
     write(data) {
       debug(data);
@@ -365,7 +244,7 @@ window.addEventListener('load', async () => {
           startDevServer();
         }
       }
-    }, 120);
+    }, 1260);
   });
 
   const exitCode = await installDependencies();

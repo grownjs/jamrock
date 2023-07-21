@@ -1,6 +1,6 @@
 ---
 $render: ../layout.pug
-includes: !include "**/*.html"
+includes: !include "how-to/**/*.{js,txt,html}"
 ---
 
 ## It works.

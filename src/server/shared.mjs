@@ -1,6 +1,5 @@
-import { Template, Compiler, Runtime, Handler, Markup, Util } from 'jamrock';
-
-import { colors as $, ms } from './utils.mjs';
+// import { Template, Compiler, Runtime, Handler, Markup, Util } from 'jamrock';
+import { Template, Runtime, Handler, Markup, Util } from '../main.mjs';
 
 import { createQueue } from './pubsub.mjs';
 import { createFSWatcher } from './fswatch.mjs';
@@ -78,7 +77,7 @@ export const createWatcher = ({ fs }, watcher, compiler) => {
 
     if (type === 'unlink') {
       delete compiler[FILES_PROPERTY][src];
-      console.log(`  ${$.red('delete')} ${$.gray(src)}`);
+      console.log(`  ${Util.$.red('delete')} ${Util.$.gray(src)}`);
     }
 
     Object.entries(compiler[FILES_PROPERTY]).forEach(([k, v]) => {
@@ -112,17 +111,23 @@ export const createWatcher = ({ fs }, watcher, compiler) => {
       if (reloading) return;
       if (req.url.split('/').pop().includes('.')) return;
       if (req.method === 'GET') {
-        const url = req.url.charAt() === '/' ? req.url : new URL(req.url).pathname;
-        const found = compiler.matches(url);
+        try {
+          const url = req.url.charAt() === '/' ? req.url : new URL(req.url).pathname;
+          const found = compiler.matches(url);
 
-        await compiler.save(found.routes);
+          await compiler.save(found.routes);
 
-        if (found.route) {
-          if (!compiler.has(found.route.layout)) sources.push(found.route.layout);
-          if (!compiler.has(found.route.error)) sources.push(found.route.error);
-          sources.push(found.route.src);
-          reloading = true;
-          await sync(true);
+          if (found.route) {
+            if (found.route.middleware && !compiler.has(found.route.middleware)) sources.push(found.route.middleware);
+            if (found.route.layout && !compiler.has(found.route.layout)) sources.push(found.route.layout);
+            if (found.route.error && !compiler.has(found.route.error)) sources.push(found.route.error);
+            if (found.route.src) sources.push(found.route.src);
+            reloading = true;
+            await sync(true);
+          }
+        } catch (e) {
+          console.log('E_REBUILD', e);
+          reloading = false;
         }
       }
     },
@@ -163,6 +168,16 @@ export const createCompiler = ({ fs, path }, options, external) => {
         root: undefined,
       })),
     }));
+  }
+
+  function handlers() {
+    const api = Template.glob(`${options.src}/**/+server.mjs`);
+    const pages = Template.glob(`${options.src}/**/*.html`);
+
+    const sources = pages.concat(api).map(x => x.replace(cwd, '.'));
+    const routes = Handler.controllers(options.src, sources.filter(x => /\+(?:page|error|layout|server)/.test(x)));
+
+    return { sources, routes };
   }
 
   let generators;
@@ -209,25 +224,29 @@ export const createCompiler = ({ fs, path }, options, external) => {
       }
 
       let mod = await Template.import(path.resolve(v.filepath), true);
-      mod = mod.default || mod;
+      if (!k.includes('+server')) {
+        mod = mod.default || mod;
 
-      if (v.filepath.includes('.client') || v.filepath.includes('.server')) {
-        mod.destination = v.filepath;
+        if (v.filepath.includes('.client') || v.filepath.includes('.server')) {
+          mod.destination = v.filepath;
+        }
+
+        this[FILES_PROPERTY][v.filepath] = { module: mod, source: Template.read(k) };
+        Template.cache.set(v.filepath, this[FILES_PROPERTY][v.filepath]);
+      } else {
+        Template.cache.set(v.filepath, this[FILES_PROPERTY][v.filepath] = { module: mod });
       }
-
-      this[FILES_PROPERTY][v.filepath] = { module: mod, source: Template.read(k) };
-      Template.cache.set(v.filepath, this[FILES_PROPERTY][v.filepath]);
     }
   }
 
   function matches(url) {
-    const paths = Template.glob(`${options.src}/**/*+{page,error,layout}.html`).map(x => x.replace(cwd, '.'));
-    const routes = Handler.controllers(options.src, paths);
+    const { routes } = handlers();
 
     for (const route of routes) {
       if (route.verb === 'GET' && route.re.test(url)) {
-        const key = `${route.src}@mtime`;
-        const mtime = fs.statSync(route.src).mtime;
+        const _ = route.src || route.middleware;
+        const key = `${_}@mtime`;
+        const mtime = fs.statSync(_).mtime;
         const cached = cache.get(key);
 
         if (!cached || cached < mtime) {
@@ -250,19 +269,26 @@ export const createCompiler = ({ fs, path }, options, external) => {
       const src = file.replace(cwd, '.');
       const key = src.replace('./', '');
 
+      if (key.includes('.mjs')) {
+        this[FILES_PROPERTY][key] = {
+          filepath: file,
+        };
+        continue;
+      }
+
       if (!imported.includes(key)) {
         try {
-          console.log($.bold(key));
+          console.log(Util.$.bold(key));
 
-          const code = Template.read(src);
-          const result = await Compiler.get(src, code, { generators, auto: true }, imported);
+          // FIXME: this is missing...
+          // const code = Template.read(src);
+          const result = {}; // await Compiler.get(src, code, { generators, auto: true }, imported);
 
           result.forEach(chunk => {
             const destFile = path.join(options.dest, path.relative(options.src, chunk.src))
-              .replace('.svelte', chunk.client ? '.client.mjs' : '.server.mjs')
               .replace('.html', chunk.bundle ? '.client.mjs' : '.server.mjs');
 
-            console.log(`  ${$.green('write')} ${$.gray(path.relative('.', destFile))}`);
+            console.log(`  ${Util.$.green('write')} ${Util.$.gray(path.relative('.', destFile))}`);
 
             results.push([chunk, destFile]);
           });
@@ -286,12 +312,11 @@ export const createCompiler = ({ fs, path }, options, external) => {
       };
     });
 
-    console.log(`${results.length > 0 ? results.length : 'No'} file${results.length === 1 ? '' : 's'} processed (${ms(start)})`);
+    console.log(`${results.length > 0 ? results.length : 'No'} file${results.length === 1 ? '' : 's'} processed (${Util.ms(start)})`);
   }
 
   async function precompile() {
-    const sources = Template.glob(`${options.src}/**/*.html`);
-    const routes = Handler.controllers(options.src, sources.filter(x => /\+(?:page|error|layout)/.test(x)));
+    const { sources, routes } = handlers();
 
     await this.recompile(sources);
     await this.save(routes);
@@ -341,12 +366,6 @@ export const createTranspiler = ({ createMortero }) => async function transpile(
         minify: process.env.NODE_ENV === 'production',
         modules: params.type === 'module',
 
-        svelte: {
-          css: 'external',
-          generate: params.server ? 'ssr' : 'dom',
-          hydratable: !params.server,
-        },
-
         install: process.env.NODE_ENV === 'development',
 
         progress: false,
@@ -378,8 +397,13 @@ export function createEnvironment({ fs, path }, options, external) {
 
   const compiler = createCompiler({ fs, path }, options, external);
 
+  const location = {
+    host: options.host || 'localhost:8000',
+    port: options.port || '8000',
+  };
+
   async function serve() {
-    this.options = { ...options };
+    this.options = { ...options, location };
 
     if (options.watch) {
       const watcher = await createFSWatcher(options, external.getChokidarModule);
@@ -407,7 +431,10 @@ export function createEnvironment({ fs, path }, options, external) {
   }
 
   function locate(src) {
-    const mod = compiler[FILES_PROPERTY][src];
+    const key = src.replace('./', '');
+    const mod = compiler[FILES_PROPERTY][key];
+
+    if (!mod) throw new Error(`Could not locate '${key}' file`);
 
     if (compiler[FILES_PROPERTY][mod.filepath]) {
       return compiler[FILES_PROPERTY][mod.filepath].module;
@@ -415,8 +442,17 @@ export function createEnvironment({ fs, path }, options, external) {
     return mod.module;
   }
 
+  function request(params = {}) {
+    return new Request(`http://${location.host}${params.url || '/'}`, {
+      duplex: 'half',
+      body: params.body,
+      method: params.method || 'GET',
+      headers: { ...location, ...params.headers },
+    });
+  }
+
   return Object.defineProperties({
-    serve, build, locate, compiler,
+    serve, build, locate, request, compiler,
   }, {
     files: { get: () => compiler[FILES_PROPERTY] },
     routes: { get: () => compiler[ROUTES_PROPERTY] },
@@ -457,7 +493,7 @@ export async function createTestingEnvironment({ fs, path }, options, external) 
       });
 
       const conn = await createConnection(store, options, request, location, teardown);
-      const result = await Template.resolve(mod, mod.src, { conn, route: params.route || {} }, props, Handler.middleware);
+      const result = await Template.execute(mod, mod.src, { conn, route: params.route || {} }, props, Handler.middleware);
 
       // FIXME: how to deal with responses? as this method will invoke the component
       // we should be allowed to bypass some stuff if we want full-coverage...
@@ -469,6 +505,7 @@ export async function createTestingEnvironment({ fs, path }, options, external) 
       const key = Object.keys(env.files).find(x => x.includes(name));
 
       if (!key) {
+        console.log('GOT', env.files);
         throw new Error(`Not found '${name}'`);
       }
 

@@ -37,17 +37,22 @@ export async function createConnection(store, options, request, location, teardo
   response.cookies.set('sid', { value: request.sid = sid });
   request.query = Object.fromEntries(new URLSearchParams(qs));
   request.type = (headers['content-type'] || '').split(';')[0];
+  request.fields = { ...request.query };
 
+  let parsed;
   Object.defineProperty(request, 'parseBody', {
     async value() {
-      if (!request.fields) {
+      if (!parsed) {
+        let values = {};
         if (request.type === 'application/x-www-form-urlencoded') {
-          request.fields = Object.fromEntries(new URLSearchParams(await request.text()));
+          values = Object.fromEntries(new URLSearchParams(await request.text()));
         } else if (request.type === 'multipart/form-data') {
-          request.fields = Object.fromEntries(await request.formData());
+          values = Object.fromEntries(await request.formData());
         } else if (request.type === 'application/json') {
-          request.fields = await request.json();
+          values = await request.json();
         }
+        Object.assign(request.fields, values);
+        parsed = true;
       }
       return request.fields;
     },
@@ -121,6 +126,9 @@ export async function createConnection(store, options, request, location, teardo
 
       session.flash = session.flash || [];
       session.flash.push({ type, value });
+    },
+    raise(code, message) {
+      throw getError(code, message);
     },
     get aborted() {
       return request.signal.aborted;

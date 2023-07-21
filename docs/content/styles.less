@@ -77,6 +77,8 @@ pre > code[data-source]::before {
 }
 .app > div:first-child {
   flex: 1 0 auto;
+  margin: auto; 
+  max-width: 1260px;
 }
 .docs {
   width: 100%;
@@ -84,7 +86,7 @@ pre > code[data-source]::before {
 }
 .files {
   color: #ECECEC;
-  width: 220px;
+  width: 320px;
   font-size: 12px;
   background-color: #353030;
   border-right: 1px solid rgba(0, 0, 0, .3);
@@ -94,6 +96,18 @@ pre > code[data-source]::before {
   margin: 0;
   padding: 0;
   list-style-type: none;
+}
+.files ul ul label,
+.files ul ul summary {
+  padding-left: 16px;
+}
+.files ul ul ul label,
+.files ul ul ul summary {
+  padding-left: 32px;
+}
+.files ul ul ul ul label,
+.files ul ul ul ul summary {
+  padding-left: 48px;
 }
 .files input {
   opacity: 0;
@@ -112,7 +126,7 @@ pre > code[data-source]::before {
   outline: none;
 }
 .files ul ul label {
-  padding-left: 16px;
+  xpadding-left: 16px;
 }
 .files label:hover,
 .files summary:hover {
@@ -202,6 +216,7 @@ pre > code[data-source]::before {
 }
 .frame svg {
   fill: currentColor;
+  vertical-align: middle;
 }
 .search {
   flex: 1 0 auto;

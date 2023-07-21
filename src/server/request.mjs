@@ -1,7 +1,8 @@
-import { Template, Handler, Markup, Util } from 'jamrock';
-import { generateClientCode } from 'jamrock/client';
+import { Template, Handler, Markup, Util } from '../main.mjs';
+// import { Template, Handler, Markup, Util } from 'jamrock';
+// import { generateClientCode } from 'jamrock/client';
 
-import { set } from './utils.mjs';
+function generateClientCode() {}
 
 export function parseCookies(cookie) {
   if (!cookie) return {};
@@ -119,16 +120,7 @@ export function getRawBody(req, limit) {
 export function getClientCode(conn, patch, baseURL, _uuid, _immediate) {
   const uuid = _uuid || conn.headers['request-uuid'] || `0.${Date.now().toString(36).replace(/.{3}/g, '$&-')}`;
   const state = JSON.stringify({ uuid, patch, csrf: conn.csrf_token, method: conn.method });
-  const client = `<script type=importmap>
-  {
-    "imports": {
-      "svelte": "https://cdn.skypack.dev/svelte",
-      "svelte/internal": "https://cdn.skypack.dev/svelte/internal",
-      "svelte/internal/disclose-version": "https://cdn.skypack.dev/svelte/internal/disclose-version"
-    }
-  }
-</script>
-<script>(${generateClientCode.toString().replace(/𝐢𝐦𝐩𝐨𝐫𝐭/g, 'import')})(${state}, ${!!_immediate});</script>
+  const client = `<script>(${generateClientCode.toString().replace(/𝐢𝐦𝐩𝐨𝐫𝐭/g, 'import')})(${state}, ${!!_immediate});</script>
 `.replaceAll('./', baseURL);
 
   return { uuid, client };
@@ -160,8 +152,11 @@ export function create404(env, conn, client, message) {
   dd + dt::before { content: ''; position: absolute; width: 100%; border-top: 1px dashed rgba(0, 0, 0, .2); top: -.25rem }
 </style>`;
 
-  const config = `<p>Loaded config</p><dl>${Object.entries(env.options).map(([k, v]) => `<dt>${k}</dt><dd>${v}</dd>`).join('')}</dl>`;
-  const environment = `<p>Loaded env</p><dl>${Object.entries(conn.env).map(([k, v]) => `<dt>${k}</dt><dd>${v}</dd>`).join('')}</dl>`;
+  const config = `<p>Loaded config</p><dl>${Object.entries(env.options)
+    .map(([k, v]) => `<dt>${k}</dt><dd>${typeof v === 'object' ? JSON.stringify(v) : v}</dd>`).join('')}</dl>`;
+
+  const environment = `<p>Loaded env</p><dl>${Object.entries(conn.env)
+    .map(([k, v]) => `<dt>${k}</dt><dd>${v}</dd>`).join('')}</dl>`;
 
   return `${style}${message}<table><caption>Available routes</caption>${env.routes.map(route => `
 <tr><td align=right style="width:1%">${route.verb}</td><td>${
@@ -172,18 +167,10 @@ export function create404(env, conn, client, message) {
 }
 
 export async function createBody(env, conn, clients, { uuid, client, matches }) {
+  let prelude = '';
   let status;
   let body;
   try {
-    const src = matches.src.replace('./', '');
-
-    if (!env.files[src]) {
-      return {
-        status: 404,
-        body: create404(env, conn, client, `Module not loaded, given '${src}'`),
-      };
-    }
-
     const ctx = {
       conn,
       clients,
@@ -191,44 +178,76 @@ export async function createBody(env, conn, clients, { uuid, client, matches }) 
       route: matches,
       routes: env.routes,
       streaming: env.streaming,
-      template: env.files[src].source,
     };
 
     ctx.uuid = uuid;
+
     conn.req.uuid = uuid;
-    conn.routes = ctx.routes;
-    conn.current_module = src;
+    conn.req.params = matches.params;
     conn.current_path = matches.path;
+    conn.routes = ctx.routes;
+
+    let mod;
+    if (matches.src) {
+      conn.current_module = matches.src.replace('./', '');
+      mod = env.locate(conn.current_module);
+    }
+
+    if (matches.middleware) {
+      conn.current_module = conn.current_module || matches.middleware.replace('./', '');
+      conn.current_options = (mod && mod.opts) || {};
+
+      const set = [matches.middleware].concat(matches.middlewares || []);
+      const result = await Handler.middlewares(ctx, matches, set.map(env.locate));
+
+      if (result) {
+        return {
+          status: conn.status_code,
+          body: result,
+        };
+      }
+    }
+
+    if (!matches.src) {
+      return {
+        status: 404,
+        body: create404(env, conn, client, 'Page not found'),
+      };
+    }
+
+    if (!env.files[conn.current_module]) {
+      return {
+        status: 404,
+        body: create404(env, conn, client, `Module not loaded, given '${conn.current_module}'`),
+      };
+    }
+
+    ctx.template = env.files[conn.current_module].source;
 
     ctx.route.layout = Util.Is.str(ctx.route.layout)
-      ? env.locate(ctx.route.layout.replace(`${env.cwd}/`, ''))
+      ? env.locate(ctx.route.layout)
       : ctx.route.layout;
 
     ctx.route.error = Util.Is.str(ctx.route.error)
-      ? env.locate(ctx.route.error.replace(`${env.cwd}/`, ''))
+      ? env.locate(ctx.route.error)
       : ctx.route.error;
 
-    const mod = env.locate(conn.current_module);
-    const file = env.files[src].filepath;
-    const opts = (mod && mod.opts) || {};
+    const file = env.files[conn.current_module].filepath;
 
     if (!mod) {
       throw new Error(`Missing '${conn.current_module}' module`);
     }
 
     let props = {};
-    if (['PUT', 'POST', 'PATCH'].includes(conn.method) && (opts.body || mod.exported.length > 0)) {
-      await conn.req.parseBody();
+    if (mod.exported && mod.exported.length > 0) {
+      props = Util.pick({ ...conn.req.fields, ...conn.req.params }, mod.exported);
 
-      if (mod.exported.includes('data')) {
-        props.data = conn.req.fields;
-      }
-    }
-
-    if (!conn.req.fields) conn.req.fields = {};
-
-    if (opts.use && opts.use.includes('csrf')) {
-      conn.req.csrfProtect();
+      Object.keys(conn.req.fields).forEach(key => {
+        if (key.includes('.') && mod.exported.includes(key.split('.')[0])) {
+          Util.set(props, key, conn.req.fields[key]);
+          delete conn.req.fields[key];
+        }
+      });
     }
 
     if (conn.method === 'POST' && conn.req.fields._method) {
@@ -241,16 +260,6 @@ export async function createBody(env, conn, clients, { uuid, client, matches }) 
       if (conn.headers['request-from']) conn.req.fields._self = conn.headers['request-from'];
     }
 
-    if (conn.method === 'PATCH' && mod.exported.length > 0) {
-      Object.assign(props, Object.keys(conn.req.fields).reduce((memo, key) => {
-        if (key !== 'data' && mod.exported.includes(key.split('.')[0])) {
-          set(memo, key, conn.req.fields[key]);
-          delete conn.req.fields[key];
-        }
-        return memo;
-      }, {}));
-    }
-
     body = await Template.resolve(mod, file, ctx, props, Handler.middleware);
 
     if (body instanceof Response) {
@@ -258,10 +267,13 @@ export async function createBody(env, conn, clients, { uuid, client, matches }) 
     }
 
     if (!Util.Is.str(body)) {
+      prelude = body.prelude ? body.prelude.join(';') : '';
+
       if (conn.is_xhr) {
         body = Markup.encode(`{${[
-          `"scripts":${JSON.stringify(Object.values(body.scripts))}`,
-          `"styles":${JSON.stringify(Object.values(body.styles))}`,
+          `"fragments":${JSON.stringify(body.fragments)}`,
+          `"scripts":${JSON.stringify(body.scripts)}`,
+          `"styles":${JSON.stringify(body.styles)}`,
           `"attrs":${JSON.stringify(body.attrs)}`,
           `"head":${Util.cleanJSON(body.head)}`,
           `"body":${Util.cleanJSON(body.body)}`,
@@ -272,6 +284,10 @@ export async function createBody(env, conn, clients, { uuid, client, matches }) 
           'content-type': 'application/json',
           'content-length': body.length,
         });
+
+        if (conn.store) {
+          conn.store.set(conn.req.uuid, prelude);
+        }
 
         return { body, headers, cookies: false, status: conn.status_code || 200 };
       }
@@ -289,6 +305,7 @@ export async function createBody(env, conn, clients, { uuid, client, matches }) 
     status = e.status || 500;
     body = createError(e, env, client);
   }
+  if (prelude) body = body.replace(/=>null/, () => `=>{${prelude}}`);
   return { body, status };
 }
 
@@ -296,32 +313,50 @@ export async function createBody(env, conn, clients, { uuid, client, matches }) 
 export async function createModuleResponse(env, conn) {
   const key = conn.path_info.slice(1).join('/');
 
+  // const state = await conn.store.get(conn.uuid);
+  // console.log('PRELUDE', { state });
+
   let mod = '';
   if (key.includes(':')) {
     const [file] = key.split(':');
-    const state = await conn.store.get(key);
-    const [props, locals, slots] = (state || '{}\0{}\0').split('\0');
+    const src = file.replace('.html.', '.html:');
+    // const state = await conn.store.get(key);
+    // const [props, locals, slots] = (state || '{}\0{}\0').split('\0');
 
-    mod = `export const __module = await window.Jamrock.Components.resolve("${file}")`;
-    mod = `${mod};\nexport const __state = {props:${props},\nslots:{${slots}},\nscope:${locals}};`;
+    mod = Template.read(env.files[src].filepath.replace('.server', '.client'));
+    mod = `${mod.replace('export default', 'export const __module =')}`;
 
-    if (!('data' in conn.query_params)) {
-      conn.store.set(file, Date.now());
-      mod = Template.read(env.files[file].filepath.replace('.server', '.client'));
-      mod = `${mod.replace('export default', 'export const __module =')}`;
-      mod += `\nexport const __state = {props:${props},\nslots:{${slots}},scope:${locals}};`;
-    }
+    console.log('COMPONENT', src);
+
+    // mod = `export const __module = await window.Jamrock.Components.resolve("${file}")`;
+    // mod = `${mod};\nexport const __state = {props:${props},\nslots:{${slots}},\nscope:${locals}};`;
+
+    // if (!('data' in conn.query_params)) {
+    //   conn.store.set(file, Date.now());
+    //   mod = Template.read(env.files[file].filepath.replace('.server', '.client'));
+    //   mod = `${mod.replace('export default', 'export const __module =')}`;
+    //   mod += `\nexport const __state = {props:${props},\nslots:{${slots}},scope:${locals}};`;
+    // }
+  } else if (key.includes('@')) {
+    // const [base, source] = key.split('@')
+    // const [ref, ...uuid] = base.split('.');
+    // const name = `${ref}@${uuid.join('.')}${source}`;
+    // const [props, code] = await Promise.all([conn.store.get(`${name}?data`), conn.store.get(`${name}?mod`)]);
+    console.log('MODULE', key);
+
+    // // here we could also rewrite imports, or shit... to connect with existing runtime?
+    // mod = `export const __hook = ${'data' in conn.query_params
+    //   ? `await window.Jamrock.Components.resolve("${conn.request_path}")`
+    //   : code};\n`;
+    // mod += `export const __data = {uuid:"${uuid.join('.')}",props:${props}};`;
   } else {
-    const [base, source] = key.split('@');
-    const [ref, ...uuid] = base.split('.');
-    const name = `${ref}@${uuid.join('.')}/${source}`;
-    const [props, code] = await Promise.all([conn.store.get(`${name}?data`), conn.store.get(`${name}?mod`)]);
+    console.log('STORE', key);
 
-    // here we could also rewrite imports, or shit... to connect with existing runtime?
-    mod = `export const __hook = ${'data' in conn.query_params
-      ? `await window.Jamrock.Components.resolve("${conn.request_path}")`
-      : code};\n`;
-    mod += `export const __data = {uuid:"${uuid.join('.')}",props:${props}};`;
+    mod = conn.store.get(key);
+  }
+
+  if (!mod) {
+    mod = '/* not found */';
   }
 
   return [mod, 200, null, new Headers({
@@ -331,8 +366,13 @@ export async function createModuleResponse(env, conn) {
 }
 
 export async function createPageResponse(env, conn, clients) {
-  const matches = env.routes.find(route => Handler.match(conn, route, ['PATCH']));
   const { uuid, client } = getClientCode(conn, env.version, conn.base_url);
+
+  let matches;
+  env.routes.some(route => {
+    matches = Handler.match(conn, route, ['PATCH']);
+    return matches;
+  });
 
   // eslint-disable-next-line no-nested-ternary
   let status = matches ? 502 : conn.method === 'GET' ? 404 : 405;
@@ -356,7 +396,9 @@ export async function createPageResponse(env, conn, clients) {
 }
 
 export async function createResponse(env, conn, clients) {
-  if (conn.path_info[0] === '@') return createModuleResponse(env, conn);
+  if (conn.path_info[0] === '_' && conn.path_info.length > 1) {
+    return createModuleResponse(env, conn);
+  }
   return createPageResponse(env, conn, clients);
 }
 

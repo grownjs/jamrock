@@ -1,6 +1,6 @@
 ---
 $render: ../../layout.pug
-includes: !include "*.html"
+includes: !include "**/*.{js,txt,html}"
 ---
 
 allow globs aswell...
@@ -8,6 +8,6 @@ allow globs aswell...
 ## How it works?
 
 ```html
-//@ example-1.html
-//! example-1.html
+//@ src/export+page.html
+//! src/export+page.html
 ```

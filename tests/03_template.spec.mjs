@@ -1,3 +1,4 @@
+/* eslint-disable */
 /* eslint-disable max-len */
 
 import { runInNewContext } from 'vm';
@@ -189,7 +190,7 @@ test.group('template transformation', t => {
     const ctx = { truth: -1, template: code };
     const mod = await load(null, head);
 
-    const result = await Template.resolve(mod, 'generated/tpl.cjs', ctx, { enabled: true });
+    const result = await Template.execute(mod, 'generated/tpl.cjs', ctx, { enabled: true });
     const markup = stringify(result);
 
     expect(markup).toContain('tests/fixtures/transformed(4).js');
@@ -197,7 +198,7 @@ test.group('template transformation', t => {
     expect(markup).toContain('<p>FIXME</p>');
     expect(markup).toContain('Hi, PATEKE.');
     expect(markup).toContain('<span>OSOM</span>');
-    expect(markup).toContain('[HTML: <h1 data-location="tests/fixtures/static.html:5:1" class="jam-x1plh5jo">I\'m static HTML!</h1>!!]');
+    expect(markup).toContain('[HTML: <h1 data-location="tests/fixtures/static.html:5:1" class="jam-x1plh5jo">I\'m static HTML!</h1>!!OK]');
   });
 });
 
@@ -229,7 +230,7 @@ test.group('stylesheet scoping', t => {
     `, { props: ['bar'] });
 
     const mod = await load(null, head);
-    const result = await Template.resolve(mod, 'generated/tpl.cjs', null, { bar: 'osom' });
+    const result = await Template.execute(mod, 'generated/tpl.cjs', null, { bar: 'osom' });
     const markup = stringify(result);
 
     expect(markup).toContain('p:where(.jam-xg9mejp){');
@@ -277,7 +278,7 @@ test.group('stylesheet scoping', t => {
     `, { props: ['bar'] });
 
     const mod = await load(null, head);
-    const result = await Template.resolve(mod, 'generated/tpl.cjs', null, { bar: 'osom' });
+    const result = await Template.execute(mod, 'generated/tpl.cjs', null, { bar: 'osom' });
     const markup = stringify(result);
 
     expect(markup).toContain('@media screen and (min-width: 100px){h1:where(.jam-xg9mejp){color:red;}');
@@ -300,7 +301,7 @@ test.group('stylesheet scoping', t => {
     `, { generators });
 
     const mod = await load(null, head);
-    const result = await Template.resolve(mod, 'generated/tpl.cjs');
+    const result = await Template.execute(mod, 'generated/tpl.cjs');
     const markup = stringify(result);
 
     expect(markup).toContain('/* tests/fixtures/stylesheets.html */\n.m-1{margin:0.25rem;}');
@@ -334,6 +335,8 @@ test.group('parse and runtime errors', t => {
     `, { props: ['users'] });
 
     await render(Tpl, { users: [{ name: 'foo' }] }, true);
+
+    // console.log(Tpl);
 
     expect(Tpl.failure.name).toEqual('ReferenceError');
     expect(Tpl.failure.stack).toContain('\n⚠    7 |         <p>{u.name} {undef}</p>\n');
@@ -426,7 +429,7 @@ test.group('compiler support', t => {
     }
 
     const main = await load(null, head);
-    const result = await Template.resolve(main, 'generated/tpl.cjs', ctx);
+    const result = await Template.execute(main, 'generated/tpl.cjs', ctx);
     const markup = stringify(result);
 
     expect(markup).toContain('Hi, Hank.');
@@ -437,7 +440,7 @@ test.group('compiler support', t => {
     const ctx = { template: Template.read(head.src), socket: false };
 
     const main = await load(null, head);
-    const result = await Template.resolve(main, 'generated/tpl.cjs', ctx);
+    const result = await Template.execute(main, 'generated/tpl.cjs', ctx);
     const markup = stringify(result);
 
     expect(markup).toContain('<x-fragment name="tests/fixtures/self.html/1/re" key="x:0" data-location="tests/fixtures/self.html:20:5">');

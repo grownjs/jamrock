@@ -1,4 +1,4 @@
-import { decode } from '../utils/client.mjs';
+import { decode, updatePage, spaNavigate } from '../utils/client.mjs';
 
 const protocol = location.protocol === 'http:' ? 'ws' : 'wss';
 
@@ -56,35 +56,11 @@ export class LiveSocket {
       return deferred;
     }
 
-    // FIXME: try sending blob to ws...
-    this.submit = () => {
-      // function sendFile() {
-      //            var file = document.getElementById('filename').files[0];
-      //            var reader = new FileReader();
-      //            var rawData = new ArrayBuffer();
-      //            reader.loadend = function() {
-      //            }
-      //            reader.onload = function(e) {
-      //                rawData = e.target.result;
-      //                ws.send(rawData);
-      //                alert("the File has been transferred.")
-      //            }
-      //            reader.readAsArrayBuffer(file);
-      //        }
-    };
-
-    this.trigger = (e, kind, source, trigger, payload, callback) => {
-      e.preventDefault();
-
-      const call = trigger.dataset['ws:call'].replace(/\s+/g, '').replace('=>', ' ');
+    this.call = (msg, next) => {
       const id = `#${Date.now().toString(13)}`;
 
-      // how to deal with formData files?
-      const data = JSON.stringify(Object.fromEntries(payload));
-
-      this.send(`rpc:trigger ${this.uuid} ${source} ${call}\t${data}`, async () => {
-        if (callback) callback(trigger, 'rpc');
-        if (!this) return;
+      this.send(msg, async () => {
+        if (next) next();
 
         const timer = setTimeout(() => {
           if (this[id]) {
@@ -101,6 +77,61 @@ export class LiveSocket {
           delete this[id];
           clearTimeout(timer);
         }
+      });
+    };
+
+    // FIXME: try sending blob to ws... a big difference here
+    // is that we could omit some fields if they were already sent...
+    // so, we can persist a local state on the running server attached
+    // to the websocket...
+    this.deferred = Promise.resolve();
+    this.upload = (key, file) => new Promise(ok => {
+      setTimeout(() => ok(console.log('UPLOAD', key, file)), 300);
+    });
+    this.unpack = payload => {
+      const body = new FormData();
+      const tasks = [];
+
+      if (payload instanceof FormData) {
+        for (const [key, value] of payload.entries()) {
+          if (value instanceof File) {
+            tasks.push(this.uplooad(key, value));
+          } else {
+            body.append(key, value);
+          }
+        }
+      }
+
+      this.deferred = Promise.all(tasks);
+
+      return new URLSearchParams(body);
+    };
+
+    this.submit = (el, url, body, method) => {
+      let data = this.unpack(body);
+
+      url = url.replace(location.origin, '');
+      url = method === 'GET' && data ? `${url.split('?')[0]}?${data}` : url;
+      data = method === 'GET' && data ? '' : `\t${data}`;
+
+      return this.deferred.then(() => {
+        this.call(`rpc:request ${this.uuid} ${method} ${url}${data}`, () => {
+          if (el) el.classList.remove('loading');
+          updatePage('', url);
+        });
+      });
+    };
+
+    // FIXME: rethink since @live seems to be transparent
+    this.trigger = (e, kind, source, trigger, payload, callback) => {
+      e.preventDefault();
+
+      const call = trigger.dataset['ws:call'];
+      const key = trigger.dataset['ws:yield'];
+      const data = this.unpack(payload);
+
+      this.call(`rpc:trigger ${this.uuid} ${source} ${kind} ${call}:${key}\t${data}`, () => {
+        if (callback) callback(trigger, 'rpc');
       });
     };
 
@@ -200,6 +231,11 @@ export class LiveSocket {
           const [task, ...args] = body.split(/\s+/);
 
           if (args[0] !== this.uuid) return;
+
+          if (task === 'response') {
+            this.browser.sync(data, spaNavigate);
+            return;
+          }
 
           if (task === 'failure') {
             this.browser.warn(data, 'WebSocket Failure');

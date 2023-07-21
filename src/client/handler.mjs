@@ -1,7 +1,10 @@
 import { handleCleanup } from './submit.mjs';
+import { findNodes } from '../utils/client.mjs';
 
-export function serializeBindings(node, payload, bindings) {
+export function serializeBindings(node, payload, bindings, targetForm) {
+  if (targetForm && targetForm.contains(node)) return;
   if (bindings.has(node)) return;
+  bindings.add(node);
 
   const keys = Object.keys(node.dataset);
 
@@ -9,8 +12,6 @@ export function serializeBindings(node, payload, bindings) {
     if (keys[i].indexOf('bind:') === 0) {
       const param = node.dataset[keys[i]];
       const prop = keys[i].substr(5);
-
-      bindings.add(node);
 
       if (node.type === 'file') {
         for (const file of node.files) {
@@ -25,6 +26,13 @@ export function serializeBindings(node, payload, bindings) {
 }
 
 export function handleEvent(e, kind) {
+  const throttle = findNodes('throttle', e.target) || null;
+
+  if (throttle) {
+    if (throttle._locked && e.type !== 'change') return;
+    throttle._locked = setTimeout(() => { throttle._locked = null; }, +throttle.dataset.throttle || 120);
+  }
+
   if (
     'put' in e.target.dataset
     || 'post' in e.target.dataset
@@ -71,12 +79,12 @@ export function handleEvent(e, kind) {
   }
 
   if (payload) {
-    serializeBindings(e.target, payload, bindings);
+    serializeBindings(e.target, payload, bindings, e.target.form);
   }
 
   if (payload || headers) {
-    const source = this.lookup('source', e.target);
-    const trigger = this.lookup('trigger', e.target);
+    const source = findNodes('source', e.target);
+    const trigger = findNodes('trigger', e.target);
 
     if (source) {
       headers = headers || {};
@@ -93,8 +101,7 @@ export function handleEvent(e, kind) {
     nodes.forEach(node => {
       if (bindings.has(node)) return;
       payload = payload || new FormData();
-      serializeBindings(node, payload, bindings);
-      bindings.add(node);
+      serializeBindings(node, payload, bindings, e.target.form);
     });
 
     bindings.forEach(handleCleanup);
@@ -103,7 +110,16 @@ export function handleEvent(e, kind) {
       return this.sockets.trigger(e, kind, source ? source.dataset.source : null, trigger, payload);
     }
 
-    return this.loadURL(e.target, null, payload, 'PATCH', {
+    const form = e.target.tagName === 'FORM' || e.target.form
+      ? (e.target.form || e.target)
+      : null;
+
+    const method = (form && (form.elements._method
+      ? ((form.elements._method && form.elements._method.value) || 'POST')
+      : form.method.toUpperCase()))
+      || 'GET';
+
+    return this.loadURL(e.target, form && form.action, payload, method, {
       'request-type': 'bind',
       ...headers,
     });

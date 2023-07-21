@@ -6,7 +6,7 @@ import { runInNewContext } from 'vm';
 
 import {
   variables, resolver,
-  readable, writable, connect, derived, get,
+  get, readable, writable, derived, computed,
 } from '../src/reactor/index.mjs';
 
 import {
@@ -30,7 +30,7 @@ test.group('compiler', () => {
   /*!#7*/await $$import("x", $$src, $$dest);
       const { y } =await $$import("./ref", $$src, $$dest);Object.assign($$defaults,{y});
       $$defaults.z=await $$import("./test", $$src, $$dest);
-    return { ctx: $$defaults, data: () => ({ self, $$slots, $$props }) };
+    ;return { ctx: $$defaults, data: () => ({ self, $$slots, $$props }) };
 }, __render = false, __props = [];
 `,
       keys: [],
@@ -132,7 +132,7 @@ test.group('compiler', () => {
       } else {
         c;
       }/*!#@@@*/}, () => []);
-    return { ctx: $$defaults, data: () => ({ foo, data, className, active, path, x, self, $$slots, $$props }) };
+    ;return { ctx: $$defaults, data: () => ({ foo, data, className, active, path, x, self, $$slots, $$props }) };
 }, __render = false, __props = [];
 `);
   });
@@ -174,7 +174,7 @@ test.group('compiler', () => {
       let testing;$$fx(async () => { testing = other[key[next]].value/*!#@@@*/}, () => [other, key, next]);
       $$fx(async () => { foo = bar[baz.buzz[x[y].z][ok]] = bazzinga/*!#@@@*/}, () => [bar, baz, x, y, ok]);
       $$fx(async () => { console.log({ used, values, key: foo.bar })/*!#@@@*/}, () => [used, values, foo]);
-    return { ctx: $$defaults, data: () => ({ testing, value, a, b, c, x, m, o, e, y, bar, other, key, next, baz, ok, bazzinga, used, values, foo, self, $$slots, $$props }) };
+    ;return { ctx: $$defaults, data: () => ({ testing, value, a, b, c, x, m, o, e, y, bar, other, key, next, baz, ok, bazzinga, used, values, foo, self, $$slots, $$props }) };
 }, __render = false, __props = ["value","a","b","c","x","m","o","e","y","bar","other","key","next","baz","ok","bazzinga","used","values","foo"];
 `);
   });
@@ -194,7 +194,7 @@ test.group('compiler', () => {
           return ({ x: 42 });
         },
       });
-    return { ctx: $$defaults, data: () => ({ foo, self, $$slots, $$props }) };
+    ;return { ctx: $$defaults, data: () => ({ foo, self, $$slots, $$props }) };
 }, __render = false, __props = ["foo"];
 `);
   });
@@ -236,7 +236,7 @@ test.group('resolver', () => {
   $$sync(b = 8);
   $$sync(b = 5);
   console.log('END',{a,b,c});
-return { ctx: $$defaults, data: () => ({ a, b, c, complex, object, self, $$slots, $$props }) };
+;return { ctx: $$defaults, data: () => ({ a, b, c, complex, object, self, $$slots, $$props }) };
 }, __render = false, __props = ["a","b","c","complex","object"];
 `;
 
@@ -270,7 +270,7 @@ return { ctx: $$defaults, data: () => ({ a, b, c, complex, object, self, $$slots
 test.group('store', () => {
   test('should handle stores, scalar values and context getters', async ({ expect }) => {
     const count = writable(0);
-    const getter = connect(x => x.y);
+    const getter = computed(x => x.y);
     const time = readable(new Date(), function start(set) {
       const interval = setInterval(() => {
         set(new Date());

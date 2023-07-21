@@ -3,8 +3,8 @@ import { Is } from '../utils/server.mjs';
 
 export async function peek(data, context, callback) {
   for (const [k, v] of Object.entries(data)) {
-    if (Is.store(v)) {
-      if (v.reload) v.reload(context);
+    if (Is.computed(v)) {
+      if (v.derive) v.derive(context);
       if (Is.func(callback)) callback(v);
     }
     data[k] = v;
