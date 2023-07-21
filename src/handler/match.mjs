@@ -6,7 +6,11 @@ const CACHED_ROUTES = new Map();
 export function match(ctx, route, allowed = []) {
   if (ctx.method === route.verb || allowed.includes(ctx.method)) {
     if (route.path === ctx.request_path) {
-      return { ...route, params: {} };
+      return {
+        ...route,
+        params: route.params
+          .reduce((memo, key, i) => Object.assign(memo, { [key]: route.keys[i] }), {}),
+      };
     }
 
     const matches = ctx.request_path.match(route.re);
@@ -23,7 +27,7 @@ export function match(ctx, route, allowed = []) {
   }
 }
 
-export async function req(ctx, call, props, actions, container) {
+export async function req(ctx, call, actions, container) {
   let result;
   const _routes = Object.keys(actions).reduce((memo, key) => {
     if (!CACHED_ROUTES.has(ctx.current_path + key)) {
@@ -51,7 +55,7 @@ export async function req(ctx, call, props, actions, container) {
     const { key, found } = _routes[0];
 
     if (Is.func(actions[key])) {
-      result = await actions[key](ctx, { ...props, ...found.params }, container);
+      result = await actions[key].call(container, found.params);
       call = true;
     } else {
       call = actions[key];

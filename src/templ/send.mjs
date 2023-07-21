@@ -4,7 +4,7 @@ import {
 
 import { ents } from '../render/hooks.mjs';
 
-export function decorate(ctx, vnode, hooks, selectors) {
+export function decorate(ctx, vnode, hooks) {
   if (hooks.length) {
     hooks.forEach(fn => {
       const state = {};
@@ -19,10 +19,12 @@ export function decorate(ctx, vnode, hooks, selectors) {
         children: vnode[2],
       });
 
-      if (Is.func(hook) && ctx.conn.store) {
-        ctx.conn.store.set(`${fn[1]}@${key}?data`, JSON.stringify(state));
-        ctx.conn.store.set(`${fn[1]}@${key}?mod`, hook.toString());
-      }
+      // FIXME: this should be sent through ws...
+      console.info('SAVE HOOK STATE?', state, hook);
+      // if (Is.func(hook) && ctx.conn.store) {
+      //   ctx.conn.store.set(`${fn[1]}@${key}?data`, JSON.stringify(state));
+      //   ctx.conn.store.set(`${fn[1]}@${key}?mod`, hook.toString());
+      // }
 
       vnode[1]['@enhance'] = true;
       vnode[1][`@use:${dashCase(fn[1])}`] = key;
@@ -36,23 +38,6 @@ export function decorate(ctx, vnode, hooks, selectors) {
     if (vnode[0] === 'textarea') {
       vnode[2] = vnode[2].map(ents);
     }
-  }
-
-  if (selectors) {
-    selectors.add(`!${vnode[0]}`);
-
-    if (vnode[1].id) {
-      selectors.add(`#${vnode[1].id}`);
-    }
-
-    if (vnode[1].class) {
-      vnode[1].class.split(' ').forEach(x => selectors.add(`.${x}`));
-    }
-
-    Object.keys(vnode[1]).forEach(key => {
-      if (key === 'ref' || key.charAt() === '@') return;
-      selectors.add(`@${key}`);
-    });
   }
 
   if (vnode[0] === 'form') {
@@ -123,19 +108,6 @@ export async function consume(ctx, self, append, callback) {
       }
     }
     if (Is.func(callback)) callback();
-  } else if (Is.store(self.value)) {
-    const end = self.value.subscribe(async item => {
-      if (frame) done = true;
-      if (i++ >= limit) done = true;
-      if (!done) cancelled = push(item);
-      else if (process.headless || cancelled === true) end();
-      else {
-        if (!finished) append(finished = true, item);
-        if (interval > 0) await sleep(interval);
-        if (Is.func(callback)) cancelled = callback() || append(ctx, item);
-        else end();
-      }
-    });
   }
 }
 
@@ -158,13 +130,13 @@ export async function streamify(ctx, depth, result, invoke, handler, callback) {
       value = result[key] = await (Is.factory(value) ? value() : value);
     }
 
-    if (Is.store(value) && Object.isFrozen(value)) {
+    if (Is.computed(value)) {
       result[key] = value.current;
       return;
     }
 
     let dynamic;
-    if (value && (Is.store(value) || Is.iterable(value))) {
+    if (value && (Is.iterable(value))) {
       dynamic = !Is.arr(value);
 
       let props;

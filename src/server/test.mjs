@@ -1,4 +1,5 @@
-import { Runtime, Render, Util } from 'jamrock';
+// import { Runtime, Render, Util } from 'jamrock';
+import { Runtime, Render, Util } from '../main.mjs';
 
 let all = [{ on: [], off: [], test: [] }];
 let depth = 0;
@@ -10,9 +11,9 @@ async function run(main, stack) {
   try {
     Render.enable(options);
 
-    window.Jamrock = { Runtime };
+    window.Jamrock = { Runtime: { ...Runtime } };
 
-    Object.assign(Runtime, Render, Render.createRender());
+    Object.assign(window.Jamrock.Runtime, Render, Render.createRender());
 
     const tabs = Array.from({ length: depth }).join('  ');
 
@@ -22,13 +23,15 @@ async function run(main, stack) {
       await main(window);
       await Promise.all(stack.on.map(fn => fn()));
 
+      console.log(`1..${stack.test.length}`);
+
       for (const { t, fn } of stack.test) {
         let ok;
         try {
           await fn(window);
           ok = true;
         } finally {
-          if (t) console.log(`${tabs}  #${ok ? 'ok' : 'not ok'} | ${t}`);
+          if (t) console.log(`${tabs}  ${ok ? 'ok' : 'not ok'} - ${t}`);
         }
       }
     } catch (e) {

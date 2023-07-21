@@ -9,12 +9,11 @@ export {
   derived,
 } from 'svelte/store';
 
-import { Is } from '../utils/server.mjs';
-import { set } from '../server/utils.mjs';
+import { Is, set } from '../utils/server.mjs';
 
 const STORE_KEY = Symbol('@@store');
 
-Object.assign(Is, { store: v => v && !!v[STORE_KEY] });
+Object.assign(Is, { computed: v => v && !!v[STORE_KEY] });
 
 export function writable(...args) {
   const target = write(...args);
@@ -37,7 +36,7 @@ export function readable(...args) {
   return target;
 }
 
-export function connect(update, callback) {
+export function computed(update, callback) {
   const store = writable(null);
 
   let _self;
@@ -48,7 +47,7 @@ export function connect(update, callback) {
   }
 
   return Object.freeze(Object.assign(store, {
-    reload: conn => {
+    derive: conn => {
       store.set(update(conn));
       _self = conn;
     },
@@ -57,7 +56,7 @@ export function connect(update, callback) {
 
 export function session(key, value) {
   const root = key.split('.')[0];
-  const store = connect(conn => {
+  const store = computed(conn => {
     const temp = typeof conn.session[root] !== 'undefined'
       && conn.session[root] !== null ? conn.session[root] : null;
 

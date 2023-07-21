@@ -1,0 +1,23 @@
+<script>
+  import { method } from 'jamrock:conn';
+
+  export let value;
+
+  export default {
+    POST: true,
+  };
+</script>
+
+<head>
+  <title>OSOM</title>
+</head>
+
+<form @multipart>
+  <input type="text" name="value" />
+  <input type="submit" />
+</form>
+
+<pre>{JSON.stringify(value,null,2)}</pre>
+
+<button onclick="Jamrock.Browser.reload()">Jamrock reload!</button>
+<button onclick="location.reload()">Browser reload!</button>

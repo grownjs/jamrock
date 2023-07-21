@@ -1,19 +1,10 @@
+import { findNodes } from '../utils/client.mjs';
+
 export class EventHub {
   constructor(sockets) {
     this.browser = sockets.browser;
     this.sockets = sockets;
     this.loaded = [];
-
-    this.lookup = (key, node) => {
-      let root = node;
-      while (root && root.parentNode) {
-        if (root === document.body) break;
-        if (key in root.dataset) return root;
-        if ('fragment' in root.dataset) break;
-        if (['FORM', 'X-FRAGMENT'].includes(root.tagName)) break;
-        root = root.parentNode;
-      }
-    };
   }
 
   start() {
@@ -43,6 +34,14 @@ export class EventHub {
     });
   }
 
+  // this could be async? also, for both submit/events
+  confirm(el, cb) {
+    const _confirm = findNodes('confirm', el) || null;
+    if (window.debug) console.log(this);
+    if (_confirm && !confirm(_confirm.dataset.confirm)) return;
+    return cb();
+  }
+
   onSubmit() {
     return e => {
       if (
@@ -58,8 +57,8 @@ export class EventHub {
 
   onHandle(kind) {
     return e => {
-      if (e.altKey && kind === 'click') {
-        let ref = this.lookup('location', e.target);
+      if (e.metaKey && kind === 'click') {
+        let ref = findNodes('location', e.target);
         if (e.target === document.documentElement || e.target === document.body) {
           ref = document.documentElement;
         }
@@ -75,13 +74,16 @@ export class EventHub {
         return;
       }
 
-      if (kind === 'change' && ['FORM', 'INPUT', 'SELECT', 'TEXTAREA'].includes(e.target.tagName)) {
-        const el = e.target.tagName === 'FORM' ? e.target : e.target.parentNode;
+      if (e.target.closest('[data-component]')) return;
 
-        if (e.target.checkValidity()) {
+      if (kind === 'input' && ['FORM', 'INPUT', 'SELECT', 'TEXTAREA'].includes(e.target.tagName)) {
+        const el = e.target.form || e.target;
+
+        if (el.checkValidity()) {
           el.classList.remove('invalid');
         } else {
           el.classList.add('invalid');
+          return;
         }
       }
 
@@ -101,27 +103,33 @@ export class EventHub {
         e.preventDefault();
       }
 
-      if (e.target.closest('[data-component]')) return;
-
-      // this could be async?
-      if ('confirm' in e.target.dataset && !confirm(e.target.dataset.confirm)) return;
-
-      this.require(1, e.target, import('./handler.mjs')).then(({ handleEvent }) => handleEvent.call(this, e, kind));
+      return this.confirm(e.target, () => {
+        return this.require(1, e.target, import('./handler.mjs'))
+          .then(({ handleEvent }) => handleEvent.call(this, e, kind));
+      });
     };
   }
 
   async loadURL(el, ...args) {
-    this.browser.pause();
-    try {
-      const { loadPage } = await import('./request.mjs');
+    return this.confirm(el, async () => {
+      const fragment = findNodes('fragment', el) || null;
+      const target = findNodes('target', el) || null;
+      const wait = findNodes('wait', el) || null;
+      const live = findNodes('live', el) || null;
 
-      const wait = this.lookup('wait', el) || null;
-      const target = this.lookup('confirm', el) || el;
-      const fragment = this.lookup('fragment', el) || null;
+      if (live) {
+        if (fragment) args[4] = { ...args[4], 'request-ref': fragment.dataset.fragment };
+        return this.sockets.submit(el, ...args);
+      }
 
-      return loadPage.call(this, { el, wait, target, fragment }, ...args);
-    } finally {
-      this.browser.resume();
-    }
+      this.browser.pause();
+      try {
+        const { loadPage } = await import('./request.mjs');
+
+        return loadPage.call(this, { el, wait, target, fragment }, ...args);
+      } finally {
+        this.browser.resume();
+      }
+    });
   }
 }

@@ -21,76 +21,39 @@ export function reduce(tree, context, indent = 0) {
     return reduce({ elements: tree }, context, indent);
   }
 
-  const isAsync = context === 'module';
-  const isStatic = context === 'static';
-
   const _tabs = repeat('\t', indent + 1);
-  const _async = isAsync ? 'async ' : '';
-  const _opened = [];
 
   const result = tree.elements.reduce((memo, node) => {
-    const _sync = isAsync ? 'async ' : '';
-
-    let scope = '[]';
-    let slots = '';
-    if (node.slots) {
-      scope = JSON.stringify([node.props, node.scope]);
-      slots = Object.keys(node.slots).map(key => {
-        return `\n${_tabs}  '${key}': ${_sync}() => [${node.slots[key].template}] /*slot*/`;
-      }).join(',');
-    }
-
     if (['element', 'fragment'].includes(node.type)) {
-      const body = node.elements && node.type !== 'fragment' ? `[${reduce(node, context, indent + 1).trim()}]` : '[]';
+      const body = node.elements && node.type !== 'fragment' ? `[${reduce(node, context, indent + 1)}]` : '[]';
       const props = node.attributes ? `${Expr.props(node.attributes, `${_tabs}\t`)}\n${_tabs}` : '';
       const prefix = node.offset ? `\n/*!#${node.offset.start.line + 1}:${node.offset.start.column + 1}*/` : '';
-      const _await = isAsync ? 'await ' : '';
 
       if (node.type === 'fragment') {
         if (node.attributes.frame) {
-          memo.push(`${_tabs}${prefix} $$.e('fragment', ${_await}$$.a(this, '${node.ref}'), [])`);
+          memo.push(`${_tabs}${prefix} ['fragment', await __fragments['${node.ref}'].attrs($$), []]`);
         } else {
-          memo.push(`${_tabs}${prefix} $$.e('fragment', ${_await}$$.a(this, '${node.ref}'), ${_await}$$.fn(this, '${node.ref}'))`);
+          memo.push(`${_tabs}${prefix} ['fragment', await __fragments['${node.ref}'].attrs($$), await __fragments['${node.ref}'].render($$)]`);
         }
       } else if (Is.upper(node.name)) {
         // eslint-disable-next-line max-len
-        memo.push(`${_tabs}${prefix} ${_await}$$.block(${node.name}, '${node.name}', {${props}}, ${scope}, {${slots}}, ${body !== '[]' ? `${_async}() => ${body}` : 'null'} /* ${node.name} */)`);
-      } else if (node.name === 'slot') {
-        memo.push(isStatic
-          ? `${_tabs}${prefix} $$.slot('${node.attributes.name || 'default'}', () => ${body})`
-          : `${_tabs}${prefix} ${_await}$$.slot('${node.attributes.name || 'default'}', ${_async}() => ${body})`);
-      } else if (node.name === 'self') {
-        memo.push(`${_tabs}${prefix} ${_await}$$.self({${props}}, {${slots}}, ${_async}() => ${body})`);
+        const fns = Object.entries(node.snippets).map(([fn, _]) => `${fn}: (${_.args.join(', ')}) => async ($$) => [${reduce(_.body, context, indent + 1)}]`).join('\n,');
+
+        // eslint-disable-next-line max-len
+        memo.push(`${_tabs}${prefix} await $$.block(${node.name}, '<${node.name}>', {${props + fns}}, ${body === '[]' ? 'null' : `async ($$) => ${body}`} /* </${node.name}> */)`);
       } else {
-        memo.push(`${_tabs}${prefix} $$.e('${node.name}', {${props}}, ${body})`);
+        memo.push(`${_tabs}${prefix} ['${node.name}', {${props}}, ${body}]`);
       }
     } else if (node.type === 'text') {
       if (node.content.trim().length > 0) memo.push(_tabs + JSON.stringify(node.content));
     } else if (node.type === 'code') {
-      memo.push(node.content.wrap(_tabs, isAsync));
+      memo.push(node.content.wrap(_tabs));
     } else if (node instanceof Expr) {
-      memo.push(node.wrap(_tabs, isAsync, null, (token, position) => {
-        if (token.content.open) {
-          _opened.push([token.content.tag, position]);
-        } else if (_opened.length > 0) {
-          const [last, prev] = _opened.pop();
-          const end = (last === 'if' || last === 'el') ? '{/if}' : '{/each}';
-
-          if (token.type !== 'code' && last !== token.content.tag) {
-            throw new SyntaxError(`Unpaired ${end} after ${prev.line + 1}:${prev.column + 1} (given ${token.content.expr})`);
-          }
-        }
-      }));
+      memo.push(node.wrap(_tabs));
     }
     return memo;
   }, []).join(',');
 
-  if (_opened.length > 0) {
-    const [last, token] = _opened[_opened.length - 1];
-    const end = (last === 'if' || last === 'el') ? '{/if}' : '{/each}';
-
-    throw new SyntaxError(`Unpaired ${end} after ${token.line + 1}:${token.column + 1}`);
-  }
   return result;
 }
 
@@ -101,22 +64,8 @@ export function extract(chunk, context, locations) {
 
   return chunk.reduce((frags, node) => {
     if (node !== null && !(node instanceof Expr)) {
-      if (context === 'static' && (node.name === 'self' || node.name === 'fragment' || Is.upper(node.name))) {
+      if (context === 'static' && (node.name === 'fragment' || Is.upper(node.name))) {
         throw new ReferenceError(`Element '${node.name}' is not allowed on static components`);
-      }
-
-      if (node.attributes && node.attributes.slot) {
-        const name = node.attributes.slot;
-
-        delete node.attributes.slot;
-        frags[name] = { children: compact(node), template: reduce([node], context) };
-
-        delete node.name;
-        delete node.elements;
-        delete node.attributes;
-
-        node.type = 'text';
-        node.content = '';
       }
 
       if (node.elements) {
@@ -235,6 +184,11 @@ export function extend(tagName, props, fn) {
   const css = [];
 
   Object.keys(props).forEach(key => {
+    if (key.indexOf('ws:') === 0) {
+      props[`@${key}`] = props[key];
+      delete props[key];
+    }
+
     if (key.indexOf('bind:') === 0) {
       if (!['form', 'input', 'select', 'textarea'].includes(tagName)) {
         throw new TypeError(`Element ${tagName} does not support bindings`);

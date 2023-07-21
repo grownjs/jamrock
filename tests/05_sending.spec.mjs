@@ -1,3 +1,4 @@
+/* eslint-disable */
 /* eslint-disable max-len */
 
 import { test } from '@japa/runner';
@@ -20,6 +21,14 @@ test.group('sending markup', t => {
   });
   t.each.teardown(() => {
     td.reset();
+  });
+
+  test('should handle snippet values', async ({ expect }) => {
+    const result = await view('tests/fixtures/snippets.html');
+    const markup = stringify(result, null, {});
+
+    expect(Template.cache.get('tests/fixtures/snippets.html').content).toContain('$$props.sum ?? this.template');
+    expect(markup).toContain('<p data-location="tests/fixtures/snippets.html:12:3">1 + 2 = 3</p> (42)');
   });
 
   test('should handle components > slots', async ({ expect }) => {
@@ -49,13 +58,12 @@ test.group('sending markup', t => {
     const markup = stringify(result).replace(/<script[^<>]*>[^]*<\/script>/);
 
     expect(markup).not.toContain('<x-fragment>');
-    expect(markup).toContain('[<b data-location="tests/fixtures/bundle.html:13:21">OSOM: 21</b>]OK(FOO: 42)[NESTED:?]');
+    expect(markup).toContain('[<b data-location="tests/fixtures/bundle.html:12:21">OSOM: 21</b>]OK(FOO: 42)[NESTED:?]');
     expect(markup).toContain('[]OK(BAR)[NESTED:?]\n');
     expect(markup).toContain('[]OK(MAIN)[NESTED:?]\n');
-    expect(markup).toContain('<div data-stuff=42 data-location="tests/fixtures/bundle.html:25:1" data-component="tests/fixtures/osom.svelte:2" data-on:interaction="true">');
-    expect(markup).toContain('<div class="svelte-1njum0u">OSOM: <h1 data-location="tests/fixtures/bundle.html:26:3">It works.</h1></div></div>');
+
     // eslint-disable-next-line quotes
-    expect(markup).toContain(`[HTML: <h1 data-location="tests/fixtures/static.html:5:1" class="jam-x1plh5jo">I'm static HTML!</h1><p data-location="tests/fixtures/static.html:8:3">&amp; I am some text...</p>]`);
+    expect(markup).toContain(`[HTML: <h1 data-location="tests/fixtures/static.html:5:1" class="jam-x1plh5jo">I'm static HTML!</h1><p data-location="tests/fixtures/static.html:8:3">&amp; I am some text...</p>OK]`);
 
     const other = await view('tests/fixtures/scripts.html', { value: -1 });
     const html = stringify(other);

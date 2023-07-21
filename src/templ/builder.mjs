@@ -150,7 +150,7 @@ export function transform(info, partial, isServer) {
     .replace(/\(_, \$\$\)/, () => `({ ${ctx} }, $$)`);
 
   code = `var __resolve = async function ({ ${vars} }, $$src, $$dest, $$fx, $$sync, $$import, $$defaults = Object.create(null)) { var self = this;
-  ${main}return { ctx: $$defaults, ${isServer ? `data: () => ({ ${ctx} })` : 'state: __state'} };
+  ${main};return { ctx: $$defaults, ${isServer ? `data: () => ({ ${ctx} })` : 'state: __state'} };
 }, __render = unwrap\`${body}\`.end, __props = ${JSON.stringify(scope)};
 `;
 
