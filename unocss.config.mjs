@@ -1,5 +1,6 @@
 export default {
   rules: [
-    ['mx-auto', { 'margin-left': 'auto', 'margin-right': 'auto' }],
+    // FIXME: ensure changes here will recompile?
+    ['fancy', { color: 'blue' }],
   ],
 };

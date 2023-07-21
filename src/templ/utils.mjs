@@ -8,11 +8,14 @@ import xmlLang from 'highlight.js/lib/languages/xml';
 import jsLang from 'highlight.js/lib/languages/javascript';
 
 import { jamLang } from './lang.mjs';
-import { Is, stack } from '../utils/server.mjs';
+import { Is, stack } from '../utils/shared.mjs';
 import { attrs, taggify } from '../markup/html.mjs';
 
-const RE_MATCH_LINES = /(?:<anonymous>|\+(?:page|error|layout)\.mjs):(\d+)(?::(\d+))?/;
+const RE_MATCH_LINES = /(?:<anonymous>|[.+](?:page|error|layout|generated)\.mjs(?:[^:]+?)):(\d+)(?::(\d+))?/;
 const RE_MATCH_OFFSETS = /\/\*!#(\d+):(\d+)\*\//;
+
+// const RE_MATCH_IMPORTS = /import\s*(.+?)\s*from\s*([^\n;]+)/g;
+// const RE_MATCH_EXPORTS = /export (\w+)/g;
 
 emphasize.registerLanguage('xml', xmlLang);
 emphasize.registerLanguage('css', cssLang);
@@ -23,6 +26,17 @@ emphasize.registerLanguage('javascript', jsLang);
 
 // eslint-disable-next-line new-cap
 const convert = new AnsiUp.default();
+
+const AsyncFunction = (async () => null).constructor;
+
+export class ParseError extends SyntaxError {
+  constructor(message, info, pos) {
+    super(message);
+    this.name = 'ParseError';
+    Object.assign(this, info);
+    this.position.e = pos;
+  }
+}
 
 export function stringify(result, callback = null) {
   let content = '';
@@ -74,8 +88,10 @@ export function highlight(code, markup) {
     : result;
 }
 
-export function sample(block, info, tail, err) {
-  if (!block.html) throw err;
+export function sample(block, info, tail, err, ok) {
+  if (!block.html) {
+    return err.stack || err.message;
+  }
 
   let match = info.match(RE_MATCH_LINES);
   if (!match && tail.some(x => x.includes(block.file))) {
@@ -102,30 +118,90 @@ export function sample(block, info, tail, err) {
       }
     }
 
-    const line = match[1] - 11;
+    const line = Math.max(1, match[1] - 11);
     const col = match[2];
 
     return `at ${block.file}:${line}\n${stack(block.html, line, col)}`;
   }
-  return `at ${block.file}\n${stack(block.html, 1, 1)}`;
+  return `at ${block.file}\n${stack(block.html, 1, 1, ok)}`;
 }
 
-// FIXME: ensure this would catch .html errors if
-// we match the component earlier in the stack...
 export function debug(block, error) {
   if (process.debug) console.debug(error, block);
 
-  const failure = new Error(error.message, { cause: error });
-  const [head, body, ...tail] = error.stack.split('\n');
+  if (error.name === 'ParseError') {
+    const offset = error.position.col + error.position.e;
+    const source = `${block.file}:${error.position.line}:${offset}`;
 
-  failure.name = error.name;
-  failure.status = error.status || 500;
-
-  if (error.name === 'SyntaxError') {
-    failure.message = 'invalid syntax';
-    failure.stack = `${error.message.replace(/\.$/, ',')} ${sample(block, head, tail, error)}`;
-  } else {
-    failure.stack = `${error.message.replace(/\.$/, ',')} ${sample(block, body, tail, error)}`;
+    error.stack = `${error.message} at ${source}\n${stack(block.html, error.position.line, offset)}`;
+    return error;
   }
-  return failure;
+
+  const [, body, ...tail] = error.stack.split('\n');
+
+  if (error.message.includes('missing ')) {
+    error.message = error.message.replace(/missing (.)/, "Missing '$1'");
+  }
+
+  error.status = error.status || 500;
+  error.stack = `${error.message.replace(/\.$/, ',')} ${sample(block, body, tail, error)}`;
+
+  if (error.cause) {
+    const causes = [];
+
+    let current = error.cause;
+    while (current) {
+      causes.push(current.message);
+      current = current.cause;
+    }
+
+    error.stack = error.stack.replace('\n', `\n- ${causes.join('\n- ')}\n`);
+  }
+  return error;
+}
+
+export function lexer(code, token) {
+  if (code.indexOf('#each ') === 0 && code.includes(' as ')) {
+    const [a, b] = code.split(' as ');
+
+    lexer(a, token);
+    lexer(`${a.replace(/./g, ' ')}    ${b}`, token);
+    return;
+  }
+
+  const offset = '#@'.includes(code.charAt())
+    ? code.indexOf(' ')
+    : 0;
+
+  const chunk = offset > 0
+    ? `_${code.substr(1, offset - 1)}:${code.substr(offset + 1)}`
+    : code;
+
+  try {
+    // eslint-disable-next-line no-new-func
+    new AsyncFunction('', chunk);
+  } catch (e) {
+    if (process.debug) {
+      console.log('---');
+      console.log(chunk);
+      console.log(e);
+    }
+    if (e.message.includes('Invalid or unexpected token')) {
+      throw new ParseError(e.message, token, chunk.trim().length);
+    }
+    if (e.message.includes('Unexpected token')) {
+      const matches = e.message.match(/Unexpected token '(.+?)'/);
+      const text = chunk.substr(offset);
+
+      if (matches[1] === '}') {
+        const clean = text.trim();
+        const char = clean.substr(-1);
+        const pos = offset + clean.length;
+
+        throw new ParseError(`Unexpected token '${char}'`, token, pos);
+      }
+      throw new ParseError(e.message, token, text.indexOf(matches[1]) + offset + 1);
+    }
+    throw new ParseError(e.message, token, offset);
+  }
 }

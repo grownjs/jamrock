@@ -55,12 +55,9 @@ export function attrs(data) {
   return props.join('');
 }
 
-export function style(chunk, split) {
+export function style(chunk) {
   const css = stringify({ stylesheet: { rules: [chunk] } }, { compress: true });
 
-  if (split) {
-    return css.split(/(?=\{)/);
-  }
   return css;
 }
 
@@ -74,7 +71,7 @@ export function rulify(css, filepath) {
         const rules = [];
 
         chunk.rules.forEach(rule => {
-          rules.push(style(rule, true));
+          rules.push(style(rule));
         });
 
         out.push([`@${chunk.type} ${chunk[chunk.type]}`, rules]);
@@ -84,7 +81,7 @@ export function rulify(css, filepath) {
       return;
     }
 
-    out.push(style(chunk, true));
+    out.push(style(chunk));
   });
   return out;
 }
@@ -275,7 +272,7 @@ export function taggify(vnode, callback) {
   });
 }
 
-export function serialize(vnode, parent, callback) {
+export function serialize(vnode, parent, callback, fragments) {
   if (Is.vnode(vnode)) {
     const hooks = [];
     const name = vnode[0];
@@ -286,7 +283,7 @@ export function serialize(vnode, parent, callback) {
     }
 
     const children = name !== 'textarea'
-      ? serialize(vnode[2], { name, props }, callback)
+      ? serialize(vnode[2], { name, props }, callback, fragments)
       : vnode[2];
 
     vnode[2] = children;
@@ -296,13 +293,18 @@ export function serialize(vnode, parent, callback) {
     if (Is.func(callback)) {
       callback(vnode, hooks);
     }
+    if (fragments && (vnode[0] === 'fragment' || vnode[1]['@fragment'])) {
+      // FIXME: capture and update... but how?
+      // fragments[vnode[1]['@fragment']] = vnode;
+      // return null;
+    }
     return vnode;
   }
 
   if (Is.arr(vnode)) {
     return vnode.reduce((memo, cur) => {
       if (Is.arr(cur) && !cur.length) return memo;
-      memo.push(serialize(cur, parent, callback));
+      memo.push(serialize(cur, parent, callback, fragments));
       return memo;
     }, []);
   }

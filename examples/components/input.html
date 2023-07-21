@@ -39,8 +39,8 @@
   const fns = {
     eq: (a, b) => a === b,
     in: (a, ...b) => b.includes(a),
-    min: (a, b) => (type === 'number' ? a >= b : a.length >= b),
-    max: (a, b) => (type === 'number' ? a <= b : a.length <= b),
+    min: (a, b) => (type === 'number' ? +a >= +b : a.length >= b),
+    max: (a, b) => (type === 'number' ? +a <= +b : a.length <= b),
     same: (a, b) => a === body_params[b],
     grep: (a, b) => new RegExp(b).test(a),
     match: (a, b) => new RegExp(`^${b.replace(/[/\\^$.|([{+}\])]/g, '\\$&').replace(/[*]/g, '.*?')}$`, 'i').test(a),
@@ -142,6 +142,9 @@
     } else if (!inputValue.length) {
       fixedValue = null;
     }
+
+    // why is this now needed?
+    if (type !== 'file') value = fixedValue;
 
     form.fields.push({
       name, type, grouped, present, required, failures, validated, value: fixedValue,

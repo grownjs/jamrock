@@ -1,3 +1,5 @@
+/* eslint-disable */
+
 import { expect } from 'expect';
 
 import type { Application } from './main.d.ts';
@@ -17,7 +19,7 @@ async function main() {
     test('it should work!', async () => {
       const el = await env.mount(home);
 
-      expect(el.innerHTML).toEqual('<h1>It works.</h1>');
+      expect(el.innerHTML).toEqual('<h1 data-location="examples/index+page.html:1:1">It works.</h1>');
     });
   });
 }

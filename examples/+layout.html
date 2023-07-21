@@ -1,13 +1,8 @@
 <script>
-  import { method, flash } from 'jamrock:conn';
+  import { flash, routes } from 'jamrock:conn';
   import { isLogged, currentInfo } from './stores.mjs';
 
   import Notifications from './components/client/notifications.html';
-
-  let messages = [];
-  if (method === 'GET') {
-    messages = flash() || null;
-  }
 </script>
 
 <style global lang="less">
@@ -16,7 +11,7 @@
     position: relative;
 
     &::after {
-      background-color: rgba(255, 255, 255, .5);
+      background-color: rgba(255, 255, 255, 0.5);
       position: absolute;
       color: inherit;
       content: '';
@@ -35,30 +30,50 @@
   .profile {
     display: inline-flex;
   }
-  .profile img { margin-right: 5px; }
+  .profile img {
+    margin-right: 5px;
+  }
+  .pages {
+    list-style-type: none;
+    flex-wrap: wrap;
+    display: flex;
+    gap: 5px;
+  }
 </style>
 
 <nav>
   <ul>
-    <li>
+    <fragment tag="li" name="auth">
       <a href="/" target="_top">Home</a>
       | {#if isLogged}
-        <span class="profile">
-          {#if currentInfo.picture}
-            <img src="/{currentInfo.picture}" width="16" />
-          {/if}
-          <a href="/login">{currentInfo.email}</a>
-        </span>
+      <span class="profile">
+        {#if currentInfo.picture}
+        <img src="/{currentInfo.picture}" width="16" />
+        {/if}
+        <a href="/login">{currentInfo.email}</a>
+      </span>
       {:else}
-        <a href="/login">Log-in</a> or <a href="/new">Create account</a>
+      <a href="/login">Log-in</a> or <a href="/new">Create account</a>
       {/if}
-    </li>
+    </fragment>
   </ul>
 </nav>
 
-<Notifications {messages} />
+<Notifications from="{flash()}" />
 
 <fieldset>
   <legend>PAGE</legend>
-  <slot />
-</fieldset
+  <fragment name="main">
+    {@render $$props.children?.()}
+  </fragment>
+</fieldset>
+
+<h3>Other pages:</h3>
+
+<ul class="pages">
+  {#each routes.filter(_ => _.verb === 'GET') as route}
+  <li>
+    <a href="{route.path}">{route.path}</a>
+  </li>
+  {/each}
+</ul>

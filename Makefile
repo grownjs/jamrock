@@ -19,8 +19,13 @@ ci: install clean dist
 	@npm run test:ci
 ifneq ($(CI),)
 	@make -s test-ci
+endif
+ifneq ($(GITHUB_ENV),)
 	@npm run codecov
 endif
+
+ci\:dev:
+	@make ci CI=1 BROWSER=chromium:headless
 
 test: dist
 	@npm run test:ci
@@ -36,28 +41,28 @@ test-ci:
 test-bun:
 	@echo "== bun =="
 	@make -s bun:build CI=1
-	@time bun run scripts/bun-testing.js
-	@HAPPY_DOM=1 time bun run scripts/bun-testing.js
+	@bun run scripts/bun-testing.js
+	@HAPPY_DOM=1 bun run scripts/bun-testing.js
 	@make -s seed:bun
 	@bun run scripts/check.ts
 	@make -s e2e:bun
 test-deno:
 	@echo "== deno =="
 	@make -s deno:build CI=1
-	@time make -s deno:test
-	@DENO_DOM=1 time make -s deno:test
+	@make -s deno:test
+	@DENO_DOM=1 make -s deno:test
 	@make -s seed:deno
-	@deno run -A scripts/check.ts
+	@deno run --import-map=import_map.json -A scripts/check.ts
 	@make -s e2e:deno
 test-nodejs:
 	@echo "== node =="
 	@make -s nodejs:build CI=1
-	@time node scripts/node-testing.mjs
-	@JS_DOM=1 time node scripts/node-testing.mjs
-	@HAPPY_DOM=1 time node scripts/node-testing.mjs
-	@make -s seed:node
-	@npx ts-node --esm --type-check scripts/check.ts
-	@make -s e2e:node
+	@node scripts/node-testing.mjs
+	@JS_DOM=1 node scripts/node-testing.mjs
+	@HAPPY_DOM=1 node scripts/node-testing.mjs
+	@make -s seed:node ts-check-nodejs e2e:node
+ts-check-nodejs:
+	@npx tsx scripts/check.ts
 
 docs:
 	@npm run docs -- -w
@@ -66,15 +71,26 @@ live:
 	@npm pack
 	@mv jamrock-0.0.0.tgz build/
 
+local: live
+	@./install.sh
+
 seed\:%: clean-ts
 	@bin/$* build --src examples
 	@bin/$* route --dts scripts/routes.d.ts --from ../lib/env
+
+admin:
+	@pocketbase migrate
+	@pocketbase admin create yo@soypache.co Password.123
 
 start\:%:
 	@NODE_ENV=production bin/$* serve --port 3000 --unocss --src examples $(START_FLAGS)
 
 e2e\:%:
-	@npx testcafe $(BROWSER) tests/e2e/cases --colors -a 'make start:$*' --quarantine-mode $(TESTCAFE_FLAGS)
+	@npx testcafe $(BROWSER) tests/e2e/cases --colors -a 'make start:$*' --quarantine-mode -S $(TESTCAFE_FLAGS)
+
+e2e:
+	@make dist
+	@bin/node serve --src examples/ --watch
 
 shot:
 	@make -sC seed dist
@@ -96,19 +112,20 @@ nodejs:
 	@node --trace-warnings scripts/node-server.mjs
 
 deno\:build: deno-deps
-	@deno run -q --allow-all --unstable --node-modules-dir scripts/deno-build.ts
+	@deno run -q --allow-all --import-map=import_map.json --unstable --node-modules-dir scripts/deno-build.ts
 deno\:test: deno-deps
-	@deno run -q --allow-all --unstable scripts/deno-testing.ts
+	@deno run -q --allow-all --import-map=import_map.json --unstable scripts/deno-testing.ts
 deno: deno-deps
-	@deno run -q --no-check --unstable --allow-all scripts/deno-server.ts
+	@deno run -q --no-check --import-map=import_map.json --unstable --allow-all scripts/deno-server.ts
 
 bun\:build:
 	@bun run scripts/bun-build.js
 bun:
 	@bun run scripts/bun-server.js
 
-dev: deps
-	@npm run watch & make -s client
+#dev: deps
+#	@npm run watch
+# & make -s client
 
 clean: clean-ts
 	@rm -rf dist/* generated/* .nyc_output
@@ -123,8 +140,8 @@ prune: clean
 build: deps
 	@npm run build -- -f --verbose
 
-client:
-	@npm run watch:browser
+#client:
+#	@npm run watch:browser
 
 source: deps
 	@npm link

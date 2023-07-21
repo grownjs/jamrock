@@ -1,0 +1,18 @@
+<script>
+  import { flash } from 'jamrock:conn';
+
+  import Notifications from './components/notifications.html';
+
+  const messages = flash();
+</script>
+
+<style global>
+  body {
+    background-color: #01111F;
+    color: #BEBEBE;
+  }
+</style>
+
+<Notifications from={messages} />
+
+<slot />

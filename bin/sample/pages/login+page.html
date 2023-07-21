@@ -1,0 +1,53 @@
+<script>
+  import { redirect, session, flash } from 'jamrock:conn';
+
+  export let email;
+  export let password;
+
+  export default {
+    use: ['csrf'],
+
+    POST() {
+      if (email === 'admin@example.com' && password === '42') {
+        flash('success', "You've been logged in!");
+        session.loggedIn = true;
+        redirect('/login');
+      } else {
+        flash('error', 'Your input is wrong!');
+      }
+    },
+    DELETE() {
+      flash('success', "You've been logged off!");
+      session.loggedIn = null;
+      redirect('/login');
+    },
+  };
+</script>
+
+<head>
+  <title>Log in</title>
+</head>
+
+{#if session.loggedIn}
+  <h3>Glad you're back!</h3>
+  <form action="/login" @delete>
+    <button type="submit">Logout</button>
+  </form>
+{:else}
+  <h3>Please log in&hellip;</h3>
+  <form method="POST" @async>
+    <p>
+      <label>
+        <span>E-mail:</span>
+        <input type="email" name="email" value={email} required />
+      </label>
+    </p>
+    <p>
+      <label>
+        <span>Password:</span>
+        <input type="password" name="password" required />
+      </label>
+    </p>
+    <button type="submit">Login</button>
+  </form>
+{/if}

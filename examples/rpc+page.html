@@ -29,22 +29,30 @@
   }
 
   let result;
-  export default {
-    doSomething(payload) {
-      // reply({
-      //   aGenerator: { v: 420, i: j++, o: '???' },
-      //   // FIXME: below is not working...
-      //   // target: { result: payload.sample },
-      // });
-      console.log('I was called server-side only!', payload);
-      // reply('target', { result: payload.sample });
-      // reply('aGenerator', {
-      //   aGenerator: { v: 420, i: j++, o: '???' },
-      //   // FIXME: below is not working...
-      //   // target: { result: payload.sample },
-      // });
-    },
-  };
+  function doSomething(payload, reply) {
+    // reply({
+    //   aGenerator: { v: 420, i: j++, o: '???' },
+    //   // FIXME: below is not working...
+    //   // target: { result: payload.sample },
+    // });
+    console.log('I was called server-side only!', payload, reply);
+    // reply('target', { result: payload.sample });
+    // reply('aGenerator', {
+    //   aGenerator: { v: 420, i: j++, o: '???' },
+    //   // FIXME: below is not working...
+    //   // target: { result: payload.sample },
+    // });
+    // return [aGenerator,
+    // { v: 420, i: j++, o: '???' }, {
+    // target: { result: payload.sample },
+    // }];
+    if (reply) {
+      reply({
+        aGenerator: { v: 420, i: j++, o: '???' },
+        target: { result: payload.sample },
+      });
+    }
+  }
 </script>
 
 <style>
@@ -70,13 +78,13 @@
 <hr />
 
 <div>
-  <form ws:call="sendMessage => aGenerator" style="width:50%">
+  <form ws:call={sendMessage} ws:yield={aGenerator} style="width:50%">
     <p>Type a number below, as it matches the current offset you'll notice:</p>
     Interval: <input type="number" name="interval" value={t} /><br />
     Your guess: <input type="text" name="message" @reset />
     <button :disabled>Send</button>
   </form>
-  <form ws:call="doSomething">
+  <form ws:call={doSomething}>
     <input type="text" name="sample" />
     <button :disabled>OK</button>
     <fragment name="target">

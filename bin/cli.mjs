@@ -1,11 +1,19 @@
-import * as process from 'node:process';
-import { writeFileSync } from 'node:fs';
+import { dirname } from 'node:path';
+import { fileURLToPath } from 'node:url';
 import { createRequire } from 'node:module';
+import { writeFileSync, existsSync, readdirSync, chmodSync, cpSync } from 'node:fs';
 
+import { Util, process } from '../dist/main.mjs';
 import { createLocalEnvironment } from '../lib/main.mjs';
-import { colors as $, rtrim, flag, has, pad, ms } from '../dist/server.mjs';
 
-const pkg = createRequire(import.meta.url)('../package.json');
+const __dirname = dirname(fileURLToPath(import.meta.url));
+const _require = createRequire(import.meta.url);
+
+_require('util')._extend = Object.assign;
+
+const pkg = _require('../package.json');
+
+const version = process.env.GIT_REVISION || pkg.revision || 'HEAD';
 
 /* global Bun, Deno */
 
@@ -16,29 +24,27 @@ const runtime = typeof Deno !== 'undefined'
     ? `bun ${Bun.version}`
     : `node ${process.version}`;
 
-// eslint-disable-next-line no-import-assign
-console.log(`🔥 Jamrock v${pkg.version}`, $.gray(`(${runtime}, ${process.env.NODE_ENV || '?'})`));
+console.log(`■ Jamrock v${pkg.version}`, Util.$.gray(`(${runtime}, ${version})`));
 
 const USAGE_INFO = `
-Usage: bin/{node,deno,bun} <COMMAND> [OPTIONS]
+Usage: ${!existsSync('package.json') ? 'jamrock' : './bin/{node,deno,bun}'} <COMMAND> [OPTIONS]
 
   serve  Starts the web-server on the given --port and --host
   build  Compiles *.html sources into page components
-  route  Prints the available routes found
+  route  Prints the available routes found${!existsSync('package.json') ? '\n  init   Generates a new application' : ''}
 
 Options:
 
-  --uws      Will use uWebSockets.js instead of native HTTP (nodejs only)
+  --src      Directory of *.html files to compile (default is ./src)
+  --dest     Destination for compiled files (default is ./dest)
+  --watch    Enable file-watching on the web-server
+
   --port     The port number to bind the web-server
   --host     The host address to bind the web-server
-  --redis    Setup redis for sessions and pub/sub events
 
-  --src      Directory of *.html files to compile
-  --dest     Destination for compiled files
-
-  --watch    Enable file-watching on the development web-server
+  --uws      Use uWebSockets.js instead of native HTTP (node)
+  --redis    Enable redis for sessions and pub/sub events
   --unocss   Enable stylesheet pre-compilation with UnoCSS
-  --fswatch  Use fswatch for file-watching (default: true)
 
   --dts      Produce the .d.ts definitions from web-server routes
   --name     Filter routes by name (contains)
@@ -47,48 +53,62 @@ Options:
 `;
 
 export default async function main(env, argv) {
-  const src = rtrim(flag('src', argv, './pages'));
-  const dest = rtrim(flag('dest', argv, './build'));
-  const watch = has('watch', argv);
+  if (Util.has('version', argv)) process.exit(1);
 
-  const uws = flag('uws', argv, false);
-  const port = +flag('port', argv, 8080);
-  const redis = flag('redis', argv, false);
-  const unocss = flag('unocss', argv, false);
-  const fswatch = flag('fswatch', argv, true);
+  argv = argv.filter(value => {
+    if (value.includes('=')) {
+      const [k, v] = value.split('=');
 
-  if (has('help', argv) || !argv[0]) {
+      process.env[k] = v;
+      return false;
+    }
+    return true;
+  });
+
+  const src = Util.rtrim(Util.flag('src', argv, './pages'));
+  const dest = Util.rtrim(Util.flag('dest', argv, './build'));
+
+  let watch = Util.has('watch', argv);
+
+  const uws = Util.flag('uws', argv, false);
+  const port = +Util.flag('port', argv, 8080);
+  const redis = Util.flag('redis', argv, false);
+  const unocss = Util.flag('unocss', argv, false);
+
+  if (Util.has('help', argv) || !argv[0]) {
     console.log(USAGE_INFO
-      .replace(/(?<=\s\s)\w+(?=\s\s)|<\w+>/g, $0 => $.bold($0))
-      .replace(/^\w+:/mg, $0 => $.yellow($0))
-      .replace(/--\w+|\[\w+\]/g, $0 => $.blue($0))
-      .replace(/\(.+?\)/g, $0 => $.gray($0)));
+      .replace(/(?<=\s\s)\w+(?=\s\s)|<\w+>/g, $0 => Util.$.bold($0))
+      .replace(/^\w+:/mg, $0 => Util.$.yellow($0))
+      .replace(/--\w+|\[\w+\]/g, $0 => Util.$.blue($0))
+      .replace(/\(.+?\)/g, $0 => Util.$.gray($0)));
     process.exit(1);
   }
 
   async function routeInfo() {
     const start = Date.now();
 
+    // FIXME: routes should be taken from .html sources on dev,
+    // but on prod it should read from the index... this way we can
+    // generate the types without having to compile everything as usual!!
     const { createSandbox } = await createLocalEnvironment();
     const _ = await createSandbox({ src, dest });
 
-    const defs = [];
     const typedefs = [];
 
     console.log(`Reading routes from ${dest}`);
 
-    const types = flag('dts', argv, has('dts', argv));
+    const types = Util.flag('dts', argv, Util.has('dts', argv));
     const names = _.routes.map(x => x.name.length).sort((a, b) => b - a)[0] + 2;
     const paths = _.routes.map(x => x.path.length).sort((a, b) => b - a)[0] + 2;
     const verbs = _.routes.map(x => x.verb.length).sort((a, b) => b - a)[0] + 2;
 
-    const url = flag('path', argv);
-    const name = flag('name', argv);
-    const method = flag('method', argv);
+    const url = Util.flag('path', argv);
+    const name = Util.flag('name', argv);
+    const method = Util.flag('method', argv);
 
     let current;
     let found = 0;
-    _.routes.forEach((route, i) => {
+    _.routes.forEach(route => {
       if (!types) {
         if ((url || name || method) && (!(
           route.verb === method
@@ -98,24 +118,24 @@ export default async function main(env, argv) {
 
         found++;
 
-        const key = route.src.replace('./', '');
+        const key = (route.src || route.middleware).replace('./', '');
 
         if (current !== key) {
-          console.log(`${current ? '\n' : ''}${$.bold(key)}`);
+          console.log(`${current ? '\n' : ''}${Util.$.bold(key)}`);
           current = key;
         }
 
-        const path = pad(route.path, paths, -1)
-          .replace(/:\w+/g, $0 => $.yellow($0))
-          .replace(/(?<=\s)\s+/, $0 => $.gray($0.split(' ').join('.')));
+        const path = Util.pad(route.path, paths, -1)
+          .replace(/:\w+/g, $0 => Util.$.yellow($0))
+          .replace(/(?<=\s)\s+/, $0 => Util.$.gray($0.split(' ').join('.')));
 
-        const named = pad(route.name, names)
+        const named = Util.pad(route.name, names)
           .replace(/\s+(?=\s)/, $0 => $0.split(' ').join('.'));
 
         // eslint-disable-next-line no-nested-ternary
         const prefix = route.verb === 'DELETE' ? 'red' : route.verb === 'GET' ? 'green' : 'yellow';
 
-        console.log($[prefix](pad(route.verb, verbs)), path + $.gray(named));
+        console.log(Util.$[prefix](Util.pad(route.verb, verbs)), path + Util.$.gray(named));
       } else {
         const suffix = `\n  /**\n  ${route.verb} ${route.path}\n  */`;
 
@@ -123,36 +143,40 @@ export default async function main(env, argv) {
           || (route.path.includes('*') && `params?: RouteParams<'${route.path}'> | PathParam[]`)
           || '';
 
-        const typedef = `type R${i} = NestedRoute<'${route.name}', RouteInfo & {${suffix}\n  url: (${params}) => string }>;\n`;
+        const typedef = `NestedRoute<'${route.name}', RouteInfo & {${suffix}\n  url: (${params}) => string }>`;
 
         found++;
-        defs.push(`R${i}`);
         typedefs.push(typedef);
       }
     });
 
     if (types) {
       const target = types === true ? 'routes.d.ts' : types;
-      const script = `import type { RouteMap, RouteInfo, RouteParams, NestedRoute, PathParam } from '${flag('from', argv, 'jamrock')}';\n
-${typedefs.join('')}\nexport type Routes = ${['RouteMap'].concat(defs).join(' & ')};\n`;
+      const script = `import type { RouteMap, RouteInfo, RouteParams, NestedRoute, PathParam } from '${Util.flag('from', argv, 'jamrock')}';\n
+export type Routes = ${['RouteMap'].concat(typedefs).join('\n& ')};\n`;
 
-      console.log(`  ${$.green('write')} ${$.gray(target)}`);
+      console.log(`  ${Util.$.green('write')} ${Util.$.gray(target)}`);
 
       writeFileSync(target, script);
 
-      console.log(`${found > 0 ? found : 'No'} route${found === 1 ? '' : 's'} written (${ms(start)})`);
+      console.log(`${found > 0 ? found : 'No'} route${found === 1 ? '' : 's'} written (${Util.ms(start)})`);
     } else {
-      console.log(`${found > 0 ? found : 'No'} route${found === 1 ? '' : 's'} found (${ms(start)})`);
+      console.log(`${found > 0 ? found : 'No'} route${found === 1 ? '' : 's'} found (${Util.ms(start)})`);
     }
 
     if (!found) process.exit(1);
   }
 
   try {
+    if (argv[0] === 'dev') {
+      argv[0] = 'serve';
+      watch = true;
+    }
+
     switch (argv[0]) {
       case 'serve':
         console.log(`Processing ${src} to ${dest}`);
-        await env({ src, dest, uws, port, watch, redis, fswatch }).serve();
+        await env({ src, dest, uws, port, watch, redis }).serve();
         break;
 
       case 'build':
@@ -162,6 +186,31 @@ ${typedefs.join('')}\nexport type Routes = ${['RouteMap'].concat(defs).join(' & 
 
       case 'route':
         await routeInfo();
+        break;
+
+      case 'init':
+        if (!argv[1]) throw new Error('Missing application name');
+        if (!Util.has('force', argv)) {
+          if (existsSync(argv[1])) throw new Error('Application already exists');
+        }
+
+        cpSync(`${__dirname}/sample`, argv[1], { recursive: true });
+
+        chmodSync(`${argv[1]}/bin/node`, '755');
+        chmodSync(`${argv[1]}/bin/deno`, '755');
+        chmodSync(`${argv[1]}/bin/bun`, '755');
+
+        writeFileSync(`${argv[1]}/package.json`, `${JSON.stringify({
+          name: argv[1],
+          version: '0.0.0',
+        }, null, 2)}\n`);
+
+        // eslint-disable-next-line no-case-declarations
+        const sources = readdirSync(`${__dirname}/sample`, { recursive: true })
+          .filter(_ => !['bin', 'pages', 'pages/components'].includes(_));
+
+        ['package.json'].concat(sources)
+          .forEach(file => console.log(`  ${Util.$.green('write')} ${Util.$.gray(file)}`));
         break;
 
       default:

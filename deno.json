@@ -1,7 +1,0 @@
-{
-  "imports": {
-    "expect": "npm:expect",
-    "svelte": "https://cdn.skypack.dev/svelte",
-    "svelte/internal": "https://cdn.skypack.dev/svelte/internal"
-  }
-}

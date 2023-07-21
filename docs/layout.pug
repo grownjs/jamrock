@@ -13,11 +13,25 @@ head
   link(rel='stylesheet' href='https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.7.0/styles/github-dark-dimmed.min.css' scope='html[theme=dark]' inline)
   script(src='https://cdnjs.cloudflare.com/ajax/libs/ace/1.16.0/ace.js' integrity='sha512-Km4SIAd8d2xB73+j5NmOjzIxriadCWR9xapO/YARlvfwkgrWneSpV/6GeaRzVLNckFHzUn9Iv1oGbsDW/HtTZQ==' crossorigin='anonymous' referrerpolicy='no-referrer')
 
+mixin entry(item, selected)
+  if item.children
+    li: details(open='')
+      summary
+        icon(src='#folder' size=16)
+        span #{item.parent ? item.parent + '/' : ''}#{item.name}/
+      ul(data-tree=`${item.parent ? item.parent + '/' : ''}${item.name}`)
+        each subTree in item.children
+          +entry(subTree, selected)
+  else
+    li(data-leaf=`${item.parent ? item.parent + '/' : ''}${item.name}`): label
+      icon(src='#file' size=16)
+      input(type='radio' name='file' checked=item.name === selected value=`${item.parent ? item.parent + '/' : ''}${item.name}`)
+      span(data-body=item.contents.toString()) #{item.name}
+
 body
-  include sprites.html
+  import(from='sprites.svg')
 
   main.app
-    // rebuild with pug may be?
     .flex
       .pad
         input#frame(type='checkbox')
@@ -25,61 +39,28 @@ body
           .flex.icons
             label(for='frame')
               svg(width='16' height='16')
-                use.off(xlink:href='#left')
-                use.on(xlink:href='#right')
+                use.off(xlink:href='#icon-left')
+                use.on(xlink:href='#icon-right')
             form#navigate.flex.search
               input#urlbar(type='text' value='/' placeholder='/')
               button#reload(type='button')
-                svg(width='16' height='16')
-                  use(xlink:href='#sync')
+                icon(src='#sync' size=16)
               button
-                svg(width='16' height='16')
-                  use(xlink:href='#play')
+                icon(src='#play' size=16)
           iframe.preview(src='/loading.html')
       .docs
         != yield
     .flex
       .files
-        //- pre!= JSON.stringify(includes, null, 2)
-        ul
-          li
-            details(open='')
-              summary
-                svg(width='16' height='16')
-                  use(xlink:href='#folder')
-                span src/
-              ul
-                li
-                  label
-                    svg(width='16' height='16')
-                      use(xlink:href='#file')
-                    input(type='radio' name='file' value='/src/index+page.html' checked='')
-                    span index+page.html
-                li
-                  label
-                    svg(width='16' height='16')
-                      use(xlink:href='#file')
-                    input(type='radio' name='file' value='/src/loops+page.html')
-                    span loops+page.html
-          li
-            label
-              svg(width='16' height='16')
-                use(xlink:href='#file')
-              input(type='radio' name='file' value='/package.json')
-              span package.json
-          li
-            label
-              svg(width='16' height='16')
-                use(xlink:href='#file')
-              input(type='radio' name='file' value='/index.js')
-              span index.js
+        ul(data-tree='/' data-selected="package.json")
+          each subTree in makeTree('/how-to', includes)
+            +entry(subTree, 'package.json')
       .editor
         #input
     details.status
       #xterminal
       summary.flex
-        svg(width='16' height='16')
-          use(xlink:href='#stdout')
+        icon(src='#stdout' size=16)
         pre.stdout Loading source code...
 
   script(type='module' src='/sandbox.js')

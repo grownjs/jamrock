@@ -1,21 +1,15 @@
-import { renderSync } from '../render/sync.mjs';
-import { Is, noop, pick } from '../utils/client.mjs';
+// import * as util from 'node:util';
 
-export function getChildren(mod, slots, props, context) {
-  function _render(chunk, locals) {
-    if (!chunk.resolve) locals = { $$props: locals, $$slots: slots };
-    return renderSync(chunk, { ...props, ...locals }, _render, { ...context, client: true });
-  }
-  return _render({ render: mod.render, _slots: slots }, props);
-}
+import { executeAsync } from '../render/async.mjs';
 
-export function wrapComponent(render) {
-  return this.createContext(render, (sync, update) => {
+export function wrapComponent(_, loop) {
+  return this.createContext(loop, (sync, update) => {
     let deferred = Promise.resolve();
     update(self => {
       if (!self.equals()) {
-        self.loop();
-        deferred = self.result.then(self.patch);
+        deferred = deferred
+          .then(() => self.loop())
+          .then(data => self.patch(data));
       }
       return deferred;
     });
@@ -23,140 +17,63 @@ export function wrapComponent(render) {
   });
 }
 
-export function slotComponent(cb, props, context) {
-  const nodes = [];
-
-  let root;
-  return [
-    () => ({
-      m: (target, anchor) => {
-        if (!cb) return;
-        root = target;
-
-        // FIXME: I think svelte-slots should be pre-rendered and sent as json,
-        // because interaction with jamrock is not expected so js-code is not needed!
-
-        const children = getChildren({ render: cb }, null, props, context);
-        const fragment = window.Jamrock.Runtime.createElement(children);
-
-        anchor = anchor || target.childNodes[target.childNodes.length - 1];
-        while (anchor && anchor.claim_order > 1) anchor = anchor.previousSibling;
-
-        fragment.childNodes.forEach(node => {
-          nodes.push(node);
-
-          if (context.hydrate) {
-            target.insertBefore(node, anchor);
-            anchor = node;
-          } else {
-            target.appendChild(node);
-          }
-        });
-      },
-      c: noop,
-      l: noop,
-      d: () => {
-        if (!root) return;
-        nodes.forEach(node => {
-          if (node.isConnected) root.removeChild(node);
-        });
-        nodes.length = 0;
-      },
-    }),
-    noop,
-    noop,
-  ];
-}
-
-export function svelteComponent(mod, context) {
-  const mount = async (el, opts) => {
-    if (el.current) {
-      throw new Error('Component already mounted');
+export function clientComponent(mod, context) {
+  const loader = x => (x === 'jamrock' ? this : context.loader?.(x) || import(x));
+  const render = executeAsync(loader, async (child, props) => {
+    let data = props;
+    if (child.__handler) {
+      console.log('CHILD', child);
+      // const tpl = await child.__handler(data, loader);
+      // const self = await tpl.__self();
+      // data = await self.result;
     }
-
-    const $$slots = Object.keys(opts.slots || {}).reduce((memo, _key) => {
-      memo[_key] = slotComponent(opts.slots[_key], opts.props, context);
-      return memo;
-    }, {});
-
-    if (!context.hydrate) {
-      while (el.firstChild) el.removeChild(el.firstChild);
-    }
-
-    el.__update = (_mod, _opts) => {
-      el.current.$destroy();
-      el.current = null;
-
-      svelteComponent(_mod, { ...context, hydrate: false }).mount(el, _opts);
-    };
-
-    // eslint-disable-next-line new-cap
-    el.current = new mod({
-      props: {
-        ...pick(opts.props, opts.scope[0]),
-        $$slots,
-        $$scope: {
-          ctx: [],
-        },
-      },
-      target: el,
-      hydrate: context.hydrate,
-      $$inline: true,
-    });
-  };
-  return { mount };
-}
-
-export function clientComponent(mod, context, filepath) {
-  const resolver = x => ((x === 'jamrock' && this) || ((context && context.load) ? context.load(x) : import(x)));
-  const mount = async (el, opts) => {
+    return render(child.__template, data);
+  });
+  const next = data => render(mod.__template, data);
+  const mount = async (el, props) => {
     if (el.current) {
       throw new Error('Component already mounted');
     }
 
     let vnode;
-    let next;
-    if (!mod.resolve) {
-      next = () => getChildren(mod, opts.slots, { ...opts.props }, context);
-    } else {
-      const $$module = { filepath, module: mod, element: el };
-      const $$state = { ...opts.props, $$props: opts.props, $$slots: opts.slots };
+    if (mod.__handler) {
+      const self = await mod.__handler(props, loader);
+      const store = await self.__self();
+      const data = await store.loop();
 
-      const self = await mod.resolve.call($$module, $$state, mod.src, null, null, null, resolver);
+      store.patch = async peek => {
+        Object.assign(el.current, peek.__scope);
 
-      let state = await self.state.result;
-      next = () => getChildren(mod, opts.slots, { ...opts.props, ...state }, context);
-
-      self.state.patch = peek => {
-        el.current = state = { ...state, ...peek };
+        const patch = await next(el.current);
 
         // eslint-disable-next-line no-return-assign
         return typeof process !== 'undefined'
-          ? this.patchNode(el, vnode, vnode = next())
+          ? this.patchNode(el, vnode, vnode = patch)
           // eslint-disable-next-line no-return-assign
-          : requestAnimationFrame(() => this.patchNode(el, vnode, vnode = next()));
+          : requestAnimationFrame(() => this.patchNode(el, vnode, vnode = patch));
       };
 
-      el.current = state;
-      el.__store = self.state;
+      el.current = { ...props, ...data.__scope };
+      el.__store = store;
     }
 
-    el.__update = async (_mod, _opts) => {
+    el.__update = (_mod, _opts) => {
       el.current = null;
-
       clientComponent.call(this, _mod, context).mount(el, _opts);
     };
 
-    if (context && context.sync) {
-      context.sync(vnode = next());
+    vnode = await next(el.current);
+
+    if (context?.sync) {
+      context.sync(vnode);
     } else {
-      this.renderToElement(el, vnode = next());
+      this.renderToElement(el, vnode);
     }
     return el;
   };
   return { mount };
 }
 
-export function mountableComponent(mod, context, filepath) {
-  return Is.func(mod) ? svelteComponent(mod, context) : clientComponent.call(this, mod, context, filepath);
+export function mountableComponent(mod, context) {
+  return clientComponent.call(this, mod, context);
 }
