@@ -28,5 +28,5 @@ test('should navigate through pages', async t => {
   await t.typeText($('input[name=b_password]'), 'bazzinga', { replace: true });
   await t.click($('[type=submit]'));
 
-  await t.expect($('p').withText('Now you can login!').exists).ok();
+  await t.expect($('li').withText('Now you can login!').exists).ok();
 });

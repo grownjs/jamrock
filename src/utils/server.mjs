@@ -1,6 +1,6 @@
 import { isNot as not, isArray as arr, isPlain as plain, isString as str, isScalar as scalar, isFunction as func } from 'somedom/ssr';
 
-import { Is, toProps } from './shared.mjs';
+import { Is } from './shared.mjs';
 
 export { default as $ } from 'picocolors';
 
@@ -38,7 +38,6 @@ export * from './shared.mjs';
 export function cleanJSON(value) {
   return JSON.stringify(value, (_, v) => {
     if (Is.arr(v)) return v.filter(x => !Is.not(x));
-    if (Is.plain(v)) return toProps(v);
     return v;
   });
 }
@@ -53,6 +52,22 @@ export function flag(value, argv, or) {
 
   if (argv.includes(`--no${value}`)) return false;
   return offset > 0 && next.indexOf('--') !== 0 ? next || or : or;
+}
+
+export function list(value, argv, or) {
+  const offset = argv.indexOf(`--${value}`);
+  const values = [];
+
+  if (offset > 0) {
+    for (let i = offset; i < argv.length; i++) {
+      const [k, v] = argv[i].split('=');
+      const next = v?.length > 0 ? v : argv[++i];
+      if (typeof next === 'undefined' || next.indexOf('--') === 0) break;
+      if (k === `--${value}`) values.push(next);
+    }
+  }
+
+  return values.length > 0 ? values : or;
 }
 
 export function has(value, argv) {

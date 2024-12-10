@@ -7,28 +7,35 @@ const FILES_PROPERTY = Symbol('@@files');
 const ROUTES_PROPERTY = Symbol('@@routes');
 const VERSION_PROPERTY = Symbol('@@version');
 
+export function printLog(...msg) {
+  console.log(...msg);
+}
+
 export const createWatcher = ({ fs }, watcher, compiler) => {
   const clients = [];
   const before = [];
 
   let reloading;
   let sources = [];
-  async function sync(quiet) {
+  async function sync(quiet, routes) {
     try {
       await Promise.all(before.map(fn => fn(sources)));
-      await compiler.recompile(sources);
+      const deps = await compiler.recompile(sources);
+      await compiler.save(routes, deps);
       await compiler.reload();
     } catch (e) {
       // FIXME: decorate errors...
       console.error('E_COMPILE', e);
     }
 
+    const changed = sources.filter(_ => !/\+(?:layout|error|server)/.test(_));
+
     reloading = true;
     sources = [];
 
     if (!quiet) {
       clients.forEach(ws => {
-        ws.send('reload');
+        ws.send(`reload ${changed.join(' ')}`);
       });
     }
 
@@ -46,12 +53,23 @@ export const createWatcher = ({ fs }, watcher, compiler) => {
 
     if (type === 'unlink') {
       delete compiler[FILES_PROPERTY][src];
-      console.log(`  ${Util.$.red('delete')} ${Util.$.gray(src)}`);
+      printLog(`  ${Util.$.red('delete')} ${Util.$.gray(src)}`);
     }
 
-    Object.entries(compiler[FILES_PROPERTY]).forEach(([k, v]) => {
-      if (v.children && v.children.includes(src)) changes.push(k);
-    });
+    const old = compiler[FILES_PROPERTY][src];
+
+    if (
+      old?.filepath
+      && old.filepath.includes('.generated.')
+      && Template.exists(old.filepath.replace('.generated.', '.bundled.'))
+    ) {
+      changes.push(src);
+    } else {
+      Object.entries(compiler[FILES_PROPERTY]).forEach(([k, v]) => {
+        if (v.deps?.includes(src)) changes.push(k);
+        if (v.children?.includes(src)) changes.push(k);
+      });
+    }
 
     if (!changes.length) {
       changes.push(src);
@@ -73,6 +91,11 @@ export const createWatcher = ({ fs }, watcher, compiler) => {
         }
       }
     });
+
+    if (/\+(?:error|layout|server)/.test(src)) {
+      clearTimeout(t);
+      t = setTimeout(sync, 60);
+    }
   });
 
   return {
@@ -84,18 +107,16 @@ export const createWatcher = ({ fs }, watcher, compiler) => {
           const url = req.url.charAt() === '/' ? req.url : new URL(req.url).pathname;
           const found = compiler.matches(url);
 
-          await compiler.save(found.routes);
-
           if (found.route) {
             if (found.route.middleware && !compiler.has(found.route.middleware)) sources.push(found.route.middleware);
             if (found.route.layout && !compiler.has(found.route.layout)) sources.push(found.route.layout);
             if (found.route.error && !compiler.has(found.route.error)) sources.push(found.route.error);
             if (found.route.src) sources.push(found.route.src);
             reloading = true;
-            await sync(true);
+            await sync(true, found.routes);
           }
         } catch (e) {
-          console.log('E_REBUILD', e);
+          console.error('E_REBUILD', e);
           reloading = false;
         }
       }
@@ -121,24 +142,25 @@ export const createCompiler = ({ fs, path }, options, external) => {
 
   function has(file) {
     if (!file) return;
-    const key = file.replace('./', '');
+    const key = Handler.rebase(file);
     return typeof this[FILES_PROPERTY][key] !== 'undefined';
   }
 
-  function save(routes) {
-    config.routes = routes;
+  function save(routes, dependencies) {
+    config.routes = routes || config.routes;
     Template.write(index, JSON.stringify({
       files: Object.entries(this[FILES_PROPERTY]).reduce((memo, [k, v]) => {
-        if (v.filepath) memo[k] = v;
+        if (dependencies?.[v.filepath]) v.deps = [...new Set(dependencies[v.filepath].children.concat(v.deps || []))];
+        memo[k] = { ...v, module: undefined, source: undefined };
         return memo;
-      }, {}),
+      }, dependencies || {}),
       routes: this[ROUTES_PROPERTY].map(route => ({
         ...route,
         re: undefined,
         lvl: undefined,
         root: undefined,
       })),
-    }));
+    }, null, options.env === 'production' ? 0 : 2));
   }
 
   function handlers() {
@@ -158,7 +180,7 @@ export const createCompiler = ({ fs, path }, options, external) => {
     if (options.unocss !== false && unoConfig) {
       const unocss = await external.getUnoCSSModule();
       const _reload = async () => {
-        console.log(`💅 ${unoConfig.replace(cwd, '.')}`);
+        printLog(`💅 ${unoConfig.replace(cwd, '.')}`);
 
         const _config = await Template.import(unoConfig, true);
 
@@ -225,24 +247,24 @@ export const createCompiler = ({ fs, path }, options, external) => {
   let imported = [];
   async function recompile(sources) {
     const start = Date.now();
+    const tasks = [];
+    const bundle = [];
     const results = [];
 
     imported = imported.filter(x => !sources.includes(x));
 
     for (const file of sources) {
       const src = file.replace(cwd, '.');
-      const key = src.replace('./', '');
+      const key = Handler.rebase(src);
 
-      if (key.includes('.mjs')) {
-        this[FILES_PROPERTY][key] = {
-          filepath: file,
-        };
+      if (!key.includes('.html')) {
+        this[FILES_PROPERTY][key] = { filepath: key, children: [] };
         continue;
       }
 
       if (!imported.includes(key)) {
         try {
-          console.log(Util.$.bold(key));
+          printLog(Util.$.bold(key));
 
           const shared = { ...options, generators };
           const mod = compile(Template.read(src), src, shared);
@@ -250,20 +272,37 @@ export const createCompiler = ({ fs, path }, options, external) => {
 
           result.forEach(chunk => {
             if (!chunk.dest) {
-              const source = chunk.src.replace('./', '');
+              const source = Handler.rebase(chunk.src);
               const destFile = Template.join(`${options.dest}/`, source);
               const relative = Template.join(destFile, chunk.src, true);
 
-              results.push([{ content: `export * from '${relative}';\n` }, destFile]);
+              results.push([{ content: `export * from '${relative}';\n` }, Handler.rebase(destFile)]);
             } else {
               const destFile = Template.join(`${options.dest}/`, chunk.dest).replace('.html', '.generated.mjs');
 
-              console.log(`  ${Util.$.green('write')} ${Util.$.gray(destFile)}`);
+              printLog(`  ${Util.$.green('write')} ${Util.$.gray(destFile)}`);
 
-              results.push([chunk, destFile.replace('./', '')]);
+              results.push([chunk, Handler.rebase(destFile)]);
+              bundle.push(destFile);
+
+              if (chunk.client) {
+                const clientFile = destFile.replace('.generated.', '.bundled.');
+
+                printLog(`  ${Util.$.green('write')} ${Util.$.gray(clientFile)}`);
+
+                tasks.push(() => Template.transpile({
+                  attributes: { bundle: true },
+                  content: `export * from '${destFile}'`,
+                  filepath: destFile.replace('.mjs', '.js'),
+                }).then(params => {
+                  // console.log('>>', params.children);
+                  Template.write(clientFile, params.content);
+                }));
+              }
             }
           });
         } catch (e) {
+          console.log('E_SOURCE', e);
           e.source = src;
           throw e;
         }
@@ -283,14 +322,18 @@ export const createCompiler = ({ fs, path }, options, external) => {
       }
     });
 
-    console.log(`${results.length > 0 ? results.length : 'No'} file${results.length === 1 ? '' : 's'} processed (${Util.ms(start)})`);
+    await Promise.all(tasks.map(fn => fn()));
+
+    printLog(`${results.length > 0 ? results.length : 'No'} file${results.length === 1 ? '' : 's'} processed (${Util.ms(start)})`);
+
+    return Template.imports(`${bundle.map(_ => `import '${_}';`).join('\n')}`);
   }
 
   async function precompile() {
     const { sources, routes } = handlers();
 
-    await this.recompile(sources);
-    await this.save(routes);
+    const deps = await this.recompile(sources);
+    await this.save(routes, deps);
   }
 
   return Object.defineProperties({
@@ -354,7 +397,7 @@ export function createEnvironment({ fs, path }, options, external) {
   }
 
   function locate(src) {
-    const key = src.replace('./', '');
+    const key = Handler.rebase(src);
     const mod = compiler[FILES_PROPERTY][key];
 
     if (!mod) throw new Error(`Could not locate '${key}' file`);
@@ -433,7 +476,7 @@ export async function createTestingEnvironment({ fs, path }, options, external) 
       const key = Object.keys(env.files).find(x => x.includes(name));
 
       if (!key) {
-        console.log('GOT', env.files);
+        // console.log('>>>', env.files);
         throw new Error(`Not found '${name}'`);
       }
 
@@ -444,13 +487,11 @@ export async function createTestingEnvironment({ fs, path }, options, external) 
       const target = document.createElement('root');
 
       if (mod.__context === 'client') {
-        window.__client = true;
         return runtime.mountableComponent(mod, {
           loader: id => env.locate(Template.path(id, mod.__src, mod.__dest)),
         }).mount(target, props);
       }
 
-      window.__client = false;
       const result = await Template.resolve(mod, mod.__src, {}, props, () => null);
 
       target.innerHTML = Markup.taggify(result.body);

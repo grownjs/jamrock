@@ -53,24 +53,6 @@ fixture`./hooks+page.html
 `;
 
 // eslint-disable-next-line no-unused-expressions
-fixture`./loops+page.html
-<script>
-  let i = 0;
-  async function *data() {
-    for (;;) {
-      yield i++;
-      if (i > 150) break;
-    }
-  }
-</script>
-<fragment tag="ul" name="test" interval="5">
-  {#each data as x}
-    <li>{x}</li>
-  {/each}
-</fragment>
-`;
-
-// eslint-disable-next-line no-unused-expressions
 fixture`./main.html
   <script context="client">
     import { onError, useRef, useState, useEffect } from 'jamrock';
@@ -333,7 +315,6 @@ test.group('integration only!', t => {
       'GET /campaigns',
       'GET /pages/:slug',
       'GET /hooks',
-      'GET /loops',
       'GET /stuff',
       'PATCH /app/:id',
       'GET /app',
@@ -614,7 +595,7 @@ test.group('integration only!', t => {
       '<!DOCTYPE html>\n',
       '<html data-location="_hidden/stuff+page.html"><head>\n',
       '<meta charset="utf-8" /><base href="/" /></head><body>\n',
-      '<div data-location="_hidden/stuff+page.html:4:1" data-component="generated/empty.html"><div data-location="main.html:42:1">',
+      '<div data-component="generated/empty.html" data-location="_hidden/stuff+page.html:4:1"><div data-location="main.html:42:1">',
       '<button data-location="main.html:44:3" class="jam-420" data-on:click="true" name="_action" value=onclick>insight</button>',
       '<button data-location="main.html:45:3" class="jam-420" data-on:click="true" name="_action" value=fixme>truth</button>',
       '<p data-location="main.html:46:3" data-on:somethingelse="callme">Your answer: FIXME</p>Just an EMPTY component\n\n',

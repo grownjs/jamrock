@@ -11,6 +11,7 @@ import GrownConn from '@grown/conn';
 import { createTranspiler } from '../../src/server/helpers.mjs';
 import { stringify, debug } from '../../src/templ/utils.mjs';
 import { executeAsync } from '../../src/render/async.mjs';
+import { rebase } from '../../src/handler/utils.mjs';
 import { taggify } from '../../src/markup/html.mjs';
 import { Template } from '../../src/templ/main.mjs';
 import { Block } from '../../src/markup/block.mjs';
@@ -32,19 +33,12 @@ export async function transpile(code, src, save, prefix = 'generated/') {
   const file = `${cwd}/${prefix}${src.replace('.html', '')}.generated.mjs`;
 
   fs.mkdirSync(path.dirname(file), { recursive: true });
-  fs.writeFileSync(file, Block.unwrap(code, src, file.replace(cwd, '.').replace('./', '')));
-  // console.log({src,file,dest:file.replace(cwd, '.').replace('./', '')});
+  fs.writeFileSync(file, Block.unwrap(code, src, rebase(file.replace(cwd, '.'))));
 
   if (!save) {
     const mod = await import(`${file}?_=${inc++}`);
     return mod;
   }
-}
-
-export function flatten(v) {
-  return Array.isArray(v)
-    ? v.reduce((memo, x) => memo.concat(flatten(x)), []).filter(x => x && String(x).trim().length > 0)
-    : v;
 }
 
 const TEMPLATE = { ...Template };
@@ -187,7 +181,7 @@ export async function build(src, opts) {
 fixture.partial = async (src, props, shared, callback) => {
   try {
     setup();
-    const tpl = await build(`./${src.replace('./', '')}`);
+    const tpl = await build(`./${rebase(src)}`);
     const out = await Template.resolve(tpl.module, 'generated/tpl.mjs', shared, props, callback);
     if (out.status) shared.conn.res.status(out.status);
     return stringify(out);

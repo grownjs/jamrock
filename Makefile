@@ -1,6 +1,7 @@
 PWD=$(shell pwd)
 
 MAILDEV=1
+EDITOR=zed
 BROWSER=chrome:headless
 DIST_TASK=dist
 FORCE_COLOR=1
@@ -12,7 +13,7 @@ endif
 
 export EDITOR APP_KEY MAILDEV FORCE_COLOR GIT_REVISION
 
-.PHONY: seed dist docs
+.PHONY: seed dist docs examples
 
 ci: install clean dist
 	@npm run lint
@@ -132,7 +133,7 @@ bun:
 clean: clean-ts
 	@rm -rf dist/* generated/* .nyc_output
 clean-ts:
-	@@rm -rf build/* scripts/routes.d.ts
+	@rm -rf build/* scripts/routes.d.ts
 
 prune: clean
 	@rm -f deno.lock
@@ -144,6 +145,11 @@ build: deps
 
 #client:
 #	@npm run watch:browser
+
+examples: clean dist
+	@bin/node build --src ./examples
+server:
+	@bin/node serve --src ./examples --watch lib
 
 source: deps
 	@npm link

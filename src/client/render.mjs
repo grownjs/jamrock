@@ -18,8 +18,20 @@ export function wrapComponent(_, loop) {
 }
 
 export function clientComponent(mod, context) {
+  // console.log('E_COMPONENT', mod, context);
+
+  if (!mod) {
+    return { mount: el => el };
+  }
+
   const loader = x => (x === 'jamrock' ? this : context.loader?.(x) || import(x));
   const render = executeAsync(loader, async (child, props) => {
+    // console.log('RENDER?', child, props);
+    if (!child) {
+      console.log('E_CHILD', props);
+      return [];
+    }
+
     let data = props;
     if (child.__handler) {
       console.log('CHILD', child);
@@ -30,15 +42,15 @@ export function clientComponent(mod, context) {
     return render(child.__template, data);
   });
   const next = data => render(mod.__template, data);
-  const mount = async (el, props) => {
+  const mount = async (el, props, _events) => {
     if (el.current) {
       throw new Error('Component already mounted');
     }
 
     let vnode;
     if (mod.__handler) {
-      const self = await mod.__handler(props, loader);
-      const store = await self.__self();
+      const main = await mod.__handler({ ...props }, loader);
+      const store = await main.__self();
       const data = await store.loop();
 
       store.patch = async peek => {
@@ -53,19 +65,29 @@ export function clientComponent(mod, context) {
           : requestAnimationFrame(() => this.patchNode(el, vnode, vnode = patch));
       };
 
+      if (el.__store) el.__store.clear();
       el.current = { ...props, ...data.__scope };
       el.__store = store;
     }
 
-    el.__update = (_mod, _opts) => {
+    // FIXME: some updates lack of state... why?
+    // for some reason, after many updates, once a trigger treis to
+    // activate the component is not reloading its state...
+
+    el.__defer = el.__defer || Promise.resolve();
+    el.__update = (_mod, _props, _events) => {
       el.current = null;
-      clientComponent.call(this, _mod, context).mount(el, _opts);
+      el.__store.clear();
+      console.log('[UPDATE]', _props);
+      el.__defer = el.__defer
+        .then(() => clientComponent.call(this, _mod, context).mount(el, _props, _events));
     };
 
+    console.log('[RENDER]', props, el.current);
     vnode = await next(el.current);
 
     if (context?.sync) {
-      context.sync(vnode);
+      context.sync(vnode, _events);
     } else {
       this.renderToElement(el, vnode);
     }

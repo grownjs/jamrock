@@ -1,13 +1,15 @@
 import { createQueue } from './pubsub.mjs';
 import { RedisHub, RedisStore } from './redis.mjs';
 
-export function createChokidarWatcher(path, chokidar) {
-  const opts = { ignoreInitial: true };
-  const watcher = chokidar.watch(path, opts);
+export function createChokidarWatcher(opts, chokidar) {
+  const params = { ignoreInitial: true };
+  const watcher = chokidar.watch(opts.src, params);
   const watchers = [];
 
+  if (Array.isArray(opts.watch)) watcher.add(opts.watch);
+
   function on(src, cb) {
-    const subwatch = chokidar.watch(src, opts);
+    const subwatch = chokidar.watch(src, params);
     subwatch.on('all', (e, file) => {
       if (e !== 'addDir') cb(e, file);
     });
@@ -29,7 +31,7 @@ export function createChokidarWatcher(path, chokidar) {
 export async function createFSWatcher(options, getChokidarModule) {
   const chokidar = await getChokidarModule();
 
-  return createChokidarWatcher(options.src, chokidar);
+  return createChokidarWatcher(options, chokidar);
 }
 
 export async function createRedisConnection(env, options, getRedisModule) {
@@ -57,7 +59,7 @@ export async function createRedisConnection(env, options, getRedisModule) {
     Object.assign(options, { store, pubsub });
   }
 
-  env.streaming = createQueue(options);
+  env.queue = createQueue(options);
 }
 
 export const createTranspiler = ({ createMortero }) => async function transpile(tpl, ext, data, options) {
@@ -80,14 +82,15 @@ export const createTranspiler = ({ createMortero }) => async function transpile(
         format: 'esm',
         bundle: params.bundle || params.scoped,
         online: !(params.bundle || params.scoped) || params.online,
-        minify: process.env.NODE_ENV === 'production',
+        minify: options?.env === 'production',
         modules: params.type === 'module',
 
-        install: process.env.NODE_ENV === 'development',
+        install: options?.env === 'development',
 
         progress: false,
         platform: 'browser',
       });
+      // console.log({params, options});
 
       partial(params, (err, output) => {
         if (err) {

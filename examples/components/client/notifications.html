@@ -23,5 +23,5 @@
 </script>
 
 {#each msgs as msg, i}
-  <p class={msg.type}>{msg.value} <button onclick="{() => close(i)}">&times;</button></p>
+  <li class={msg.type}>{msg.value} <button type="button" onclick="{() => close(i)}">&times;</button></li>
 {/each}

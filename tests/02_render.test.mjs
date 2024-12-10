@@ -65,6 +65,21 @@ test.group('generated code', () => {
 
     expect(o.html).toEqual('<li data-test:id="form.x.elements.y" data-location="source.html:1:1">...</li>');
   });
+
+  test('should expose exported locals', async ({ expect }) => {
+    const mod = await compile(`
+      <script>
+        let cssClass;
+        let messages = [];
+        export { messages as from };
+        export { cssClass as class };
+        export const truth = 42;
+        export let value;
+      </script>
+    `);
+
+    expect(mod.__exported).toEqual(['truth', 'value', 'class', 'from']);
+  });
 });
 
 test.group('expressions', () => {
@@ -136,22 +151,3 @@ test.group('using loops', () => {
     expect(html).toContain('Jesús - John Wick (42)');
   });
 });
-
-//  test('skip: pin: should be able to invoke bundles', async ({ expect }) => {
-//    const render = await fixture.bundle('main.html');
-//    const markup = await render({
-//      slots: {
-//        default: [['fragment', { '@html': '<b>DUB</b>' }]],
-//        before: ['*'],
-//        after: ['NIX'],
-//      },
-//    });
-//
-//    expect(markup).toContain('*<button data-location="generated/main.html:43:3" class="jam-x1704ny8">insight</button>');
-//    expect(markup).toContain('<button data-location="generated/main.html:44:3" class="jam-x1704ny8">truth</button>');
-//    expect(markup).toContain('<p data-location="generated/main.html:45:3">Your answer: FIXME</p>');
-//
-//    expect(markup).toContain('<h1 style="color:red">It works.</h1>');
-//    expect(markup).toContain('</p>Just an EMPTY component');
-//    expect(markup).toContain('[<b>DUB</b>:NIX]');
-//  });

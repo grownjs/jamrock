@@ -68,7 +68,7 @@ export default async function main(env, argv) {
   const src = Util.rtrim(Util.flag('src', argv, './pages'));
   const dest = Util.rtrim(Util.flag('dest', argv, './build'));
 
-  let watch = Util.has('watch', argv);
+  let watch = Util.list('watch', argv, Util.has('watch', argv));
 
   const uws = Util.flag('uws', argv, false);
   const port = +Util.flag('port', argv, 8080);
@@ -115,7 +115,7 @@ export default async function main(env, argv) {
 
         found++;
 
-        const key = (route.src || route.middleware).replace('./', '');
+        const key = route.src || route.middleware;
 
         if (current !== key) {
           console.log(`${current ? '\n' : ''}${Util.$.bold(key)}`);
@@ -167,7 +167,7 @@ export type Routes = ${['RouteMap'].concat(typedefs).join('\n& ')};\n`;
   try {
     if (argv[0] === 'dev') {
       argv[0] = 'serve';
-      watch = true;
+      watch = watch || true;
     }
 
     switch (argv[0]) {

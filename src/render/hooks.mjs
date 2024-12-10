@@ -1,4 +1,4 @@
-import { Is, toProps } from '../utils/client.mjs';
+import { Is } from '../utils/client.mjs';
 
 export function str(value) {
   if (!Is.value(value)) value = Object.prototype.toString.call(value);
@@ -14,7 +14,11 @@ export const execute = (loader, next, run) => {
   const context = {
     $: value => {
       if (value === null || value === false || typeof value === 'undefined') return '';
-      if (!Is.value(value)) value = Object.prototype.toString.call(value);
+      if (!Is.scalar(value)) {
+        return Is.arr(value)
+          ? value.map(context.$).join('')
+          : Object.prototype.toString.call(value);
+      }
       return Is.str(value) ? ents(value) : value.toString();
     },
     d: value => {
@@ -27,9 +31,6 @@ export const execute = (loader, next, run) => {
     },
     h: value => {
       return Is.arr(value) ? value : ['fragment', { '@html': String(value) }];
-    },
-    e: (name, props, children) => {
-      return [name, typeof window !== 'undefined' && window.__client ? toProps(props) : props, children];
     },
     if: (cond, then, ...branches) => {
       if (cond) return run(then(), []);

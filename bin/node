@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-
+// process.debug = 1;
 Promise.all([
   import('../lib/nodejs/main.mjs'),
   import('./cli.mjs'),

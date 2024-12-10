@@ -56,6 +56,11 @@ export function loadPage({ el, wait, target, fragment }, url, data, method, _hea
   const active = document.activeElement;
   const parent = (el && el.form) || el;
 
+  if (!(url || _location)) {
+    console.log({ active, data, method });
+    throw new Error('Missed location');
+  }
+
   if (parent) {
     parent.classList.add('loading');
   }
@@ -83,6 +88,7 @@ export function loadPage({ el, wait, target, fragment }, url, data, method, _hea
       return _callback && _callback(target, body);
     }
 
+    console.log('[PAGE]', url || _location);
     this.browser.sync(JSON.parse(decode(body)), spaNavigate)
       .then(() => _callback && _callback(target, body));
   })).then(() => {

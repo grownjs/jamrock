@@ -181,6 +181,7 @@ export function lexer(code, token) {
     // eslint-disable-next-line no-new-func
     new AsyncFunction('', chunk);
   } catch (e) {
+    // console.log('E_LEXER', e);
     if (process.debug) {
       console.log('---');
       console.log(chunk);

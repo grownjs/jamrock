@@ -53,183 +53,76 @@ export function decorate(ctx, vnode, hooks) {
   }
 }
 
-export async function consume(ctx, self, append, callback) {
-  let interval = 0;
-  let timeout = 50;
-  let limit = 100;
-  let mode = 'append';
-  let frame;
-  if (self.chunk) {
-    if (self.props.frame) frame = true;
-    if (self.props.mode) mode = self.props.mode;
-    if (self.props.limit > 0) limit = self.props.limit;
-    if (self.props.timeout > 0) timeout = self.props.timeout;
-    if (self.props.interval > 0) interval = self.props.interval;
+export function streamify(ctx) {
+  function append(key, item) {
+    ctx.publish?.(ctx.ref, key, item);
   }
 
-  let done;
-  setTimeout(() => { done = true; }, timeout);
+  function peek(key, value) {
+    let interval = 0;
+    let timeout = 50;
+    let limit = 100;
+    let mode = 'append';
 
-  self.result[self.key] = [];
+    const values = [];
 
-  function push(item) {
-    self.result[self.key][mode === 'prepend' ? 'unshift' : 'push'](item);
-  }
+    let cancelled;
+    let done;
+    let t = setTimeout(() => { done = true; }, timeout);
 
-  ctx.subscribe(self.handler.component.src, self.name, {
-    cancel() {
-      ctx.unsubscribe(self.handler.component.src, self.name, self.depth);
-      clearTimeout(timeout);
-      timeout = undefined;
-      done = true;
-    },
-    accept(ws) {
-      ctx.accept(self.handler.component.src, self.name, self.depth, self.handler, ws);
-      clearTimeout(timeout);
-      timeout = undefined;
-      return true;
-    },
-  }, self.depth);
-
-  let cancelled;
-  let finished;
-  let i = 0;
-  if (Is.iterable(self.value)) {
-    for await (const item of self.value) {
-      if (frame) done = true;
-      if (i++ >= limit) done = true;
-      if (!done) cancelled = push(item);
-      else if (process.headless || cancelled === true) break;
-      else {
-        if (!finished) append(finished = true, item);
-        if (interval > 0) await sleep(interval);
-        if (Is.func(callback)) cancelled = callback() || append(ctx, item);
-        else break;
-      }
-    }
-    if (Is.func(callback)) callback();
-  }
-}
-
-export async function streamify(ctx, depth, result, invoke, handler, callback) {
-  const keys = Object.keys(result);
-  const frags = {};
-
-  // we could match more than one fragments at once, right?
-  Object.entries(handler.fragments).forEach(([k, v]) => {
-    keys.forEach(key => {
-      if (v.scope && v.scope.includes(key)) frags[key] = { key: k, frag: v };
+    ctx.streams.set(`${ctx.ref}/${key}`, {
+      cancel() {
+        clearTimeout(t);
+        cancelled = done = true;
+      },
+      publish(item) {
+        append(key, item);
+      },
     });
-  });
 
-  return Promise.all(keys.map(async key => {
-    if (key.charAt() === '@' || key === '$$props' || key === '$$slots') return;
+    const push = item => {
+      values[mode === 'prepend' ? 'unshift' : 'push'](item);
+    };
 
-    let value = result[key];
-    if (value && (Is.thenable(value) || Is.generator(value))) {
-      value = result[key] = await (Is.factory(value) ? value() : value);
-    }
+    const pull = async next => {
+      let i = 0;
+      for await (const item of value) {
+        if (!done && i++ >= limit) {
+          next(values);
+          done = true;
+        }
 
-    if (Is.computed(value)) {
-      result[key] = value.current;
-      return;
-    }
-
-    let dynamic;
-    if (value && (Is.iterable(value))) {
-      dynamic = !Is.arr(value);
-
-      let props;
-      let chunk;
-      let name;
-      if (frags[key]) {
-        name = frags[key].key;
-        props = await invoke(ctx, { render: frags[key].frag.attributes, depth }, result);
-        chunk = { slots: handler.component._slots, render: frags[key].frag.template };
+        if (!done) push(item);
+        else if (process.headless || cancelled) break;
+        else {
+          if (interval > 0) await sleep(interval);
+          if (this.append(key, item)) break;
+        }
       }
+      if (!done) next(values);
+    };
 
-      return new Promise(next => {
-        const values = [];
+    return new Promise(pull);
+  }
 
-        let flushed;
-        async function flush(data) {
-          if (!chunk) return;
-          if (ctx.conn && ctx.conn.aborted) return;
-          if (ctx.socket && ctx.socket.closed) return;
-          if (ctx.socket && ctx.socket.identity !== ctx.uuid) return;
-          flushed = true;
+  async function wrap(state) {
+    const keys = Object.keys(state);
+    const values = [];
 
-          await ctx.send(key, data, ctx.uuid, chunk, `${handler.component.src}/${depth}/${name}`, props, result);
-        }
-
-        let r;
-        function retry(data) {
-          clearTimeout(r);
-          r = setTimeout(() => {
-            if (ctx.socket) flush(data);
-            else if (!ctx.done) retry(data);
-          }, 60);
-        }
-
-        let d;
-        let p;
-        function send() {
-          clearTimeout(d);
-          let c = 50;
-          d = setTimeout(function tick() {
-            if (ctx.socket && !flushed) {
-              retry(values.splice(0, values.length));
-              return;
-            }
-            if (c-- > 0 && !flushed) {
-              clearTimeout(p);
-              p = setTimeout(tick, 200);
-            }
-          });
-        }
-
-        let ready;
-        let done;
-        let t;
-        callback(ctx, {
-          key, name, value, result, props, depth, chunk, invoke, handler,
-        }, (evt, item) => {
-          if (ctx.conn && ctx.conn.aborted) return true;
-          if (ctx.socket && ctx.socket.identity !== ctx.uuid) return true;
-
-          if (props && props.frame) {
-            if (evt !== true) flush([item]);
-            return;
-          }
-
-          if (values.length > 1000) return true;
-          if (!chunk || ctx.done) return true;
-          if (!ctx.socket) {
-            if (evt !== true) values.push(item);
-          } else if (chunk) {
-            if (ctx.socket.closed) return true;
-            if (evt !== true) values.push(item);
-            if (values.length) flush(values.splice(0, values.length));
-            if (!ready) ready = ctx.connect(handler.component.src, name, depth, ctx.socket);
-          }
-        }, () => {
-          if (!done) {
-            done = true;
-            next();
-          }
-
-          if (ctx.socket === false) return true;
-          if (ctx.socket && ctx.socket.closed) return true;
-          if (ctx.socket && ctx.socket.identity !== ctx.uuid) return true;
-          if (values.length && !ctx.socket && !dynamic) {
-            retry(values.splice(0, values.length));
-          } else {
-            clearTimeout(t);
-            t = setTimeout(send, 200);
-          }
-          return ctx.done;
-        });
-      });
+    for (const key of keys) {
+      if (key.charAt() === '@') continue;
+      let value = state[key];
+      if (value && (Is.thenable(value) || Is.generator(value))) {
+        values.push(Promise.resolve()
+          .then(() => (Is.factory(value) ? value() : value))
+          .then(_ => (Is.iterable(_) ? this.peek(key, _) : _))
+          .then(result => { state[key] = result; }));
+      }
     }
-  }));
+
+    await Promise.all(values);
+    return state;
+  }
+
+  return { wrap, peek, append };
 }

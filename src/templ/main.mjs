@@ -1,12 +1,17 @@
 import { pascalCase, snakeCase, realpath, Is } from '../utils/server.mjs';
 import { serialize, taggify, scopify, rulify } from '../markup/html.mjs';
+// import { useWebSockets, decorate } from './send.mjs';
 import { executeAsync } from '../render/async.mjs';
+import { decorate, streamify } from './send.mjs';
 import { debug, stringify } from './utils.mjs';
+import { rebase } from '../handler/utils.mjs';
 import { ents } from '../render/hooks.mjs';
-import { decorate } from './send.mjs';
 
 const RE_SAFE_IMPORTS = /^(?:npm|node|file|https?):/;
 const RE_SAFE_NAME = /(?:^|\/)(.+?)(?:\/\+\w+)?\.\w+$/;
+
+const RE_EXTERNALS = /\b(?:import[^;=]*\(?(?:"([^;]+)"|'([^;]+)')|(?:export|import)[^;=]+from\s*(?:"([^;]+)"|'([^;]+)'))/g;
+const RE_COMMENTS = /\/\*[\S\s]*?\*\/|\/\/.*/g;
 
 const NO_HOOKS = {
   useState: v => [v],
@@ -26,36 +31,39 @@ export class Template {
   }
 
   async regenerate(imported = []) {
-    const cwd = process.cwd();
+    // const cwd = process.cwd();
+
+    // console.log({ cwd });
 
     Template.cache = Template.cache || new Map();
 
     const mods = await this.transform(Template.transpile, null, {
-      external: ['jamrock'],
-      locate: path => {
-        if (path.indexOf(cwd) === 0) {
-          const file = path.replace(`${cwd}/`, '');
-
-          if (Template.cache.has(`${file}.mjs`)) {
-            return `${cwd}/${file}.mjs`;
-          }
-        }
-      },
-      resolve: path => {
-        if (path.indexOf(cwd) === 0) {
-          const file = path.replace(`${cwd}/`, '');
-
-          if (Template.cache.has(file)) {
-            const chunk = Template.cache.get(file);
-
-            return {
-              loader: 'js',
-              contents: chunk.content,
-              resolveDir: Template.dirname(path),
-            };
-          }
-        }
-      },
+      // FIXME: options not longer needed?
+      // external: ['jamrock'],
+      //      locate: path => {
+      //        if (path.indexOf(cwd) === 0) {
+      //          const file = path.replace(`${cwd}/`, '');
+      //
+      //          if (Template.cache.has(`${file}.mjs`)) {
+      //            return `${cwd}/${file}.mjs`;
+      //          }
+      //        }
+      //      },
+      //      resolve: path => {
+      //        if (path.indexOf(cwd) === 0) {
+      //          const file = path.replace(`${cwd}/`, '');
+      //
+      //          if (Template.cache.has(file)) {
+      //            const chunk = Template.cache.get(file);
+      //
+      //            return {
+      //              loader: 'js',
+      //              contents: chunk.content,
+      //              resolveDir: Template.dirname(path),
+      //            };
+      //          }
+      //        }
+      //      },
     }, imported);
 
     if (!mods.length) {
@@ -74,6 +82,8 @@ export class Template {
 
     const isStatic = context === 'static';
     const isClient = bundle || context === 'client';
+
+    // console.log({ isClient, context, filepath });
 
     const tasks = [];
     const mod = [];
@@ -129,15 +139,15 @@ export class Template {
       result = { content: this.partial.toString(), src: filepath, children, dest: target };
 
       if (isClient) {
-        mod.push(result);
+        mod.push({ ...result, client: true });
       } else {
         mod.unshift(result);
       }
     }
 
-    if (Template.cache) {
-      Template.cache.set(target.replace('.html', '.js'), result);
-    }
+    //    if (Template.cache) {
+    //      Template.cache.set(target.replace('.html', '.js'), result);
+    //    }
     return mod;
   }
 
@@ -167,6 +177,7 @@ export class Template {
         if (_chunk instanceof Response) response = _chunk;
       }
     } catch (e) {
+      // console.log('E_ACTIONS', e);
       if (Is.func(main.__actions?.catch)) {
         await main.__actions.catch(e);
       } else {
@@ -189,6 +200,7 @@ export class Template {
   static async finalize(e, self, chunk, mixins, filepath) {
     const fragments = self.is_json ? {} : null;
 
+    // FIXME: use this technique when executing from fragments over ws/sse
     await Promise.all([
       serialize(chunk.body, null, (_, x) => decorate(self, _, x), fragments),
       serialize(chunk.head, null, (_, x) => decorate(self, _, x), fragments),
@@ -268,11 +280,14 @@ export class Template {
   }
 
   static async execute(component, context, props, cb) {
-    context.base_url = context.conn?.base_url;
-    context.is_json = context.conn?.is_xhr;
-    context.mixins = [];
-    context.stack = [];
-    context.scope = {};
+    context.base_url = context.base_url || context.conn?.base_url;
+    context.is_json = context.is_json || context.conn?.is_xhr;
+    context.streams = context.streams || new Map();
+    context.locals = context.locals || streamify(context);
+    context.mixins = context.mixins || [];
+    context.stack = context.stack || [];
+    context.scope = context.scope || {};
+    context.depth = context.depth || 0;
 
     const shared = {
       failure: null,
@@ -285,10 +300,13 @@ export class Template {
       doc: {},
     };
 
+    // 1. setup hooks for ws/sse here
     const tasks = [];
 
     try {
       let result = await Template.render(component, null, props, context, cb);
+
+      // 4. a this point we should have something... so, we can wait, or not...
 
       if (!result) {
         // console.log({ component, props });
@@ -297,6 +315,8 @@ export class Template {
 
       Object.values(context.scope).forEach(_ => tasks.push(..._.handlers));
       await Promise.all(tasks.map(fn => fn(result)));
+
+      // console.log('GOT', context.stack);
 
       if (!(result instanceof Response)) {
         if (context.route?.layout) {
@@ -310,6 +330,7 @@ export class Template {
       }
       return result;
     } catch (e) {
+      // console.log('E_ROUTE', e);
       if (context.route?.error) {
         props = props || {};
         props.failure = e;
@@ -370,18 +391,25 @@ export class Template {
 
     try {
       const data = main?.__scope ?? main?.__callback?.();
-      const state = { ...props, ...data };
 
-      const [doc, body, head, attrs] = await Promise.all([
+      let state = { ...props, ...data };
+      if (ctx.locals) state = await ctx.locals.wrap(state);
+
+      let [doc, body, head, attrs] = await Promise.all([
         view(component.__doctype, state),
         view(component.__template, state),
         view(component.__metadata, state),
         view(component.__attributes, state),
       ]);
 
+      while (body?.length === 1 && !Is.vnode(body[0])) body = body[0];
+      while (head?.length === 1 && !Is.vnode(head[0])) head = head[0];
+
       if (component.__context === 'client') {
-        Template.client(ctx, body, props, parent, component);
+        body = Template.client(ctx, body, props, parent, component);
       }
+
+      // 3. render cycle is over...
 
       return {
         scripts, styles, attrs, head, body, doc,
@@ -471,24 +499,21 @@ export class Template {
   static client(ctx, body, props, parent, component) {
     if (parent?.__context !== 'module') return;
 
-    // FIXME: we need a particular strategy here,
-    // we should wrap only top-level components that
-    // are client-side, and let the inner ones as is...
-    // once on the DOM, we only patch the root-component!!
-    // also, we can provide special tags or meanings to
-    // hydrate on interaction, or client-side only, etc.
-    // i.e. on:idle on:visible on:interaction
-
-    console.log('CSR', component.__src, props);
-
-    if (!body[0] && body.length === 1) {
-      body[0] = 'div';
-      body[1] = { ...props, 'data-component': ctx.ref };
-      body[2] = [];
-    } else if (Is.vnode(body[0]) && body.length === 1) {
-      body.unshift({ ...props, 'data-component': ctx.ref });
-      body.unshift('div');
+    if (ctx.queue) {
+      ctx.queue.set(ctx.uuid, ctx.ref, component.__exported.reduce((memo, key) => {
+        const value = props[key];
+        if (Is.data(value)) memo[key] = value;
+        return memo;
+      }, {}));
     }
+
+    const attrs = Object.keys(props).reduce((memo, key) => {
+      if (/^(?:@|on|data|class|style|aria)/.test(key)) memo[key] = props[key];
+      else if (key !== 'tag' && Is.scalar(props[key])) memo[key] = props[key];
+      return memo;
+    }, { 'data-component': ctx.ref });
+
+    return [props.tag || 'div', attrs, body || []];
   }
 
   static hooks(ctx, parent) {
@@ -516,6 +541,37 @@ export class Template {
         }
       },
     };
+  }
+
+  static imports(str, base, shared, filepath, imported = new Map()) {
+    const ret = shared || {};
+    str
+      .replace(RE_COMMENTS, '')
+      .replace(RE_EXTERNALS, (_, $1, $2, $3, $4) => {
+        const src = $4 || $3 || $2 || $1;
+        const source = base ? Template.join(`${base}/`, src) : src;
+
+        if (src.charAt() !== '.' || filepath === source) return _;
+
+        const key = rebase(source.replace(process.cwd(), '.'));
+
+        if (imported.has(key)) {
+          const { set, found } = imported.get(key);
+
+          ret[key] = { ...ret[key], children: [...new Set(Object.keys(set).concat(ret[key]?.children || []))] };
+          Object.assign(ret, found);
+          return _;
+        }
+
+        const set = {};
+        const code = Template.read(source);
+        const found = Template.imports(code, Template.dirname(source), set, source, imported);
+
+        ret[key] = { ...ret[key], children: [...new Set(Object.keys(set).concat(ret[key]?.children || []))] };
+        imported.set(key, { set, found });
+        Object.assign(ret, found);
+      });
+    return ret;
   }
 
   static dirname(path) {
@@ -572,8 +628,8 @@ export class Template {
       const src = realpath(source, mod);
       const dest = realpath(filepath, mod);
 
-      if (src) paths.push(src.replace('./', ''));
-      if (dest) paths.unshift(dest.replace('./', ''));
+      if (src) paths.push(rebase(src));
+      if (dest) paths.unshift(rebase(dest));
     } else if (mod.indexOf('node:') === 0) return mod;
     else if (!mod.includes(':') && mod.charAt() === '/') paths.push(mod);
     else if (Template.exists(`node_modules/${mod.split(':')[0]}/package.json`)) return mod;

@@ -1,4 +1,4 @@
-import { rankify, routify, extract, rematch } from './utils.mjs';
+import { rankify, routify, extract, rematch, rebase } from './utils.mjs';
 import { Template } from '../templ/main.mjs';
 import { Is, set } from '../utils/server.mjs';
 import { req } from './match.mjs';
@@ -46,7 +46,7 @@ export async function middleware(ctx, actions) {
 }
 
 export function controllers(cwd, from) {
-  const { api, routes } = routify(from.map(_ => _.replace(cwd, '')));
+  const { api, routes } = routify(cwd, from);
   const collection = [];
 
   for (const route of routes) {
@@ -54,10 +54,11 @@ export function controllers(cwd, from) {
     const layout = route.get('layout');
     const error = route.get('error');
 
-    route.options.middleware = _middleware ? cwd + _middleware.replace(cwd, '') : null;
-    route.options.layout = layout ? cwd + layout.replace(cwd, '') : null;
-    route.options.error = error ? cwd + error.replace(cwd, '') : null;
-    route.options.all = route.all('page', _ => cwd + _);
+    route.options.middleware = rebase(_middleware);
+    route.options.layout = rebase(layout);
+    route.options.error = rebase(error);
+
+    route.options.all = route.all('page', rebase);
     route.options.src = route.options.all[0];
 
     delete route.options.page;
@@ -92,7 +93,7 @@ export function controllers(cwd, from) {
   const _middlewares = api.map(_ => _.src);
 
   api.forEach(({ src, route }) => {
-    const code = Template.read(cwd + src);
+    const code = Template.read(src);
     const matches = extract(code);
 
     matches.forEach(subroute => {
@@ -100,7 +101,7 @@ export function controllers(cwd, from) {
       const { depth, params } = rankify(path);
 
       subroute.middlewares = [];
-      subroute.middleware = cwd + src;
+      subroute.middleware = src;
       subroute.base = subroute.path;
       subroute.keys = params;
       subroute.path = path;
@@ -117,7 +118,7 @@ export function controllers(cwd, from) {
         parts.pop();
 
         if (_middlewares.includes(key)) {
-          subroute.middlewares.push(cwd + key);
+          subroute.middlewares.push(key);
         }
       }
     });

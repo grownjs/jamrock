@@ -1,6 +1,8 @@
 import { Template, Handler, Markup, Util } from 'jamrock/core';
 import { generateClientCode } from 'jamrock/client';
 
+const PATH_LOADER_PREFIX = '@';
+
 export function parseCookies(cookie) {
   if (!cookie) return {};
 
@@ -117,9 +119,8 @@ export function getRawBody(req, limit) {
 export function getClientCode(conn, patch, baseURL, _uuid, _immediate) {
   const uuid = _uuid || conn.headers['request-uuid'] || `0.${Date.now().toString(36).replace(/.{3}/g, '$&-')}`;
   const state = JSON.stringify({ uuid, patch, csrf: conn.csrf_token, method: conn.method });
-  const client = `<script>(${
-    generateClientCode.toString().replace(/𝐢𝐦𝐩𝐨𝐫𝐭/g, 'import')
-  })(${state}, ${!!_immediate});</script>
+  const client = `<script>(${generateClientCode.toString().replace(/𝐢𝐦𝐩𝐨𝐫𝐭/g, 'import')
+    })(${state}, ${!!_immediate});</script>
 `.replaceAll('./', baseURL);
 
   return { uuid, client };
@@ -158,9 +159,8 @@ export function create404(env, conn, client, message) {
     .map(([k, v]) => `<dt>${k}</dt><dd>${v}</dd>`).join('')}</dl>`;
 
   return `${style}${message}<table><caption>Available routes</caption>${env.routes.map(route => `
-<tr><td align=right style="width:1%">${route.verb}</td><td>${
-  route.verb === 'GET' ? `<a href="${route.path}">${route.path}</a>` : route.path
-}</tr>`).join('')}
+<tr><td align=right style="width:1%">${route.verb}</td><td>${route.verb === 'GET' ? `<a href="${route.path}">${route.path}</a>` : route.path
+    }</tr>`).join('')}
 <tfoot><tr><th colspan="2">${conn.req.url} &mdash; ${now}</th></tr></tfoot>
 </table>${config}${environment}${client}`;
 }
@@ -173,10 +173,12 @@ export async function createBody(env, conn, clients, { uuid, client, matches }) 
     const ctx = {
       conn,
       clients,
+      depth: 0,
+      stack: [],
       called: true,
       route: matches,
+      queue: env.queue,
       routes: env.routes,
-      streaming: env.streaming,
     };
 
     ctx.uuid = uuid;
@@ -186,14 +188,30 @@ export async function createBody(env, conn, clients, { uuid, client, matches }) 
     conn.current_path = matches.path;
     conn.routes = ctx.routes;
 
+    // FIXME: setup context for ws/see here!!
+    if (Util.Is.func(ctx.clients) && !ctx.socket) {
+      console.log('[SETUP_SOCKETS]');
+
+      let _socket;
+      Object.defineProperty(ctx, 'socket', {
+        get: () => {
+          // eslint-disable-next-line no-return-assign
+          return _socket || (_socket = ctx.clients().find(x => x.identity === ctx.uuid));
+        },
+        set: v => {
+          _socket = v;
+        },
+      });
+    }
+
     let mod;
     if (matches.src) {
-      conn.current_module = matches.src.replace('./', '');
+      conn.current_module = matches.src;
       mod = env.locate(conn.current_module);
     }
 
     if (matches.middleware) {
-      conn.current_module = conn.current_module || matches.middleware.replace('./', '');
+      conn.current_module = conn.current_module || matches.middleware;
       conn.current_options = (mod && mod.opts) || {};
 
       const set = [matches.middleware].concat(matches.middlewares || []);
@@ -277,6 +295,7 @@ export async function createBody(env, conn, clients, { uuid, client, matches }) 
           `"head":${Util.cleanJSON(body.head)}`,
           `"body":${Util.cleanJSON(body.body)}`,
           `"doc":${JSON.stringify(body.doc)}`,
+          `"_":${JSON.stringify(ctx.queue.get(uuid))}`,
         ].join(',')}}`);
 
         const headers = new Headers({
@@ -296,11 +315,14 @@ export async function createBody(env, conn, clients, { uuid, client, matches }) 
         buffer += chunk;
       });
 
+      // FIXME: how to stream on this? like, to pull data from iterators...
       body = buffer + client;
+      body += `<script>window.__=${JSON.stringify(ctx.queue.get(uuid))};</script>`;
       status = conn.status_code || 200;
     }
     status = conn.status_code || 200;
   } catch (e) {
+    console.log('E_STATUS', e);
     status = e.status || 500;
     body = createError(e, env, client);
   }
@@ -310,53 +332,27 @@ export async function createBody(env, conn, clients, { uuid, client, matches }) 
 
 // FIXME: we could do magic here? like, idk, wrapping functions into rpc calls? :v
 export async function createModuleResponse(env, conn) {
-  const key = conn.path_info.slice(1).join('/');
+  const parts = conn.path_info.slice(1);
+  const uuid = parts.shift();
+  const key = parts.join('/');
 
-  // const state = await conn.store.get(conn.uuid);
-  // console.log('PRELUDE', { state });
-
-  let mod = '';
-  if (key.includes(':')) {
-    const [file] = key.split(':');
-    const src = file.replace('.html.', '.html:');
-    // const state = await conn.store.get(key);
-    // const [props, locals, slots] = (state || '{}\0{}\0').split('\0');
-
-    mod = Template.read(env.files[src].filepath.replace('.server', '.client'));
-    mod = `${mod.replace('export default', 'export const __module =')}`;
-
-    console.log('COMPONENT', src);
-
-    // mod = `export const __module = await window.Jamrock.Components.resolve("${file}")`;
-    // mod = `${mod};\nexport const __state = {props:${props},\nslots:{${slots}},\nscope:${locals}};`;
-
-    // if (!('data' in conn.query_params)) {
-    //   conn.store.set(file, Date.now());
-    //   mod = Template.read(env.files[file].filepath.replace('.server', '.client'));
-    //   mod = `${mod.replace('export default', 'export const __module =')}`;
-    //   mod += `\nexport const __state = {props:${props},\nslots:{${slots}},scope:${locals}};`;
-    // }
-  } else if (key.includes('@')) {
-    // const [base, source] = key.split('@')
-    // const [ref, ...uuid] = base.split('.');
-    // const name = `${ref}@${uuid.join('.')}${source}`;
-    // const [props, code] = await Promise.all([conn.store.get(`${name}?data`), conn.store.get(`${name}?mod`)]);
-    console.log('MODULE', key);
-
-    // // here we could also rewrite imports, or shit... to connect with existing runtime?
-    // mod = `export const __hook = ${'data' in conn.query_params
-    //   ? `await window.Jamrock.Components.resolve("${conn.request_path}")`
-    //   : code};\n`;
-    // mod += `export const __data = {uuid:"${uuid.join('.')}",props:${props}};`;
-  } else {
-    console.log('STORE', key);
-
-    mod = conn.store.get(key);
+  if (!parts.at(-1).includes('.html')) {
+    parts.pop();
   }
 
-  if (!mod) {
-    mod = '/* not found */';
+  const state = env.queue.fetch(uuid, key);
+  const file = parts.join('/');
+
+  // FIXME: we can enforce reloading through a flag?
+  let mod = '/* not found */';
+  if ('_' in conn.query_params) {
+    mod = `var __data = ${JSON.stringify(state)};\nexport { __data };\n`;
+  } else if (env.files[file]) {
+    mod = Template.read(env.files[file].filepath.replace('.generated.', '.bundled.'));
+    mod = mod.replace(/\bexport\s*\{/, _ => `var __data = ${JSON.stringify(state)};\n${_.substr(0, _.length - 1)}{\n  __data,`);
   }
+
+  console.log({ uuid, key }, env.queue.keys());
 
   return [mod, 200, null, new Headers({
     'content-type': 'application/javascript',
@@ -379,10 +375,7 @@ export async function createPageResponse(env, conn, clients) {
   let headers = null;
   let body = null;
   if (matches) {
-    // FIXME: this is breaking e2e, anyways
-    // the apps should should work js-lessly way!
-    // console.log({ client });
-    const result = await createBody(env, conn, clients, { uuid, client: '', matches });
+    const result = await createBody(env, conn, clients, { uuid, client, matches });
 
     cookies = result.cookies || cookies;
     headers = result.headers || headers;
@@ -398,8 +391,48 @@ export async function createPageResponse(env, conn, clients) {
 }
 
 export async function createResponse(env, conn, clients) {
-  if (conn.path_info[0] === '_' && conn.path_info.length > 1) {
-    return createModuleResponse(env, conn);
+  if (conn.path_info[0] === PATH_LOADER_PREFIX) {
+    // FIXME: here we could validate paths!!
+    if (conn.path_info.length > 1) {
+      return createModuleResponse(env, conn);
+    }
+
+    let cancelled;
+    return new Response(new ReadableStream({
+      start(controller) {
+        console.log('START SEE');
+
+        function sendSSEMessage(data) {
+          controller.enqueue(`data: ${JSON.stringify(data)}\n\n`);
+        }
+
+        const interval = setInterval(() => {
+          if (cancelled) {
+            clearInterval(interval);
+          } else {
+            sendSSEMessage('Hello, World!');
+          }
+        }, 1000);
+
+        sendSSEMessage('READY');
+
+        conn.req.signal.onabort = () => {
+          clearInterval(interval);
+          controller.close();
+        };
+      },
+      cancel(reason) {
+        cancelled = true;
+        console.log('STOP SEE', reason);
+      },
+    }), {
+      status: 200,
+      headers: {
+        'content-type': 'text/event-stream',
+        'cache-control': 'no-cache',
+        connection: 'keep-alive',
+      },
+    });
   }
   return createPageResponse(env, conn, clients);
 }

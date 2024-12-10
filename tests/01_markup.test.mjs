@@ -189,6 +189,8 @@ test.group('parsing', () => {
           close: 16,
         },
         ref: 'x',
+        scope: [],
+        props: ['name'],
         name: 'x-fragment',
         type: 'fragment',
       },
@@ -326,6 +328,8 @@ test.group('parsing', () => {
               { expr: [], raw: [] },
             ],
             name: 'Nested',
+            scope: ['bar'],
+            props: [],
             offset: { close: 101, end: 162, start: { column: 8, index: 94, line: 5 } },
             snippets: {
               bar: {

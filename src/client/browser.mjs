@@ -1,10 +1,10 @@
-import { toNodes, toAttrs } from '../utils/client.mjs';
+import { Is, toNodes, toAttrs } from '../utils/client.mjs';
 import { LiveSocket } from './livesocket.mjs';
 import { EventHub } from './events.mjs';
 
 export class Browser {
   constructor(state, version) {
-    console.warn('check', state.patch, version);
+    console.info('check', state.patch, version);
 
     this.paused = false;
     this.version = version;
@@ -14,14 +14,18 @@ export class Browser {
 
     this.warn = (e, msg) => import('./debugger.mjs').then(({ showDebug }) => showDebug(e, msg));
 
-    this.sync = (payload, callback) => {
+    this.sync = async (payload, callback) => {
       window.Jamrock.LiveSocket.start();
       window.Jamrock.Components.off();
 
-      return this.runtime().then(() => {
+      try {
+        await this.runtime();
+
         if (this.teardown) this.teardown();
 
-        // FIXME: patch fragments?
+        Object.assign(window.Jamrock.Components.locals, payload._);
+
+        // FIXME: how to patch fragments?
         console.log('PATCH', payload.fragments);
 
         this.patch(document.head, payload.head.concat([['style', null, Object.values(payload.styles).join('\n')]]));
@@ -29,17 +33,20 @@ export class Browser {
         this.attrs(document.body, payload.attrs);
         this.scripts(Object.values(payload.scripts));
 
-        return callback(() => this.patch(document.body, payload.body));
-      }).then(() => {
+        await callback(() => this.patch(document.body, payload.body));
+      } finally {
         window.Jamrock.Components.on();
-        window.Jamrock.Components.refetch();
-      });
+      }
+
+      // FIXME: method below was intended for
+      // retrieving page state... right? D:
+      // window.Jamrock.Components.refetch();
     };
 
     this.attrs = (el, props) => {
       if (!el) return console.log({ props });
       el.getAttributeNames().forEach(name => {
-        el.removeAttribute(name);
+        if (!(name in props)) el.removeAttribute(name);
       });
       Object.entries(props).forEach(([key, value]) => {
         el.setAttribute(key, value);
@@ -62,7 +69,7 @@ export class Browser {
     };
 
     this.scripts = js => {
-      if (Array.isArray(js)) {
+      if (Is.arr(js)) {
         return js.forEach(this.scripts);
       }
 
@@ -142,7 +149,7 @@ export class Browser {
     };
   }
 
-  static init(Components, version, state, cb) {
+  static init(Components, version, state, data, cb) {
     const browser = new Browser(state, version);
     const sockets = new LiveSocket(browser);
     const events = new EventHub(sockets);
@@ -154,7 +161,7 @@ export class Browser {
       Browser: browser,
       EventHub: events,
       LiveSocket: sockets,
-      Components: new Components(browser, cb),
+      Components: new Components(browser, data, cb),
     };
   }
 }

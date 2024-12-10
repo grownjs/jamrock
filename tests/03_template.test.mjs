@@ -206,6 +206,32 @@ fixture`./nested/path/to/transformed.html
   [HTML: <Markup>!!</Markup>]
 `;
 
+// eslint-disable-next-line no-unused-expressions
+fixture`./server.html
+  <script>
+    import Client from './client.html';
+  </script>
+  <main id="app">
+    <Client>OSOM</Client>
+  </main>
+`;
+
+// eslint-disable-next-line no-unused-expressions
+fixture`./client.html
+  <script context="client">
+    import Root from './root.html';
+  </script>
+  <Root>{@render $$props.children?.()}</Root>
+`;
+
+// eslint-disable-next-line no-unused-expressions
+fixture`./root.html
+  <script>
+    export let children;
+  </script>
+  <section>{@render children?.()}</section>
+`;
+
 test.group('template transformation', t => {
   t.each.setup(async () => {
     const Inspect = {
@@ -242,7 +268,6 @@ test.group('template transformation', t => {
     expect(tpl.module.name).toEqual('OSOM');
 
     td.replace(Math, 'random', () => 1);
-
     const { attrs, meta, html, css } = await tpl.render();
 
     expect(css).toEqual(`p:where(.jam-420){color:#ff0;}
@@ -265,6 +290,17 @@ ROUTER(FIXME)
         ['title', {}, ['Untitled "', '42', '"']],
       ],
     });
+  });
+
+  test('should manage server/client components', async ({ expect }) => {
+    const tpl = await build('./server.html');
+    const { html } = await tpl.render();
+
+    expect(html).toEqual([
+      '<main id=app data-location="server.html:4:1">',
+      '<div data-component="generated/root.html" data-location="server.html:5:3">',
+      '<section data-location="root.html:4:1">OSOM</section></div></main>',
+    ].join(''));
   });
 
   test('should scope css-selectors', async ({ expect }) => {
@@ -368,7 +404,7 @@ test.group('parse and runtime errors', () => {
   });
 });
 
-test.group('dynamic loading', t => {
+test.group('core utilties', t => {
   t.each.setup(() => {
     td.replace(Template, 'exists', x => fs.existsSync(x) && fs.statSync(x).isFile());
   });
@@ -376,7 +412,7 @@ test.group('dynamic loading', t => {
     td.reset();
   });
 
-  test('should resolve from shared modules', async ({ expect }) => {
+  test('Template.load', async ({ expect }) => {
     const cwd = process.cwd();
 
     td.replace(process, 'cwd');
@@ -393,12 +429,6 @@ test.group('dynamic loading', t => {
     expect(cjs.value).toEqual(42);
     expect(js.default).toEqual({ value: 42 });
     expect(js.value).toBeUndefined();
-  });
-});
-
-test.group('core utilities', t => {
-  t.each.teardown(() => {
-    td.reset();
   });
 
   test('Template.join', ({ expect }) => {
@@ -464,5 +494,56 @@ test.group('core utilities', t => {
       // ['nested/noop.html', 'generated/nested/noop.html'],
       ['router.html', 'generated/router.html'],
     ]);
+  });
+
+  test('Template.imports', ({ expect }) => {
+    setup();
+    expect(Template.imports(`
+      import from './src/markup/html.mjs';
+    `, process.cwd())).toEqual({
+      'src/markup/html.mjs': {
+        children: [
+          'src/markup/expr.mjs',
+          'src/utils/server.mjs',
+          'src/utils/shared.mjs',
+          'src/markup/adapter.mjs',
+          'src/markup/utils.mjs',
+          'src/render/hooks.mjs',
+          'src/utils/client.mjs',
+        ],
+      },
+      'src/markup/expr.mjs': {
+        children: ['src/utils/server.mjs', 'src/utils/shared.mjs'],
+      },
+      'src/utils/server.mjs': {
+        children: ['src/utils/shared.mjs'],
+      },
+      'src/utils/shared.mjs': {
+        children: [],
+      },
+      'src/markup/adapter.mjs': {
+        children: [
+          'src/utils/server.mjs',
+          'src/utils/shared.mjs',
+          'src/markup/expr.mjs',
+        ],
+      },
+      'src/markup/utils.mjs': {
+        children: [
+          'src/markup/expr.mjs',
+          'src/utils/server.mjs',
+          'src/utils/shared.mjs',
+          'src/render/hooks.mjs',
+          'src/utils/client.mjs',
+        ],
+      },
+      'src/render/hooks.mjs': {
+        children: ['src/utils/client.mjs', 'src/utils/shared.mjs'],
+      },
+      'src/utils/client.mjs': {
+        children: ['src/utils/shared.mjs'],
+      },
+    });
+    reset();
   });
 });

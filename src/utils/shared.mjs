@@ -12,10 +12,15 @@ export class Is {
     return Is.str(value) && RE_FIXED_NAMES.test(value);
   }
 
+  static data(value) {
+    return Is.arr(value) || Is.plain(value) || Is.scalar(value);
+  }
+
   static value(value) {
     if (value === null) return true;
     if (value instanceof Date) return true;
     if (value instanceof Symbol) return true;
+    if (value instanceof RegExp) return true;
     if (value instanceof String) return true;
     if (value instanceof Number) return true;
     if (value instanceof Boolean) return true;
@@ -65,6 +70,12 @@ export function merge(target, ...objs) {
   return copy;
 }
 
+export function flatten(v) {
+  return Array.isArray(v)
+    ? v.reduce((memo, x) => memo.concat(flatten(x)), []).filter(x => x && String(x).trim().length > 0)
+    : v;
+}
+
 export function stack(source, line, col, ok) {
   const lines = source.split('\n');
   const idx = typeof line === 'undefined' ? lines.length : +line;
@@ -88,10 +99,6 @@ export function sleep(n) {
 
 export function repeat(char, length) {
   return Array.from({ length }).join(char);
-}
-
-export function toProps(value) {
-  return Is.arr(value) ? value : [].concat(...Object.entries(value));
 }
 
 export function ucFirst(value) {

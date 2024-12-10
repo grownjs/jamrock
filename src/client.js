@@ -3,13 +3,17 @@ export const generateClientCode = (state, immediate) => {
     const { href } = location;
     const url = href.replace(/[&?]noscript(?:=[^&?=]*?)?/, '');
 
+    const data = window.__ || {};
+
+    delete window.__;
+
     if (url !== href) {
       location.href = url;
     } else if (typeof window.Jamrock === 'undefined') {
       Promise.all([
         import('./client/browser.mjs'),
         import('./client/components.mjs'),
-      ]).then(([{ Browser }, { Components }]) => Browser.init(Components, process.env.VERSION, state, () => null));
+      ]).then(([{ Browser }, { Components }]) => Browser.init(Components, process.env.VERSION, state, data, () => null));
     } else {
       window.Jamrock.Browser.csrf_token = state.csrf;
     }

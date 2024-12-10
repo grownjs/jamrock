@@ -1,60 +1,59 @@
 export class MemoryHub {
-  constructor() {
-    this.callbacks = new Map();
-    this.pending = new Map();
+  constructor(options) {
+    this.timeout = options.ttl ?? 1000 * 60 * 5;
+    this.cache = new Map();
+    this.ttls = {};
   }
 
-  refresh(key, fn) {
-    if (this.pending.has(key)) {
-      const q = this.pending.get(key);
-      this.pending.delete(key);
-      q.forEach(_ => fn(..._, true));
-    }
+  clear(uuid) {
+    this.cache.delete(uuid);
   }
 
-  listen(key, fn) {
-    this.callbacks.set(key, fn);
-    this.refresh(key, fn);
+  read(uuid) {
+    return this.cache.get(uuid);
   }
 
-  emit(key, ...args) {
-    const fn = this.callbacks.get(key);
-
-    if (!fn) {
-      const q = this.pending.get(key) || [];
-      if (!this.pending.has(key)) this.pending.set(key, q);
-      q.push(args);
-      return;
-    }
-
-    this.refresh(key, fn);
-    fn(...args);
+  peek(uuid, key, or) {
+    const set = this.cache.get(uuid) || {};
+    const data = set[key] ?? or;
+    delete set[key];
+    return data;
   }
 
-  off(key) {
-    this.callbacks.delete(key);
-    this.pending.delete(key);
+  save(uuid, key, data) {
+    const set = this.cache.get(uuid) || {};
+    set[key] = { ...set[key], ...data };
+    this.cache.set(uuid, set);
+    clearTimeout(this.ttls[`${uuid}@${key}`]);
+    this.ttls[`${uuid}@${key}`] = setTimeout(() => { delete set[key]; }, this.timeout);
   }
 }
 
 export function createQueue(options) {
-  const queue = options.pubsub || new MemoryHub();
+  const queue = options.pubsub || new MemoryHub(options);
 
-  function unsubscribe(key) {
-    return queue.off(key);
+  function fetch(uuid, key) {
+    return queue.peek(uuid, key);
   }
 
-  function subscribe(key, fn) {
-    return queue.listen(key, fn);
+  function keys() {
+    return [...queue.cache.keys()];
   }
 
-  function publish(key, ...args) {
-    return queue.emit(key, ...args);
+  function set(uuid, key, data) {
+    queue.save(uuid, key, data);
+  }
+
+  function get(uuid) {
+    const all = queue.read(uuid) || null;
+    queue.clear(uuid);
+    return all;
   }
 
   return {
-    unsubscribe,
-    subscribe,
-    publish,
+    fetch,
+    keys,
+    get,
+    set,
   };
 }

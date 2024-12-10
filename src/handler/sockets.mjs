@@ -2,21 +2,12 @@ import { Is, cleanJSON } from '../utils/server.mjs';
 
 export function setup(ctx, env, editor, handler, timeout) {
   ctx.on('open', ws => {
-    if (handler.sync) {
+    if (handler?.sync) {
       handler.sync.subscribe(ws);
     }
 
     ws.stop = () => {
-      if (!ws.closed && ws.streams) {
-        ws.streams.forEach(ref => {
-          if (ws.context.streams.has(ref)) {
-            ws.context.streams.get(ref).cancel();
-            ws.context.streams.delete(ref);
-          }
-        });
-        ws.streams = null;
-        ws.context = null;
-      }
+      console.log('E_STOP_WS', ws.closed, ws.streams, ws.context);
     };
 
     ws.dispose = () => {
@@ -24,7 +15,7 @@ export function setup(ctx, env, editor, handler, timeout) {
       ws.emit('disconnect');
       ws.stop();
 
-      if (handler.sync) {
+      if (handler?.sync) {
         handler.sync.unsubscribe(ws);
       }
     };
@@ -33,9 +24,9 @@ export function setup(ctx, env, editor, handler, timeout) {
     ws.on('close', () => {
       clearTimeout(t);
     });
-    ws.on('update', (key, _props, children) => {
-      ws.send(`rpc:update ${ws.identity} ${key} ${_props.mode || 'append'}\t${cleanJSON(children)}`);
-    });
+    //    ws.on('update', (key, _props, children) => {
+    //      ws.send(`rpc:update ${ws.identity} ${key} ${_props.mode || 'append'}\t${cleanJSON(children)}`);
+    //    });
     ws.on('failure', ({ e, msg, args, data }) => {
       console.error('E_SOCKET', { e, msg, args, data });
       if (ctx.socket) {
@@ -66,10 +57,10 @@ export function setup(ctx, env, editor, handler, timeout) {
       } else if (msg === 'disconnect') {
         ws.dispose();
       } else if (msg === 'connect') {
-        ws.streams = new Set();
         ws.identity = args[0];
+        ws.source = args[1];
         ws.send(`welcome ${args[0]}`);
-        console.log('CONNECTED');
+        console.log('CONNECTED', args);
       } else if (msg === 'request') {
         const input = data
           ? Object.fromEntries(new URLSearchParams(data))
@@ -110,7 +101,5 @@ export function setup(ctx, env, editor, handler, timeout) {
     });
   });
 
-  ctx.on('close', ws => {
-    ws.dispose();
-  });
+  ctx.on('close', ws => ws.dispose());
 }

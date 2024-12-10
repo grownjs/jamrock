@@ -2,30 +2,25 @@ import { blocks, vars } from 'eslint-plugin-jamrock/util.js';
 import { RE_MATCH_ROUTES } from 'eslint-plugin-jamrock/const.js';
 
 import { Expr } from './expr.mjs';
-import { reduce } from './utils.mjs';
 import { traverse } from './walk.mjs';
-import { Template } from '../templ/main.mjs';
 import { lexer } from '../templ/utils.mjs';
-import { extract } from '../handler/utils.mjs';
+import { reduce, walk } from './utils.mjs';
+import { Template } from '../templ/main.mjs';
+import { flatten } from '../utils/shared.mjs';
+import { extract, rebase } from '../handler/utils.mjs';
 import { Is, parseMarkup, identifier } from '../utils/server.mjs';
 
-const RE_EXPORT_DEFAULT = /(?=\bexport default\b)/;
-const RE_UNWRAP_SYMBOLS = /unwrap(\d+)`([^]*?)`\.end\1/g;
+const RE_EXPORT_DEFAULT = /\bexport default\b/;
+// const RE_UNWRAP_SYMBOLS = /unwrap(\d+)`([^]*?)`\.end\1/g;
 const RE_RESOLVE_IMPORTS = /\/\*@@\*\/__resolve\('(.+?)'\)/g;
 
-export function flatten(v) {
-  return Array.isArray(v)
-    ? v.reduce((memo, x) => memo.concat(flatten(x)), []).filter(x => x && String(x).trim().length > 0)
-    : v;
-}
-
-let counter = 0;
+// let counter = 0;
 export class Block {
   constructor(tpl, file, options) {
     const opts = { ...options };
     const base = `${opts.cwd || '.'}/`;
-    const src = file.replace(base, '').replace('./', '');
-    const dest = `${base}${src}`.replace('./', '');
+    const src = rebase(file.replace(base, ''));
+    const dest = rebase(`${base}${src}`);
     const id = opts.scope || identifier('jam', src).join('-');
 
     Object.defineProperty(this, 'id', { value: id });
@@ -90,11 +85,7 @@ export class Block {
     } else {
       const contexts = this.scripts.reduce((memo, cur) => memo.concat(cur.attributes.context || []), []);
 
-      if (contexts.length > 1) {
-        throw new ReferenceError(`Component '${this.src}' should contain just one script-tag with context`);
-      }
-
-      this.context = contexts[0] || 'module';
+      this.context = contexts.some(_ => _ === 'client') ? 'client' : 'module';
 
       Object.defineProperty(this, 'module', {
         value: vars(this.scripts
@@ -110,7 +101,7 @@ export class Block {
 
       // FIXME: use jslint here?
       lexer(Block.module(this.module.code), { position: { line: 1, col: this.module.code.indexOf('\n') } });
-      lexer(Block.module(this.script.code), { position: { line: 1, col: this.script.code.indexOf('\n') } });
+      lexer(Block.module(this.script.code, true), { position: { line: 1, col: this.script.code.indexOf('\n') } });
 
       const filepath = `${this.opts.cwd || '.'}/${src}`;
 
@@ -126,6 +117,8 @@ export class Block {
 
     Object.defineProperty(this, 'children', { value: children });
     Object.defineProperty(this, 'imports', { value: imports });
+
+    walk(this.markup.content, locations);
   }
 
   get $attributes() {
@@ -191,7 +184,11 @@ export default {${defaults}};
 `.replace(/\(\$\$\)/g, '($$$$,$$$$props)');
     }
 
-    const exported = this.script.keys.filter(x => this.script.locals[x] === 'let');
+    const aliases = this.script.aliases;
+    const locals = this.script.locals;
+    const keys = this.script.keys;
+
+    const exported = keys.filter(x => ['let', 'const', 'export'].includes(locals[x])).map(x => aliases[x] || x);
     const matched = extract(Block.imports(this.script.code), true);
 
     matched.code = Block.exports(matched.code);
@@ -201,11 +198,8 @@ export default {${defaults}};
     let offset = 0;
     for (let i = 0; i < lines.length; i += 1) {
       if (lines[i].trim().includes('import(')) offset = i + 1;
+      if (lines[i].trim().includes('__loader(')) offset = i + 1;
     }
-
-    const aliases = this.script.aliases;
-    const locals = this.script.locals;
-    const keys = this.script.keys;
 
     const scope = keys.concat(this.script.deps)
       .reduce((memo, key) => {
@@ -266,13 +260,14 @@ export default {${defaults},__exported,__handler,__routes};
     return code.replace(/\bimport([^;]+?)from\s*(['""])(.+?)\2(?=[\n;])/g, (_, $1, qt, $3, offset) => {
       if (callback) return callback($1, $3, offset);
 
-      const symbols = `/*!#${offset}*/const ${$1.trim().replace(/\sas\s/g, ': ')}`;
+      const name = $1.replace(/[*]\s*as/, '').trim().replace(/\sas\s/g, ': ');
+      const symbols = `/*!#${offset}*/const ${name}`;
 
       if ($3 === 'jamrock' || $3.includes('jamrock:')) {
         return `${symbols} = await __loader('${$3}');\n`;
       }
 
-      if (!($3.includes('.html') || $3.includes(':'))) {
+      if ($3.charAt() === '.' && !$3.includes('.html')) {
         return `${symbols} = await /*@@*/__resolve('${$3}')`;
       }
 
@@ -287,15 +282,18 @@ export default {${defaults},__exported,__handler,__routes};
       .replace(/\bexport\s+(let|const)\s+(\w+)\s*=/g, '$1 $2 = $$$$props.$2 ??')
       .replace(/\bexport\s+function\s+(\w+)\s*\(/g, 'let $1 = $$$$props.$1 ?? function $1(')
       .replace(/\bexport\s+default\b/, '__actions =')
-      .replace(/\bexport\s*\{([^;]+?)\}\s*(?=[\n;])/, (_, $1) => $1.split(',').map(expr => {
+      .replace(/\bexport\s*\{([^;]+?)\}\s*(?=[\n;])/g, (_, $1) => $1.split(',').map(expr => {
         const [a, b] = expr.trim().split(/\sas\s/);
         return a && b ? `\n${a} = $$props.${b} ?? ${a};` : '';
       }).join(''));
   }
 
-  static module(code) {
-    return Block.imports(code, () => '')
-      .replace(RE_MATCH_ROUTES, (_, verb, path, alias) => _.replace(alias, x => x.replace(/./g, ' ')))
+  static module(code, routes) {
+    code = Block.imports(code, () => '');
+
+    if (routes) code = code.replace(RE_MATCH_ROUTES, (_, verb, path, alias) => _.replace(alias, x => x.replace(/./g, ' ')));
+
+    return code
       .replace(/\bexport\s*\{\s*([^;]+?)\s*\}/g, (_, $1, offset) => `/*!#${offset}*/({${$1.split(' as ').reverse().join(': ')}})`)
       .replace(/\bexport\s+default\b/g, 'const _default=')
       .replace(/\bexport\b/g, x => x.replace(/./g, ' '));
@@ -305,8 +303,7 @@ export default {${defaults},__exported,__handler,__routes};
     const info = `\nexport const __src = '${source}';\nexport const __dest = '${target}';\n`;
 
     return code
-      .replace(RE_EXPORT_DEFAULT, () => info)
-      .replace(RE_UNWRAP_SYMBOLS, '/*<![CDATA[*/$2/*]]>*/')
+      .replace(RE_EXPORT_DEFAULT, _ => info + _)
       .replace(RE_RESOLVE_IMPORTS, (_, src, v, qt, file) => {
         const a = Template.join(source, src || file);
         const b = Template.join(target, src || file);
@@ -317,6 +314,6 @@ export default {${defaults},__exported,__handler,__routes};
   }
 
   static wrap(code) {
-    return `unwrap${counter}\`${code}\`.end${counter++}`;
+    return `/*<![CDATA[*/${code}/*]]>*/`;
   }
 }

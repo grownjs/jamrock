@@ -29,20 +29,24 @@ export function reduce(tree, context, indent = 0) {
       const props = node.attributes ? `${Expr.props(node.attributes, `${_tabs}\t`)}\n${_tabs}` : '';
       const prefix = node.offset ? `\n/*!#${node.offset.start.line + 1}:${node.offset.start.column + 1}*/` : '';
 
+      // console.log(node.scope, node.props);
+
       if (node.type === 'fragment') {
         if (node.attributes.frame) {
-          memo.push(`${_tabs}${prefix} $$.e('fragment', await __fragments['${node.ref}'].attrs($$), [])`);
+          memo.push(`${_tabs}${prefix} ['fragment', await __fragments['${node.ref}'].attrs($$), []]`);
         } else {
-          memo.push(`${_tabs}${prefix} $$.e('fragment', await __fragments['${node.ref}'].attrs($$), await __fragments['${node.ref}'].render($$))`);
+          memo.push(`${_tabs}${prefix} ['fragment', await __fragments['${node.ref}'].attrs($$), await __fragments['${node.ref}'].render($$)]`);
         }
       } else if (Is.upper(node.name)) {
+        // console.log(node.scope, node.props);
+
         // eslint-disable-next-line max-len
         const fns = Object.entries(node.snippets).map(([fn, _]) => `${fn}: (${_.args.join(', ')}) => async () => [${reduce(_.body, context, indent + 1)}]`).join('\n,');
 
         // eslint-disable-next-line max-len
         memo.push(`${_tabs}${prefix} await $$.block(${node.name}, '<${node.name}>', {${props + fns}}, ${body === '[]' ? 'null' : `async () => ${body}`} /* </${node.name}> */)`);
       } else {
-        memo.push(`${_tabs}${prefix} $$.e('${node.name}', {${props}}, ${body})`);
+        memo.push(`${_tabs}${prefix} ['${node.name}', {${props}}, ${body}]`);
       }
     } else if (node.type === 'text') {
       if (node.content.trim().length > 0) memo.push(_tabs + JSON.stringify(node.content));
@@ -55,38 +59,6 @@ export function reduce(tree, context, indent = 0) {
   }, []).join(',');
 
   return result;
-}
-
-export function extract(chunk, context, locations) {
-  if (!Is.arr(chunk)) {
-    return extract(chunk.elements || [], context, locations);
-  }
-
-  return chunk.reduce((frags, node) => {
-    if (node !== null && !(node instanceof Expr)) {
-      if (context === 'static' && (node.name === 'fragment' || Is.upper(node.name))) {
-        throw new ReferenceError(`Element '${node.name}' is not allowed on static components`);
-      }
-
-      if (node.elements) {
-        const isComponent = Is.upper(node.name);
-
-        if (isComponent || node.type === 'fragment') {
-          node.scope = [...new Set(locations
-            .filter(x => x.offset[0] > node.offset.close && x.offset[0] < node.offset.end)
-            .reduce((memo, k) => memo.concat(k.locals.map(u => u.name)), []))];
-        }
-
-        if (isComponent) {
-          node.slots = extract(node.elements, context, locations);
-          node.props = Object.keys(node.attributes).filter(k => RE_SAFE_PROPS.test(k));
-        } else {
-          Object.assign(frags, extract(node.elements, context, locations));
-        }
-      }
-    }
-    return frags;
-  }, {});
 }
 
 export function enhance(vnode, parent) {
@@ -233,4 +205,25 @@ export function extend(tagName, props, fn) {
 
   if (!props.class) delete props.class;
   return props;
+}
+
+export function walk(chunk, locations) {
+  if (!Is.arr(chunk)) {
+    walk(chunk.elements || [], locations);
+  } else {
+    chunk.forEach(node => {
+      if (node.elements) {
+        const isComponent = Is.upper(node.name);
+
+        if (isComponent || node.type === 'fragment') {
+          node.props = Object.keys(node.attributes).filter(k => RE_SAFE_PROPS.test(k));
+          node.scope = [...new Set(locations
+            .filter(x => x.offset[0] > node.offset.close && x.offset[0] < node.offset.end)
+            .reduce((memo, k) => memo.concat(k.locals.map(u => u.name)), []))];
+        } else {
+          walk(node.elements, locations);
+        }
+      }
+    });
+  }
 }

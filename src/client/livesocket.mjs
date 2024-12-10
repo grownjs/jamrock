@@ -10,6 +10,7 @@ export class LiveSocket {
 
     this.ready = false;
     this.browser = browser;
+    this.document = document.documentElement.dataset.location;
     this.location = location.pathname.split(this.uuid)[1] || location.pathname;
 
     console.debug('connect', this.uuid, this.location);
@@ -95,15 +96,14 @@ export class LiveSocket {
       if (payload instanceof FormData) {
         for (const [key, value] of payload.entries()) {
           if (value instanceof File) {
-            tasks.push(this.uplooad(key, value));
+            tasks.push(this.upload(key, value));
           } else {
             body.append(key, value);
           }
         }
       }
 
-      this.deferred = Promise.all(tasks);
-
+      this.deferred = this.deferred.then(() => Promise.all(tasks));
       return new URLSearchParams(body);
     };
 
@@ -114,12 +114,12 @@ export class LiveSocket {
       url = method === 'GET' && data ? `${url.split('?')[0]}?${data}` : url;
       data = method === 'GET' && data ? '' : `\t${data}`;
 
-      return this.deferred.then(() => {
+      this.deferred = this.deferred.then(() => {
         this.call(`rpc:request ${this.uuid} ${method} ${url}${data}`, () => {
           if (el) el.classList.remove('loading');
           updatePage('', url);
         });
-      });
+      })
     };
 
     // FIXME: rethink since @live seems to be transparent
@@ -137,32 +137,37 @@ export class LiveSocket {
 
     window.onbeforeunload = () => this.close() || null;
 
-    function connect(uuid, ready) {
+    function connect(doc, uuid, ready) {
       return new Promise(ok => {
         ws = new WebSocket(`${protocol}://${location.host}`);
 
         ws.addEventListener('open', () => {
-          ws.send(`rpc:connect ${uuid}`);
+          ws.send(`rpc:connect ${uuid} ${doc}`);
           interval = 100;
-          ready(uuid, ws, ok(ws));
+          ready(doc, uuid, ws, ok(ws));
         });
 
         ws.addEventListener('error', () => {
-          setTimeout(() => connect(uuid, ready).then(ok), timeout('connect'));
+          setTimeout(() => connect(doc, uuid, ready).then(ok), timeout('connect'));
         });
       });
     }
 
-    function open(uuid, socket) {
+    function open(doc, uuid, socket) {
       socket.try = (msg, cb) => {
         if (socket.readyState !== socket.OPEN) {
-          setTimeout(() => connect(uuid, open).then(() => socket.try(msg, cb)), timeout('open'));
+          setTimeout(() => connect(doc, uuid, open).then(() => socket.try(msg, cb)), timeout('open'));
           return;
         }
         socket.send(msg);
         if (cb) cb(socket);
       };
     }
+
+    const eventSource = new EventSource('/@');
+    eventSource.onmessage = event => {
+      console.log(event.data);
+    };
 
     const queue = [];
 
@@ -188,7 +193,7 @@ export class LiveSocket {
     this.next = _uuid => {
       if (ws && ws.readyState === ws.OPEN) ws.send(`rpc:reconnect ${this.browser.request_uuid = _uuid}`);
     };
-    this.start = () => (!ws || ws.readyState !== ws.OPEN) && connect(this.uuid, open).then(socket => {
+    this.start = () => (!ws || ws.readyState !== ws.OPEN) && connect(this.document, this.uuid, open).then(socket => {
       this.ready = true;
 
       let t;
@@ -198,15 +203,22 @@ export class LiveSocket {
           if (socket.readyState === socket.OPEN) socket.send('alive');
         }, Math.floor(Math.random() * (7500 - 6000)) + 6000);
 
-        if (e.data === 'reload') {
+        if (e.data.indexOf('reload ') === 0) {
+          const [, ...sources] = e.data.split(/\s+/).filter(Boolean);
+
           // FIXME: here we should get a list of files changed... and then,
           // we should remove them from the import-memory and such...
-          if (e.isTrusted) {
-            window.frames.top.Jamrock.Components.reload(e.data);
-            window.frames.top.Jamrock.Browser.reload(null, true);
+          if (!sources.length || sources.includes(this.document)) {
+            if (e.isTrusted) {
+              // window.frames.top.Jamrock.Components.reload(e.data);
+              window.frames.top.Jamrock.Browser.reload(null, true);
+            } else {
+              // window.Jamrock.Components.reload(e.data);
+              window.Jamrock.Browser.reload(null, true);
+            }
           } else {
-            window.Jamrock.Components.reload(e.data);
-            window.Jamrock.Browser.reload(null, true);
+            console.log('SYNC?', sources);
+            sources.forEach(_ => console.log('>>>', document.querySelector(`[data-component^="${_}"]`)));
           }
         } else if (e.data.indexOf('welcome ') === 0) {
           console.debug(e.data, this.location);
@@ -233,6 +245,7 @@ export class LiveSocket {
           if (args[0] !== this.uuid) return;
 
           if (task === 'response') {
+            console.log('[RESPONSE]', data);
             this.browser.sync(data, spaNavigate);
             return;
           }

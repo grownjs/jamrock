@@ -11,7 +11,7 @@ export const Is = Object.assign(is, {
   not, str, arr, func, plain, scalar,
 });
 
-export { pick, noop, sleep, toProps } from './shared.mjs';
+export { pick, noop, sleep } from './shared.mjs';
 
 export function decode(v) {
   const txt = new DOMParser().parseFromString(v, 'text/html');

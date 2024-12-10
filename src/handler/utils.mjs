@@ -30,6 +30,10 @@ class Route {
   }
 }
 
+export function rebase(str) {
+  return str ? str.replace(/\.\.\//g, '').replace('./', '') : null;
+}
+
 export function regexify(route) {
   // translate parameters into captures
   route = route.replace(/\/\*\w+/g, '(?:/(.*))?');
@@ -60,14 +64,16 @@ export function rankify(route) {
   return { depth, params };
 }
 
-export function routify(set) {
+export function routify(cwd, set) {
   const tree = new Route(null);
   const routes = [];
   const api = [];
 
   set.forEach(src => {
     // clean extensions and _hidden segments
-    let path = src.replace(/index|(?<=\/)_\w+\/|\.\w+$/g, '');
+    let path = src
+      .replace(`${cwd}/`, '/')
+      .replace(/index|(?<=\/)_\w+\/|\.\w+$/g, '');
 
     // replace sveltekit-like parameters
     path = path.replace(/\[\.\.\.(\w+)\]/g, '*$1');
@@ -92,7 +98,7 @@ export function routify(set) {
         route = route.charAt() !== '/' ? `/${route}` : route;
 
         if (key === '+server') {
-          leaf.options.middleware = src;
+          leaf.options.middleware = rebase(src);
           api.push({ src, route });
         } else {
           leaf.options[key.substr(1)] = src;

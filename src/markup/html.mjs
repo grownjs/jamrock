@@ -185,6 +185,7 @@ export function scopify(ref, _class, styles, children, filepath) {
 
     return out;
   } catch (e) {
+    console.log('E_HTML', e);
     if (e.filename) {
       e.message = `${e.reason} at ${e.filename}:${e.line}:${e.column}`;
       e.stack = stack(css, e.line, e.column);
