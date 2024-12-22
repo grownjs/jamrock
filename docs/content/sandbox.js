@@ -54,11 +54,11 @@ function walkNodes(root, parent) {
 
         parent[node.dataset.leaf.split('/').pop()] = { file: { contents } };
       } else {
-        const tree = node.firstElementChild.querySelector('details > ul[data-tree]');
+        const _tree = node.firstElementChild.querySelector('details > ul[data-tree]');
         const directory = {};
 
-        parent[tree.dataset.tree] = { directory };
-        walkNodes(tree, directory);
+        parent[_tree.dataset.tree] = { directory };
+        walkNodes(_tree, directory);
       }
     }
   });
@@ -77,8 +77,11 @@ editor.gotoLine(1);
 editor.focus();
 
 editor.setTheme('ace/theme/pastel_on_dark');
+
+// eslint-disable-next-line no-nested-ternary
 editor.session.setMode(selected.includes('.html')
   ? 'ace/mode/html'
+  // eslint-disable-next-line no-nested-ternary
   : selected.includes('.json')
     ? 'ace/mode/json'
     : selected.includes('.css')
@@ -155,7 +158,7 @@ const dimmed = {
   brightCyan: '#2e706d',
 
   white: '#b9bcba',
-  brightWhite: '#fdffb9'
+  brightWhite: '#fdffb9',
 };
 
 const terminal = new xterm.Terminal({
@@ -164,7 +167,7 @@ const terminal = new xterm.Terminal({
   fontSize: 12,
   theme: dimmed,
 });
-terminal.open(xterminal);
+terminal.open();
 
 const up = new AnsiUp();
 
@@ -201,7 +204,7 @@ async function startDevServer() {
     },
   }));
   webcontainerInstance.on('server-ready', (port, url) => {
-    console.log({url});
+    console.log({ url });
     iframeEl.src = url;
     baseUrl = url;
   });
@@ -211,9 +214,11 @@ function gotoPage(url) {
   if (!baseUrl) return;
   const root = iframeEl.parentNode;
   root.removeChild(iframeEl);
-  iframeEl.src = baseUrl + url + '#' + Math.random();
+  iframeEl.src = `${baseUrl + url}#${Math.random()}`;
   root.appendChild(iframeEl);
 }
+
+/* global navigate, urlbar, reload */
 
 window.addEventListener('load', async () => {
   navigate.addEventListener('submit', e => {

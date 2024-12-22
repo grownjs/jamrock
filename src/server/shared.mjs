@@ -66,16 +66,12 @@ export const createWatcher = ({ fs }, watcher, compiler) => {
       changes.push(src);
     } else {
       Object.entries(compiler[FILES_PROPERTY]).forEach(([k, v]) => {
-        if (v.deps?.includes(src)) changes.push(k);
         if (v.children?.includes(src)) changes.push(k);
+        if (v.deps?.includes(src)) changes.push(k);
       });
     }
 
-    if (!changes.length) {
-      changes.push(src);
-    }
-
-    changes.forEach(file => {
+    (changes.length ? changes : [src]).forEach(file => {
       if (!file.includes('.html')) return;
       if (!sources.includes(file)) {
         clearTimeout(t);
@@ -294,10 +290,7 @@ export const createCompiler = ({ fs, path }, options, external) => {
                   attributes: { bundle: true },
                   content: `export * from '${destFile}'`,
                   filepath: destFile.replace('.mjs', '.js'),
-                }).then(params => {
-                  // console.log('>>', params.children);
-                  Template.write(clientFile, params.content);
-                }));
+                }).then(params => Template.write(clientFile, params.content)));
               }
             }
           });
@@ -452,10 +445,6 @@ export async function createTestingEnvironment({ fs, path }, options, external) 
 
   return Object.assign(env, {
     async resolve(mod, props, params = {}) {
-      if (!Util.Is.func(mod)) {
-        throw new ReferenceError(`Expecting AsyncFunction to resolve, given '${typeof mod}'`);
-      }
-
       const request = new Request(`http://${location.host}${params.url || '/'}`, {
         duplex: 'half',
         body: params.body,
@@ -463,23 +452,23 @@ export async function createTestingEnvironment({ fs, path }, options, external) 
         headers: { ...location, ...params.headers },
       });
 
-      const conn = await createConnection(store, options, request, location, teardown);
-      const result = await Template.execute(mod, { conn, route: params.route || {} }, props, Handler.middleware);
+      const ctx = {
+        route: params.route || {},
+        conn: await createConnection(store, options, request, location, teardown),
+      };
+
+      const result = await Template.resolve(mod, mod.__src, ctx, props, Handler.middleware);
 
       // FIXME: how to deal with responses? as this method will invoke the component
       // we should be allowed to bypass some stuff if we want full-coverage...
       // also, we'll need a full-context instead of just conn/route info
       // const resp = await createResponse(env, conn, clients);
+      // btw, this is similar to rpc:request calls?
       return result;
     },
     lookup(name) {
       const key = Object.keys(env.files).find(x => x.includes(name));
-
-      if (!key) {
-        // console.log('>>>', env.files);
-        throw new Error(`Not found '${name}'`);
-      }
-
+      if (!key) throw new Error(`Not found '${name}'`);
       return env.locate(key);
     },
     async mount(mod, props) {
@@ -487,9 +476,7 @@ export async function createTestingEnvironment({ fs, path }, options, external) 
       const target = document.createElement('root');
 
       if (mod.__context === 'client') {
-        return runtime.mountableComponent(mod, {
-          loader: id => env.locate(Template.path(id, mod.__src, mod.__dest)),
-        }).mount(target, props);
+        return runtime.mountableComponent(mod).mount(target, props);
       }
 
       const result = await Template.resolve(mod, mod.__src, {}, props, () => null);

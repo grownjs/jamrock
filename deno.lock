@@ -191,7 +191,7 @@
         "npm:mortero@^0.0.117",
         "npm:nohooks@^0.0.9",
         "npm:npm-run-all@^4.1.5",
-        "npm:open-editor@4",
+        "npm:open-editor@5",
         "npm:picocolors@1",
         "npm:pocketbase@~0.21.3",
         "npm:pug@^3.0.2",
@@ -199,7 +199,7 @@
         "npm:rewrite-exports@^0.0.28",
         "npm:rewrite-imports@3",
         "npm:serve-static-bun@0.5",
-        "npm:somedom@~0.7.5",
+        "npm:somedom@0.8",
         "npm:testdouble@^3.16.1",
         "npm:tiny-dedent@^1.0.2",
         "npm:undici@^6.2.1"

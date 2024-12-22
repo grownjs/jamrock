@@ -1,5 +1,3 @@
-// import * as util from 'node:util';
-
 import { executeAsync } from '../render/async.mjs';
 
 export function wrapComponent(_, loop) {
@@ -70,17 +68,13 @@ export function clientComponent(mod, context) {
       el.__store = store;
     }
 
-    // FIXME: some updates lack of state... why?
-    // for some reason, after many updates, once a trigger treis to
-    // activate the component is not reloading its state...
-
     el.__defer = el.__defer || Promise.resolve();
-    el.__update = (_mod, _props, _events) => {
+    el.__update = (_mod, _props) => {
       el.current = null;
       el.__store.clear();
       console.log('[UPDATE]', _props);
       el.__defer = el.__defer
-        .then(() => clientComponent.call(this, _mod, context).mount(el, _props, _events));
+        .then(() => clientComponent.call(this, _mod, context).mount(el, _props));
     };
 
     console.log('[RENDER]', props, el.current);

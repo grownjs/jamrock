@@ -23,10 +23,9 @@ export class Browser {
 
         if (this.teardown) this.teardown();
 
-        Object.assign(window.Jamrock.Components.locals, payload._);
-
         // FIXME: how to patch fragments?
         console.log('PATCH', payload.fragments);
+        window.Jamrock.Components.set(payload._);
 
         this.patch(document.head, payload.head.concat([['style', null, Object.values(payload.styles).join('\n')]]));
         this.attrs(document.documentElement, payload.doc);
@@ -37,10 +36,6 @@ export class Browser {
       } finally {
         window.Jamrock.Components.on();
       }
-
-      // FIXME: method below was intended for
-      // retrieving page state... right? D:
-      // window.Jamrock.Components.refetch();
     };
 
     this.attrs = (el, props) => {
@@ -149,7 +144,7 @@ export class Browser {
     };
   }
 
-  static init(Components, version, state, data, cb) {
+  static init(Components, version, state, data) {
     const browser = new Browser(state, version);
     const sockets = new LiveSocket(browser);
     const events = new EventHub(sockets);
@@ -161,7 +156,7 @@ export class Browser {
       Browser: browser,
       EventHub: events,
       LiveSocket: sockets,
-      Components: new Components(browser, data, cb),
+      Components: new Components(browser, data),
     };
   }
 }

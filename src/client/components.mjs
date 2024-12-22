@@ -119,10 +119,8 @@ export class Conditions {
       let t;
       function skip(e, cb) {
         const ev = { x: e.x, y: e.y, tag: e.target.tagName, type: e.type };
-        console.log({ev});
-        if (e.type === 'click') {
-          return next(ev, cb);
-        }
+
+        if (e.type === 'click') return next(ev, cb);
 
         clearTimeout(t);
         t = setTimeout(() => next(ev, cb), 150);
@@ -140,12 +138,9 @@ export class Conditions {
 }
 
 export class Components {
-  constructor(browser, locals, callback) {
+  constructor(browser, locals) {
     this.browser = browser;
     this.locals = locals;
-
-    // FIXME: load locals into modules...?
-    console.log({locals});
 
     this.observer = new MutationObserver(list => {
       for (const mutation of list) {
@@ -162,8 +157,6 @@ export class Components {
     this.modules = new Map();
     this.imports = [];
     this.on();
-
-    requestAnimationFrame(callback);
   }
 
   async resolve(key) {
@@ -172,7 +165,6 @@ export class Components {
   }
 
   async import(url) {
-    // FIXME: try using a counter to invalidate prev calls?
     const q = this.modules.has(url) ? `?_=${Date.now()}` : '';
     const path = `/${PATH_LOADER_PREFIX}/${this.browser.request_uuid}/${url}${q}`;
 
@@ -183,7 +175,8 @@ export class Components {
       this.modules.set(url, mod);
       if (url.includes('.html')) {
         const old = this.components.get(url);
-        this.components.set(url, { ...old, ...mod, __data: mod.__data || this.locals[url] });
+        this.locals[url] = { ...mod.__data, ...this.locals[url] };
+        this.components.set(url, { ...old, ...mod, __data: this.locals[url] });
       }
     }
     if (!this.modules.has(url)) {
@@ -191,10 +184,6 @@ export class Components {
     }
     return this.modules.get(url);
   }
-
-  // FIXME: one state to rule them all? istead of fetching individual state per-component
-  // we should have a central state that can be refreshed by repeating the request, if any
-  // on server... actually, we can sync between using a single SSE channel, right?
 
   async load(node, events) {
     node.__pending = null;
@@ -236,18 +225,20 @@ export class Components {
     this.elements.forEach(node => this.delete(node));
   }
 
+  set(locals) {
+    Object.assign(this.locals, locals);
+  }
+
   hooks(node, events) {
     if (node.__hooks) {
       node.__hooks.forEach(fn => fn());
     }
 
     node.__hooks = [];
-    console.log({events})
+
     return Promise.all(events.reduce((memo, ev) => {
       if (ev?.type === 'click') {
         const el = document.elementFromPoint(ev.x, ev.y);
-        console.log('[CLICK]', el, ev, el.onclick);
-        // if (confirm('?'))
         if (el.tagName === ev.tag) el.click();
       }
 
@@ -256,7 +247,7 @@ export class Components {
         const key = `${ev.params.name}.${uuid}@${parts.join('/')}`;
 
         memo.push(this.import(key).then(mod => {
-          console.log('HOOK', mod, ev.params);
+          console.log('[HOOK]', mod, ev.params);
           // if (mod.__hook) {
           //   const off = mod.__hook(node, mod.__data);
 
@@ -272,21 +263,13 @@ export class Components {
   }
 
   reload(source) {
-    console.log('HMR?', source);
+    console.log('[HMR]', source);
     this.modules = new Map();
     this.imports = [];
-
-    // FIXME: this causes problem... what should we do?
-    // this.elements.forEach(node => {
-    //   node.__pending = null;
-    //   this.delete(node);
-    //   this.refresh(node);
-    // });
   }
 
-  async refetch() {
+  refetch() {
     console.log('[REFETCH]');
-    // await import(`/${PATH_LOADER_PREFIX}/${this.browser.request_uuid}`);
     this.reload();
   }
 
@@ -296,13 +279,9 @@ export class Components {
     }
 
     const component = window.Jamrock.Runtime.mountableComponent(mod, {
-      sync: async vdom => {
-        await this.browser.patch(node, vdom);
-        // requestAnimationFrame(() => this.hooks(node, _events || events));
-      },
+      sync: vdom => this.browser.patch(node, vdom),
     }, filepath);
 
-    node.__hydrated = true;
     return component.mount(node, state);
   }
 
@@ -339,8 +318,8 @@ export class Components {
       node.__hooks = null;
     }
 
-    if (node.__store && node.__store.state) {
-      node.__store.state.clear();
+    if (node.__store) {
+      node.__store.clear();
       node.__store = null;
     }
   }

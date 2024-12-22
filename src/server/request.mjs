@@ -119,8 +119,9 @@ export function getRawBody(req, limit) {
 export function getClientCode(conn, patch, baseURL, _uuid, _immediate) {
   const uuid = _uuid || conn.headers['request-uuid'] || `0.${Date.now().toString(36).replace(/.{3}/g, '$&-')}`;
   const state = JSON.stringify({ uuid, patch, csrf: conn.csrf_token, method: conn.method });
-  const client = `<script>(${generateClientCode.toString().replace(/𝐢𝐦𝐩𝐨𝐫𝐭/g, 'import')
-    })(${state}, ${!!_immediate});</script>
+  const client = `<script>(${
+    generateClientCode.toString().replace(/𝐢𝐦𝐩𝐨𝐫𝐭/g, 'import')
+  })(${state}, ${!!_immediate});</script>
 `.replaceAll('./', baseURL);
 
   return { uuid, client };
@@ -159,8 +160,9 @@ export function create404(env, conn, client, message) {
     .map(([k, v]) => `<dt>${k}</dt><dd>${v}</dd>`).join('')}</dl>`;
 
   return `${style}${message}<table><caption>Available routes</caption>${env.routes.map(route => `
-<tr><td align=right style="width:1%">${route.verb}</td><td>${route.verb === 'GET' ? `<a href="${route.path}">${route.path}</a>` : route.path
-    }</tr>`).join('')}
+<tr><td align=right style="width:1%">${route.verb}</td><td>${
+  route.verb === 'GET' ? `<a href="${route.path}">${route.path}</a>` : route.path
+}</tr>`).join('')}
 <tfoot><tr><th colspan="2">${conn.req.url} &mdash; ${now}</th></tr></tfoot>
 </table>${config}${environment}${client}`;
 }
@@ -188,10 +190,7 @@ export async function createBody(env, conn, clients, { uuid, client, matches }) 
     conn.current_path = matches.path;
     conn.routes = ctx.routes;
 
-    // FIXME: setup context for ws/see here!!
     if (Util.Is.func(ctx.clients) && !ctx.socket) {
-      console.log('[SETUP_SOCKETS]');
-
       let _socket;
       Object.defineProperty(ctx, 'socket', {
         get: () => {
@@ -212,7 +211,7 @@ export async function createBody(env, conn, clients, { uuid, client, matches }) 
 
     if (matches.middleware) {
       conn.current_module = conn.current_module || matches.middleware;
-      conn.current_options = (mod && mod.opts) || {};
+      conn.current_options = { ...mod?.opts };
 
       const set = [matches.middleware].concat(matches.middlewares || []);
       const result = await Handler.middlewares(ctx, matches, set.map(env.locate));
@@ -240,6 +239,7 @@ export async function createBody(env, conn, clients, { uuid, client, matches }) 
     }
 
     ctx.template = env.files[conn.current_module].source;
+    console.log(ctx);
 
     ctx.route.layout = Util.Is.str(ctx.route.layout)
       ? env.locate(ctx.route.layout)
@@ -287,16 +287,16 @@ export async function createBody(env, conn, clients, { uuid, client, matches }) 
       prelude = body.prelude ? body.prelude.join(';') : '';
 
       if (conn.is_xhr) {
-        body = Markup.encode(`{${[
-          `"fragments":${JSON.stringify(body.fragments)}`,
-          `"scripts":${JSON.stringify(body.scripts)}`,
-          `"styles":${JSON.stringify(body.styles)}`,
-          `"attrs":${JSON.stringify(body.attrs)}`,
-          `"head":${Util.cleanJSON(body.head)}`,
-          `"body":${Util.cleanJSON(body.body)}`,
-          `"doc":${JSON.stringify(body.doc)}`,
-          `"_":${JSON.stringify(ctx.queue.get(uuid))}`,
-        ].join(',')}}`);
+        body = Markup.encode(JSON.stringify({
+          fragments: body.fragments,
+          scripts: body.scripts,
+          styles: body.styles,
+          attrs: body.attrs,
+          head: body.head,
+          body: body.body,
+          doc: body.doc,
+          _: ctx.queue.get(uuid),
+        }));
 
         const headers = new Headers({
           'content-type': 'application/json',

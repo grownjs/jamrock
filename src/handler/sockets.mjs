@@ -1,4 +1,4 @@
-import { Is, cleanJSON } from '../utils/server.mjs';
+import { Is } from '../utils/server.mjs';
 
 export function setup(ctx, env, editor, handler, timeout) {
   ctx.on('open', ws => {

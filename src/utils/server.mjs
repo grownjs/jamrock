@@ -35,13 +35,6 @@ Object.assign(Is, {
 
 export * from './shared.mjs';
 
-export function cleanJSON(value) {
-  return JSON.stringify(value, (_, v) => {
-    if (Is.arr(v)) return v.filter(x => !Is.not(x));
-    return v;
-  });
-}
-
 export function rtrim(value) {
   return value.replace(/\/$/, '');
 }

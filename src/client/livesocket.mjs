@@ -119,7 +119,7 @@ export class LiveSocket {
           if (el) el.classList.remove('loading');
           updatePage('', url);
         });
-      })
+      });
     };
 
     // FIXME: rethink since @live seems to be transparent
