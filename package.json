@@ -95,7 +95,7 @@
   "dependencies": {
     "@grown/static": "^0.0.10",
     "@unocss/core": "^0.65.2",
-    "chokidar": "^4.0.3",
+    "chokidar": "^3.6.0",
     "fast-glob": "^3.2.13",
     "grown": "^1.4.23",
     "mortero": "^0.0.123",
