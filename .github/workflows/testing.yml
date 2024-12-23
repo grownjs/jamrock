@@ -42,7 +42,7 @@ jobs:
       - name: Deno setup
         uses: denoland/setup-deno@v1
         with:
-          deno-version: 2.0.4
+          deno-version: 2.0.6
       - name: Bun setup
         uses: antongolub/action-setup-bun@v1
         with:

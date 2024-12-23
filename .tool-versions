@@ -1,4 +1,4 @@
-nodejs 22.4.0
+nodejs 23.1.0
 redis 7.0.11
-deno 2.0.4
-bun 1.1.34
+deno 2.0.6
+bun 1.1.42
