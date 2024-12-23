@@ -238,8 +238,8 @@ export async function createBody(env, conn, clients, { uuid, client, matches }) 
       };
     }
 
-    ctx.template = env.files[conn.current_module].source;
-    console.log(ctx);
+    // ctx.template = env.files[conn.current_module].source;
+    // console.log(ctx);
 
     ctx.route.layout = Util.Is.str(ctx.route.layout)
       ? env.locate(ctx.route.layout)

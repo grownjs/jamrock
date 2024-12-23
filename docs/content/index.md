@@ -1,6 +1,6 @@
 ---
 $render: ../layout.pug
-includes: !include "how-to/**/*.{js,txt,html}"
+includes: !include "how-to/**/*.{js,mjs,txt,html}"
 ---
 
 ## It works.
@@ -16,7 +16,7 @@ includes: !include "how-to/**/*.{js,txt,html}"
 
 <details>
   <summary>
-  Click
+    Click
   </summary>
   <button onclick="toggle()">OSOM</button>
 </details>

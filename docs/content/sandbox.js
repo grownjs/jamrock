@@ -5,13 +5,15 @@ import untar from 'js-untar';
 import xterm from 'xterm';
 import pako from 'pako';
 
+const start = Date.now();
+
 let jamfiles;
 fetch('jamrock-0.0.0.tgz').then(res => res.arrayBuffer())
   .then(pako.inflate)
   .then(arr => arr.buffer)
   .then(untar)
   .then(_files => {
-    jamfiles = _files;
+    jamfiles = _files.filter(_ => /package\.json|\.[cm]?js$/.test(_.name));
   });
 
 const isDark = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
@@ -41,6 +43,8 @@ if (!theme) {
   });
 }
 loadTheme();
+
+// FIXME: plan for a better strategy I guess?
 
 const tree = document.querySelector('[data-tree="/"]');
 const selected = tree.dataset.selected;
@@ -112,7 +116,7 @@ src.addEventListener('click', e => {
             editor.session.setMode('ace/mode/css');
           } else if (file.includes('.json')) {
             editor.session.setMode('ace/mode/json');
-          } else if (file.includes('.js')) {
+          } else if (file.includes('.js') || file.includes('.mjs')) {
             editor.session.setMode('ace/mode/javascript');
           }
 
@@ -201,15 +205,13 @@ async function startDevServer() {
   if (appProcess) appProcess.kill();
 
   appProcess = await webcontainerInstance.spawn('npm', ['start']);
-  appProcess.output.pipeTo(new WritableStream({
-    write(data) {
-      debug(data);
-    },
-  }));
+  appProcess.output.pipeTo(new WritableStream({ write: debug }));
   webcontainerInstance.on('server-ready', (port, url) => {
     console.log({ url });
     iframeEl.src = url;
     baseUrl = url;
+    const end = Date.now();
+    console.log('Ready after', (end - start) / 1000, 'secs...');
   });
 }
 
@@ -246,11 +248,10 @@ window.addEventListener('load', async () => {
     t = setTimeout(() => {
       if (current) {
         writeFile(current, editor.getValue());
-
-        if (current.includes('.js')) {
-          debug('Restarting server...\n');
-          startDevServer();
-        }
+        //        if (current.includes('.js')) {
+        //          debug('Restarting server...\n');
+        //          startDevServer();
+        //        }
       }
     }, 1260);
   });
@@ -261,7 +262,7 @@ window.addEventListener('load', async () => {
     throw new Error('Installation failed');
   }
 
-  await installDependencies(['@grown/static', 'grown', 'mortero', 'chokidar', 'open-editor', 'undici', 'fast-glob']);
+  await installDependencies(['@grown/static', 'grown', 'chokidar', 'open-editor']);
   await webcontainerInstance.fs.writeFile('package.json', files['package.json'].file.contents);
 
   debug('Installing jamrock modules...\n');
@@ -269,11 +270,20 @@ window.addEventListener('load', async () => {
   await webcontainerInstance.fs.mkdir('node_modules/jamrock/lib/nodejs', { recursive: true });
   await webcontainerInstance.fs.mkdir('node_modules/jamrock/dist');
 
+  let count = 0;
   await Promise.all(jamfiles.map(file => {
-    if (file.name.includes('deno') || file.name.includes('bun')) return;
-    return webcontainerInstance.fs.writeFile(file.name.replace('package', 'node_modules/jamrock'), new Uint8Array(file.buffer));
+    if (/\/(?:deno|bun|@?grown|chokidar|open-editor)/.test(file.name)) return;
+
+    const dir = file.name.replace(/\/[^/]+$/, '').replace('package', 'node_modules/jamrock');
+    const dest = file.name.replace('package', 'node_modules/jamrock');
+
+    count++;
+    return Promise.resolve()
+      .then(() => webcontainerInstance.fs.mkdir(dir, { recursive: true }))
+      .then(() => webcontainerInstance.fs.writeFile(dest, new Uint8Array(file.buffer)));
   }));
 
+  debug(`${count} files were written!\n`);
   debug('Starting dev server...\n');
 
   startDevServer();

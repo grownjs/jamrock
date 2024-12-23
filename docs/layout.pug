@@ -1,6 +1,5 @@
 doctype html
-script document.write(decodeURIComponent('%3Chtml theme='+(window.localStorage.theme||'dark')+'%3E')); // eslint-disable-line
-
+script document.documentElement.setAttribute('theme', localStorage.theme||'dark');
 head
   meta(charset='UTF-8')
   link(rel='icon' type='image/svg+xml' href='/vite.svg')
