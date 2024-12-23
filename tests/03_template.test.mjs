@@ -349,7 +349,7 @@ ROUTER(FIXME)
 
   test('should support css-generators, like unocss', async ({ expect }) => {
     const generators = {
-      css: createGenerator({
+      css: await createGenerator({
         rules: [
           ['m-1', { margin: '0.25rem' }],
         ],

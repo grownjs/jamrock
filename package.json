@@ -31,7 +31,7 @@
     "lint": "eslint *.js bin lib src tests scripts examples --ext html,mjs,js",
     "_seed": "jamrock main --out build --chdir seed --build",
     "dev": "node --watch-path src --watch-path lib --watch-path tests --watch test.mjs",
-    "test:ci": "npm-run-all -s coverage:unit report -- -r ${LCOV_OUTPUT:-lcov}",
+    "test:ci": "npm-run-all -s coverage:unit -- -r ${LCOV_OUTPUT:-lcov}",
     "test:e2e": "npx testcafe ${BROWSER:-chrome} tests/e2e/cases -e --color --debug-on-fail",
     "test:run": "node test.mjs",
     "test:unit": "npm run test:run --",
@@ -94,14 +94,14 @@
   },
   "dependencies": {
     "@grown/static": "^0.0.10",
-    "@unocss/core": "^0.61.0",
-    "chokidar": "^3.6.0",
+    "@unocss/core": "^0.65.2",
+    "chokidar": "^4.0.3",
     "fast-glob": "^3.2.13",
     "grown": "^1.4.23",
     "mortero": "^0.0.123",
     "open-editor": "^5.0.0",
     "serve-static-bun": "^0.5.0",
-    "undici": "^6.2.1"
+    "undici": "^7.2.0"
   },
   "bundleDependencies": [
     "chokidar",

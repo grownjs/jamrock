@@ -179,8 +179,7 @@ export const createCompiler = ({ fs, path }, options, external) => {
         printLog(`💅 ${unoConfig.replace(cwd, '.')}`);
 
         const _config = await Template.reload(unoConfig, true);
-
-        generators = { ...generators, css: unocss.createGenerator(_config.default || _config) };
+        generators = { ...generators, css: await unocss.createGenerator(_config.default || _config) };
       };
 
       if (watcher) {
