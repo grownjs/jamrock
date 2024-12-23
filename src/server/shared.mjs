@@ -259,46 +259,40 @@ export const createCompiler = ({ fs, path }, options, external) => {
       }
 
       if (!imported.includes(key)) {
-        try {
-          printLog(Util.$.bold(key));
+        printLog(Util.$.bold(key));
 
-          const shared = { ...options, generators };
-          const mod = compile(Template.read(src), src, shared);
-          const result = await Template.compile(compile, mod, shared, imported);
+        const shared = { ...options, generators };
+        const mod = compile(Template.read(src), src, shared);
+        const result = await Template.compile(compile, mod, shared, imported);
 
-          result.forEach(chunk => {
-            if (!chunk.dest) {
-              const source = Handler.rebase(chunk.src);
-              const destFile = Template.join(`${options.dest}/`, source);
-              const relative = Template.join(destFile, chunk.src, true);
+        result.forEach(chunk => {
+          if (!chunk.dest) {
+            const source = Handler.rebase(chunk.src);
+            const destFile = Template.join(`${options.dest}/`, source);
+            const relative = Template.join(destFile, chunk.src, true);
 
-              results.push([{ content: `export * from '${relative}';\n` }, Handler.rebase(destFile)]);
-            } else {
-              const destFile = Template.join(`${options.dest}/`, chunk.dest).replace('.html', '.generated.mjs');
+            results.push([{ content: `export * from '${relative}';\n` }, Handler.rebase(destFile)]);
+          } else {
+            const destFile = Template.join(`${options.dest}/`, chunk.dest).replace('.html', '.generated.mjs');
 
-              printLog(`  ${Util.$.green('write')} ${Util.$.gray(destFile)}`);
+            printLog(`  ${Util.$.green('write')} ${Util.$.gray(destFile)}`);
 
-              results.push([chunk, Handler.rebase(destFile)]);
-              bundle.push(destFile);
+            results.push([chunk, Handler.rebase(destFile)]);
+            bundle.push(destFile);
 
-              if (chunk.client) {
-                const clientFile = destFile.replace('.generated.', '.bundled.');
+            if (chunk.client) {
+              const clientFile = destFile.replace('.generated.', '.bundled.');
 
-                printLog(`  ${Util.$.green('write')} ${Util.$.gray(clientFile)}`);
+              printLog(`  ${Util.$.green('write')} ${Util.$.gray(clientFile)}`);
 
-                tasks.push(() => Template.transpile({
-                  attributes: { bundle: true },
-                  content: `export * from '${destFile}'`,
-                  filepath: destFile.replace('.mjs', '.js'),
-                }).then(params => Template.write(clientFile, params.content)));
-              }
+              tasks.push(() => Template.transpile({
+                attributes: { bundle: true },
+                content: `export * from '${destFile}'`,
+                filepath: destFile.replace('.mjs', '.js'),
+              }).then(params => Template.write(clientFile, params.content)));
             }
-          });
-        } catch (e) {
-          console.log('E_SOURCE', e);
-          e.source = src;
-          throw e;
-        }
+          }
+        });
       }
     }
 
@@ -376,16 +370,11 @@ export function createEnvironment({ fs, path }, options, external) {
   }
 
   async function build(reload) {
-    try {
-      if (reload) {
-        await compiler.reload();
-      } else {
-        await compiler.hooks();
-        await compiler.precompile();
-      }
-    } catch (e) {
-      console.error('E_BUILD', e);
-      process.exit(1);
+    if (reload) {
+      await compiler.reload();
+    } else {
+      await compiler.hooks();
+      await compiler.precompile();
     }
   }
 
