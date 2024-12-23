@@ -41,8 +41,7 @@ async function run(main, stack) {
       await Promise.all(stack.off.map(fn => fn()));
     }
   } catch (e) {
-    // console.log('E_RUN', e);
-    console.error(e[debug ? 'stack' : 'message']);
+    console.error(e);
     errors++;
   } finally {
     Render.disable();

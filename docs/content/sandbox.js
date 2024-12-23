@@ -167,7 +167,10 @@ const terminal = new xterm.Terminal({
   fontSize: 12,
   theme: dimmed,
 });
-terminal.open();
+
+/* global xterminal */
+
+terminal.open(xterminal);
 
 const up = new AnsiUp();
 

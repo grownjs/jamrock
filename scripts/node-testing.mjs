@@ -1,6 +1,6 @@
 import { expect } from 'expect';
 
-import jsdom from 'jsdom';
+import * as jsdom from 'jsdom';
 import * as happydom from 'happy-dom';
 
 import { test, createSandbox } from '../lib/nodejs/test.mjs';

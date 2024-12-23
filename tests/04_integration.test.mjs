@@ -479,7 +479,7 @@ test.group('integration only!', t => {
             ctx.conn.current_options = {};
 
             const set = [found.middleware].concat(found.middlewares);
-            const mods = await Promise.all(set.map(Template.import));
+            const mods = await Promise.all(set.map(Template.reload));
             const result = await middlewares(ctx, found, mods);
 
             conn.res.write(String(result));

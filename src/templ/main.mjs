@@ -439,7 +439,7 @@ export class Template {
       resolved = Template.path(`${process.cwd()}/node_modules/${mod}/shared/${name}`);
 
       if (!resolved) {
-        return Template.import(id);
+        return Template.reload(id);
       }
     }
 
@@ -453,14 +453,20 @@ export class Template {
 
     if (resolved && Template.exists(resolved)) {
       return resolved.charAt() === '/'
-        ? Template.import(`file://${resolved}`)
-        : Template.import(`file://${process.cwd()}/${resolved}`);
+        ? Template.reload(`file://${resolved}`)
+        : Template.reload(`file://${process.cwd()}/${resolved}`);
     }
 
-    return Template.import(id);
+    return Template.reload(id);
   }
 
-  static async import(id) {
+  static async reload(id, force) {
+    if (!force && Template.cache?.has(id)) {
+      return Template.cache.get(id).module;
+    }
+    if (force && id.charAt() === '/') {
+      return import(`file://${id}?d=${Date.now()}`);
+    }
     return import(id);
   }
 

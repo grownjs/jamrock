@@ -77,7 +77,7 @@ export function clientComponent(mod, context) {
         .then(() => clientComponent.call(this, _mod, context).mount(el, _props));
     };
 
-    console.log('[RENDER]', props, el.current);
+    // console.log('[RENDER]', props, el.current);
     vnode = await next(el.current);
 
     if (context?.sync) {

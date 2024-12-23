@@ -178,7 +178,7 @@ export const createCompiler = ({ fs, path }, options, external) => {
       const _reload = async () => {
         printLog(`💅 ${unoConfig.replace(cwd, '.')}`);
 
-        const _config = await Template.import(unoConfig, true);
+        const _config = await Template.reload(unoConfig, true);
 
         generators = { ...generators, css: unocss.createGenerator(_config.default || _config) };
       };
@@ -200,7 +200,7 @@ export const createCompiler = ({ fs, path }, options, external) => {
     for (const [k, v] of Object.entries(this[FILES_PROPERTY])) {
       if (!v.filepath || !fs.existsSync(k)) continue;
 
-      let mod = await Template.import(path.resolve(v.filepath), true);
+      let mod = await Template.reload(path.resolve(v.filepath), true);
       if (!k.includes('+server')) {
         mod = mod.default || mod;
 
