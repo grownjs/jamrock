@@ -1,4 +1,6 @@
+import { Is } from '../utils/client.mjs';
 import { createQueue } from './pubsub.mjs';
+import { createBundler } from './bundler.mjs';
 import { RedisHub, RedisStore } from './redis.mjs';
 
 export function createChokidarWatcher(opts, chokidar) {
@@ -6,7 +8,7 @@ export function createChokidarWatcher(opts, chokidar) {
   const watcher = chokidar.watch(opts.src, params);
   const watchers = [];
 
-  if (Array.isArray(opts.watch)) watcher.add(opts.watch);
+  if (Is.arr(opts.watch)) watcher.add(opts.watch);
 
   function on(src, cb) {
     const subwatch = chokidar.watch(src, params);
@@ -62,52 +64,25 @@ export async function createRedisConnection(env, options, getRedisModule) {
   env.queue = createQueue(options);
 }
 
-export const createTranspiler = ({ createMortero }) => async function transpile(tpl, ext, data, options) {
-  if (Array.isArray(tpl)) {
-    return Promise.all(tpl.map(x => transpile(x, ext, data, options)));
-  }
+export const createTranspiler = ({ getESbuildModule, ...deps }) => {
+  let esbuild;
+  let bundler;
+  return async function transpile(tpl, ext, opts, hooks) {
+    if (Is.arr(tpl)) {
+      return Promise.all(tpl.map(x => transpile(x, ext, opts, hooks)));
+    }
 
-  const params = { ...tpl.attributes, ...data };
+    esbuild = esbuild || await getESbuildModule();
+    bundler = bundler || createBundler({ ...deps, esbuild });
 
-  if (typeof tpl === 'object') {
-    const mortero = await createMortero();
-    const result = await new Promise((resolve, reject) => {
-      const filepath = tpl.filepath || `${tpl.identifier}.${params.lang || ext}`;
-      const partial = (mortero.default || mortero).parse(filepath, tpl.content, {
-        ...options,
+    const params = { ...tpl.attributes };
 
-        write: false,
-        watch: false,
+    tpl = await bundler.bundle(tpl, ext, opts, hooks);
 
-        format: 'esm',
-        bundle: params.bundle || params.scoped,
-        online: !(params.bundle || params.scoped) || params.online,
-        minify: options?.env === 'production',
-        modules: params.type === 'module',
-
-        install: options?.env === 'development',
-
-        progress: false,
-        platform: 'browser',
-      });
-      // console.log({params, options});
-
-      partial(params, (err, output) => {
-        if (err) {
-          reject(err);
-          return;
-        }
-        resolve(output);
-      });
-    });
-
-    tpl = result;
-  }
-
-  return {
-    params,
-    content: tpl.source,
-    children: tpl.children,
-    resources: tpl.resources,
+    return {
+      params,
+      content: tpl.source,
+      children: tpl.children,
+    };
   };
 };

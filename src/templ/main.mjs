@@ -22,8 +22,11 @@ const NO_HOOKS = {
 };
 
 export class Template {
-  constructor(name, block, hooks, callback) {
-    this.generators = hooks || [];
+  constructor(name, block, options, callback) {
+    this.generators = options.generators;
+    this.attributes = { ...options };
+    delete this.attributes.generators;
+
     this.component = name;
     this.partial = block;
 
@@ -31,39 +34,11 @@ export class Template {
   }
 
   async regenerate(imported = []) {
-    // const cwd = process.cwd();
-
-    // console.log({ cwd });
-
     Template.cache = Template.cache || new Map();
 
     const mods = await this.transform(Template.transpile, null, {
-      // FIXME: options not longer needed?
-      // external: ['jamrock'],
-      //      locate: path => {
-      //        if (path.indexOf(cwd) === 0) {
-      //          const file = path.replace(`${cwd}/`, '');
-      //
-      //          if (Template.cache.has(`${file}.mjs`)) {
-      //            return `${cwd}/${file}.mjs`;
-      //          }
-      //        }
-      //      },
-      //      resolve: path => {
-      //        if (path.indexOf(cwd) === 0) {
-      //          const file = path.replace(`${cwd}/`, '');
-      //
-      //          if (Template.cache.has(file)) {
-      //            const chunk = Template.cache.get(file);
-      //
-      //            return {
-      //              loader: 'js',
-      //              contents: chunk.content,
-      //              resolveDir: Template.dirname(path),
-      //            };
-      //          }
-      //        }
-      //      },
+      params: this.attributes,
+      use: this.generators,
     }, imported);
 
     if (!mods.length) {
@@ -108,11 +83,11 @@ export class Template {
 
     if (Is.func(cb)) {
       tasks.push(cb(this.partial.scripts
-        .filter(x => x.root || x.attributes.scoped || x.attributes.bundle || x.attributes.type === 'module'), 'js', null, options)
+        .filter(x => x.root || x.attributes.scoped || x.attributes.bundle || x.attributes.type === 'module'), 'js', options)
         .then(js => { resources.js = js.map(x => [x.params.type === 'module' || !x.params.bundle, x.content]); }));
 
       this.partial.styles.forEach(x => {
-        tasks.push(cb(x, 'css', null, options).then(code => {
+        tasks.push(cb(x, 'css', options).then(code => {
           if (!x.attributes.global) {
             resources.css.push(scopify(scope, x.attributes.scoped, code.content, markup.content, `${x.identifier}.css`));
           } else {
@@ -124,7 +99,7 @@ export class Template {
 
     await Promise.all(tasks);
 
-    if (this.generators && this.generators.css) {
+    if (this.generators?.css) {
       const { css } = await this.generators.css.generate(this.partial.rules.join(' '));
 
       resources.css.push(rulify(css, target));
@@ -161,11 +136,12 @@ export class Template {
     const result = await Template.render(this.module, null, props, ctx, cb);
     const html = taggify(result.body);
     const css = result.styles[this.module.__src];
+    const js = result.scripts[this.module.__src];
     const doc = result.doc;
     const meta = result.head;
     const attrs = result.attrs;
 
-    return { attrs, meta, html, css, doc };
+    return { attrs, meta, html, doc, css, js };
   }
 
   static async preflight(main, ctx, cb) {
@@ -219,29 +195,6 @@ export class Template {
     chunk.doc['data-location'] = filepath;
     chunk.status = e ? e.status : null;
     chunk.fragments = fragments;
-
-    Object.entries(chunk.styles).forEach(([src, rules]) => {
-      if (Is.arr(rules)) console.log('CSS_RULES', { src, rules });
-      chunk.styles[src] = Is.arr(rules) ? rules.reduce((memo, styles) => {
-        if (Is.arr(styles)) {
-          styles.forEach(style => {
-            if (Is.arr(style)) {
-              if (style[0].charAt() === '@') {
-                if (style[1].length > 0) {
-                  memo.push(`${style[0]}{${style[1].join('')}}`);
-                }
-              } else {
-                memo.push(style.join(''));
-              }
-            } else {
-              memo.push(style);
-            }
-          });
-          return memo;
-        }
-        return memo.concat(styles);
-      }, []).join('') : rules;
-    });
 
     return chunk;
   }
@@ -479,7 +432,7 @@ export class Template {
       params: { ...tpl.attributes },
       content: tpl.content,
       children: [],
-      resources: [],
+      // resources: [],
     });
   }
 
@@ -580,6 +533,10 @@ export class Template {
     return ret;
   }
 
+  static relative(a, b) {
+    return rebase(Template.join(a, b).replace(process.cwd(), '.'));
+  }
+
   static dirname(path) {
     const parts = path.split('/');
     return parts.slice(0, parts.length - 1).join('/');
@@ -669,6 +626,6 @@ export class Template {
     const id = pascalCase(snakeCase(name));
     const cb = (src, code, _opts) => Template.from(compile, compile(code, src), { ...opts, ..._opts });
 
-    return new Template(id, block, opts.generators, cb);
+    return new Template(id, block, opts, cb);
   }
 }

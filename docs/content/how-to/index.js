@@ -6,4 +6,7 @@ env({
   redis: false,
   src: './src',
   dest: './dist',
+  generators: {
+    less: await import('less'),
+  },
 })[process.argv.includes('--build') ? 'build' : 'serve']();

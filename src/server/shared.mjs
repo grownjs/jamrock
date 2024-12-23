@@ -169,7 +169,7 @@ export const createCompiler = ({ fs, path }, options, external) => {
     return { sources, routes };
   }
 
-  let generators;
+  let generators = options.generators;
   async function hooks(watcher) {
     const unoConfig = Template.path('./unocss.config', `${cwd}/`);
 

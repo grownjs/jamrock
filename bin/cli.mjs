@@ -1,6 +1,6 @@
-import { dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { createRequire } from 'node:module';
+import { dirname, resolve } from 'node:path';
 import { writeFileSync, existsSync, readdirSync, chmodSync, cpSync } from 'node:fs';
 
 import { Util, process } from '../dist/main.mjs';
@@ -170,15 +170,23 @@ export type Routes = ${['RouteMap'].concat(typedefs).join('\n& ')};\n`;
       watch = watch || true;
     }
 
+    const defaults = {};
+
+    if (existsSync('dev.config.mjs')) {
+      const mod = await import(resolve('dev.config.mjs'));
+
+      Object.assign(defaults, mod.default || mod);
+    }
+
     switch (argv[0]) {
       case 'serve':
         console.log(`Processing ${src} to ${dest}`);
-        await env({ src, dest, uws, port, watch, redis }).serve();
+        await env({ ...defaults, src, dest, uws, port, watch, redis }).serve();
         break;
 
       case 'build':
         console.log(`Building ${src} to ${dest}`);
-        await env({ src, dest, unocss }).build();
+        await env({ ...defaults, src, dest, unocss }).build();
         break;
 
       case 'route':
@@ -199,7 +207,12 @@ export type Routes = ${['RouteMap'].concat(typedefs).join('\n& ')};\n`;
 
         writeFileSync(`${argv[1]}/package.json`, `${JSON.stringify({
           name: argv[1],
+          type: 'module',
           version: '0.0.0',
+          devDependencies: {
+            esbuild: 'latest',
+            less: 'latest',
+          },
         }, null, 2)}\n`);
 
         // eslint-disable-next-line no-case-declarations

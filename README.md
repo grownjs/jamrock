@@ -14,7 +14,7 @@ I've been working on this shit for a short while, learning a lot while stealing 
 I don't want to compete with a vast and wild world of kick-ass technologies... so far, I want to limit what am planning for it.
 
 - [x] Components &mdash; a bit of them, based on Svelte 5 syntax but using old `export` style props!
-- [x] Fragments &mdash; not yet finished, but they are meant for updateable nodes on the browser.
+- [ ] Fragments &mdash; not yet finished, but they are meant for updateable nodes on the browser.
 - [x] Snippets &mdash; yes! well, not so advanced but for most basic usage they just work.
 - [x] Layouts &mdash; support for `+layout` or `+error` components is built-in, nested component rendering is also handled this way.
 - [ ] Scripts &mdash; you can actually embed scripts for client-side usage, or bundle them... something in between!

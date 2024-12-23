@@ -1,5 +1,6 @@
 #!/usr/bin/env -S deno run --allow-all --unstable
-
+// @ts-nocheck
+/* global Deno */
 Promise.all([
   import('../lib/deno/main.mjs'),
   import('./cli.mjs'),

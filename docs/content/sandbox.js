@@ -7,8 +7,9 @@ import pako from 'pako';
 
 const start = Date.now();
 
-let jamfiles;
-fetch('jamrock-0.0.0.tgz').then(res => res.arrayBuffer())
+let jamfiles = [];
+fetch('jamrock-0.0.0.tgz')
+  .then(res => res.arrayBuffer())
   .then(pako.inflate)
   .then(arr => arr.buffer)
   .then(untar)
@@ -211,7 +212,7 @@ async function startDevServer() {
     iframeEl.src = url;
     baseUrl = url;
     const end = Date.now();
-    console.log('Ready after', (end - start) / 1000, 'secs...');
+    debug(`■ Ready after ${(end - start) / 1000} secs...\n`);
   });
 }
 
@@ -234,11 +235,11 @@ window.addEventListener('load', async () => {
     gotoPage(urlbar.value || '/');
   });
 
-  debug('Initializing web container...\n');
+  debug('■ Initializing web container...\n');
   editor.container.style.opacity = 1;
   webcontainerInstance = await WebContainer.boot();
 
-  debug('Initializing file system...\n');
+  debug('■ Initializing file system...\n');
 
   await webcontainerInstance.mount(files);
 
@@ -249,7 +250,7 @@ window.addEventListener('load', async () => {
       if (current) {
         writeFile(current, editor.getValue());
         //        if (current.includes('.js')) {
-        //          debug('Restarting server...\n');
+        //          debug('■ Restarting server...\n');
         //          startDevServer();
         //        }
       }
@@ -265,7 +266,7 @@ window.addEventListener('load', async () => {
   await installDependencies(['@grown/static', 'grown', 'chokidar', 'open-editor']);
   await webcontainerInstance.fs.writeFile('package.json', files['package.json'].file.contents);
 
-  debug('Installing jamrock modules...\n');
+  debug('■ Installing jamrock modules...\n');
 
   await webcontainerInstance.fs.mkdir('node_modules/jamrock/lib/nodejs', { recursive: true });
   await webcontainerInstance.fs.mkdir('node_modules/jamrock/dist');
@@ -283,8 +284,8 @@ window.addEventListener('load', async () => {
       .then(() => webcontainerInstance.fs.writeFile(dest, new Uint8Array(file.buffer)));
   }));
 
-  debug(`${count} files were written!\n`);
-  debug('Starting dev server...\n');
+  debug(`■ ${count} files were written!\n`);
+  debug('■ Starting dev server...\n');
 
   startDevServer();
 });

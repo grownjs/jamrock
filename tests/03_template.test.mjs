@@ -3,6 +3,7 @@
 import { test } from '@japa/runner';
 import { createGenerator } from '@unocss/core';
 
+import { Readable } from 'stream';
 import * as td from 'testdouble';
 import * as path from 'path';
 import * as fs from 'fs';
@@ -77,6 +78,11 @@ fixture`./unocss.html
 `;
 
 // eslint-disable-next-line no-unused-expressions
+fixture`./fonts/Bravo.otf
+  FONT
+`;
+
+// eslint-disable-next-line no-unused-expressions
 fixture`./nested.html
   <style>
     h1 { color: blue }
@@ -87,7 +93,7 @@ fixture`./nested.html
   <style global>
     @font-face {
       font-family: Alpha;
-      src: url('Bravo.otf');
+      src: url('./fonts/Bravo.otf');
     }
     @supports (display: flex) {
       .flex-container > * {
@@ -102,6 +108,11 @@ fixture`./nested.html
   </style>
   <h1>OSOM</h1>
   <div class="flex-container">!</div>
+`;
+
+// eslint-disable-next-line no-unused-expressions
+fixture`./nested/path/module.mjs
+  export const truth = 42;
 `;
 
 // eslint-disable-next-line no-unused-expressions
@@ -152,7 +163,8 @@ fixture`./nested/path/to/transformed.html
 
   <body class="main x-{value}">
     <script>
-      console.log(42);
+      import { truth } from '../module.mjs';
+      console.log(truth);
     </script>
 
     <script type="module">
@@ -184,7 +196,7 @@ fixture`./nested/path/to/transformed.html
     p { color: @red; }
     @font-face {
       font-family: Alpha;
-      src: url('Bravo.otf');
+      src: url('../../../fonts/Bravo.otf');
     }
   </style>
 
@@ -253,7 +265,7 @@ test.group('template transformation', t => {
     td.replace(Template, 'load', loader);
     td.replace(Template, 'read', x => fs.readFileSync(x).toString());
     td.replace(Template, 'exists', x => fs.existsSync(x) && fs.statSync(x).isFile());
-    td.replace(Template, 'transpile', createTranspiler({ createMortero: () => import('mortero'), path }));
+    td.replace(Template, 'transpile', createTranspiler({ fs, path, Readable, Template, getESbuildModule: () => import('esbuild') }));
   });
   t.each.teardown(() => {
     delete Template.cache;
@@ -262,21 +274,33 @@ test.group('template transformation', t => {
   });
 
   test('should compile recursively to ESM', async ({ expect }) => {
-    const tpl = await build('./nested/path/to/transformed.html');
+    const tpl = await build('./nested/path/to/transformed.html', {
+      generators: {
+        less: await import('less'),
+      },
+    });
 
     expect(tpl.module.enabled).toEqual(false);
     expect(tpl.module.name).toEqual('OSOM');
 
     td.replace(Math, 'random', () => 1);
-    const { attrs, meta, html, css } = await tpl.render();
 
-    expect(css).toEqual(`p:where(.jam-420){color:#ff0;}
-@font-face{font-family:Alpha;src:url('../Bravo.otf');}`);
+    const { attrs, meta, html, css, js } = await tpl.render();
 
-    expect(html).toContain(`<p data-location="nested/path/to/transformed.html:67:3" class="jam-420">OK: 28</p>
+    expect(js.map(_ => _[0])).toEqual([true, true, false]);
+
+    expect(js[0][1]).toContain('truth = 42');
+    expect(js[0][1]).toContain('console.log(truth)');
+    expect(js[1][1]).toContain('console.log({ kindOf: kind_of_default })');
+    expect(js[2][1]).toContain('console.log({ isNumber: is_number_default })');
+
+    expect(css).toContain(`p:where(.jam-420){color:#ff0;}
+@font-face{font-family:Alpha;src:url(generated/fonts/Bravo.otf);}`);
+
+    expect(html).toContain(`<p data-location="nested/path/to/transformed.html:68:3" class="jam-420">OK: 28</p>
     <span>OSOM</span>
-  <h1>It works.</h1><x-fragment name=test interval=60 data-location="nested/path/to/transformed.html:83:1">
-  OSOM: FIXME</x-fragment><h1 data-location="nested/path/to/hello.html:4:1">Hi, PATEKE.</h1><pre data-location="nested/path/to/transformed.html:89:1">42</pre>TEST(FIXME)
+  <h1>It works.</h1><x-fragment name=test interval=60 data-location="nested/path/to/transformed.html:84:1">
+  OSOM: FIXME</x-fragment><h1 data-location="nested/path/to/hello.html:4:1">Hi, PATEKE.</h1><pre data-location="nested/path/to/transformed.html:90:1">42</pre>TEST(FIXME)
 INNER(FIXME)
 NOOP(FIXME)
 ROUTER(FIXME)
@@ -307,14 +331,12 @@ ROUTER(FIXME)
     const tpl = await build('./scoping.html');
     const { html, css } = await tpl.render({ bar: 42 });
 
-    expect(css).toEqual([
-      'p:where(.jam-420){color:red;}',
-      '.foo:where(.jam-420){color:green;}',
-      'p:where(.jam-420) .foo:where(.jam-420):not(.x){color:yellow;}',
-      'p[data-root]:where(.jam-420) .foo:where(.jam-420){color:black;}',
-      'ul:where(.jam-420) li span:where(.jam-420){color:pink;}',
-      '.name:where(.jam-420){color:purple;}',
-    ].join('\n'));
+    expect(css).toContain(`p:where(.jam-420){color:red;}
+.foo:where(.jam-420){color:green;}
+p:where(.jam-420) .foo:where(.jam-420):not(.x){color:yellow;}
+p[data-root]:where(.jam-420) .foo:where(.jam-420){color:black;}
+ul:where(.jam-420) li span:where(.jam-420){color:pink;}
+.name:where(.jam-420){color:purple;}`);
 
     expect(html).toEqual([
       '<p data-root data-location="scoping.html:9:1" class="jam-420">',
@@ -330,16 +352,13 @@ ROUTER(FIXME)
     const tpl = await build('./nested.html');
     const { html, css } = await tpl.render();
 
-    expect(css).toEqual([
-      'h1:where(.jam-420){color:blue;}',
-      '@media screen and (min-width: 100px)',
-      'h1:where(.jam-420){color:red;}',
-      "@font-face{font-family:Alpha;src:url('../Bravo.otf');}",
-      '@supports (display: flex)',
-      '.flex-container > *{text-shadow:0 0 2px blue;float:none;}',
-      '.flex-container{display:flex;}',
-      '[class]{color:cyan;}',
-    ].join('\n'));
+    expect(css).toContain(`@font-face{font-family:Alpha;src:url(generated/fonts/Bravo.otf);}
+@supports (display: flex){.flex-container > *{text-shadow:0 0 2px blue;float:none;}
+.flex-container{display:flex;}}
+[class]{color:cyan;}`);
+
+    expect(css).toContain(`h1:where(.jam-420){color:blue;}
+@media screen and (min-width: 100px){h1:where(.jam-420){color:red;}}`);
 
     expect(html).toEqual([
       '<h1 data-location="nested.html:23:1" class="jam-420">OSOM</h1>',
@@ -359,7 +378,7 @@ ROUTER(FIXME)
     const tpl = await build('./unocss.html', { generators });
     const { css } = await tpl.render();
 
-    expect(css).toEqual('.m-1{margin:0.25rem;}');
+    expect(css).toContain('.m-1{margin:0.25rem;}');
   });
 });
 
@@ -479,7 +498,12 @@ test.group('core utilties', t => {
   test('Template.compile', async ({ expect }) => {
     setup();
     const imported = ['generated/nested/noop.html'];
-    const shared = { cwd: 'generated' };
+    const shared = {
+      cwd: 'generated',
+      generators: {
+        less: await import('less'),
+      },
+    };
     const tpl = fixture.get('./nested/path/to/transformed.html');
     const mod = new Block(tpl.source, tpl.filepath, shared);
     const mods = await Template.compile((src, file, opts) => new Block(src, file, opts), mod, shared, imported);

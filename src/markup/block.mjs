@@ -6,15 +6,12 @@ import { traverse } from './walk.mjs';
 import { lexer } from '../templ/utils.mjs';
 import { reduce, walk } from './utils.mjs';
 import { Template } from '../templ/main.mjs';
-import { flatten } from '../utils/shared.mjs';
 import { extract, rebase } from '../handler/utils.mjs';
 import { Is, parseMarkup, identifier } from '../utils/server.mjs';
 
 const RE_EXPORT_DEFAULT = /\bexport default\b/;
-// const RE_UNWRAP_SYMBOLS = /unwrap(\d+)`([^]*?)`\.end\1/g;
 const RE_RESOLVE_IMPORTS = /\/\*@@\*\/__resolve\('(.+?)'\)/g;
 
-// let counter = 0;
 export class Block {
   constructor(tpl, file, options) {
     const opts = { ...options };
@@ -147,16 +144,38 @@ export class Block {
       .join('');
   }
 
+  get $styles() {
+    return this.assets.css.reduce((memo, styles) => {
+      if (Is.arr(styles)) {
+        styles.forEach(style => {
+          if (Is.arr(style)) {
+            if (style[0].charAt() === '@') {
+              if (style[1].length > 0) {
+                memo.push(`${style[0]}{${style[1].join('\n')}}`);
+              }
+            } else {
+              memo.push(style.join('\n'));
+            }
+          } else {
+            memo.push(style);
+          }
+        });
+        return memo;
+      }
+      return memo.concat(styles);
+    }, []).join('\n');
+  }
+
   get $prefix() {
-    const stylesheets = flatten(this.assets.css).join('\n');
     const javascript = JSON.stringify(this.assets.js);
+    const stylesheets = JSON.stringify(this.$styles);
 
     return `export const __snippets = {${this.$snippets}};
 
 export const __fragments = {${this.$fragments}};
 
 export const __scripts = ${javascript};
-export const __styles = \`${stylesheets}\`;
+export const __styles = ${stylesheets};
 
 export const __context = ${JSON.stringify(this.context)};
 export const __doctype = ${this.$doctype};

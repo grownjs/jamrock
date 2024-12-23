@@ -8,5 +8,9 @@
   "scripts": {
     "start": "node .",
     "prestart": "node . --build"
+  },
+  "devDependencies": {
+    "esbuild": "latest",
+    "less": "latest"
   }
 }
