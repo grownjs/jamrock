@@ -31,7 +31,7 @@ export function createView(loader) {
 
 let inc = 0;
 export async function transpile(code, src, save, prefix = 'generated/') {
-  const file = `${cwd}/${prefix}${src.replace('.html', '')}.generated.mjs`;
+  const file = `${cwd}/${prefix}${src.replace('.html', '.generated.mjs')}`;
 
   fs.mkdirSync(path.dirname(file), { recursive: true });
   fs.writeFileSync(file, Block.unwrap(code, src, rebase(file.replace(cwd, '.'))));

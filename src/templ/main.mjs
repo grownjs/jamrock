@@ -36,15 +36,10 @@ export class Template {
   async regenerate(imported = []) {
     Template.cache = Template.cache || new Map();
 
-    const mods = await this.transform(Template.transpile, null, {
+    return this.transform(Template.transpile, null, {
       params: this.attributes,
       use: this.generators,
     }, imported);
-
-    if (!mods.length) {
-      throw new Error(`Failed to compile '<${this.component}>' component`);
-    }
-    return mods;
   }
 
   async transform(cb, bundle, options, imported = []) {
@@ -55,13 +50,10 @@ export class Template {
     const scope = this.partial.id;
     const { markup } = this.partial;
 
+    const set = [];
+    const tasks = [];
     const isStatic = context === 'static';
     const isClient = bundle || context === 'client';
-
-    // console.log({ isClient, context, filepath });
-
-    const tasks = [];
-    const mod = [];
 
     if (!imported.includes(target)) {
       imported.push(target);
@@ -73,18 +65,23 @@ export class Template {
         imported.push(c.src);
         tasks.push(this.build(c.src, c.code)
           .transform(cb, isClient, options, imported)
-          .then(result => mod.push(...result)));
+          .then(result => set.push(...result)));
       } else {
         console.debug(`=> '${c.src}' not found in`, target);
       }
     }
 
-    mod.push(...this.partial.imports);
+    set.push(...this.partial.imports);
 
     if (Is.func(cb)) {
       tasks.push(cb(this.partial.scripts
         .filter(x => x.root || x.attributes.scoped || x.attributes.type === 'module'), 'js', options)
-        .then(js => { resources.js = js.map(x => [x.params.type === 'module', x.parent, x.content]); }));
+        .then(js => set.unshift(...js.map((x, i) => {
+          const destFile = `${target.replace('.html', '')}(${i}).js`;
+
+          resources.js.push([x.params.type === 'module' ? 1 : 0, x.parent, destFile]);
+          return { content: x.content, dest: destFile };
+        }))));
 
       this.partial.styles.forEach(x => {
         tasks.push(cb(x, 'css', options).then(code => {
@@ -107,23 +104,19 @@ export class Template {
 
     let result;
     if (isStatic) {
-      mod.push(result = { content: this.partial.toString(), src: filepath, dest: target });
+      set.push(result = { content: this.partial.toString(), src: filepath, dest: target });
     } else {
       const children = [...new Set(this.partial.children.map(x => x.src))];
 
       result = { content: this.partial.toString(), src: filepath, children, dest: target };
 
       if (isClient) {
-        mod.push({ ...result, client: true });
+        set.push({ ...result, client: true });
       } else {
-        mod.unshift(result);
+        set.unshift(result);
       }
     }
-
-    //    if (Template.cache) {
-    //      Template.cache.set(target.replace('.html', '.js'), result);
-    //    }
-    return mod;
+    return set;
   }
 
   async compile(mod, block, callback) {
@@ -199,7 +192,7 @@ export class Template {
     return chunk;
   }
 
-  static async compile(cb, mod, opts, imported) {
+  static compile(cb, mod, opts, imported) {
     mod = Template.from((_, file, _opts) => cb(_, file, { ..._opts, ...opts }), mod, opts);
     return mod.regenerate(imported);
   }
@@ -304,14 +297,8 @@ export class Template {
       ? `${component.__src}/${++ctx.depth}`
       : component.__src;
 
-    const styles = {
-      [component.__src]: component.__styles,
-    };
-
-    const scripts = {
-      [component.__src]: component.__scripts
-        .map(([k, p, v], i) => [k, p, `/* ${component.__src}(${i}) */\n${v}`]),
-    };
+    const styles = { [component.__src]: component.__styles };
+    const scripts = { [component.__src]: component.__scripts };
 
     const hooks = component.__context === 'module'
       ? Template.hooks(ctx, parent)

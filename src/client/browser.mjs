@@ -63,6 +63,8 @@ export class Browser {
       return patchNode(el, !force ? el.__vnode : null, el.__vnode = vdom); // eslint-disable-line
     };
 
+    // FIXME: this... import and execute if not scoped, otherwise,
+    // wait for node to be created and then execute!
     this.scripts = js => {
       if (Is.arr(js)) {
         return js.forEach(this.scripts);

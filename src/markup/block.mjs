@@ -144,6 +144,10 @@ export class Block {
       .join('');
   }
 
+  get $scripts() {
+    return this.assets.js.map(([a, b, c]) => [a, b, this.opts.cwd ? rebase(c.replace(this.opts.cwd, '.')) : c]);
+  }
+
   get $styles() {
     return this.assets.css.reduce((memo, styles) => {
       if (Is.arr(styles)) {
@@ -167,7 +171,7 @@ export class Block {
   }
 
   get $prefix() {
-    const javascript = JSON.stringify(this.assets.js);
+    const javascript = JSON.stringify(this.$scripts);
     const stylesheets = JSON.stringify(this.$styles);
 
     return `export const __snippets = {${this.$snippets}};
