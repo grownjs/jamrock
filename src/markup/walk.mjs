@@ -1,7 +1,7 @@
 import { decodeEnts } from 'somedom/ssr';
 
-import { Is, repeat } from '../utils/server.mjs';
 import { Expr } from './expr.mjs';
+import { Is, repeat, identifier } from '../utils/server.mjs';
 
 const NOT_ANCHORS = [
   'br', 'hr', 'wbr', 'area', 'html', 'head', 'title', 'base', 'meta', 'link', 'style', 'script', 'track', 'option',
@@ -52,8 +52,13 @@ export function traverse(obj, html, parent, context, counter = 0) {
           const { line, column, index } = node.children[0].position.start;
           const prefix = repeat(' ', index - (line + column) + 3) + repeat('\n', line) + repeat(' ', column);
 
+          if (parent) {
+            parent.__ref = parent.__ref || identifier();
+          }
+
           const fixedNode = {
-            root: parent ? parent.name : null,
+            ref: parent?.__ref || null,
+            root: parent?.name || null,
             offset: node.children[0].position.start,
             content: prefix + node.children[0].content,
             identifier: `${context.file.replace(/\.\w+$/, '')}(${counter})`,
@@ -108,6 +113,7 @@ export function traverse(obj, html, parent, context, counter = 0) {
         copy.push(...newNode.elements);
         context.response.markup.attributes = newNode.attributes;
         Object.assign(context.response.snippets, newNode.snippets);
+        if (newNode.__ref) newNode.attributes['@ref'] = newNode.__ref;
       } else if (node.rawTagName === '!DOCTYPE') {
         context.response.markup.doctype = newNode.attributes;
       } else if (node.rawTagName === 'fragment') {

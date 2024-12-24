@@ -1,6 +1,7 @@
 /* eslint-disable max-len */
 
 import { test } from '@japa/runner';
+import * as td from 'testdouble';
 
 import { Block } from '../src/markup/index.mjs';
 import { Expr } from '../src/markup/expr.mjs';
@@ -122,7 +123,13 @@ test.group('Expr', () => {
   });
 });
 
-test.group('parsing', () => {
+test.group('parsing', t => {
+  t.each.setup(() => {
+    td.replace(Math, 'random', () => 0.0001);
+    td.replace(Date, 'now', () => 0);
+  });
+  t.each.teardown(td.reset);
+
   test('should rewrite exports', ({ expect }) => {
     const code = Block.exports(`
       let messages = [];
@@ -208,7 +215,7 @@ test.group('parsing', () => {
     `, 'page.html')).toEqual({
       context: 'module',
       markup: {
-        attributes: { '@location': 'page.html:5:7' },
+        attributes: { '@location': 'page.html:5:7', '@ref': 'x004nym8' },
         content: [],
       },
       scripts: [{
@@ -216,12 +223,14 @@ test.group('parsing', () => {
         identifier: 'page(0)',
         content: '               \n        export const value = 42;\n      ',
         offset: { column: 14, index: 15, line: 1 },
+        ref: null,
         root: null,
       }, {
         attributes: {},
         identifier: 'page(1)',
         content: '                                                                           \n\n\n\n               \n          console.log(42);\n        ',
         offset: { column: 16, index: 94, line: 5 },
+        ref: 'x004nym8',
         root: 'body',
       }],
       fragments: {},
@@ -398,6 +407,7 @@ test.group('parsing', () => {
         identifier: 'markup(0)',
         content: '                                                                           \n\n\n\n             \n        export let value = 42;\n      ',
         offset: { column: 14, index: 92, line: 5 },
+        ref: null,
         root: null,
       }],
       styles: [{
@@ -405,6 +415,7 @@ test.group('parsing', () => {
         identifier: 'markup(1)',
         content: '                                                                                                                                                                 \n\n\n\n\n\n\n\n                   \n        h1 { color: red; }\n      ',
         offset: { column: 20, index: 188, line: 9 },
+        ref: null,
         root: null,
       }],
       rules: [],

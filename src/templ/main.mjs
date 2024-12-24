@@ -84,7 +84,7 @@ export class Template {
     if (Is.func(cb)) {
       tasks.push(cb(this.partial.scripts
         .filter(x => x.root || x.attributes.scoped || x.attributes.type === 'module'), 'js', options)
-        .then(js => { resources.js = js.map(x => [x.params.type === 'module', x.content]); }));
+        .then(js => { resources.js = js.map(x => [x.params.type === 'module', x.parent, x.content]); }));
 
       this.partial.styles.forEach(x => {
         tasks.push(cb(x, 'css', options).then(code => {
@@ -310,7 +310,7 @@ export class Template {
 
     const scripts = {
       [component.__src]: component.__scripts
-        .map(([k, v], i) => [k, `/* ${component.__src}(${i}) */\n${v}`]),
+        .map(([k, p, v], i) => [k, p, `/* ${component.__src}(${i}) */\n${v}`]),
     };
 
     const hooks = component.__context === 'module'
@@ -432,7 +432,6 @@ export class Template {
       params: { ...tpl.attributes },
       content: tpl.content,
       children: [],
-      // resources: [],
     });
   }
 

@@ -274,6 +274,9 @@ test.group('template transformation', t => {
   });
 
   test('should compile recursively to ESM', async ({ expect }) => {
+    td.replace(Math, 'random', () => 1);
+    td.replace(Date, 'now', () => 0);
+
     const tpl = await build('./nested/path/to/transformed.html', {
       generators: {
         less: await import('less'),
@@ -283,17 +286,15 @@ test.group('template transformation', t => {
     expect(tpl.module.enabled).toEqual(false);
     expect(tpl.module.name).toEqual('OSOM');
 
-    td.replace(Math, 'random', () => 1);
-
     const { attrs, meta, html, css, js } = await tpl.render();
 
     expect(js.map(_ => _[0])).toEqual([false, true, false]);
-
-    expect(js[0][1]).toContain('truth = 42');
-    expect(js[0][1]).toContain('console.log({ self, truth })');
-    expect(js[1][1]).toContain('console.log({ kindOf })');
-    expect(js[1][1]).toContain('from "https://cdn.skypack.dev/kind-of"');
-    expect(js[2][1]).toContain('console.log({ isNumber: is_number_default })');
+console.log(js)
+    expect(js[0][2]).toContain('truth = 42');
+    expect(js[0][2]).toContain('console.log({ self, truth })');
+    expect(js[1][2]).toContain('console.log({ kindOf })');
+    expect(js[1][2]).toContain('from "https://cdn.skypack.dev/kind-of"');
+    expect(js[2][2]).toContain('console.log({ isNumber: is_number_default })');
 
     expect(css).toContain(`p:where(.jam-420){color:#ff0;}
 @font-face{font-family:Alpha;src:url(generated/fonts/Bravo.otf);}`);
@@ -310,7 +311,7 @@ ROUTER(FIXME)
 [HTML: <element tag=del data-location="nested/path/to/static.html:6:1">!!</element>]`);
 
     expect({ attrs, meta }).toEqual({
-      attrs: { class: 'main x-42' },
+      attrs: { class: 'main x-42', '@ref': 'x' },
       meta: [
         ['title', {}, ['Untitled "', '42', '"']],
       ],

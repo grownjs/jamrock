@@ -81,6 +81,7 @@ export const createTranspiler = ({ getESbuildModule, ...deps }) => {
 
     return {
       params,
+      parent: tpl.root,
       content: tpl.source,
       children: tpl.children,
     };

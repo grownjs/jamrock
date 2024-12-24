@@ -76,6 +76,7 @@ export function createBundler({ Template, esbuild, ...deps }) {
         const less = opts.use.less.default || opts.use.less;
         const out = await less.render(tpl.content, { filename: filepath });
 
+        tpl.root = tpl.ref;
         tpl.content = out.css;
         tpl.children = out.imports;
       } else {
@@ -109,6 +110,7 @@ export function createBundler({ Template, esbuild, ...deps }) {
       });
 
       return {
+        root: tpl.ref,
         source: outputFiles[0].text,
         children: (metafile?.inputs[__filename]?.imports || [])
           .filter(_ => _.path.indexOf('http-url:') === -1)
@@ -117,6 +119,7 @@ export function createBundler({ Template, esbuild, ...deps }) {
     }
 
     return {
+      root: tpl.ref,
       source: tpl.content,
       children: tpl.children || [],
     };

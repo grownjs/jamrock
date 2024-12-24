@@ -3,6 +3,8 @@ const RE_CAMEL_CASE = /(?<=[a-z])[A-Z]/;
 const RE_FIXED_NAMES = /^[a-zA-Z][\w:-]*$/;
 const RE_TO_SNAKE_CASE = /[_\W]+/g;
 
+let ID_COUNTER = 0;
+
 export class Is {
   static num(value) {
     return typeof value === 'number';
@@ -142,7 +144,7 @@ export function stringhash(str) {
 export function identifier(prefix, suffix) {
   const hash = suffix
     ? `x${stringhash(suffix)}`
-    : `x${Math.random().toString(36).substr(2, 7)}`;
+    : `x${(ID_COUNTER++ + Date.now() + Math.random()).toString(36).substr(2, 7)}`;
 
   return prefix ? [prefix.replace(/[^a-zA-Z\d]/g, '-'), hash] : hash;
 }
