@@ -580,34 +580,21 @@ export class Template {
     return b.href.replace('file://', '');
   }
 
-  static path(mod, source, filepath) {
-    const cwd = process.cwd();
+  static path(mod) {
     const paths = [];
 
-    if (mod.charAt() === '~') {
-      paths.push(mod.replace('~', cwd).replace(`${cwd}/`, ''));
-    } else if (mod.charAt() === '.') {
-      const src = realpath(source, mod);
-      const dest = realpath(filepath, mod);
-
-      if (src) paths.push(rebase(src));
-      if (dest) paths.unshift(rebase(dest));
-    } else if (mod.indexOf('node:') === 0) return mod;
-    else if (!mod.includes(':') && mod.charAt() === '/') paths.push(mod);
+    if (mod.indexOf('node:') === 0) return mod;
+    if (!mod.includes(':') && mod.charAt() === '/') paths.push(mod);
     else if (Template.exists(`node_modules/${mod.split(':')[0]}/package.json`)) return mod;
 
     for (let i = 0; i < paths.length; i += 1) {
-      const subject = paths[i].replace(/\.(?:html)$/, '');
-
-      if (Template.exists(`${subject}.server.mjs`)) return `${subject}.server.mjs`;
-      if (Template.exists(`${subject}.client.mjs`)) return `${subject}.client.mjs`;
-      if (Template.exists(`${paths[i]}/index.mjs`)) return `${paths[i]}/index.mjs`;
-      if (Template.exists(`${paths[i]}/index.cjs`)) return `${paths[i]}/index.cjs`;
-      if (Template.exists(`${paths[i]}/index.js`)) return `${paths[i]}/index.js`;
+      if (Template.exists(paths[i])) return paths[i];
+      if (Template.exists(`${paths[i]}.js`)) return `${paths[i]}.js`;
       if (Template.exists(`${paths[i]}.mjs`)) return `${paths[i]}.mjs`;
       if (Template.exists(`${paths[i]}.cjs`)) return `${paths[i]}.cjs`;
-      if (Template.exists(`${paths[i]}.js`)) return `${paths[i]}.js`;
-      if (Template.exists(paths[i])) return paths[i];
+      if (Template.exists(`${paths[i]}/index.js`)) return `${paths[i]}/index.js`;
+      if (Template.exists(`${paths[i]}/index.mjs`)) return `${paths[i]}/index.mjs`;
+      if (Template.exists(`${paths[i]}/index.cjs`)) return `${paths[i]}/index.cjs`;
     }
   }
 

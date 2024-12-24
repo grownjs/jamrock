@@ -3,8 +3,8 @@ import { createRequire } from 'node:module';
 import { dirname, resolve } from 'node:path';
 import { writeFileSync, existsSync, readdirSync, chmodSync, cpSync } from 'node:fs';
 
-import { Util, process } from '../dist/main.mjs';
 import { createLocalEnvironment } from '../lib/main.mjs';
+import { Template, Util, process } from '../dist/main.mjs';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const _require = createRequire(import.meta.url);
@@ -171,9 +171,11 @@ export type Routes = ${['RouteMap'].concat(typedefs).join('\n& ')};\n`;
     }
 
     const defaults = {};
+    const cwd = process.cwd();
+    const config = Template.path(`${cwd}/dev.config`);
 
-    if (existsSync('dev.config.mjs')) {
-      const mod = await import(resolve('dev.config.mjs'));
+    if (config) {
+      const mod = await import(config);
 
       Object.assign(defaults, mod.default || mod);
     }

@@ -289,7 +289,6 @@ test.group('template transformation', t => {
     const { attrs, meta, html, css, js } = await tpl.render();
 
     expect(js.map(_ => _[0])).toEqual([false, true, false]);
-console.log(js)
     expect(js[0][2]).toContain('truth = 42');
     expect(js[0][2]).toContain('console.log({ self, truth })');
     expect(js[1][2]).toContain('console.log({ kindOf })');
@@ -475,22 +474,10 @@ test.group('core utilties', t => {
 
   test('Template.path', ({ expect }) => {
     td.replace(Template, 'exists');
-    td.when(Template.exists('tests/fixtures/sample/index.cjs')).thenReturn(true);
-    td.when(Template.exists('tests/fixtures/hello.html')).thenReturn(true);
-    td.when(Template.exists('tests/fixtures/hello.mjs')).thenReturn(true);
-    td.when(Template.exists('tests/fixtures/id.js')).thenReturn(true);
-    td.when(Template.exists('router.html')).thenReturn(true);
-    td.when(Template.exists('noop/index.mjs')).thenReturn(true);
     td.when(Template.exists('node_modules/jamrock/package.json')).thenReturn(true);
 
-    expect(Template.path('node:util', 'tests/fixtures/transformed.html')).toEqual('node:util');
-    expect(Template.path('jamrock:components', 'tests/fixtures/transformed.html')).toEqual('jamrock:components');
-    expect(Template.path('./hello.html', 'tests/fixtures/transformed.html')).toEqual('tests/fixtures/hello.html');
-    expect(Template.path('./hello', 'tests/fixtures/transformed.html')).toEqual('tests/fixtures/hello.mjs');
-    expect(Template.path('../../noop', 'tests/fixtures/transformed.html')).toEqual('noop/index.mjs');
-    expect(Template.path('../../../router.html', 'tests/fixtures/transformed.html')).toEqual('router.html');
-    expect(Template.path('~/tests/fixtures/id', 'tests/fixtures/transformed.html')).toEqual('tests/fixtures/id.js');
-    expect(Template.path('~/tests/fixtures/sample', 'tests/fixtures/bundle.html', 'generated/tpl.cjs')).toEqual('tests/fixtures/sample/index.cjs');
+    expect(Template.path('node:util')).toEqual('node:util');
+    expect(Template.path('jamrock:components')).toEqual('jamrock:components');
   });
 
   test('Template.dirname', ({ expect }) => {
