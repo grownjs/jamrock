@@ -135,7 +135,6 @@ test.group('parsing', () => {
 
     expect(code).toContain('messages = $$props.from ?? messages;');
     expect(code).toContain('classes = $$props.class ?? classes;');
-    expect(code).toContain('/*!#56*/');
   });
 
   test('should rewrite imports', ({ expect }) => {
@@ -146,10 +145,9 @@ test.group('parsing', () => {
       import { existsSync, unlinkSync } from 'node:fs';
     `);
 
-    expect(code).toContain('/*!#7*/const');
     expect(code).toContain('a: foo, bar');
     expect(code).toContain('await __loader');
-    expect(code).toContain("/*!#74*/const { existsSync, unlinkSync } = await import('node:fs')");
+    expect(code).toContain("const { existsSync, unlinkSync } = await import('node:fs')");
   });
 
   test('should rewrite modules', ({ expect }) => {
@@ -158,7 +156,7 @@ test.group('parsing', () => {
       export { messages as from };
     `);
 
-    expect(code).toContain('/*!#32*/({from: messages});');
+    expect(code).toContain('({from: messages});');
   });
 
   test('should resolve on unwrap', ({ expect }) => {

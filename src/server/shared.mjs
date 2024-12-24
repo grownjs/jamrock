@@ -285,9 +285,8 @@ export const createCompiler = ({ fs, path }, options, external) => {
               printLog(`  ${Util.$.green('write')} ${Util.$.gray(clientFile)}`);
 
               tasks.push(() => Template.transpile({
-                attributes: { bundle: true },
-                content: `export * from '${destFile}'`,
                 filepath: destFile.replace('.mjs', '.js'),
+                content: `export * from '${Template.join(`${cwd}/`, destFile)}'`,
               }).then(params => Template.write(clientFile, params.content)));
             }
           }

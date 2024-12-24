@@ -276,11 +276,11 @@ export default {${defaults},__exported,__handler,__routes};
   }
 
   static imports(code, callback) {
-    return code.replace(/\bimport([^;]+?)from\s*(['""])(.+?)\2(?=[\n;])/g, (_, $1, qt, $3, offset) => {
-      if (callback) return callback($1, $3, offset);
+    return code.replace(/\bimport([^;]+?)from\s*(['""])(.+?)\2(?=[\n;])/g, (_, $1, _qt, $3) => {
+      if (callback) return callback($1, $3);
 
       const name = $1.replace(/[*]\s*as/, '').trim().replace(/\sas\s/g, ': ');
-      const symbols = `/*!#${offset}*/const ${name}`;
+      const symbols = `const ${name}`;
 
       if ($3 === 'jamrock' || $3.includes('jamrock:')) {
         return `${symbols} = await __loader('${$3}');\n`;
@@ -296,24 +296,23 @@ export default {${defaults},__exported,__handler,__routes};
 
   static exports(code) {
     return code
-      .replace(/\bexport\b/g, (_, offset) => `/*!#${offset}*/${_}`)
       .replace(/\bexport\s+(let|const)\s+(\w+)\s*(?=[\n;])/g, '$1 $2 = $$$$props.$2')
       .replace(/\bexport\s+(let|const)\s+(\w+)\s*=/g, '$1 $2 = $$$$props.$2 ??')
       .replace(/\bexport\s+function\s+(\w+)\s*\(/g, 'let $1 = $$$$props.$1 ?? function $1(')
       .replace(/\bexport\s+default\b/, '__actions =')
-      .replace(/\bexport\s*\{([^;]+?)\}\s*(?=[\n;])/g, (_, $1) => $1.split(',').map(expr => {
+      .replace(/\bexport\s*\{([^;]+?)\}/g, (_, $1) => $1.split(',').map(expr => {
         const [a, b] = expr.trim().split(/\sas\s/);
-        return a && b ? `\n${a} = $$props.${b} ?? ${a};` : '';
+        return a && b ? `${a} = $$props.${b} ?? ${a};\n` : '';
       }).join(''));
   }
 
   static module(code, routes) {
     code = Block.imports(code, () => '');
 
-    if (routes) code = code.replace(RE_MATCH_ROUTES, (_, verb, path, alias) => _.replace(alias, x => x.replace(/./g, ' ')));
+    if (routes) code = code.replace(RE_MATCH_ROUTES, (_, _verb, _path, alias) => _.replace(alias, x => x.replace(/./g, ' ')));
 
     return code
-      .replace(/\bexport\s*\{\s*([^;]+?)\s*\}/g, (_, $1, offset) => `/*!#${offset}*/({${$1.split(' as ').reverse().join(': ')}})`)
+      .replace(/\bexport\s*\{\s*([^;]+?)\s*\}/g, (_, $1) => `({${$1.split(' as ').reverse().join(': ')}})`)
       .replace(/\bexport\s+default\b/g, 'const _default=')
       .replace(/\bexport\b/g, x => x.replace(/./g, ' '));
   }

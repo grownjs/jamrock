@@ -1,7 +1,9 @@
 const HTTP_NS = 'http-url';
 const RE_MATCH_ALL = /.*/;
 const RE_HTTPS_URL = /^https?:\/\//;
+const RE_MODULE_NAME = /^@?[\w-]+?$/;
 const ALLOWED_EXTENSIONS = ['js', 'mjs', 'css'];
+const RESOLVED_CDN_PREFIX_URL = 'https://cdn.skypack.dev/%s';
 
 export const createTransform = ({ Template, fetchSource }) => ({
   name: 'jamrock',
@@ -19,6 +21,10 @@ export const createTransform = ({ Template, fetchSource }) => ({
         const src = Template.relative(`${args.resolveDir}/`, args.path);
 
         return { path: src, external: true };
+      }
+
+      if (RE_MODULE_NAME.test(name) && build.initialOptions.platform === 'browser') {
+        return { path: RESOLVED_CDN_PREFIX_URL.replace('%s', args.path), external: true };
       }
     });
 
@@ -62,10 +68,10 @@ export function createBundler({ Template, esbuild, ...deps }) {
   const helpers = createHelpers({ ...deps, Template });
   const transform = createTransform(helpers);
 
-  async function bundle(tpl, ext, opts) {
-    const filepath = tpl.filepath || `${tpl.identifier}.${tpl.attributes.lang || ext}`;
+  async function bundle(tpl, ext = 'js', opts = {}) {
+    const filepath = tpl.filepath || `${tpl.identifier}.${tpl.attributes?.lang || ext}`;
 
-    if (ext === 'css' && tpl.attributes.lang) {
+    if (ext === 'css' && tpl.attributes?.lang) {
       if (tpl.attributes.lang === 'less' && opts.use?.less) {
         const less = opts.use.less.default || opts.use.less;
         const out = await less.render(tpl.content, { filename: filepath });
@@ -78,16 +84,19 @@ export function createBundler({ Template, esbuild, ...deps }) {
     }
 
     if (ext === 'js' || ext === 'css') {
-      const __filename = opts.params.cwd
+      const __filename = opts.params?.cwd
         ? Template.join(opts.params.cwd, filepath)
         : filepath;
 
-      const __dirname = opts.params.cwd
+      const __dirname = opts.params?.cwd
         ? Template.join(opts.params.cwd, Template.dirname(filepath))
         : Template.dirname(filepath);
 
       const { outputFiles, metafile } = await esbuild.build({
-        minify: opts.params.env === 'production',
+        platform: tpl.attributes?.type === 'module' ? 'browser' : 'node',
+        minify: opts.params?.env === 'production',
+        metafile: true,
+        bundle: true,
         stdin: {
           resolveDir: __dirname,
           sourcefile: filepath.split('/').pop(),
@@ -95,16 +104,13 @@ export function createBundler({ Template, esbuild, ...deps }) {
           loader: ext,
         },
         write: false,
-        bundle: true,
-        metafile: true,
         format: 'esm',
-        platform: 'node',
         plugins: [transform],
       });
 
       return {
         source: outputFiles[0].text,
-        children: metafile.inputs[__filename].imports
+        children: (metafile?.inputs[__filename]?.imports || [])
           .filter(_ => _.path.indexOf('http-url:') === -1)
           .map(_ => _.path).concat(tpl.children || []),
       };

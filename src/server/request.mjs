@@ -168,7 +168,6 @@ export function create404(env, conn, client, message) {
 }
 
 export async function createBody(env, conn, clients, { uuid, client, matches }) {
-  let prelude = '';
   let status;
   let body;
   try {
@@ -238,9 +237,6 @@ export async function createBody(env, conn, clients, { uuid, client, matches }) 
       };
     }
 
-    // ctx.template = env.files[conn.current_module].source;
-    // console.log(ctx);
-
     ctx.route.layout = Util.Is.str(ctx.route.layout)
       ? env.locate(ctx.route.layout)
       : ctx.route.layout;
@@ -284,8 +280,6 @@ export async function createBody(env, conn, clients, { uuid, client, matches }) 
     }
 
     if (!Util.Is.str(body)) {
-      prelude = body.prelude ? body.prelude.join(';') : '';
-
       if (conn.is_xhr) {
         body = Markup.encode(JSON.stringify({
           fragments: body.fragments,
@@ -303,30 +297,23 @@ export async function createBody(env, conn, clients, { uuid, client, matches }) 
           'content-length': body.length,
         });
 
-        if (conn.store) {
-          conn.store.set(conn.req.uuid, prelude);
-        }
-
         return { body, headers, cookies: false, status: conn.status_code || 200 };
       }
 
-      let buffer = '';
-      Template.stringify(body, chunk => {
-        buffer += chunk;
-      });
+      let buffer = [];
+      Template.stringify(body, chunk => buffer.push(chunk));
 
-      // FIXME: how to stream on this? like, to pull data from iterators...
-      body = buffer + client;
-      body += `<script>window.__=${JSON.stringify(ctx.queue.get(uuid))};</script>`;
+      buffer.push(client);
+      buffer.push(`<script>window.__=${JSON.stringify(ctx.queue.get(uuid))};</script>`);
+
       status = conn.status_code || 200;
+      body = buffer.join('');
     }
-    status = conn.status_code || 200;
   } catch (e) {
     console.log('E_STATUS', e);
     status = e.status || 500;
     body = createError(e, env, client);
   }
-  if (prelude) body = body.replace(/=>null/, () => `=>{${prelude}}`);
   return { body, status };
 }
 

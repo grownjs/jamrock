@@ -105,7 +105,7 @@ endif
 	@LCOV_OUTPUT=html npm run test:ci
 
 dist: deps
-	@VERSION=$(shell jq -r .version package.json) NODE_ENV=production npm run $(DIST_TASK)
+	@VERSION=$(shell jq -r .version package.json) NODE_ENV=test npm run $(DIST_TASK)
 
 install: deps
 

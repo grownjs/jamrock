@@ -78,5 +78,10 @@ export const execute = (loader, next, run) => {
     },
   };
 
-  return (view, props) => run(view(context, props), []);
+  return (tpl, props, label = 'unknown') => {
+    if (!tpl) {
+      throw new TypeError(`Invalid template (${label})`);
+    }
+    return run(tpl(context, props), []);
+  };
 };

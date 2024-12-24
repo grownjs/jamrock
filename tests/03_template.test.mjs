@@ -162,17 +162,17 @@ fixture`./nested/path/to/transformed.html
   <html lang="es-MX" />
 
   <body class="main x-{value}">
-    <script>
+    <script scoped>
       import { truth } from '../module.mjs';
-      console.log(truth);
+      console.log({ self, truth });
     </script>
 
     <script type="module">
-      import kindOf from 'https://cdn.skypack.dev/kind-of';
+      import kindOf from 'kind-of';
       console.log({ kindOf });
     </script>
 
-    <script bundle>
+    <script>
       import isNumber from 'https://cdn.skypack.dev/is-number';
       console.log({ isNumber });
     </script>
@@ -287,11 +287,12 @@ test.group('template transformation', t => {
 
     const { attrs, meta, html, css, js } = await tpl.render();
 
-    expect(js.map(_ => _[0])).toEqual([true, true, false]);
+    expect(js.map(_ => _[0])).toEqual([false, true, false]);
 
     expect(js[0][1]).toContain('truth = 42');
-    expect(js[0][1]).toContain('console.log(truth)');
-    expect(js[1][1]).toContain('console.log({ kindOf: kind_of_default })');
+    expect(js[0][1]).toContain('console.log({ self, truth })');
+    expect(js[1][1]).toContain('console.log({ kindOf })');
+    expect(js[1][1]).toContain('from "https://cdn.skypack.dev/kind-of"');
     expect(js[2][1]).toContain('console.log({ isNumber: is_number_default })');
 
     expect(css).toContain(`p:where(.jam-420){color:#ff0;}

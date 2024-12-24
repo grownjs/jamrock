@@ -1,6 +1,6 @@
 import { pascalCase, snakeCase, realpath, Is } from '../utils/server.mjs';
 import { serialize, taggify, scopify, rulify } from '../markup/html.mjs';
-// import { useWebSockets, decorate } from './send.mjs';
+
 import { executeAsync } from '../render/async.mjs';
 import { decorate, streamify } from './send.mjs';
 import { debug, stringify } from './utils.mjs';
@@ -83,8 +83,8 @@ export class Template {
 
     if (Is.func(cb)) {
       tasks.push(cb(this.partial.scripts
-        .filter(x => x.root || x.attributes.scoped || x.attributes.bundle || x.attributes.type === 'module'), 'js', options)
-        .then(js => { resources.js = js.map(x => [x.params.type === 'module' || !x.params.bundle, x.content]); }));
+        .filter(x => x.root || x.attributes.scoped || x.attributes.type === 'module'), 'js', options)
+        .then(js => { resources.js = js.map(x => [x.params.type === 'module', x.content]); }));
 
       this.partial.styles.forEach(x => {
         tasks.push(cb(x, 'css', options).then(code => {
@@ -349,10 +349,10 @@ export class Template {
       if (ctx.locals) state = await ctx.locals.wrap(state);
 
       let [doc, body, head, attrs] = await Promise.all([
-        view(component.__doctype, state),
-        view(component.__template, state),
-        view(component.__metadata, state),
-        view(component.__attributes, state),
+        view(component.__doctype, state, `${component.__src}#doctype`),
+        view(component.__template, state, `${component.__src}#template`),
+        view(component.__metadata, state, `${component.__src}#metadata`),
+        view(component.__attributes, state, `${component.__src}#attributes`),
       ]);
 
       while (body?.length === 1 && !Is.vnode(body[0])) body = body[0];

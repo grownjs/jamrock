@@ -26,7 +26,7 @@ export function clientComponent(mod, context) {
   const render = executeAsync(loader, async (child, props) => {
     // console.log('RENDER?', child, props);
     if (!child) {
-      console.log('E_CHILD', props);
+      console.log('E_CHILD', props, child);
       return [];
     }
 
@@ -37,9 +37,9 @@ export function clientComponent(mod, context) {
       // const self = await tpl.__self();
       // data = await self.result;
     }
-    return render(child.__template, data);
+    return render(child.__template, data, child.__src);
   });
-  const next = data => render(mod.__template, data);
+  const next = data => render(mod.__template, data, mod.__src);
   const mount = async (el, props, _events) => {
     if (el.current) {
       throw new Error('Component already mounted');
@@ -70,9 +70,9 @@ export function clientComponent(mod, context) {
 
     el.__defer = el.__defer || Promise.resolve();
     el.__update = (_mod, _props) => {
-      el.current = null;
-      el.__store.clear();
       console.log('[UPDATE]', _props);
+      if (el.__store) el.__store.clear();
+      el.current = null;
       el.__defer = el.__defer
         .then(() => clientComponent.call(this, _mod, context).mount(el, _props));
     };
