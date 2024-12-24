@@ -273,7 +273,7 @@ test.group('template transformation', t => {
     td.reset();
   });
 
-  test('should compile recursively to ESM', async ({ expect }) => {
+  test('pinx: should compile recursively to ESM', async ({ expect }) => {
     td.replace(Math, 'random', () => 1);
     td.replace(Date, 'now', () => 0);
 

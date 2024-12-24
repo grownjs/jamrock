@@ -99,6 +99,10 @@ export function sleep(n) {
   return new Promise(ok => setTimeout(ok, n));
 }
 
+export function ignore(code) {
+  return code.replace(/./g, ' ');
+}
+
 export function repeat(char, length) {
   return Array.from({ length }).join(char);
 }

@@ -8,8 +8,8 @@ import xmlLang from 'highlight.js/lib/languages/xml';
 import jsLang from 'highlight.js/lib/languages/javascript';
 
 import { jamLang } from './lang.mjs';
-import { Is, stack } from '../utils/shared.mjs';
 import { attrs, taggify } from '../markup/html.mjs';
+import { Is, stack, ignore } from '../utils/shared.mjs';
 
 const RE_MATCH_LINES = /(?:<anonymous>|[.+](?:page|error|layout|generated)\.mjs(?:[^:]+?)):(\d+)(?::(\d+))?/;
 const RE_MATCH_OFFSETS = /\/\*!#(\d+):(\d+)\*\//;
@@ -165,7 +165,7 @@ export function lexer(code, token) {
     const [a, b] = code.split(' as ');
 
     lexer(a, token);
-    lexer(`${a.replace(/./g, ' ')}    ${b}`, token);
+    lexer(`${ignore(a)}    ${b}`, token);
     return;
   }
 

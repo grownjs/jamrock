@@ -7,10 +7,11 @@ import { lexer } from '../templ/utils.mjs';
 import { reduce, walk } from './utils.mjs';
 import { Template } from '../templ/main.mjs';
 import { extract, rebase } from '../handler/utils.mjs';
-import { Is, parseMarkup, identifier } from '../utils/server.mjs';
+import { Is, parseMarkup, identifier, ignore } from '../utils/server.mjs';
 
 const RE_EXPORT_DEFAULT = /\bexport default\b/;
 const RE_RESOLVE_IMPORTS = /\/\*@@\*\/__resolve\('(.+?)'\)/g;
+const RE_MATCH_IMPORTS = /\bimport([^;]+?)from\s*(['""])(.+?)\2(?=[\n;])/g;
 
 export class Block {
   constructor(tpl, file, options) {
@@ -84,6 +85,8 @@ export class Block {
 
       this.context = contexts.some(_ => _ === 'client') ? 'client' : 'module';
 
+      // FIXME: validate qty of script tags...
+
       Object.defineProperty(this, 'module', {
         value: vars(this.scripts
           .filter(x => !x.root && !x.attributes.scoped && x.attributes.context === 'module')
@@ -94,6 +97,14 @@ export class Block {
         value: vars(this.scripts
           .filter(x => !x.root && !x.attributes.scoped && x.attributes.context !== 'module' && x.attributes.type !== 'module')
           .map(x => x.content).join('\n')),
+      });
+
+      this.scripts.forEach(_ => {
+        if (_.attributes.scoped) {
+          const { prelude, interlude } = Block.script(_.content);
+
+          _.content = `${prelude}\nexport function __execute(self) {${interlude}};\nexport default {__execute};`;
+        }
       });
 
       // FIXME: use jslint here?
@@ -212,17 +223,10 @@ export default {${defaults}};
     const keys = this.script.keys;
 
     const exported = keys.filter(x => ['let', 'const', 'export'].includes(locals[x])).map(x => aliases[x] || x);
-    const matched = extract(Block.imports(this.script.code), true);
+    const { prelude, interlude } = Block.imports(this.script.code);
+    const matched = extract(interlude, true);
 
     matched.code = Block.exports(matched.code);
-
-    const lines = matched.code.split('\n');
-
-    let offset = 0;
-    for (let i = 0; i < lines.length; i += 1) {
-      if (lines[i].trim().includes('import(')) offset = i + 1;
-      if (lines[i].trim().includes('__loader(')) offset = i + 1;
-    }
 
     const scope = keys.concat(this.script.deps)
       .reduce((memo, key) => {
@@ -240,10 +244,9 @@ export default {${defaults}};
       .concat(Object.keys(this.snippets))
       .concat(this.opts.props || []);
 
-    const prelude = lines.slice(0, offset).join('\n');
-    const interlude = `\tasync function __context(__actions = {}) {
+    const main = `\tasync function __context(__actions = {}) {
 ${Object.keys(this.snippets).map(_ => `const ${_} = $$props.${_} ?? __snippets.${_};`)}
-${lines.slice(offset).join('\n')}
+${matched.code}
 ${this.context === 'client'
     ? `\t\treturn {__actions,__scope:{${lets.join(',')}}};`
     : `\t\tconst __callback = () => ({${lets.join(',')}});
@@ -257,7 +260,7 @@ ${this.context === 'client'
 
     const js = `/* eslint-disable */${mod}
 export const __handler = async ($$props, __loader) => {
-${[prelude, interlude].join('\n')}
+${[prelude, main].join('\n')}
 ${this.context === 'client'
     ? `\tconst __runtime = await __loader('jamrock');
 \tconst __self = __runtime.wrapComponent('${this.src}', __context, __template);
@@ -279,23 +282,8 @@ export default {${defaults},__exported,__handler,__routes};
     return code;
   }
 
-  static imports(code, callback) {
-    return code.replace(/\bimport([^;]+?)from\s*(['""])(.+?)\2(?=[\n;])/g, (_, $1, _qt, $3) => {
-      if (callback) return callback($1, $3);
-
-      const name = $1.replace(/[*]\s*as/, '').trim().replace(/\sas\s/g, ': ');
-      const symbols = `const ${name}`;
-
-      if ($3 === 'jamrock' || $3.includes('jamrock:')) {
-        return `${symbols} = await __loader('${$3}');\n`;
-      }
-
-      if ($3.charAt() === '.' && !$3.includes('.html')) {
-        return `${symbols} = await /*@@*/__resolve('${$3}')`;
-      }
-
-      return `${symbols} = await import('${$3.replace('.html', '.generated.mjs')}')`;
-    });
+  static imports(code, clean) {
+    return Block.script(code, true, clean);
   }
 
   static exports(code) {
@@ -311,14 +299,55 @@ export default {${defaults},__exported,__handler,__routes};
   }
 
   static module(code, routes) {
-    code = Block.imports(code, () => '');
+    const { interlude } = Block.imports(code, true);
 
-    if (routes) code = code.replace(RE_MATCH_ROUTES, (_, _verb, _path, alias) => _.replace(alias, x => x.replace(/./g, ' ')));
+    let out = interlude;
 
-    return code
+    if (routes) {
+      out = out.replace(RE_MATCH_ROUTES, (_, _verb, _path, alias) => _.replace(alias, ignore));
+    }
+
+    return out
       .replace(/\bexport\s*\{\s*([^;]+?)\s*\}/g, (_, $1) => `({${$1.split(' as ').reverse().join(': ')}})`)
       .replace(/\bexport\s+default\b/g, 'const _default=')
-      .replace(/\bexport\b/g, x => x.replace(/./g, ' '));
+      .replace(/\bexport\b/g, ignore);
+  }
+
+  static script(code, modify, cleanup) {
+    let offset = 0;
+    let fixed = 0;
+    code = code.replace(RE_MATCH_IMPORTS, (_, $1, _2, $3, _offset) => {
+      offset = _offset + _.length + 1;
+
+      if (cleanup) return ignore(_);
+      if (!modify) return _;
+
+      // FIXME: extract to encode white-space
+      const name = $1.replace(/[*]\s*as/, ignore)
+        .trim().replace(/\sas\s/g, '  : ');
+
+      const symbols = `const ${name}`;
+
+      if ($3 === 'jamrock' || $3.includes('jamrock:')) {
+        fixed += 12;
+        return `${symbols} = await __loader('${$3}')`;
+      }
+
+      if ($3.charAt() === '.' && !$3.includes('.html')) {
+        fixed += 19;
+        return `${symbols} = await /*@@*/__resolve('${$3}')`;
+      }
+
+      fixed += $3.includes('.html') ? 19 : 10;
+      return `${symbols} = await import('${$3.replace('.html', '.generated.mjs')}')`;
+    });
+
+    offset += fixed;
+
+    const prelude = offset > 0 ? code.substr(0, offset) : '';
+    const interlude = offset > 0 ? code.substr(offset) : code;
+
+    return { offset, prelude, interlude };
   }
 
   static unwrap(code, source, target) {

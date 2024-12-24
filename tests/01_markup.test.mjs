@@ -145,16 +145,76 @@ test.group('parsing', t => {
   });
 
   test('should rewrite imports', ({ expect }) => {
-    const code = Block.imports(`
+    expect(Block.imports(`
       import {
         a as foo, bar
       } from 'jamrock:stuff';
-      import { existsSync, unlinkSync } from 'node:fs';
-    `);
+      console.log({ foo, bar });
+    `)).toEqual({
+      offset: 79,
+      prelude: "\n      const {\n        a  : foo, bar\n      } = await __loader('jamrock:stuff');",
+      interlude: '\n      console.log({ foo, bar });\n    ',
+    });
 
-    expect(code).toContain('a: foo, bar');
-    expect(code).toContain('await __loader');
-    expect(code).toContain("const { existsSync, unlinkSync } = await import('node:fs')");
+    expect(Block.imports(`
+      import { existsSync, unlinkSync } from 'node:fs';
+      console.log({ existsSync, unlinkSync });
+    `)).toEqual({
+      offset: 66,
+      prelude: "\n      const { existsSync, unlinkSync } = await import('node:fs');",
+      interlude: '\n      console.log({ existsSync, unlinkSync });\n    ',
+    });
+  });
+
+  test('should rewrite scripts', ({ expect }) => {
+    expect(Block.script(`
+      import { useState } from 'jamrock';
+      console.log({ self, useState });
+    `, true)).toEqual({
+      offset: 54,
+      prelude: "\n      const { useState } = await __loader('jamrock');",
+      interlude: '\n      console.log({ self, useState });\n    ',
+    });
+
+    expect(Block.script(`
+      import { truth } from '../mod.mjs';
+      console.log({ self, truth });
+    `, true)).toEqual({
+      offset: 61,
+      prelude: "\n      const { truth } = await /*@@*/__resolve('../mod.mjs');",
+      interlude: '\n      console.log({ self, truth });\n    ',
+    });
+
+    expect(Block.script(`
+      import Test from '../test.html';
+      console.log({ self, Test });
+    `, true)).toEqual({
+      offset: 58,
+      prelude: "\n      const Test = await import('../test.generated.mjs');",
+      interlude: '\n      console.log({ self, Test });\n    ',
+    });
+
+    expect(Block.script([
+      "import { Inspect } from 'jamrock:components';\n",
+      "import Test from './hello.generated.mjs';\n",
+      "import Markup from './static.generated.mjs';\n",
+      "import Test1 from './test.generated.mjs';\n",
+      "import Test2 from '../inner.generated.mjs';\n",
+      "import Test3 from '../../noop.generated.mjs';\n",
+      "import Test4 from '../../../router.generated.mjs';\n",
+    ].join(''), true)).toEqual({
+      offset: 441,
+      prelude: [
+        "const { Inspect } = await __loader('jamrock:components');\n",
+        "const Test = await /*@@*/__resolve('./hello.generated.mjs');\n",
+        "const Markup = await /*@@*/__resolve('./static.generated.mjs');\n",
+        "const Test1 = await /*@@*/__resolve('./test.generated.mjs');\n",
+        "const Test2 = await /*@@*/__resolve('../inner.generated.mjs');\n",
+        "const Test3 = await /*@@*/__resolve('../../noop.generated.mjs');\n",
+        "const Test4 = await /*@@*/__resolve('../../../router.generated.mjs');",
+      ].join(''),
+      interlude: '\n',
+    });
   });
 
   test('should rewrite modules', ({ expect }) => {
@@ -163,7 +223,7 @@ test.group('parsing', t => {
       export { messages as from };
     `);
 
-    expect(code).toContain('({from: messages});');
+    expect(code).toEqual('\n      let messages = [];\n      ({from: messages});\n    ');
   });
 
   test('should resolve on unwrap', ({ expect }) => {
