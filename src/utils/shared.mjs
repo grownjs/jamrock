@@ -123,14 +123,6 @@ export function pascalCase(value) {
   return ucFirst(camelCase(value.replace(/\W/g, '-')));
 }
 
-export function realpath(base, filepath) {
-  if (!base) return;
-
-  const resolved = new URL(filepath, `file:${base}`).pathname;
-
-  return resolved.indexOf(base) === 0 ? resolved : resolved.substr(1);
-}
-
 export function stringhash(str) {
   let hash = 0;
   for (let i = 0; i < str.length; i++) {

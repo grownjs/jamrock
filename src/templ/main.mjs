@@ -1,5 +1,5 @@
-import { pascalCase, snakeCase, realpath, Is } from '../utils/server.mjs';
 import { serialize, taggify, scopify, rulify } from '../markup/html.mjs';
+import { pascalCase, snakeCase, Is } from '../utils/server.mjs';
 
 import { executeAsync } from '../render/async.mjs';
 import { decorate, streamify } from './send.mjs';

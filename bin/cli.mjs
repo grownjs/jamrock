@@ -1,6 +1,6 @@
+import { dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { createRequire } from 'node:module';
-import { dirname, resolve } from 'node:path';
 import { writeFileSync, existsSync, readdirSync, chmodSync, cpSync } from 'node:fs';
 
 import { createLocalEnvironment } from '../lib/main.mjs';
