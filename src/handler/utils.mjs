@@ -30,8 +30,10 @@ class Route {
   }
 }
 
-export function rebase(str) {
-  return str ? str.replace(/\.\.\//g, '').replace('./', '') : null;
+export function rebase(str, cwd) {
+  if (!str) return null;
+  if (cwd) str = str.replace(cwd, '.');
+  return str.replace(/\.\.\//g, '').replace('./', '');
 }
 
 export function regexify(route) {

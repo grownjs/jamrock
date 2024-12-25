@@ -10,13 +10,13 @@ export function ents(value) {
   return str(value).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
 }
 
-export const execute = (loader, next, run) => {
-  const context = {
+export const execute = (element, loader, next, run) => {
+  const self = {
     $: value => {
       if (value === null || value === false || typeof value === 'undefined') return '';
       if (!Is.scalar(value)) {
         return Is.arr(value)
-          ? value.map(context.$).join('')
+          ? value.map(self.$).join('')
           : Object.prototype.toString.call(value);
       }
       return Is.str(value) ? ents(value) : value.toString();
@@ -28,6 +28,9 @@ export const execute = (loader, next, run) => {
     r: value => {
       if (Is.empty(value)) return;
       return Is.func(value) ? value : () => value;
+    },
+    e: (tag, props, children) => {
+      return element ? element(tag, props, children) : [tag, props, children];
     },
     h: value => {
       return Is.arr(value) ? value : ['fragment', { '@html': String(value) }];
@@ -74,7 +77,7 @@ export const execute = (loader, next, run) => {
       if (!tpl) throw new Error(`Missing '${name}' component`);
       if (_children) props.children = () => _children;
 
-      return run(next(tpl, props, loader, context), []);
+      return run(next(tpl, props, loader, self), []);
     },
   };
 
@@ -82,6 +85,6 @@ export const execute = (loader, next, run) => {
     if (!tpl) {
       throw new TypeError(`Invalid template (${label})`);
     }
-    return run(tpl(context, props), []);
+    return run(tpl(self, props), []);
   };
 };

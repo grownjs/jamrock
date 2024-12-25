@@ -1,0 +1,15 @@
+<div>
+  FIXME!!
+  <script global scoped>
+    import moment from 'https://cdn.skypack.dev/moment';
+    console.log(self === window, self.textContent);
+    self.textContent = moment().format('hh:mm:ss');
+    const t = setInterval(() => {
+      self.textContent = moment().format('hh:mm:ss');
+    }, 1000);
+    self.addEventListener('teardown', () => {
+      console.log('BYE BYE!');
+      clearInterval(t);
+    });
+</script>
+</div>

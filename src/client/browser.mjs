@@ -1,4 +1,4 @@
-import { Is, toNodes, toAttrs } from '../utils/client.mjs';
+import { toNodes, toAttrs } from '../utils/client.mjs';
 import { LiveSocket } from './livesocket.mjs';
 import { EventHub } from './events.mjs';
 
@@ -23,14 +23,13 @@ export class Browser {
 
         if (this.teardown) this.teardown();
 
+        // normalize keys!!
         // FIXME: how to patch fragments?
-        console.log('PATCH', payload.fragments);
-        window.Jamrock.Components.set(payload._);
+        window.Jamrock.Components.set(payload._, payload.scripts, payload.fragments);
 
         this.patch(document.head, payload.head.concat([['style', null, Object.values(payload.styles).join('\n')]]));
         this.attrs(document.documentElement, payload.doc);
         this.attrs(document.body, payload.attrs);
-        this.scripts(Object.values(payload.scripts));
 
         await callback(() => this.patch(document.body, payload.body));
       } finally {
@@ -63,24 +62,12 @@ export class Browser {
       return patchNode(el, !force ? el.__vnode : null, el.__vnode = vdom); // eslint-disable-line
     };
 
-    // FIXME: this... import and execute if not scoped, otherwise,
-    // wait for node to be created and then execute!
     this.scripts = js => {
-      if (Is.arr(js)) {
-        return js.forEach(this.scripts);
-      }
-
-      const script = document.createElement('script');
-
-      script.textContent = js;
-      script.type = 'module';
-
-      requestAnimationFrame(() => {
-        try {
-          document.head.appendChild(script);
-        } finally {
-          document.head.removeChild(script);
-        }
+      if (!js) return;
+      Object.values(js).forEach(set => {
+        set.forEach(([ref, id]) => {
+          if (!ref) window.Jamrock.Components.import(id);
+        });
       });
     };
 

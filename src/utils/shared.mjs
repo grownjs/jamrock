@@ -50,6 +50,13 @@ export class Is {
 
 export const noop = () => {};
 
+export function omit(obj, keys) {
+  return Object.keys(obj).reduce((memo, key) => {
+    if (!keys.includes(key)) memo[key] = obj[key];
+    return memo;
+  }, {});
+}
+
 export function pick(obj, keys) {
   return Object.keys(obj).reduce((memo, key) => {
     if ((!keys || key.charAt() === '@' || keys.includes(key)) && typeof obj[key] !== 'undefined' && obj[key] !== null) {
@@ -140,7 +147,9 @@ export function stringhash(str) {
 export function identifier(prefix, suffix) {
   const hash = suffix
     ? `x${stringhash(suffix)}`
-    : `x${(ID_COUNTER++ + Date.now() + Math.random()).toString(36).substr(2, 7)}`;
+    : `x${(
+      Date.now() + Math.random() + ID_COUNTER++
+    ).toString(36).replace(/\W/g, '').substr(2, 7)}`;
 
   return prefix ? [prefix.replace(/[^a-zA-Z\d]/g, '-'), hash] : hash;
 }

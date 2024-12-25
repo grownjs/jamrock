@@ -15,7 +15,12 @@ const CONDITIONS_MAP = ['idle', 'visible', 'media', 'savedata', 'interaction'];
 
 export class Conditions {
   static is(node) {
-    return (node.dataset && ('component' in node.dataset || 'enhance' in node.dataset || 'reset' in node.dataset)) || Is.func(node.__destroy);
+    return (node.dataset && (
+      'component' in node.dataset
+      || 'enhance' in node.dataset
+      || 'reset' in node.dataset
+      || 'use' in node.dataset
+    )) || Is.func(node.__destroy);
   }
 
   static has(node) {
@@ -138,9 +143,10 @@ export class Conditions {
 }
 
 export class Components {
-  constructor(browser, locals) {
+  constructor(browser, { __defaults, __scripts }) {
     this.browser = browser;
-    this.locals = locals;
+    this.scripts = __scripts || {};
+    this.defaults = __defaults || {};
 
     this.observer = new MutationObserver(list => {
       for (const mutation of list) {
@@ -153,20 +159,27 @@ export class Components {
       }
     });
 
-    this.components = new Map();
+    this.elements = new Map();
     this.modules = new Map();
     this.imports = [];
     this.on();
   }
 
+  rebase(url) {
+    const q = this.modules.has(url) ? `?_=${Date.now()}` : '';
+    const path = `/${PATH_LOADER_PREFIX}/${this.browser.request_uuid}/${url}${q}`;
+    return path;
+  }
+
   async resolve(key) {
     await this.import(key);
-    return this.components.get(key);
+    return this.elements.get(key);
   }
 
   async import(url) {
-    const q = this.modules.has(url) ? `?_=${Date.now()}` : '';
-    const path = `/${PATH_LOADER_PREFIX}/${this.browser.request_uuid}/${url}${q}`;
+    console.log('[ESM]', url);
+
+    const path = this.rebase(url);
 
     if (!this.imports[path]) {
       this.imports[path] = Date.now();
@@ -174,9 +187,9 @@ export class Components {
       mod = mod.default || mod;
       this.modules.set(url, mod);
       if (url.includes('.html')) {
-        const old = this.components.get(url);
-        this.locals[url] = { ...mod.__data, ...this.locals[url] };
-        this.components.set(url, { ...old, ...mod, __data: this.locals[url] });
+        const old = this.elements.get(url);
+        this.defaults[url] = { ...mod.__data, ...this.defaults[url] };
+        this.elements.set(url, { ...old, ...mod, __data: this.defaults[url] });
       }
     }
     if (!this.modules.has(url)) {
@@ -205,13 +218,16 @@ export class Components {
       }
     } else if ('enhance' in node.dataset) {
       requestAnimationFrame(() => this.hooks(node, events));
+    } else if ('use' in node.dataset) {
+      this.ref(node, node.dataset.use);
     }
   }
 
   on() {
-    this.elements = new Set([...document.querySelectorAll('[data-component],[data-enhance],[data-reset]')]);
+    this.elements = new Set([...document.querySelectorAll('[data-component],[data-enhance],[data-reset],[data-use]')]);
 
     requestAnimationFrame(() => this.elements.forEach(node => Conditions.is(node) && this.append(node)));
+    requestAnimationFrame(() => this.browser.scripts(this.scripts));
 
     this.observer.observe(document.documentElement, {
       attributes: true,
@@ -225,8 +241,17 @@ export class Components {
     this.elements.forEach(node => this.delete(node));
   }
 
-  set(locals) {
-    Object.assign(this.locals, locals);
+  set(defaults, scripts, fragments) {
+    console.log('[FRAGMENTS]', fragments);
+    if (scripts) Object.assign(this.scripts, scripts);
+    if (defaults) Object.assign(this.defaults, defaults);
+  }
+
+  ref(node, reference) {
+    console.log('[REF]', node, reference);
+    this.import(reference).then(hook => {
+      if (hook.__execute) return hook.__execute(node);
+    });
   }
 
   hooks(node, events) {
@@ -243,19 +268,19 @@ export class Components {
       }
 
       if (ev?.node) {
-        const [uuid, ...parts] = ev.params.source.split('/');
-        const key = `${ev.params.name}.${uuid}@${parts.join('/')}`;
+        console.log('[HOOK]', ev.node, ev.params, this);
+        // const [uuid, ...parts] = ev.params.source.split('/');
+        // const key = `${ev.params.name}.${uuid}@${parts.join('/')}`;
 
-        memo.push(this.import(key).then(mod => {
-          console.log('[HOOK]', mod, ev.params);
-          // if (mod.__hook) {
-          //   const off = mod.__hook(node, mod.__data);
+        // memo.push(this.import(key).then(mod => {
+        // if (mod.__hook) {
+        //   const off = mod.__hook(node, mod.__data);
 
-          //   if (Is.func(off)) {
-          //     node.__hooks.push(off);
-          //   }
-          // }
-        }));
+        //   if (Is.func(off)) {
+        //     node.__hooks.push(off);
+        //   }
+        // }
+        // }));
       }
 
       return memo;
@@ -311,6 +336,8 @@ export class Components {
   }
 
   delete(node) {
+    node.dispatchEvent(new CustomEvent('teardown'));
+
     this.elements.delete(node);
 
     if (node.__hooks) {

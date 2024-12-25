@@ -18,7 +18,7 @@ export const createTransform = ({ Template, fetchSource }) => ({
       const ext = args.path.split('.').pop();
 
       if (name.charAt() === '.' && !ALLOWED_EXTENSIONS.includes(ext)) {
-        const src = Template.relative(`${args.resolveDir}/`, args.path);
+        const src = Template.join(args.resolveDir.replace(process.cwd(), '.'), args.path);
 
         return { path: src, external: true };
       }
@@ -54,7 +54,7 @@ function createHelpers({ fs, Readable, Template }) {
   }
 
   async function fetchSource(url) {
-    const tmpFile = Template.join(`${TEMP_DIR}/`, `${url.replace(/\W/g, '_')}@out`);
+    const tmpFile = Template.join(TEMP_DIR, `${url.replace(/\W/g, '_')}@out`);
 
     if (!fs.existsSync(tmpFile)) await fetchFile(url, tmpFile);
 
@@ -96,8 +96,8 @@ export function createBundler({ Template, esbuild, ...deps }) {
       const { outputFiles, metafile } = await esbuild.build({
         platform: tpl.attributes?.type === 'module' ? 'browser' : 'node',
         minify: opts.params?.env === 'production',
-        metafile: true,
-        bundle: true,
+        bundle: ext === 'css' || !tpl.attributes?.global,
+        metafile: ext === 'css' || !tpl.attributes?.global,
         stdin: {
           resolveDir: __dirname,
           sourcefile: filepath.split('/').pop(),

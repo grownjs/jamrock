@@ -15,15 +15,14 @@ export function wrapComponent(_, loop) {
   });
 }
 
-export function clientComponent(mod, context) {
-  // console.log('E_COMPONENT', mod, context);
-
+export function clientComponent(mod, context, filepath) {
   if (!mod) {
+    console.log('E_MOD', { context, filepath });
     return { mount: el => el };
   }
 
   const loader = x => (x === 'jamrock' ? this : context.loader?.(x) || import(x));
-  const render = executeAsync(loader, async (child, props) => {
+  const render = executeAsync(null, loader, async (child, props) => {
     // console.log('RENDER?', child, props);
     if (!child) {
       console.log('E_CHILD', props, child);
@@ -90,6 +89,6 @@ export function clientComponent(mod, context) {
   return { mount };
 }
 
-export function mountableComponent(mod, context) {
-  return clientComponent.call(this, mod, context);
+export function mountableComponent(mod, context, filepath) {
+  return clientComponent.call(this, mod, context, filepath);
 }

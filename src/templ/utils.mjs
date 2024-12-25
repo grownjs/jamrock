@@ -49,7 +49,6 @@ export function stringify(result, callback = null) {
   taggify(result.head || [], callback);
 
   const styles = Object.entries(result.styles);
-  const scripts = Object.values(result.scripts);
 
   let sent;
   styles.forEach(([k, v]) => {
@@ -67,12 +66,6 @@ export function stringify(result, callback = null) {
   callback(`</head><body${attrs(result.attrs)}>\n`);
 
   taggify(result.body, callback);
-
-  scripts.forEach(js => {
-    js.forEach(([mod, code]) => {
-      if (code) callback(`\n<script${mod ? ' type=module' : ''}>\n${code}</script>`);
-    });
-  });
 
   callback('</body></html>');
 

@@ -266,13 +266,12 @@ export const createCompiler = ({ fs, path }, options, external) => {
 
         result.forEach(chunk => {
           if (!chunk.dest) {
-            const source = Handler.rebase(chunk.src);
-            const destFile = Template.join(`${options.dest}/`, source);
-            const relative = Template.join(destFile, chunk.src, true);
+            const destFile = Template.join(options.dest, chunk.src);
+            const relative = Template.relative(destFile, chunk.src);
 
             results.push([{ content: `export * from '${relative}';\n` }, Handler.rebase(destFile)]);
           } else {
-            const destFile = Template.join(`${options.dest}/`, chunk.dest).replace('.html', '.generated.mjs');
+            const destFile = Template.join(options.dest, chunk.dest).replace('.html', '.generated.mjs');
 
             printLog(`  ${Util.$.green('write')} ${Util.$.gray(destFile)}`);
 
@@ -286,7 +285,7 @@ export const createCompiler = ({ fs, path }, options, external) => {
 
               tasks.push(() => Template.transpile({
                 filepath: destFile.replace('.mjs', '.js'),
-                content: `export * from '${Template.join(`${cwd}/`, destFile)}'`,
+                content: `export * from '${Template.join(cwd, destFile)}'`,
               }).then(params => Template.write(clientFile, params.content)));
             }
           }

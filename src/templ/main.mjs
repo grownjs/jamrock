@@ -75,11 +75,11 @@ export class Template {
 
     if (Is.func(cb)) {
       tasks.push(cb(this.partial.scripts
-        .filter(x => x.root || x.attributes.scoped || x.attributes.type === 'module'), 'js', options)
+        .filter(x => x.root || x.attributes.scoped || x.attributes.global), 'js', options)
         .then(js => set.unshift(...js.map((x, i) => {
           const destFile = `${target.replace('.html', '')}(${i}).js`;
 
-          resources.js.push([x.params.type === 'module' ? 1 : 0, x.parent, destFile]);
+          resources.js.push([x.parent, destFile]);
           return { content: x.content, dest: destFile };
         }))));
 
@@ -169,18 +169,18 @@ export class Template {
   static async finalize(e, self, chunk, mixins, filepath) {
     const fragments = self.is_json ? {} : null;
 
-    // FIXME: use this technique when executing from fragments over ws/sse
-    await Promise.all([
-      serialize(chunk.body, null, (_, x) => decorate(self, _, x), fragments),
-      serialize(chunk.head, null, (_, x) => decorate(self, _, x), fragments),
-    ]);
-
     chunk.doc = Object.assign({ ...chunk.doc }, ...mixins.map(x => x.doc));
     chunk.attrs = Object.assign({ ...chunk.attrs }, ...mixins.map(x => x.attrs));
     chunk.styles = Object.assign({ ...chunk.styles }, ...mixins.map(x => x.styles));
     chunk.scripts = Object.assign({ ...chunk.scripts }, ...mixins.map(x => x.scripts));
 
-    chunk.prelude = (chunk.prelude || []).concat(mixins.map(x => x.prelude));
+    // FIXME: use this technique when executing from fragments over ws/sse
+    await Promise.all([
+      serialize(chunk.body, null, (_, x) => decorate(chunk, self, _, x), fragments),
+      serialize(chunk.head, null, (_, x) => decorate(chunk, self, _, x), fragments),
+    ]);
+
+    // chunk.prelude = (chunk.prelude || []).concat(mixins.map(x => x.prelude));
     chunk.head = (chunk.head || []).concat(mixins.map(x => x.head));
     chunk.head.unshift(['base', { href: self.base_url || '/' }]);
     chunk.head.unshift(['meta', { charset: 'utf-8' }]);
@@ -234,6 +234,7 @@ export class Template {
     context.stack = context.stack || [];
     context.scope = context.scope || {};
     context.depth = context.depth || 0;
+    context.node = context.node || Template.tag(context);
 
     const shared = {
       failure: null,
@@ -315,7 +316,7 @@ export class Template {
       ? await component.__handler(props, loader)
       : null;
 
-    const view = executeAsync(loader, async (child, _) => {
+    const view = executeAsync(ctx.node, loader, async (child, _) => {
       const result = await Template.render(child, component, _, ctx, cb);
       return result.body;
     });
@@ -494,11 +495,11 @@ export class Template {
       .replace(RE_COMMENTS, '')
       .replace(RE_EXTERNALS, (_, $1, $2, $3, $4) => {
         const src = $4 || $3 || $2 || $1;
-        const source = base ? Template.join(`${base}/`, src) : src;
+        const source = base ? Template.join(base, src) : src;
 
         if (src.charAt() !== '.' || filepath === source) return _;
 
-        const key = rebase(source.replace(process.cwd(), '.'));
+        const key = rebase(source, process.cwd());
 
         if (imported.has(key)) {
           const { set, found } = imported.get(key);
@@ -519,13 +520,24 @@ export class Template {
     return ret;
   }
 
-  static relative(a, b) {
-    return rebase(Template.join(a, b).replace(process.cwd(), '.'));
+  static relative(base, leaf) {
+    const c = [];
+    const a = base.split('/');
+    const b = leaf.split('/');
+
+    for (let i = 0; i < a.length; i++) {
+      if (a[i] !== b[i]) break;
+      c.push(a[i]);
+    }
+
+    const backtracks = Math.max(a.length - c.length - 1, 0);
+    const diff = b.slice(c.length, b.length);
+
+    return [...Array.from({ length: backtracks }).fill('..'), ...diff].join('/');
   }
 
   static dirname(path) {
-    const parts = path.split('/');
-    return parts.slice(0, parts.length - 1).join('/');
+    return Template.join(path, '..');
   }
 
   static exists() {
@@ -545,26 +557,23 @@ export class Template {
     return new Function('', `return(${code})`)();
   }
 
-  static join(base, leaf, resolve) {
-    if (resolve) {
-      const c = [];
-      const a = base.split('/');
-      const b = leaf.split('/');
-
-      for (let i = 0; i < a.length; i++) {
-        if (a[i] !== b[i]) break;
-        c.push(a[i]);
-      }
-
-      const backtracks = Math.max(a.length - c.length - 1, 0);
-      const diff = b.slice(c.length, b.length);
-
-      return [...Array.from({ length: backtracks }).fill('..'), ...diff].join('/');
+  static join(...args) {
+    let parts = [];
+    for (let i = 0, l = args.length; i < l; i++) {
+      parts = parts.concat(args[i].split('/'));
     }
 
-    const a = new URL(`file://${base}`);
-    const b = URL.parse(leaf, a);
-    return b.href.replace('file://', '');
+    const newParts = [];
+
+    for (let i = 0, l = parts.length; i < l; i++) {
+      const part = parts[i];
+
+      if (!part || part === '.') continue;
+      if (part === '..') newParts.pop();
+      else newParts.push(part);
+    }
+    if (parts[0] === '') newParts.unshift('');
+    return newParts.join('/') || (newParts.length ? '/' : '.');
   }
 
   static path(mod) {
@@ -600,5 +609,27 @@ export class Template {
     const cb = (src, code, _opts) => Template.from(compile, compile(code, src), { ...opts, ..._opts });
 
     return new Template(id, block, opts, cb);
+  }
+
+  static tag(context) {
+    return (name, attrs, children) => {
+      if (
+        ['form', 'select', 'textarea'].includes(name)
+        || (name === 'input' && attrs.type !== 'hidden')
+        || (name === 'button' && (attrs.onclick || attrs.type === 'submit'))
+      ) {
+        if (context.ref) attrs['@source'] = context.ref;
+      }
+
+      if (attrs['@location'] && context.conn?.env?.NODE_ENV === 'production') {
+        delete attrs['@location'];
+      }
+
+      if (name === 'fragment') {
+        if (context.uuid) attrs['@request'] = context.uuid;
+      }
+
+      return [name, attrs, children];
+    };
   }
 }

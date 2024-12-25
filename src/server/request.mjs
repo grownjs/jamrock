@@ -121,7 +121,7 @@ export function getClientCode(conn, patch, baseURL, _uuid, _immediate) {
   const state = JSON.stringify({ uuid, patch, csrf: conn.csrf_token, method: conn.method });
   const client = `<script>(${
     generateClientCode.toString().replace(/𝐢𝐦𝐩𝐨𝐫𝐭/g, 'import')
-  })(${state}, ${!!_immediate});</script>
+  }).call(null, ${state}, ${!!_immediate});</script>
 `.replaceAll('./', baseURL);
 
   return { uuid, client };
@@ -153,7 +153,7 @@ export function create404(env, conn, client, message) {
   dd + dt::before { content: ''; position: absolute; width: 100%; border-top: 1px dashed rgba(0, 0, 0, .2); top: -.25rem }
 </style>`;
 
-  const config = `<p>Loaded config</p><dl>${Object.entries(env.options)
+  const config = `<p>Loaded config</p><dl>${Object.entries(Util.omit(env.options, ['generators']))
     .map(([k, v]) => `<dt>${k}</dt><dd>${typeof v === 'object' ? JSON.stringify(v) : v}</dd>`).join('')}</dl>`;
 
   const environment = `<p>Loaded env</p><dl>${Object.entries(conn.env)
@@ -303,9 +303,12 @@ export async function createBody(env, conn, clients, { uuid, client, matches }) 
       let buffer = [];
       Template.stringify(body, chunk => buffer.push(chunk));
 
-      buffer.push(client);
-      buffer.push(`<script>window.__=${JSON.stringify(ctx.queue.get(uuid))};</script>`);
+      const payload = [
+        `\n\t__defaults: ${JSON.stringify(ctx.queue.get(uuid))},`,
+        `\n\t__scripts: ${JSON.stringify(body.scripts)},\n`,
+      ].join('');
 
+      buffer.push(client.replace('this', `{${payload}}`));
       status = conn.status_code || 200;
       body = buffer.join('');
     }
@@ -322,8 +325,9 @@ export async function createModuleResponse(env, conn) {
   const parts = conn.path_info.slice(1);
   const uuid = parts.shift();
   const key = parts.join('/');
+  const ext = parts.at(-1).split('.').pop();
 
-  if (!parts.at(-1).includes('.html')) {
+  if (!['js', 'html'].includes(ext)) {
     parts.pop();
   }
 
@@ -331,17 +335,25 @@ export async function createModuleResponse(env, conn) {
   const file = parts.join('/');
 
   // FIXME: we can enforce reloading through a flag?
+  let status = 404;
   let mod = '/* not found */';
   if ('_' in conn.query_params) {
+    status = 200;
     mod = `var __data = ${JSON.stringify(state)};\nexport { __data };\n`;
   } else if (env.files[file]) {
+    status = 200;
     mod = Template.read(env.files[file].filepath.replace('.generated.', '.bundled.'));
     mod = mod.replace(/\bexport\s*\{/, _ => `var __data = ${JSON.stringify(state)};\n${_.substr(0, _.length - 1)}{\n  __data,`);
+  } else {
+    const js = Template.join(env.options.dest, file);
+
+    if (Template.exists(js)) {
+      mod = Template.read(js);
+      status = 200;
+    }
   }
 
-  console.log({ uuid, key }, env.queue.keys());
-
-  return [mod, 200, null, new Headers({
+  return [mod, status, null, new Headers({
     'content-type': 'application/javascript',
     'content-length': mod.length,
   })];

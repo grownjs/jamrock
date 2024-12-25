@@ -22,7 +22,7 @@ util._extend = Object.assign;
 const cwd = process.cwd();
 
 export function createView(loader) {
-  return executeAsync(loader, async (tpl, props, _loader, _context) => {
+  return executeAsync(null, loader, async (tpl, props, _loader, _context) => {
     return Promise.resolve(tpl.__handler ? tpl.__handler(props, _loader) : null)
       .then(ctx => (ctx?.__context ? ctx.__context() : { __scope: props }))
       .then(ctx => tpl.__template(_context, ctx.__scope ?? ctx.__callback?.()));
@@ -34,7 +34,7 @@ export async function transpile(code, src, save, prefix = 'generated/') {
   const file = `${cwd}/${prefix}${src.replace('.html', '.generated.mjs')}`;
 
   fs.mkdirSync(path.dirname(file), { recursive: true });
-  fs.writeFileSync(file, Block.unwrap(code, src, rebase(file.replace(cwd, '.'))));
+  fs.writeFileSync(file, Block.unwrap(code, src, rebase(file, cwd)));
 
   if (!save) {
     const mod = await import(`${file}?_=${inc++}`);

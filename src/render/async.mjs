@@ -33,4 +33,4 @@ export async function execAsync(chunk, ctx, _) {
   return result;
 }
 
-export const executeAsync = (loader, callback) => execute(loader, callback, execAsync);
+export const executeAsync = (tag, loader, callback) => execute(tag, loader, callback, execAsync);

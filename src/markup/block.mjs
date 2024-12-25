@@ -95,7 +95,7 @@ export class Block {
 
       Object.defineProperty(this, 'script', {
         value: vars(this.scripts
-          .filter(x => !x.root && !x.attributes.scoped && x.attributes.context !== 'module' && x.attributes.type !== 'module')
+          .filter(x => !x.root && !x.attributes.scoped && !x.attributes.global && x.attributes.context !== 'module')
           .map(x => x.content).join('\n')),
       });
 
@@ -111,16 +111,16 @@ export class Block {
       lexer(Block.module(this.module.code), { position: { line: 1, col: this.module.code.indexOf('\n') } });
       lexer(Block.module(this.script.code, true), { position: { line: 1, col: this.script.code.indexOf('\n') } });
 
-      const filepath = `${this.opts.cwd || '.'}/${src}`;
+      const __dirname = Template.dirname(`${this.opts.cwd || '.'}/${src}`);
 
       children = this.module.children.concat(this.script.children)
         .filter(_ => _.includes('.html'))
-        .map(_ => ({ ref: _, src: Template.join(filepath, _) }))
+        .map(_ => ({ ref: _, src: Template.join(__dirname, _) }))
         .map(_ => Object.defineProperty(_, 'code', { get: () => Template.read(_.src) }));
 
       imports = this.module.children.concat(this.script.children)
         .filter(_ => !_.includes('.html') && _.charAt() === '.')
-        .map(_ => ({ ref: _, src: Template.join(filepath, _) }));
+        .map(_ => ({ ref: _, src: Template.join(__dirname, _) }));
     }
 
     Object.defineProperty(this, 'children', { value: children });
@@ -156,7 +156,7 @@ export class Block {
   }
 
   get $scripts() {
-    return this.assets.js.map(([a, b, c]) => [a, b, this.opts.cwd ? rebase(c.replace(this.opts.cwd, '.')) : c]);
+    return this.assets.js.map(([ref, id]) => [ref, this.opts.cwd ? rebase(id, this.opts.cwd) : id]);
   }
 
   get $styles() {
@@ -351,14 +351,20 @@ export default {${defaults},__exported,__handler,__routes};
   }
 
   static unwrap(code, source, target) {
-    const info = `\nexport const __src = '${source}';\nexport const __dest = '${target}';\n`;
+    const info = [
+      source ? `\nexport const __src = '${source}';` : '',
+      target ? `\nexport const __dest = '${target}';` : '',
+    ].join('');
+
+    const base = source ? Template.dirname(source) : null;
+    const leaf = target ? Template.dirname(target) : null;
 
     return code
-      .replace(RE_EXPORT_DEFAULT, _ => info + _)
+      .replace(RE_EXPORT_DEFAULT, _ => [info, _].join('\n'))
       .replace(RE_RESOLVE_IMPORTS, (_, src, v, qt, file) => {
-        const a = Template.join(source, src || file);
-        const b = Template.join(target, src || file);
-        const c = Template.join(b, a, true);
+        const a = Template.join(base, src || file);
+        const b = Template.join(leaf, src || file);
+        const c = Template.relative(b, a);
 
         return `import('${c}')`;
       });

@@ -33,9 +33,9 @@ export function reduce(tree, context, indent = 0) {
 
       if (node.type === 'fragment') {
         if (node.attributes.frame) {
-          memo.push(`${_tabs}${prefix} ['fragment', await __fragments['${node.ref}'].attrs($$), []]`);
+          memo.push(`${_tabs}${prefix} $$.e('fragment', await __fragments['${node.ref}'].attrs($$), [])`);
         } else {
-          memo.push(`${_tabs}${prefix} ['fragment', await __fragments['${node.ref}'].attrs($$), await __fragments['${node.ref}'].render($$)]`);
+          memo.push(`${_tabs}${prefix} $$.e('fragment', await __fragments['${node.ref}'].attrs($$), await __fragments['${node.ref}'].render($$))`);
         }
       } else if (Is.upper(node.name)) {
         // console.log(node.scope, node.props);
@@ -46,7 +46,7 @@ export function reduce(tree, context, indent = 0) {
         // eslint-disable-next-line max-len
         memo.push(`${_tabs}${prefix} await $$.block(${node.name}, '<${node.name}>', {${props + fns}}, ${body === '[]' ? 'null' : `async () => ${body}`} /* </${node.name}> */)`);
       } else {
-        memo.push(`${_tabs}${prefix} ['${node.name}', {${props}}, ${body}]`);
+        memo.push(`${_tabs}${prefix} $$.e('${node.name}', {${props}}, ${body})`);
       }
     } else if (node.type === 'text') {
       if (node.content.trim().length > 0) memo.push(_tabs + JSON.stringify(node.content));

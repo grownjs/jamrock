@@ -52,7 +52,7 @@ export function traverse(obj, html, parent, context, counter = 0) {
           const { line, column, index } = node.children[0].position.start;
           const prefix = repeat(' ', index - (line + column) + 3) + repeat('\n', line) + repeat(' ', column);
 
-          if (parent) {
+          if (parent && node.rawTagName === 'script') {
             parent.__ref = parent.__ref || identifier();
           }
 
@@ -104,6 +104,12 @@ export function traverse(obj, html, parent, context, counter = 0) {
 
       Object.defineProperty(newNode, 'root', { value: parent || null });
 
+      if (Object.keys(newNode.snippets).length > 0 && !(node.rawTagName === 'body' || Is.upper(node.rawTagName))) {
+        throw new Error(`Element '${node.rawTagName}' cannot have snippets`);
+      }
+
+      if (newNode.__ref) newNode.attributes['@ref'] = newNode.__ref;
+
       if (node.rawTagName === 'html') {
         context.response.markup.document = newNode.attributes;
         copy.push(...newNode.elements);
@@ -113,7 +119,6 @@ export function traverse(obj, html, parent, context, counter = 0) {
         copy.push(...newNode.elements);
         context.response.markup.attributes = newNode.attributes;
         Object.assign(context.response.snippets, newNode.snippets);
-        if (newNode.__ref) newNode.attributes['@ref'] = newNode.__ref;
       } else if (node.rawTagName === '!DOCTYPE') {
         context.response.markup.doctype = newNode.attributes;
       } else if (node.rawTagName === 'fragment') {

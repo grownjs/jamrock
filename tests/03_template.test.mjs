@@ -287,17 +287,17 @@ test.group('template transformation', t => {
     expect(tpl.module.name).toEqual('OSOM');
 
     expect(tpl.partial.assets.js).toEqual([
-      [0, 'x', 'generated/nested/path/to/transformed(0).js'],
-      [1, 'x', 'generated/nested/path/to/transformed(1).js'],
-      [0, 'x', 'generated/nested/path/to/transformed(2).js'],
+      ['x', 'generated/nested/path/to/transformed(0).js'],
+      ['x', 'generated/nested/path/to/transformed(1).js'],
+      ['x', 'generated/nested/path/to/transformed(2).js'],
     ]);
 
     const { attrs, meta, html, css, js } = await tpl.render();
 
     expect(js).toEqual([
-      [0, 'x', 'nested/path/to/transformed(0).js'],
-      [1, 'x', 'nested/path/to/transformed(1).js'],
-      [0, 'x', 'nested/path/to/transformed(2).js'],
+      ['x', 'nested/path/to/transformed(0).js'],
+      ['x', 'nested/path/to/transformed(1).js'],
+      ['x', 'nested/path/to/transformed(2).js'],
     ]);
 
     expect(css).toContain(`p:where(.jam-420){color:#ff0;}
@@ -457,7 +457,7 @@ test.group('core utilties', t => {
   });
 
   test('Template.join', ({ expect }) => {
-    expect(Template.join('/a/b/c', './d')).toEqual('/a/b/d');
+    expect(Template.join('/a/b/c', './d')).toEqual('/a/b/c/d');
     expect(Template.join('/a/b/c/', './d')).toEqual('/a/b/c/d');
     expect(Template.join('/a/b/c/', '../d')).toEqual('/a/b/d');
     expect(Template.join('/a/b/c/', '../../d')).toEqual('/a/d');
@@ -468,9 +468,9 @@ test.group('core utilties', t => {
     const source = 'examples/login+page.html';
     const target = 'build/examples/login+page.generated.mjs';
 
-    const a = Template.join(source, sample);
-    const b = Template.join(target, sample);
-    const c = Template.join(b, a, true);
+    const a = Template.join(Template.dirname(source), sample);
+    const b = Template.join(Template.dirname(target), sample);
+    const c = Template.relative(b, a);
 
     expect(a).toEqual('examples/stores.mjs');
     expect(b).toEqual('build/examples/stores.mjs');

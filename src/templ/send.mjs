@@ -2,9 +2,9 @@ import {
   Is, sleep, dashCase,
 } from '../utils/server.mjs';
 
-import { ents } from '../render/hooks.mjs';
+// import { ents } from '../render/hooks.mjs';
 
-export function decorate(ctx, vnode, hooks) {
+export function decorate($, ctx, vnode, hooks) {
   if (hooks.length) {
     hooks.forEach(fn => {
       const state = {};
@@ -31,13 +31,26 @@ export function decorate(ctx, vnode, hooks) {
     });
   }
 
-  if (ctx.is_json) {
-    if (vnode[1]['@html']) {
-      vnode[1]['@html'] = ents(vnode[1]['@html']);
-    }
-    if (vnode[0] === 'textarea') {
-      vnode[2] = vnode[2].map(ents);
-    }
+  //  if (ctx.is_json) {
+  //    if (vnode[1]['@html']) {
+  //      vnode[1]['@html'] = ents(vnode[1]['@html']);
+  //    }
+  //    if (vnode[0] === 'textarea') {
+  //      vnode[2] = vnode[2].map(ents);
+  //    }
+  //  }
+
+  if (vnode[1]['@ref']) {
+    Object.values($.scripts).some(set => {
+      return set.some(([ref, id]) => {
+        if (ref === vnode[1]['@ref']) {
+          vnode[1]['@use'] = id;
+          return true;
+        }
+        return false;
+      });
+    });
+    delete vnode[1]['@ref'];
   }
 
   if (vnode[0] === 'form') {
