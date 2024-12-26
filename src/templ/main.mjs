@@ -24,8 +24,11 @@ const NO_HOOKS = {
 export class Template {
   constructor(name, block, options, callback) {
     this.generators = options.generators;
+    this.elements = options.elements;
     this.attributes = { ...options };
+
     delete this.attributes.generators;
+    delete this.attributes.elements;
 
     this.component = name;
     this.partial = block;
@@ -102,13 +105,13 @@ export class Template {
       resources.css.push(rulify(css, target));
     }
 
-    let result;
+    let result = await this.partial.transform(this.elements);
     if (isStatic) {
-      set.push(result = { content: this.partial.toString(), src: filepath, dest: target });
+      set.push(result = { content: result, src: filepath, dest: target });
     } else {
       const children = [...new Set(this.partial.children.map(x => x.src))];
 
-      result = { content: this.partial.toString(), src: filepath, children, dest: target };
+      result = { content: result, src: filepath, children, dest: target };
 
       if (isClient) {
         set.push({ ...result, client: true });

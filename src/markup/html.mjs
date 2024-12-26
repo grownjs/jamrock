@@ -1,9 +1,9 @@
 import { parse, stringify } from 'css';
 
 import { Expr } from './expr.mjs';
+import { str } from '../render/hooks.mjs';
 import { fixedAdapter } from './adapter.mjs';
 import { enhance, extend } from './utils.mjs';
-import { str, ents } from '../render/hooks.mjs';
 import { Is, stack, findAll } from '../utils/server.mjs';
 
 const RE_QUOTES_REQUIRED = /[\s"'`=</_:>-]/;
@@ -264,11 +264,10 @@ export function taggify(vnode, callback) {
     return;
   }
   if (!Is.func(callback)) {
-    return vnode.map(chunk => (Is.str(chunk)
-      ? ents(chunk) : taggify(chunk))).join('');
+    return vnode.map(chunk => (Is.scalar(chunk) ? chunk : taggify(chunk))).join('');
   }
   vnode.forEach(chunk => {
-    if (Is.str(chunk)) callback(ents(chunk));
+    if (Is.scalar(chunk)) callback(chunk);
     else taggify(chunk, callback);
   });
 }

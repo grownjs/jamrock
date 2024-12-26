@@ -17,8 +17,9 @@ const HEAD_ELEMENTS = ['title', 'meta', 'link', 'base'];
 const HTML_ELEMENTS = ['body', 'html'];
 
 export function traverse(obj, html, parent, context, counter = 0) {
-  const copy = [];
+  const preserve = context.file.includes('+page');
   const stack = [];
+  const copy = [];
 
   let inSnippet;
   let chunk = [];
@@ -137,7 +138,8 @@ export function traverse(obj, html, parent, context, counter = 0) {
         copy.push(newNode);
       }
     } else if (node.type === 'text' && node.content.trim().length) {
-      const tokens = Expr.unwrap(decodeEnts(node.content), tokenStart, context);
+      const pre = preserve || ['pre', 'textarea'].includes(parent?.name);
+      const tokens = Expr.unwrap(decodeEnts(node.content), tokenStart, context, pre);
       const newTokens = [];
 
       tokens.expr.forEach(token => {

@@ -110,6 +110,8 @@ export class Expr {
         _expr = `(${_expr.substr(6)}, void 0)`;
       } else if (_expr.indexOf('@html ') === 0) {
         _expr = `$$.h(${_expr.substr(6)})`;
+      } else if (_expr.indexOf('@raw ') === 0) {
+        _expr = _expr.substr(5);
       } else if (expression !== false) {
         _expr = `$$.$(${_expr})`;
       }
@@ -127,7 +129,7 @@ export class Expr {
     return out;
   }
 
-  static unwrap(template, position, context = {}) {
+  static unwrap(template, position, context = {}, preserve = false) {
     const chunks = [];
 
     do {
@@ -138,7 +140,7 @@ export class Expr {
       if (matches.index > 0) {
         const chunk = template.substr(0, matches.index);
 
-        if (!Is.blank(chunk)) {
+        if (preserve || !Is.blank(chunk)) {
           chunks.push({
             type: 'text',
             content: chunk,
@@ -163,7 +165,7 @@ export class Expr {
       });
     } while (true); // eslint-disable-line
 
-    if (!Is.blank(template)) {
+    if (preserve || !Is.blank(template)) {
       chunks.push({
         type: 'text',
         content: template,

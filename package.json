@@ -110,6 +110,7 @@
     "@grown/static",
     "fast-glob",
     "grown",
+    "kramed",
     "open-editor",
     "serve-static-bun",
     "undici"

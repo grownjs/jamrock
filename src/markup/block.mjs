@@ -2,9 +2,10 @@ import { blocks, vars } from 'eslint-plugin-jamrock/util.js';
 import { RE_MATCH_ROUTES } from 'eslint-plugin-jamrock/const.js';
 
 import { Expr } from './expr.mjs';
+import { render } from './mkd.mjs';
 import { traverse } from './walk.mjs';
 import { lexer } from '../templ/utils.mjs';
-import { reduce, walk } from './utils.mjs';
+import { reduce, visit } from './utils.mjs';
 import { Template } from '../templ/main.mjs';
 import { extract, rebase } from '../handler/utils.mjs';
 import { Is, parseMarkup, identifier, ignore } from '../utils/server.mjs';
@@ -123,10 +124,9 @@ export class Block {
         .map(_ => ({ ref: _, src: Template.join(__dirname, _) }));
     }
 
+    Object.defineProperty(this, 'locations', { value: locations });
     Object.defineProperty(this, 'children', { value: children });
     Object.defineProperty(this, 'imports', { value: imports });
-
-    walk(this.markup.content, locations);
   }
 
   get $attributes() {
@@ -197,6 +197,22 @@ export const __doctype = ${this.$doctype};
 export const __metadata = ${this.$metadata};
 export const __attributes = ${this.$attributes};
 `;
+  }
+
+  async transform(elements) {
+    if (this.src.includes('+page')) {
+      this.markup.content = await render(this.markup.content);
+    }
+
+    await visit(this.markup.content, async node => {
+      if (elements?.[node.name]) {
+        const newNode = await elements[node.name](node);
+        if (newNode) return newNode;
+      }
+      return node;
+    }, this.locations);
+
+    return this.toString();
   }
 
   toString() {
@@ -322,7 +338,6 @@ export default {${defaults},__exported,__handler,__routes};
       if (cleanup) return ignore(_);
       if (!modify) return _;
 
-      // FIXME: extract to encode white-space
       const name = $1.replace(/[*]\s*as/, ignore)
         .trim().replace(/\sas\s/g, '  : ');
 

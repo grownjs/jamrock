@@ -159,7 +159,7 @@ export class Components {
       }
     });
 
-    this.elements = new Map();
+    this.scripts = new Map();
     this.modules = new Map();
     this.imports = [];
     this.on();
@@ -173,7 +173,7 @@ export class Components {
 
   async resolve(key) {
     await this.import(key);
-    return this.elements.get(key);
+    return this.scripts.get(key);
   }
 
   async import(url) {
@@ -187,9 +187,9 @@ export class Components {
       mod = mod.default || mod;
       this.modules.set(url, mod);
       if (url.includes('.html')) {
-        const old = this.elements.get(url);
+        const old = this.scripts.get(url);
         this.defaults[url] = { ...mod.__data, ...this.defaults[url] };
-        this.elements.set(url, { ...old, ...mod, __data: this.defaults[url] });
+        this.scripts.set(url, { ...old, ...mod, __data: this.defaults[url] });
       }
     }
     if (!this.modules.has(url)) {

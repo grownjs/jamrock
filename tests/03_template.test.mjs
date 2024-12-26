@@ -244,6 +244,21 @@ fixture`./root.html
   <section>{@render children?.()}</section>
 `;
 
+// eslint-disable-next-line no-unused-expressions
+fixture`./markdown+page.html
+  <script>
+    const value = 'OSOM';
+  </script>
+
+  # It works.
+  - {value}
+
+  <b>OK</b>
+
+  ## sub
+  - other
+`;
+
 test.group('template transformation', t => {
   t.each.setup(async () => {
     const Inspect = {
@@ -273,7 +288,7 @@ test.group('template transformation', t => {
     td.reset();
   });
 
-  test('pinx: should compile recursively to ESM', async ({ expect }) => {
+  test('should compile recursively to ESM', async ({ expect }) => {
     td.replace(Math, 'random', () => 1);
     td.replace(Date, 'now', () => 0);
 
@@ -320,6 +335,18 @@ ROUTER(FIXME)
         ['title', {}, ['Untitled "', '42', '"']],
       ],
     });
+  });
+
+  test('should render markdown on pages', async ({ expect }) => {
+    const tpl = await build('./markdown+page.html');
+    const { html } = await tpl.render();
+
+    expect(html).toEqual([
+      '<h1 id="it-works">It works.</h1>\n',
+      '<ul>\n<li>OSOM</li>\n</ul>\n',
+      '<b data-location="markdown+page.html:8:1">OK</b>',
+      '<h2 id="sub">sub</h2>\n<ul>\n<li>other</li>\n</ul>\n',
+    ].join(''));
   });
 
   test('should manage server/client components', async ({ expect }) => {
@@ -508,12 +535,12 @@ test.group('core utilties', t => {
       ['generated/nested/path/to/transformed(0).js'],
       ['generated/nested/path/to/transformed(1).js'],
       ['generated/nested/path/to/transformed(2).js'],
-      ['nested/path/to/hello.html', 'generated/nested/path/to/hello.html'],
-      ['nested/path/to/static.html', 'generated/nested/path/to/static.html'],
       ['nested/path/to/test.html', 'generated/nested/path/to/test.html'],
       ['nested/path/inner.html', 'generated/nested/path/inner.html'],
       // ['nested/noop.html', 'generated/nested/noop.html'],
       ['router.html', 'generated/router.html'],
+      ['nested/path/to/hello.html', 'generated/nested/path/to/hello.html'],
+      ['nested/path/to/static.html', 'generated/nested/path/to/static.html'],
     ]);
   });
 
@@ -527,10 +554,10 @@ test.group('core utilties', t => {
           'src/markup/expr.mjs',
           'src/utils/server.mjs',
           'src/utils/shared.mjs',
-          'src/markup/adapter.mjs',
-          'src/markup/utils.mjs',
           'src/render/hooks.mjs',
           'src/utils/client.mjs',
+          'src/markup/adapter.mjs',
+          'src/markup/utils.mjs',
         ],
       },
       'src/markup/expr.mjs': {

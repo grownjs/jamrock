@@ -2,9 +2,6 @@ import { Expr } from './expr.mjs';
 import { ents } from '../render/hooks.mjs';
 import { Is, repeat, encodeText } from '../utils/server.mjs';
 
-export const RE_JS_EXPR = /[[?:=+*!(/.-]/;
-export const RE_SAFE_PROPS = /^[$\w]+$/;
-
 export function encode(value) {
   return encodeText(value, { quotes: false, unsafe: true });
 }
@@ -188,7 +185,7 @@ export function extend(tagName, props, fn) {
       delete props[key];
     }
 
-    if (key.indexOf('on') === 0 && (Is.func(props[key]) || !String(props[key]).match(RE_JS_EXPR))) {
+    if (key.indexOf('on') === 0 && Is.func(props[key])) {
       props[`@${key.replace('on', 'on:')}`] = Is.func(props[key]) ? props[key].name : props[key];
       delete props[key];
     }
@@ -207,23 +204,23 @@ export function extend(tagName, props, fn) {
   return props;
 }
 
-export function walk(chunk, locations) {
+export async function visit(chunk, callback, locations) {
   if (!Is.arr(chunk)) {
-    walk(chunk.elements || [], locations);
+    await visit(chunk.elements || [], callback, locations);
   } else {
-    chunk.forEach(node => {
+    await Promise.all(chunk.map(node => {
       if (node.elements) {
-        const isComponent = Is.upper(node.name);
-
-        if (isComponent || node.type === 'fragment') {
-          node.props = Object.keys(node.attributes).filter(k => RE_SAFE_PROPS.test(k));
-          node.scope = [...new Set(locations
+        Object.defineProperty(node, 'locals', {
+          value: [...new Set(locations
             .filter(x => x.offset[0] > node.offset.close && x.offset[0] < node.offset.end)
-            .reduce((memo, k) => memo.concat(k.locals.map(u => u.name)), []))];
-        } else {
-          walk(node.elements, locations);
-        }
+            .reduce((memo, k) => memo.concat(k.locals.map(u => u.name)), []))],
+        });
+
+        return Promise.resolve()
+          .then(() => visit(node.elements, callback, locations))
+          .then(() => callback && callback(node));
       }
-    });
+      return null;
+    }));
   }
 }

@@ -254,8 +254,8 @@ test.group('parsing', t => {
           close: 16,
         },
         ref: 'x',
-        scope: [],
-        props: ['name'],
+        // scope: [],
+        // props: ['name'],
         name: 'x-fragment',
         type: 'fragment',
       },
@@ -348,8 +348,14 @@ test.group('parsing', t => {
       },
       markup: {
         content: [
-          { expr: [], raw: [] },
-          { expr: [], raw: [] },
+          {
+            expr: [],
+            raw: [],
+          },
+          {
+            expr: [],
+            raw: [],
+          },
         ],
       },
       rules: [],
@@ -386,17 +392,23 @@ test.group('parsing', t => {
       markup: {
         attributes: { '@location': 'snippets.html:5:7' },
         content: [
-          { expr: [], raw: [] },
+          {
+            expr: [],
+            raw: [],
+          },
           {
             attributes: {
               '@location': 'snippets.html:6:9',
             },
             elements: [
-              { expr: [], raw: [] },
+              {
+                expr: [],
+                raw: [],
+              },
             ],
             name: 'Nested',
-            scope: ['bar'],
-            props: [],
+            // scope: ['bar'],
+            // props: [],
             offset: { close: 101, end: 162, start: { column: 8, index: 94, line: 5 } },
             snippets: {
               bar: {
@@ -436,7 +448,13 @@ test.group('parsing', t => {
           {
             attributes: { '@location': 'markup.html:9:7' },
             elements: [
-              { expr: [{ content: 'Got: ', type: 'text' }, { content: { expr: ['{value}'], raw: [] }, type: 'code' }], raw: [] },
+              {
+                expr: [
+                  { content: 'Got: ', type: 'text' },
+                  { content: { expr: ['{value}'], raw: [] }, type: 'code' },
+                ],
+                raw: [],
+              },
             ],
             snippets: {},
             name: 'h1',
