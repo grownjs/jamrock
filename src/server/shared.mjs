@@ -201,15 +201,16 @@ export const createCompiler = ({ fs, path }, options, external) => {
 
       let mod = await Template.reload(path.resolve(v.filepath), true);
       if (!k.includes('+server')) {
-        mod = mod.default || mod;
-
-        if (v.filepath.includes('.generated')) {
-          mod.destination = v.filepath;
-        }
-
-        this[FILES_PROPERTY][v.filepath] = { ...this[FILES_PROPERTY][v.filepath], module: mod, source: Template.read(k) };
+        this[FILES_PROPERTY][v.filepath] = {
+          ...this[FILES_PROPERTY][v.filepath],
+          module: mod.default || mod,
+          source: Template.read(k),
+        };
       } else {
-        this[FILES_PROPERTY][v.filepath] = { ...this[FILES_PROPERTY][v.filepath], module: mod };
+        this[FILES_PROPERTY][v.filepath] = {
+          ...this[FILES_PROPERTY][v.filepath],
+          module: mod,
+        };
       }
 
       Template.cache.set(v.filepath, this[FILES_PROPERTY][v.filepath]);
