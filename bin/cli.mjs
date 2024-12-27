@@ -29,8 +29,8 @@ console.log(`■ Jamrock v${pkg.version}`, Util.$.gray(`(${runtime}, ${version})
 const USAGE_INFO = `
 Usage: ${!existsSync('package.json') ? 'jamrock' : './bin/{node,deno,bun}'} <COMMAND> [OPTIONS]
 
+  build  Compiles *.html sources into server-components
   serve  Starts the web-server on the given --port and --host
-  build  Compiles *.html sources into page components
   route  Prints the available routes found${!existsSync('package.json') ? '\n  init   Generates a new application' : ''}
 
 Options:
@@ -38,6 +38,7 @@ Options:
   --src      Directory of *.html files to compile (default is ./src)
   --dest     Destination for compiled files (default is ./dest)
   --watch    Enable file-watching on the web-server
+  --static   SSG from pre-built sources
 
   --port     The port number to bind the web-server
   --host     The host address to bind the web-server
@@ -172,6 +173,7 @@ export type Routes = ${['RouteMap'].concat(typedefs).join('\n& ')};\n`;
 
     const defaults = {};
     const cwd = process.cwd();
+    const _static = Util.has('static', argv);
     const config = Template.path(`${cwd}/dev.config`);
 
     if (config) {
@@ -187,8 +189,8 @@ export type Routes = ${['RouteMap'].concat(typedefs).join('\n& ')};\n`;
         break;
 
       case 'build':
-        console.log(`Building ${src} to ${dest}`);
-        await env({ ...defaults, src, dest, unocss }).build();
+        console.log(_static ? `Processing from ${dest}` : `Building ${src} to ${dest}`);
+        await env({ ...defaults, src, dest, port, redis, unocss })[_static ? 'static' : 'build']();
         break;
 
       case 'route':

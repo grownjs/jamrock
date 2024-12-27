@@ -1,6 +1,5 @@
 <script context="client">
   import { useState, useEffect } from 'jamrock';
-  import * as nohooks from 'nohooks';
 
   const [now, setTime] = useState(Date.now());
 
@@ -10,8 +9,6 @@
     }, 1000);
     return () => clearInterval(timer);
   }, []);
-
-  console.log({ nohooks });
 </script>
 
 {new Date(now).toISOString().substr(11, 8)}

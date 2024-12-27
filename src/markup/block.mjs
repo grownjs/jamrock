@@ -338,22 +338,20 @@ export default {${defaults},__exported,__handler,__routes};
       if (cleanup) return ignore(_);
       if (!modify) return _;
 
-      const name = $1.replace(/[*]\s*as/, ignore)
-        .trim().replace(/\sas\s/g, '  : ');
-
+      const name = $1.replace(/[*]\s*as/, ignore).replace(/\sas\s/g, '  : ');
       const symbols = `const ${name}`;
 
       if ($3 === 'jamrock' || $3.includes('jamrock:')) {
-        fixed += 12;
+        fixed += 14;
         return `${symbols} = await __loader('${$3}')`;
       }
 
       if ($3.charAt() === '.' && !$3.includes('.html')) {
-        fixed += 19;
+        fixed += 21;
         return `${symbols} = await /*@@*/__resolve('${$3}')`;
       }
 
-      fixed += $3.includes('.html') ? 19 : 10;
+      fixed += $3.includes('.html') ? 21 : 12;
       return `${symbols} = await import('${$3.replace('.html', '.generated.mjs')}')`;
     });
 

@@ -8,7 +8,8 @@ export function decorate($, ctx, vnode, hooks) {
   if (hooks.length) {
     hooks.forEach(fn => {
       const state = {};
-      const key = `${ctx.uuid}/${vnode[1]['@location'].split(':')[0]}/${ctx.depth}`;
+      const _key = `${vnode[1]['@location'].split(':')[0]}/${ctx.depth}`;
+      const key = ctx.ref;
       const hook = fn[0]({
         ctx,
         key,
@@ -20,7 +21,7 @@ export function decorate($, ctx, vnode, hooks) {
       });
 
       // FIXME: this should be sent through ws...
-      console.info('SAVE HOOK STATE?', state, hook);
+      console.info('SAVE HOOK STATE?', { state, hook, key, _key });
       // if (Is.func(hook) && ctx.conn.store) {
       //   ctx.conn.store.set(`${fn[1]}@${key}?data`, JSON.stringify(state));
       //   ctx.conn.store.set(`${fn[1]}@${key}?mod`, hook.toString());
@@ -106,13 +107,13 @@ export function streamify(ctx) {
         }
 
         if (!done) push(item);
-        else if (process.headless || cancelled) break;
+        else if (process.env.HEADLESS || cancelled) break;
         else {
           if (interval > 0) await sleep(interval);
           if (this.append(key, item)) break;
         }
       }
-      if (!done) next(values);
+      if (process.env.HEADLESS || !done) next(values);
     };
 
     return new Promise(pull);

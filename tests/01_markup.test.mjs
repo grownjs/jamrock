@@ -149,49 +149,52 @@ test.group('parsing', t => {
       import {
         a as foo, bar
       } from 'jamrock:stuff';
-      console.log({ foo, bar });
-    `)).toEqual({
-      offset: 79,
-      prelude: "\n      const {\n        a  : foo, bar\n      } = await __loader('jamrock:stuff');",
-      interlude: '\n      console.log({ foo, bar });\n    ',
+`)).toEqual({
+      offset: 81,
+      prelude: "\n      const  {\n        a  : foo, bar\n      }  = await __loader('jamrock:stuff');",
+      interlude: '\n',
     });
 
     expect(Block.imports(`
       import { existsSync, unlinkSync } from 'node:fs';
-      console.log({ existsSync, unlinkSync });
-    `)).toEqual({
-      offset: 66,
-      prelude: "\n      const { existsSync, unlinkSync } = await import('node:fs');",
-      interlude: '\n      console.log({ existsSync, unlinkSync });\n    ',
+`)).toEqual({
+      offset: 68,
+      prelude: "\n      const  { existsSync, unlinkSync }  = await import('node:fs');",
+      interlude: '\n',
     });
   });
 
   test('should rewrite scripts', ({ expect }) => {
     expect(Block.script(`
-      import { useState } from 'jamrock';
-      console.log({ self, useState });
-    `, true)).toEqual({
+      import * as nohooks from 'nohooks';
+`, true)).toEqual({
       offset: 54,
-      prelude: "\n      const { useState } = await __loader('jamrock');",
-      interlude: '\n      console.log({ self, useState });\n    ',
+      prelude: "\n      const       nohooks  = await import('nohooks');",
+      interlude: '\n',
+    });
+
+    expect(Block.script(`
+      import { useState } from 'jamrock';
+`, true)).toEqual({
+      offset: 56,
+      prelude: "\n      const  { useState }  = await __loader('jamrock');",
+      interlude: '\n',
     });
 
     expect(Block.script(`
       import { truth } from '../mod.mjs';
-      console.log({ self, truth });
-    `, true)).toEqual({
-      offset: 61,
-      prelude: "\n      const { truth } = await /*@@*/__resolve('../mod.mjs');",
-      interlude: '\n      console.log({ self, truth });\n    ',
+`, true)).toEqual({
+      offset: 63,
+      prelude: "\n      const  { truth }  = await /*@@*/__resolve('../mod.mjs');",
+      interlude: '\n',
     });
 
     expect(Block.script(`
       import Test from '../test.html';
-      console.log({ self, Test });
-    `, true)).toEqual({
-      offset: 58,
-      prelude: "\n      const Test = await import('../test.generated.mjs');",
-      interlude: '\n      console.log({ self, Test });\n    ',
+`, true)).toEqual({
+      offset: 60,
+      prelude: "\n      const  Test  = await import('../test.generated.mjs');",
+      interlude: '\n',
     });
 
     expect(Block.script([
@@ -203,15 +206,15 @@ test.group('parsing', t => {
       "import Test3 from '../../noop.generated.mjs';\n",
       "import Test4 from '../../../router.generated.mjs';\n",
     ].join(''), true)).toEqual({
-      offset: 441,
+      offset: 455,
       prelude: [
-        "const { Inspect } = await __loader('jamrock:components');\n",
-        "const Test = await /*@@*/__resolve('./hello.generated.mjs');\n",
-        "const Markup = await /*@@*/__resolve('./static.generated.mjs');\n",
-        "const Test1 = await /*@@*/__resolve('./test.generated.mjs');\n",
-        "const Test2 = await /*@@*/__resolve('../inner.generated.mjs');\n",
-        "const Test3 = await /*@@*/__resolve('../../noop.generated.mjs');\n",
-        "const Test4 = await /*@@*/__resolve('../../../router.generated.mjs');",
+        "const  { Inspect }  = await __loader('jamrock:components');\n",
+        "const  Test  = await /*@@*/__resolve('./hello.generated.mjs');\n",
+        "const  Markup  = await /*@@*/__resolve('./static.generated.mjs');\n",
+        "const  Test1  = await /*@@*/__resolve('./test.generated.mjs');\n",
+        "const  Test2  = await /*@@*/__resolve('../inner.generated.mjs');\n",
+        "const  Test3  = await /*@@*/__resolve('../../noop.generated.mjs');\n",
+        "const  Test4  = await /*@@*/__resolve('../../../router.generated.mjs');",
       ].join(''),
       interlude: '\n',
     });

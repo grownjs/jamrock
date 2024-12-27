@@ -172,19 +172,23 @@ export class Template {
   static async finalize(e, self, chunk, mixins, filepath) {
     const fragments = self.is_json ? {} : null;
 
-    chunk.doc = Object.assign({ ...chunk.doc }, ...mixins.map(x => x.doc));
-    chunk.attrs = Object.assign({ ...chunk.attrs }, ...mixins.map(x => x.attrs));
-    chunk.styles = Object.assign({ ...chunk.styles }, ...mixins.map(x => x.styles));
-    chunk.scripts = Object.assign({ ...chunk.scripts }, ...mixins.map(x => x.scripts));
-
     // FIXME: use this technique when executing from fragments over ws/sse
     await Promise.all([
       serialize(chunk.body, null, (_, x) => decorate(chunk, self, _, x), fragments),
       serialize(chunk.head, null, (_, x) => decorate(chunk, self, _, x), fragments),
     ]);
 
+    mixins.forEach(mixin => {
+      // FIXME: how to check dupes?
+      chunk.head = (chunk.head || []).concat(mixin.head);
+
+      Object.assign(chunk.doc, mixin.doc);
+      Object.assign(chunk.attrs, mixin.attrs);
+      Object.assign(chunk.styles, mixin.styles);
+      Object.assign(chunk.scripts, mixin.scripts);
+    });
+
     // chunk.prelude = (chunk.prelude || []).concat(mixins.map(x => x.prelude));
-    chunk.head = (chunk.head || []).concat(mixins.map(x => x.head));
     chunk.head.unshift(['base', { href: self.base_url || '/' }]);
     chunk.head.unshift(['meta', { charset: 'utf-8' }]);
 
@@ -232,51 +236,35 @@ export class Template {
     context.base_url = context.base_url || context.conn?.base_url;
     context.is_json = context.is_json || context.conn?.is_xhr;
     context.streams = context.streams || new Map();
+    context.mixins = context.mixins || new Map();
     context.locals = context.locals || streamify(context);
-    context.mixins = context.mixins || [];
     context.stack = context.stack || [];
     context.scope = context.scope || {};
     context.depth = context.depth || 0;
     context.node = context.node || Template.tag(context);
 
-    const shared = {
-      failure: null,
-      fragments: {},
-      prelude: [],
-      scripts: {},
-      styles: {},
-      attrs: {},
-      head: [],
-      doc: {},
-    };
-
-    // 1. setup hooks for ws/sse here
     const tasks = [];
 
     try {
       let result = await Template.render(component, null, props, context, cb);
 
-      // 4. a this point we should have something... so, we can wait, or not...
-
-      if (!result) {
-        // console.log({ component, props });
-        throw new Error('Missing response?');
-      }
-
       Object.values(context.scope).forEach(_ => tasks.push(..._.handlers));
-      await Promise.all(tasks.map(fn => fn(result)));
 
-      // console.log('GOT', context.stack);
+      await Promise.all(tasks.map(fn => fn(result)));
 
       if (!(result instanceof Response)) {
         if (context.route?.layout) {
-          props.children = () => result.body;
+          const markup = result.body;
+
+          delete result.body;
+          props.children = () => markup;
+          context.mixins.set(component.__src, result);
 
           const layout = await Template.render(context.route.layout, null, props, context);
-          const response = await Template.finalize(null, context, layout, [result, shared].concat(context.mixins), component.__src);
+          const response = await Template.finalize(null, context, layout, context.mixins, component.__src);
           return response;
         }
-        result = await Template.finalize(null, context, result, [shared].concat(context.mixins), component.__src);
+        result = await Template.finalize(null, context, result, context.mixins, component.__src);
       }
       return result;
     } catch (e) {
@@ -289,7 +277,7 @@ export class Template {
         props.failure.stack = props.failure.stack.split('\n').slice(1).join('\n');
 
         const error = await Template.render(context.route.error, null, props, context);
-        const result = await Template.finalize(e, context, error, [shared].concat(context.mixins), component.__src);
+        const result = await Template.finalize(e, context, error, context.mixins, component.__src);
         return result;
       }
       throw e;
@@ -301,8 +289,8 @@ export class Template {
       ? `${component.__src}/${++ctx.depth}`
       : component.__src;
 
-    const styles = { [component.__src]: component.__styles };
     const scripts = { [component.__src]: component.__scripts };
+    const styles = { [component.__src]: component.__styles };
 
     const hooks = component.__context === 'module'
       ? Template.hooks(ctx, parent)
@@ -320,8 +308,15 @@ export class Template {
       : null;
 
     const view = executeAsync(ctx.node, loader, async (child, _) => {
-      const result = await Template.render(child, component, _, ctx, cb);
-      return result.body;
+      const chunk = await Template.render(child, component, _, ctx, cb);
+      const body = chunk.body;
+
+      if (ctx.mixins && !ctx.mixins.has(child.__src)) {
+        ctx.mixins.set(child.__src, chunk);
+      }
+
+      delete chunk.body;
+      return body;
     });
 
     if (ctx.stack) ctx.stack.push(ctx.ref);
@@ -352,8 +347,6 @@ export class Template {
       if (component.__context === 'client') {
         body = Template.client(ctx, body, props, parent, component);
       }
-
-      // 3. render cycle is over...
 
       return {
         scripts, styles, attrs, head, body, doc,
@@ -624,7 +617,7 @@ export class Template {
         if (context.ref) attrs['@source'] = context.ref;
       }
 
-      if (attrs['@location'] && context.conn?.env?.NODE_ENV === 'production') {
+      if (process.env.HEADLESS || context.conn?.env?.NODE_ENV === 'production') {
         delete attrs['@location'];
       }
 

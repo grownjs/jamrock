@@ -349,7 +349,7 @@ export function createEnvironment({ fs, path }, options, external) {
   const compiler = createCompiler({ fs, path }, options, external);
 
   const location = {
-    host: options.host || 'localhost:8000',
+    host: options.host || `localhost:${options.port || 8000}`,
     port: options.port || '8000',
   };
 
@@ -373,6 +373,35 @@ export function createEnvironment({ fs, path }, options, external) {
     } else {
       await compiler.hooks();
       await compiler.precompile();
+    }
+  }
+
+  async function _static() {
+    try {
+      process.env.HEADLESS = true;
+
+      await this.serve();
+
+      for (const route of compiler[ROUTES_PROPERTY].filter(_ => _.verb === 'GET')) {
+        const destFile = path.join(options.dest, 'public', route.path, 'index.html');
+
+        console.log('GET', route.path, destFile);
+
+        try {
+          const resp = await fetch(`http://${location.host}${route.path}`);
+          const html = await resp.text();
+
+          fs.mkdirSync(path.dirname(destFile), { recursive: true });
+          fs.writeFileSync(destFile, html);
+        } catch (e) {
+          console.log('Failed', e, route);
+        }
+      }
+    } catch (e) {
+      console.log(e);
+      process.exit(1);
+    } finally {
+      process.exit();
     }
   }
 
@@ -403,7 +432,7 @@ export function createEnvironment({ fs, path }, options, external) {
   }
 
   return Object.defineProperties({
-    serve, build, locate, request, compiler,
+    serve, build, locate, request, compiler, static: _static,
   }, {
     files: { get: () => compiler[FILES_PROPERTY] },
     routes: { get: () => compiler[ROUTES_PROPERTY] },
@@ -432,12 +461,7 @@ export async function createTestingEnvironment({ fs, path }, options, external) 
 
   return Object.assign(env, {
     async resolve(mod, props, params = {}) {
-      const request = new Request(`http://${location.host}${params.url || '/'}`, {
-        duplex: 'half',
-        body: params.body,
-        method: params.method || 'GET',
-        headers: { ...location, ...params.headers },
-      });
+      const request = env.request(params);
 
       const ctx = {
         route: params.route || {},

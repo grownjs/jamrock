@@ -48,20 +48,11 @@ export function stringify(result, callback = null) {
 
   taggify(result.head || [], callback);
 
-  const styles = Object.entries(result.styles);
-
-  let sent;
-  styles.forEach(([k, v]) => {
-    if (v) {
-      if (!sent) {
-        callback('<style>\n');
-        sent = true;
-      }
-      callback(`${k !== 'default' ? `/* ${k} */\n` : ''}${v}\n`);
-    }
-  });
-
-  if (sent) callback('</style>');
+  if (result.styles) {
+    Object.keys(result.styles).forEach(key => {
+      if (result.styles[key]) callback(`<style>/* ${key} */${result.styles[key]}</style>`);
+    });
+  }
 
   callback(`</head><body${attrs(result.attrs)}>\n`);
 
@@ -120,7 +111,7 @@ export function sample(block, info, tail, err, ok) {
 }
 
 export function debug(block, error) {
-  if (process.debug) console.debug(error, block);
+  // console.debug(error, block);
 
   if (error.name === 'ParseError') {
     const offset = error.position.col + error.position.e;
