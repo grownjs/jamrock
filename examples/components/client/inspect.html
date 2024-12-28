@@ -1,5 +1,5 @@
 <script context="client">
-  import { useState } from 'jamrock';
+  import { useState, useEffect } from 'jamrock';
 
   export let data = [];
   export let fields;
@@ -37,6 +37,12 @@
       });
     }, 120);
   }
+
+  useEffect(() => {
+    const input = self?.querySelector('input');
+    const q = input?.value;
+    if (q && query !== q) filter(q);
+  }, [query]);
 </script>
 
 <style>
