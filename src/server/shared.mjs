@@ -353,8 +353,8 @@ export function createEnvironment({ fs, path }, options, external) {
     port: options.port || '8000',
   };
 
-  async function serve() {
-    this.options = { ...options, location };
+  async function serve(overrides) {
+    this.options = { ...options, ...overrides, location };
 
     if (options.watch) {
       const watcher = await createFSWatcher(options, external.getChokidarModule);
@@ -362,7 +362,7 @@ export function createEnvironment({ fs, path }, options, external) {
       this.watcher = createWatcher({ fs }, watcher, compiler);
     }
 
-    await external.createServer(this, options);
+    await external.createServer(this, this.options);
     await compiler.hooks(this.watcher);
     await compiler.reload();
   }
@@ -380,16 +380,17 @@ export function createEnvironment({ fs, path }, options, external) {
     try {
       process.env.HEADLESS = true;
 
-      await this.serve();
+      await this.serve({ quiet: true });
 
       fs.mkdirSync(path.join(options.dest, 'public'));
 
-      // GET http://localhost:8080/@/0.m57-mi3-av/examples/components/client/notifications.html/2
-      for (const bundle of Template.glob(path.join(options.dest, '/**/*.bundled.mjs'))) {
+      let count = 0;
+      for (const bundle of Template.glob(path.join(options.dest, '/**/*.{css,bundled.mjs}'))) {
         const destFile = path.join(options.dest, 'public/@', path.relative(options.dest, bundle));
 
         fs.mkdirSync(path.dirname(destFile), { recursive: true });
         fs.copyFileSync(bundle, destFile);
+        count++;
       }
 
       for (const file of fs.readdirSync(import.meta.dirname)) {
@@ -399,12 +400,13 @@ export function createEnvironment({ fs, path }, options, external) {
         const destFile = path.join(options.dest, 'public', file);
 
         fs.copyFileSync(srcFile, destFile);
+        count++;
       }
 
       for (const route of compiler[ROUTES_PROPERTY].filter(_ => _.kind === 'page')) {
         const destFile = path.join(options.dest, 'public', route.path, 'index.html');
 
-        console.log(route.verb, route.path, destFile);
+        // console.log(route.verb, route.path, destFile);
 
         try {
           const resp = await fetch(`http://${location.host}${route.path}`);
@@ -412,10 +414,13 @@ export function createEnvironment({ fs, path }, options, external) {
 
           fs.mkdirSync(path.dirname(destFile), { recursive: true });
           fs.writeFileSync(destFile, html);
+          count++;
         } catch (e) {
           console.log('Failed', e, route);
         }
       }
+
+      console.log('Written', count, 'file(s)');
     } catch (e) {
       console.log(e);
       process.exit(1);

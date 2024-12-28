@@ -598,8 +598,7 @@ test.group('integration only!', t => {
     expect(tpl).toEqual([
       '<!DOCTYPE html>\n',
       '<html data-location="_hidden/stuff+page.html"><head>\n',
-      '<meta charset="utf-8" /><base href="/" /><style>/* generated/main.html */\n',
-      'button:where(.jam-420){color:red;}</style></head><body>\n',
+      '<meta charset="utf-8" /><base href="/" /><link rel=stylesheet href="main(0).css" /></head><body>\n',
       '<div data-component="generated/empty.html" data-location="_hidden/stuff+page.html:4:1"><div data-location="main.html:42:1">',
       '<button data-location="main.html:44:3" class="jam-420" data-source="generated/main.html/2" data-on:click="true" name="_action" value=onclick>insight</button>',
       '<button data-location="main.html:45:3" class="jam-420" data-source="generated/main.html/2" data-on:click="true" name="_action" value=fixme>truth</button>',

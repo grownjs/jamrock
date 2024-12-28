@@ -50,7 +50,11 @@ export function stringify(result, callback = null) {
 
   if (result.styles) {
     Object.keys(result.styles).forEach(key => {
-      if (result.styles[key]) callback(`<style>/* ${key} */${result.styles[key]}</style>`);
+      if (result.styles[key].length > 0) {
+        result.styles[key].forEach(_ => {
+          callback(`<link rel=stylesheet href="@/${_}" />`);
+        });
+      }
     });
   }
 

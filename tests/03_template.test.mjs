@@ -315,8 +315,10 @@ test.group('template transformation', t => {
       ['x', 'nested/path/to/transformed(2).js'],
     ]);
 
-    expect(css).toContain(`p:where(.jam-420){color:#ff0;}
-@font-face{font-family:Alpha;src:url(generated/fonts/Bravo.otf);}`);
+    expect(css).toEqual([['nested/path/to/transformed(0).css']]);
+
+    expect(Template.read('generated/nested/path/to/transformed(0).css'))
+      .toContain('p:where(.jam-420){color:#ff0;}\n@font-face{font-family:Alpha;src:url(generated/fonts/Bravo.otf);}');
 
     expect(html).toContain(`<p data-location="nested/path/to/transformed.html:68:3" class="jam-420">OK: 28</p>
     <span>OSOM</span>
@@ -364,7 +366,10 @@ ROUTER(FIXME)
     const tpl = await build('./scoping.html');
     const { html, css } = await tpl.render({ bar: 42 });
 
-    expect(css).toContain(`p:where(.jam-420){color:red;}
+    expect(css).toEqual([['scoping(0).css']]);
+
+    expect(Template.read('generated/scoping(0).css'))
+      .toContain(`p:where(.jam-420){color:red;}
 .foo:where(.jam-420){color:green;}
 p:where(.jam-420) .foo:where(.jam-420):not(.x){color:yellow;}
 p[data-root]:where(.jam-420) .foo:where(.jam-420){color:black;}
@@ -385,12 +390,16 @@ ul:where(.jam-420) li span:where(.jam-420){color:pink;}
     const tpl = await build('./nested.html');
     const { html, css } = await tpl.render();
 
-    expect(css).toContain(`@font-face{font-family:Alpha;src:url(generated/fonts/Bravo.otf);}
+    expect(css).toEqual([['nested(0).css'], ['nested(1).css']]);
+
+    expect(Template.read('generated/nested(1).css'))
+      .toContain(`@font-face{font-family:Alpha;src:url(generated/fonts/Bravo.otf);}
 @supports (display: flex){.flex-container > *{text-shadow:0 0 2px blue;float:none;}
 .flex-container{display:flex;}}
 [class]{color:cyan;}`);
 
-    expect(css).toContain(`h1:where(.jam-420){color:blue;}
+    expect(Template.read('generated/nested(0).css'))
+      .toContain(`h1:where(.jam-420){color:blue;}
 @media screen and (min-width: 100px){h1:where(.jam-420){color:red;}}`);
 
     expect(html).toEqual([
@@ -411,7 +420,8 @@ ul:where(.jam-420) li span:where(.jam-420){color:pink;}
     const tpl = await build('./unocss.html', { generators });
     const { css } = await tpl.render();
 
-    expect(css).toContain('.m-1{margin:0.25rem;}');
+    expect(css).toEqual([['unocss.css']]);
+    expect(Template.read('generated/unocss.css')).toContain('.m-1{margin:0.25rem;}');
   });
 });
 
@@ -535,6 +545,7 @@ test.group('core utilties', t => {
       ['generated/nested/path/to/transformed(0).js'],
       ['generated/nested/path/to/transformed(1).js'],
       ['generated/nested/path/to/transformed(2).js'],
+      ['generated/nested/path/to/transformed(0).css'],
       ['nested/path/to/test.html', 'generated/nested/path/to/test.html'],
       ['nested/path/inner.html', 'generated/nested/path/inner.html'],
       // ['nested/noop.html', 'generated/nested/noop.html'],

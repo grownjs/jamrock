@@ -160,25 +160,7 @@ export class Block {
   }
 
   get $styles() {
-    return this.assets.css.reduce((memo, styles) => {
-      if (Is.arr(styles)) {
-        styles.forEach(style => {
-          if (Is.arr(style)) {
-            if (style[0].charAt() === '@') {
-              if (style[1].length > 0) {
-                memo.push(`${style[0]}{${style[1].join('\n')}}`);
-              }
-            } else {
-              memo.push(style.join('\n'));
-            }
-          } else {
-            memo.push(style);
-          }
-        });
-        return memo;
-      }
-      return memo.concat(styles);
-    }, []).join('\n');
+    return this.assets.css.map(([id]) => [this.opts.cwd ? rebase(id, this.opts.cwd) : id]);
   }
 
   get $prefix() {
@@ -371,6 +353,8 @@ export default {${defaults},__exported,__handler,__routes};
 
     const base = source ? Template.dirname(source) : null;
     const leaf = target ? Template.dirname(target) : null;
+
+    if (!code.replace) console.log({ code, source });
 
     return code
       .replace(RE_EXPORT_DEFAULT, _ => [info, _].join('\n'))

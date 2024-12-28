@@ -1,4 +1,4 @@
-import { serialize, taggify, scopify, rulify } from '../markup/html.mjs';
+import { serialize, taggify, scopify, rulify, cssify } from '../markup/html.mjs';
 import { pascalCase, snakeCase, Is } from '../utils/server.mjs';
 
 import { executeAsync } from '../render/async.mjs';
@@ -86,35 +86,43 @@ export class Template {
           return { content: x.content, dest: destFile };
         }))));
 
-      this.partial.styles.forEach(x => {
-        tasks.push(cb(x, 'css', options).then(code => {
-          if (!x.attributes.global) {
-            resources.css.push(scopify(scope, x.attributes.scoped, code.content, markup.content, `${x.identifier}.css`));
+      tasks.push(cb(this.partial.styles, 'css', options)
+        .then(css => set.unshift(...css.map((x, i) => {
+          const destFile = `${target.replace('.html', '')}(${i}).css`;
+
+          let styles;
+          if (!x.params.global) {
+            styles = scopify(scope, x.params.scoped, x.content, markup.content, destFile);
           } else {
-            resources.css.push(rulify(code.content, target));
+            styles = rulify(x.content, target);
           }
-        }));
-      });
+
+          resources.css.push([destFile]);
+          return { content: cssify(styles), dest: destFile };
+        }))));
     }
 
     await Promise.all(tasks);
 
     if (this.generators?.css) {
       const { css } = await this.generators.css.generate(this.partial.rules.join(' '));
+      const destFile = target.replace('.html', '.css');
+      const styles = cssify(rulify(css, target));
 
-      resources.css.push(rulify(css, target));
+      resources.css.push([destFile]);
+      set.unshift({ content: styles, dest: destFile });
     }
 
     let result = await this.partial.transform(this.elements);
     if (isStatic) {
-      set.push(result = { content: result, src: filepath, dest: target });
+      set.unshift(result = { content: result, src: filepath, dest: target, js: true });
     } else {
       const children = [...new Set(this.partial.children.map(x => x.src))];
 
-      result = { content: result, src: filepath, children, dest: target };
+      result = { content: result, src: filepath, children, dest: target, js: true };
 
       if (isClient) {
-        set.push({ ...result, client: true });
+        set.unshift({ ...result, client: true });
       } else {
         set.unshift(result);
       }

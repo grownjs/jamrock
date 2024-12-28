@@ -194,6 +194,25 @@ export function scopify(ref, _class, styles, children, filepath) {
   }
 }
 
+export function cssify(styles) {
+  const out = [];
+
+  styles.forEach(css => {
+    if (Is.arr(css)) {
+      if (css[0].charAt() === '@') {
+        if (css[1].length > 0) {
+          out.push(`${css[0]}{${css[1].join('\n')}}`);
+        }
+      } else {
+        out.push(css.join('\n'));
+      }
+    } else {
+      out.push(css);
+    }
+  });
+  return out.join('\n').trim();
+}
+
 export function taggify(vnode, callback) {
   if (Is.not(vnode)) return;
   if (!Is.arr(vnode)) {

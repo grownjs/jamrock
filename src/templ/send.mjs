@@ -21,7 +21,7 @@ export function decorate($, ctx, vnode, hooks) {
       });
 
       // FIXME: this should be sent through ws...
-      console.info('SAVE HOOK STATE?', { state, hook, key, _key });
+      if (process.env.DEBUG) console.info('SAVE HOOK STATE?', { state, hook, key, _key });
       // if (Is.func(hook) && ctx.conn.store) {
       //   ctx.conn.store.set(`${fn[1]}@${key}?data`, JSON.stringify(state));
       //   ctx.conn.store.set(`${fn[1]}@${key}?mod`, hook.toString());

@@ -322,17 +322,17 @@ export async function createBody(env, conn, clients, { uuid, client, matches }) 
 
 export async function createModuleResponse(env, conn) {
   const file = conn.path_info.slice(1).join('/');
-  const js = Template.join(env.options.dest, file);
+  const src = Template.join(env.options.dest, file);
 
   let status = 404;
   let mod = `/* ${file} not found */`;
-  if (Template.exists(js)) {
-    mod = Template.read(js);
+  if (Template.exists(src)) {
+    mod = Template.read(src);
     status = 200;
   }
 
   return [mod, status, null, new Headers({
-    'content-type': 'application/javascript',
+    'content-type': file.includes('css') ? 'text/css' : 'application/javascript',
     'content-length': mod.length,
   })];
 }

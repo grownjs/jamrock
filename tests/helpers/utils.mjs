@@ -172,9 +172,9 @@ export async function build(src, opts) {
   let mod = await fixture.use(src, options, true);
   mod = Template.from((code, file) => fixture.load(code, file, { raw: true, ...options }), mod, options);
   const mods = await mod.regenerate();
-
   for (let i = 1; i < mods.length; i++) {
-    if (mods[i].dest) transpile(mods[i].content, mods[i].dest, true, '');
+    if (mods[i].js) transpile(mods[i].content, mods[i].dest, true, '');
+    else if (!mods[i].src) fs.writeFileSync(mods[i].dest, mods[i].content);
   }
   return mod.compile(mods[0], mod.partial, transpile);
 }
