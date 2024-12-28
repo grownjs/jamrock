@@ -27,9 +27,12 @@
         query: q,
         filtered: data.filter(item => {
           const subject = JSON.stringify(item).toLowerCase();
-          return q.includes(':')
-            ? subject.includes(`"${q.split(':').join('":"')}"`)
-            : subject.includes(q.toLowerCase());
+          const filters = q.toLowerCase().split(/\s+/).filter(Boolean);
+
+          return filters.every(_ => {
+            if (_.includes(':')) return subject.includes(`"${_.split(':').join('":"')}"`);
+            return subject.includes(_.toLowerCase());
+          });
         }),
       });
     }, 120);
@@ -59,9 +62,6 @@
   th, td, h4, small {
     padding: 5px;
   }
-  th {
-    white-space: nowrap;
-  }
   h4 span {
     flex: 1;
   }
@@ -73,7 +73,10 @@
     border-top: 1px solid rgba(0, 0, 0, .1);
     border-bottom: 1px solid rgba(0, 0, 0, .1);
   }
-  td {
+  th {
+    min-width: 10em;
+  }
+  th, td {
     word-break: break-all;
   }
 </style>

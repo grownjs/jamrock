@@ -320,37 +320,15 @@ export async function createBody(env, conn, clients, { uuid, client, matches }) 
   return { body, status };
 }
 
-// FIXME: we could do magic here? like, idk, wrapping functions into rpc calls? :v
 export async function createModuleResponse(env, conn) {
-  const parts = conn.path_info.slice(1);
-  const uuid = parts.shift();
-  const key = parts.join('/');
-  const ext = parts.at(-1).split('.').pop();
+  const file = conn.path_info.slice(1).join('/');
+  const js = Template.join(env.options.dest, file);
 
-  if (!['js', 'html'].includes(ext)) {
-    parts.pop();
-  }
-
-  const state = env.queue.fetch(uuid, key);
-  const file = parts.join('/');
-
-  // FIXME: we can enforce reloading through a flag?
   let status = 404;
-  let mod = '/* not found */';
-  if ('_' in conn.query_params) {
+  let mod = `/* ${file} not found */`;
+  if (Template.exists(js)) {
+    mod = Template.read(js);
     status = 200;
-    mod = `var __data = ${JSON.stringify(state)};\nexport { __data };\n`;
-  } else if (env.files[file]) {
-    status = 200;
-    mod = Template.read(env.files[file].filepath.replace('.generated.', '.bundled.'));
-    mod = mod.replace(/\bexport\s*\{/, _ => `var __data = ${JSON.stringify(state)};\n${_.substr(0, _.length - 1)}{\n  __data,`);
-  } else {
-    const js = Template.join(env.options.dest, file);
-
-    if (Template.exists(js)) {
-      mod = Template.read(js);
-      status = 200;
-    }
   }
 
   return [mod, status, null, new Headers({

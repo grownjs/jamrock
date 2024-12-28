@@ -166,11 +166,9 @@ export class Components {
     this.on();
   }
 
-  rebase(url) {
-    const q = this.modules.has(url) ? `?_=${Date.now()}` : '';
-    const path = this.headless
-      ? `/${PATH_LOADER_PREFIX}/${url}${q}`
-      : `/${PATH_LOADER_PREFIX}/${this.browser.request_uuid}/${url}${q}`;
+  rebase(url, reload) {
+    const q = reload || this.modules.has(url) ? `?_=${Date.now()}` : '';
+    const path = `/${PATH_LOADER_PREFIX}/${url}${q}`;
     return path;
   }
 
@@ -179,15 +177,13 @@ export class Components {
     return this.scripts.get(key);
   }
 
-  async import(url) {
+  async import(url, reload) {
     console.log('[ESM]', url);
 
-    const path = this.rebase(url);
+    const path = this.rebase(url, reload);
 
     if (!this.imports[path]) {
-      const src = this.headless
-        ? path.replace(/\.html\S*$/, '.bundled.mjs')
-        : path;
+      const src = path.replace(/\.html(?:\/\d+)?/, '.bundled.mjs');
 
       this.imports[path] = Date.now();
       let mod = await import(src);
