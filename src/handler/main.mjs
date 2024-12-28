@@ -49,6 +49,16 @@ export function controllers(cwd, from) {
   const { api, routes } = routify(cwd, from);
   const collection = [];
 
+  function push(route) {
+    const found = collection.find(_ => _.verb === route.verb && _.path === route.path);
+
+    if (found) {
+      Object.assign(found, route);
+    } else {
+      collection.push(route);
+    }
+  }
+
   for (const route of routes) {
     const _middleware = route.get('middleware');
     const layout = route.get('layout');
@@ -84,10 +94,10 @@ export function controllers(cwd, from) {
       subroute.lvl = depth;
       subroute.all = route.options.all;
       subroute.src = route.options.src;
-      collection.push(rematch(subroute));
+      push(rematch(subroute));
     });
 
-    collection.push(rematch(route.options));
+    push(rematch(route.options));
   }
 
   const _middlewares = api.map(_ => _.src);
@@ -106,7 +116,7 @@ export function controllers(cwd, from) {
       subroute.keys = params;
       subroute.path = path;
       subroute.lvl = depth;
-      collection.push(rematch(subroute));
+      push(rematch(subroute));
 
       const parts = src.split('/');
 

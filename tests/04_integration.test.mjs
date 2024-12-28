@@ -320,7 +320,6 @@ test.group('integration only!', t => {
       'PATCH /app/:id',
       'GET /app',
       'POST /app',
-      'GET /app',
     ]);
 
     expect(Object.isFrozen(routes)).toBeTruthy();
