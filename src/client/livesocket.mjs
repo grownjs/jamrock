@@ -10,6 +10,7 @@ export class LiveSocket {
 
     this.ready = false;
     this.browser = browser;
+    this.headless = browser.headless;
     this.document = document.documentElement.dataset.location;
     this.location = location.pathname.split(this.uuid)[1] || location.pathname;
 
@@ -164,10 +165,10 @@ export class LiveSocket {
       };
     }
 
-    const eventSource = new EventSource('/@');
-    eventSource.onmessage = event => {
-      console.log(event.data);
-    };
+    // const eventSource = new EventSource('/@');
+    // eventSource.onmessage = event => {
+    // console.log(event.data);
+    // };
 
     const queue = [];
 
@@ -193,7 +194,7 @@ export class LiveSocket {
     this.next = _uuid => {
       if (ws && ws.readyState === ws.OPEN) ws.send(`rpc:reconnect ${this.browser.request_uuid = _uuid}`);
     };
-    this.start = () => (!ws || ws.readyState !== ws.OPEN) && connect(this.document, this.uuid, open).then(socket => {
+    this.start = () => !this.headless && (!ws || ws.readyState !== ws.OPEN) && connect(this.document, this.uuid, open).then(socket => {
       this.ready = true;
 
       let t;

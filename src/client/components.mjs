@@ -144,6 +144,7 @@ export class Conditions {
 
 export class Components {
   constructor(browser, { __defaults, __scripts }) {
+    this.headless = browser.headless;
     this.browser = browser;
     this.scripts = __scripts || {};
     this.defaults = __defaults || {};
@@ -167,7 +168,9 @@ export class Components {
 
   rebase(url) {
     const q = this.modules.has(url) ? `?_=${Date.now()}` : '';
-    const path = `/${PATH_LOADER_PREFIX}/${this.browser.request_uuid}/${url}${q}`;
+    const path = this.headless
+      ? `/${PATH_LOADER_PREFIX}/${url}${q}`
+      : `/${PATH_LOADER_PREFIX}/${this.browser.request_uuid}/${url}${q}`;
     return path;
   }
 
@@ -182,8 +185,12 @@ export class Components {
     const path = this.rebase(url);
 
     if (!this.imports[path]) {
+      const src = this.headless
+        ? path.replace(/\.html\S*$/, '.bundled.mjs')
+        : path;
+
       this.imports[path] = Date.now();
-      let mod = await import(path);
+      let mod = await import(src);
       mod = mod.default || mod;
       this.modules.set(url, mod);
       if (url.includes('.html')) {

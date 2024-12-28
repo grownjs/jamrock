@@ -1,4 +1,4 @@
-export const generateClientCode = (state, immediate) => {
+export const generateClientCode = (state, headless) => {
   function main() {
     const { href } = location;
     const url = href.replace(/[&?]noscript(?:=[^&?=]*?)?/, '');
@@ -9,13 +9,13 @@ export const generateClientCode = (state, immediate) => {
       Promise.all([
         import('./client/browser.mjs'),
         import('./client/components.mjs'),
-      ]).then(([{ Browser }, { Components }]) => Browser.init(Components, process.env.VERSION, state, this));
+      ]).then(([{ Browser }, { Components }]) => Browser.init(Components, headless, process.env.VERSION, state, this));
     } else {
       window.Jamrock.Browser.csrf_token = state.csrf;
     }
   }
 
-  if (immediate || ['complete', 'loaded', 'interactive'].includes(document.readyState)) {
+  if (['complete', 'loaded', 'interactive'].includes(document.readyState)) {
     main();
   } else {
     document.addEventListener('DOMContentLoaded', () => main());

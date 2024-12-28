@@ -3,11 +3,12 @@ import { LiveSocket } from './livesocket.mjs';
 import { EventHub } from './events.mjs';
 
 export class Browser {
-  constructor(state, version) {
+  constructor(state, version, headless) {
     console.info('check', state.patch, version);
 
     this.paused = false;
     this.version = version;
+    this.headless = headless;
     this.csrf_token = state.csrf;
     this.request_uuid = state.uuid;
     this.request_method = state.method;
@@ -133,8 +134,8 @@ export class Browser {
     };
   }
 
-  static init(Components, version, state, data) {
-    const browser = new Browser(state, version);
+  static init(Components, headless, version, state, data) {
+    const browser = new Browser(state, version, headless);
     const sockets = new LiveSocket(browser);
     const events = new EventHub(sockets);
 

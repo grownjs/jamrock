@@ -60,7 +60,7 @@ export async function createConnection(store, options, request, location, teardo
 
   Object.defineProperty(request, 'csrfProtect', {
     value() {
-      if (!(process.headless || ['GET', 'HEAD', 'OPTIONS'].includes(request.method))) {
+      if (!(process.env.HEADLESS || ['GET', 'HEAD', 'OPTIONS'].includes(request.method))) {
         const token = (request.fields && request.fields._csrf)
           || request.query._csrf
           || headers['csrf-token']

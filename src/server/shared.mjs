@@ -382,6 +382,25 @@ export function createEnvironment({ fs, path }, options, external) {
 
       await this.serve();
 
+      fs.mkdirSync(path.join(options.dest, 'public'));
+
+      // GET http://localhost:8080/@/0.m57-mi3-av/examples/components/client/notifications.html/2
+      for (const bundle of Template.glob(path.join(options.dest, '/**/*.bundled.mjs'))) {
+        const destFile = path.join(options.dest, 'public/@', path.relative(options.dest, bundle));
+
+        fs.mkdirSync(path.dirname(destFile), { recursive: true });
+        fs.copyFileSync(bundle, destFile);
+      }
+
+      for (const file of fs.readdirSync(import.meta.dirname)) {
+        if (['client.mjs', 'server.mjs', 'main.mjs'].includes(file)) continue;
+
+        const srcFile = path.join(import.meta.dirname, file);
+        const destFile = path.join(options.dest, 'public', file);
+
+        fs.copyFileSync(srcFile, destFile);
+      }
+
       for (const route of compiler[ROUTES_PROPERTY].filter(_ => _.kind === 'page')) {
         const destFile = path.join(options.dest, 'public', route.path, 'index.html');
 

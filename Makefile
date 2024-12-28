@@ -150,6 +150,10 @@ examples: clean dist
 	@bin/node build --src ./examples
 server:
 	@bin/node serve --src ./examples --watch lib
+static:
+	@bin/node build --src ./examples --static
+preview:
+	@npx sirv-cli build/public
 
 source: deps
 	@npm link
