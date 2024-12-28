@@ -10,6 +10,13 @@
   // like importing shit and so? I mean, this easy shit can
   // be inlined within the component... but man, proves a point!
   // this shit is like in-place instantiation from remote code... edge?
+  //
+  // well.... actually it sucks!! because, on SSG mode we want those to be
+  // imported directly and executed in place... exact as scoped scripts!!
+  //
+  // how to do that? we can just iterate all components and write down
+  // some files with the exported functions?
+
   function tabs() {
     return node => {
       function checkA11y(e) {

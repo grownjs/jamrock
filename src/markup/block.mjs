@@ -198,7 +198,7 @@ export const __attributes = ${this.$attributes};
   }
 
   toString() {
-    const defaults = '__src,__dest,__context,__snippets,__fragments,__scripts,__styles,__doctype,__metadata,__attributes,__template';
+    const defaults = '__src,__dest,__context,__snippets,__fragments,__scripts,__styles,__doctype,__metadata,__attributes,__functions,__template';
     const template = reduce(this.markup.content, this.context, 1);
 
     if (!this.script) {
@@ -220,6 +220,7 @@ export default {${defaults}};
     const locals = this.script.locals;
     const keys = this.script.keys;
 
+    const functions = this.module.deps.filter(_ => this.module.locals[_] === 'function');
     const exported = keys.filter(x => ['let', 'const', 'export'].includes(locals[x])).map(x => aliases[x] || x);
     const { prelude, interlude } = Block.imports(this.script.code);
     const matched = extract(interlude, true);
@@ -270,6 +271,7 @@ export const __routes = ${JSON.stringify(matched.routes)};
 ${this.$prefix}
 export const __template = async ($$) => [${Block.wrap(template)}];
 export const __exported = ${JSON.stringify(exported)};
+export const __functions = [${functions.join(',')}];
 export default {${defaults},__exported,__handler,__routes};
 `;
 

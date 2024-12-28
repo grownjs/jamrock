@@ -278,12 +278,7 @@ export async function createBody(env, conn, clients, { uuid, client, matches, op
     }
 
     if (!Util.Is.str(body)) {
-      const state = [];
-
-      // we should skip hook-fns from this payload...
-      // as we'll import that as a separate module!
       Object.entries(ctx.queue.get(uuid))
-        .filter(([key]) => key.charAt() !== '!')
         .forEach(([key, data]) => state.push(`"${key}":${data}`));
 
       if (conn.is_xhr) {

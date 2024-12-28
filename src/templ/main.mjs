@@ -250,6 +250,10 @@ export class Template {
     context.depth = context.depth || 0;
     context.node = context.node || Template.tag(context);
 
+    component.__functions.forEach(fn => {
+      fn.$ = fn.$ || component.__src;
+    });
+
     const tasks = [];
 
     try {

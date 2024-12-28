@@ -38,17 +38,15 @@ fixture`./empty.html
 
 // eslint-disable-next-line no-unused-expressions
 fixture`./hooks+page.html
-  <script>
-    function test({ props }) {
-      console.info('IT WORKS!', props);
+  <script context="module">
+    function test(_, params) {
+      console.info('IT WORKS!', params);
     }
-    function doStuff() {
-      return node => {
-        console.info(node, location.href);
-      };
+    function doStuff(node, params) {
+      console.info(node, location.href);
     }
   </script>
-  <button use:test>FOO</button>
+  <button use:test="foo|bar">FOO</button>
   <button use:doStuff>BAR</button>
 `;
 
@@ -378,18 +376,15 @@ test.group('integration only!', t => {
     ].join('\n'));
   });
 
-  test('skip: should allow to hook functions into nodes', async ({ expect }) => {
-    ctx.conn.store = {
+  test('pin: should allow to hook functions into nodes', async ({ expect }) => {
+    ctx.queue = {
       set: td.func('write'),
     };
 
     const markup = await fixture.partial('hooks+page.html', null, ctx);
 
-    // FIXME: how hooks are propagated?
-    // expect(td.explain(ctx.conn.store.set).callCount).toEqual(2);
-
-    expect(td.explain(console.info).callCount).toEqual(3);
-    expect(markup).toContain('data-enhance data-use:do-stuff="jam-uuid/hooks+page.html/1"');
+    expect(td.explain(ctx.queue.set).callCount).toEqual(1);
+    expect(markup).toContain('data-enhance data-use:do-stuff="hooks+page.html/1"');
   });
 
   test('should be able to handle middleware calls', async ({ expect }) => {

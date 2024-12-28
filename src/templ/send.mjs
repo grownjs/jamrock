@@ -7,20 +7,10 @@ import {
 export function decorate($, ctx, vnode, hooks) {
   if (hooks.length) {
     hooks.forEach(fn => {
-      const state = {};
-      const key = `${vnode[1]['@location'].split(':')[0]}/${ctx.depth}`;
-      const hook = fn[0]({
-        ctx,
-        key,
-        vnode,
-        state,
-        hook: fn[1],
-        props: vnode[1],
-        children: vnode[2],
-      });
+      if (Is.func(fn[0])) {
+        const state = {};
+        const key = `${fn[0].$}/${ctx.depth}`;
 
-      if (Is.func(hook)) {
-        ctx.queue.set(ctx.uuid, `!${key}`, hook.toString());
         ctx.queue.set(ctx.uuid, key, state);
 
         vnode[1]['@enhance'] = true;
