@@ -38,6 +38,7 @@ Options:
   --src      Directory of *.html files to compile (default is ./src)
   --dest     Destination for compiled files (default is ./dest)
   --watch    Enable file-watching on the web-server
+  --prefix   Prefix for bundled resources
   --static   SSG from pre-built sources
 
   --port     The port number to bind the web-server
@@ -75,6 +76,7 @@ export default async function main(env, argv) {
   const port = +Util.flag('port', argv, 8080);
   const redis = Util.flag('redis', argv, false);
   const unocss = Util.flag('unocss', argv, false);
+  const _prefix = Util.flag('prefix', argv, '@');
 
   if (Util.has('help', argv) || !argv[0]) {
     console.log(USAGE_INFO
@@ -182,15 +184,17 @@ export type Routes = ${['RouteMap'].concat(typedefs).join('\n& ')};\n`;
       Object.assign(defaults, mod.default || mod);
     }
 
+    const _options = { src, dest, port, redis, prefix: _prefix };
+
     switch (argv[0]) {
       case 'serve':
         console.log(`Processing ${src} to ${dest}`);
-        await env({ ...defaults, src, dest, uws, port, watch, redis }).serve();
+        await env({ ...defaults, ..._options, uws, watch }).serve();
         break;
 
       case 'build':
         console.log(_static ? `Processing from ${dest}` : `Building ${src} to ${dest}`);
-        await env({ ...defaults, src, dest, port, redis, unocss })[_static ? 'static' : 'build']();
+        await env({ ...defaults, ..._options, unocss })[_static ? 'static' : 'build']();
         break;
 
       case 'route':

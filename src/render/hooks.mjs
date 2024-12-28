@@ -14,6 +14,7 @@ export const execute = (element, loader, next, run) => {
   const self = {
     $: value => {
       if (value === null || value === false || typeof value === 'undefined') return '';
+      if (value.current) value = value.current;
       if (!Is.scalar(value)) {
         return Is.arr(value)
           ? value.map(self.$).join('')
@@ -66,6 +67,7 @@ export const execute = (element, loader, next, run) => {
       }
 
       let input = [];
+      if (subj?.current) subj = subj.current;
       if (Is.iterable(subj) || Is.arr(subj)) input = [...subj];
       else if (Is.num(subj)) input = Array.from({ length: subj }).map((_, i) => i);
 

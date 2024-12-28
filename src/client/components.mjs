@@ -4,8 +4,6 @@ import { wrapComponent, mountableComponent } from './render.mjs';
 import { Is, sleep } from '../utils/client.mjs';
 import { flatten } from '../utils/shared.mjs';
 
-const PATH_LOADER_PREFIX = '@';
-
 const HAS_INTER_OBSERVERS = 'IntersectionObserver' in window;
 const HAS_REQUEST_IDLE = 'requestIdleCallback' in window;
 const HAS_MATCH_MEDIA = 'matchMedia' in window;
@@ -143,9 +141,10 @@ export class Conditions {
 }
 
 export class Components {
-  constructor(browser, { __defaults, __scripts }) {
+  constructor(browser, prefix, { __defaults, __scripts }) {
     this.headless = browser.headless;
     this.browser = browser;
+    this.prefix = prefix;
     this.scripts = __scripts || {};
     this.defaults = __defaults || {};
 
@@ -168,7 +167,7 @@ export class Components {
 
   rebase(url, reload) {
     const q = reload || this.modules.has(url) ? `?_=${Date.now()}` : '';
-    const path = `/${PATH_LOADER_PREFIX}/${url}${q}`;
+    const path = `/${this.prefix}/${url}${q}`;
     return path;
   }
 

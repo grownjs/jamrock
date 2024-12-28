@@ -125,12 +125,14 @@ export function streamify(ctx) {
 
     for (const key of keys) {
       if (key.charAt() === '@') continue;
-      let value = state[key];
+
+      const value = state[key];
+
       if (value && (Is.thenable(value) || Is.generator(value))) {
         values.push(Promise.resolve()
           .then(() => (Is.factory(value) ? value() : value))
           .then(_ => (Is.iterable(_) ? this.peek(key, _) : _))
-          .then(result => { state[key] = result; }));
+          .then(result => { value.current = result; }));
       }
     }
 

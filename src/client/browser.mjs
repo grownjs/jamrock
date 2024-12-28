@@ -134,7 +134,7 @@ export class Browser {
     };
   }
 
-  static init(Components, headless, version, state, data) {
+  static init(Components, version, headless, prefix, state, data) {
     const browser = new Browser(state, version, headless);
     const sockets = new LiveSocket(browser);
     const events = new EventHub(sockets);
@@ -146,7 +146,7 @@ export class Browser {
       Browser: browser,
       EventHub: events,
       LiveSocket: sockets,
-      Components: new Components(browser, data),
+      Components: new Components(browser, prefix, data),
     };
   }
 }

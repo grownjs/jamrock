@@ -627,6 +627,8 @@ export class Template {
 
       if (process.env.HEADLESS || context.conn?.env?.NODE_ENV === 'production') {
         delete attrs['@location'];
+        delete attrs['@source'];
+        delete attrs['@async'];
       }
 
       if (name === 'fragment') {

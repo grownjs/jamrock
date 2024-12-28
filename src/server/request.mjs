@@ -1,8 +1,6 @@
 import { Template, Handler, Markup, Util } from 'jamrock/core';
 import { generateClientCode } from 'jamrock/client';
 
-const PATH_LOADER_PREFIX = '@';
-
 export function parseCookies(cookie) {
   if (!cookie) return {};
 
@@ -116,12 +114,12 @@ export function getRawBody(req, limit) {
   });
 }
 
-export function getClientCode(conn, patch, baseURL, _uuid) {
+export function getClientCode(conn, patch, baseURL, _uuid, _prefix) {
   const uuid = _uuid || conn.headers['request-uuid'] || `0.${Date.now().toString(36).replace(/.{3}/g, '$&-')}`;
   const state = JSON.stringify({ uuid, patch, csrf: conn.csrf_token, method: conn.method });
   const client = `<script>(${
     generateClientCode.toString().replace(/𝐢𝐦𝐩𝐨𝐫𝐭/g, 'import')
-  })(${state}, ${process.env.HEADLESS ? 'true' : 'undefined'});</script>
+  })(${state}, ${JSON.stringify(_prefix)}, ${process.env.HEADLESS ? 'true' : 'undefined'});</script>
 `.replaceAll('./', baseURL);
 
   return { uuid, client };
@@ -301,7 +299,7 @@ export async function createBody(env, conn, clients, { uuid, client, matches, op
       }
 
       let buffer = [];
-      Template.stringify(body, options.prefix || '@', chunk => buffer.push(chunk));
+      Template.stringify(body, options.prefix, chunk => buffer.push(chunk));
 
       const payload = [
         `\n\t__defaults: ${JSON.stringify(ctx.queue.get(uuid))},`,
@@ -338,7 +336,7 @@ export async function createModuleResponse(env, conn) {
 }
 
 export async function createPageResponse(env, conn, clients, options) {
-  const { uuid, client } = getClientCode(conn, env.version, conn.base_url);
+  const { uuid, client } = getClientCode(conn, env.version, conn.base_url, options.uuid, options.prefix);
 
   let matches;
   env.routes.some(route => {
@@ -368,7 +366,7 @@ export async function createPageResponse(env, conn, clients, options) {
 }
 
 export async function createResponse(env, conn, clients, options) {
-  if (conn.path_info[0] === PATH_LOADER_PREFIX) {
+  if (conn.path_info[0] === options.prefix) {
     // FIXME: here we could validate paths!!
     if (conn.path_info.length > 1) {
       return createModuleResponse(env, conn);

@@ -378,6 +378,8 @@ export function createEnvironment({ fs, path }, options, external) {
 
   async function _static() {
     try {
+      const start = Date.now();
+
       process.env.HEADLESS = true;
 
       await this.serve({ quiet: true });
@@ -386,7 +388,7 @@ export function createEnvironment({ fs, path }, options, external) {
 
       let count = 0;
       for (const bundle of Template.glob(path.join(options.dest, '/**/*.{css,bundled.mjs}'))) {
-        const destFile = path.join(options.dest, 'public/@', path.relative(options.dest, bundle));
+        const destFile = path.join(options.dest, 'public', options.prefix, path.relative(options.dest, bundle));
 
         fs.mkdirSync(path.dirname(destFile), { recursive: true });
         fs.copyFileSync(bundle, destFile);
@@ -420,7 +422,7 @@ export function createEnvironment({ fs, path }, options, external) {
         }
       }
 
-      console.log('Written', count, 'file(s)');
+      console.log(`${count} file${count === 1 ? '' : 's'} written (${Util.ms(start)})`);
     } catch (e) {
       console.log(e);
       process.exit(1);
