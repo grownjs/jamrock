@@ -374,7 +374,7 @@ test.group('integration only!', t => {
       '<!DOCTYPE html>',
       '<html data-location=app+page.html><head>',
       '<meta charset="utf-8" /><base href="/" /><title>OSOM</title></head><body>',
-      '<h1 data-location="app+page.html:7:1" class=active>Hello World</h1><a href="/app/123" data-location="app+page.html:25:3">LINK</a></body></html>',
+      '<h1 data-location="app+page.html:7:1" class=active>Hello World</h1>\n\n<a href="/app/123" data-location="app+page.html:25:3">LINK</a>\n</body></html>',
     ].join('\n'));
   });
 
@@ -401,7 +401,7 @@ test.group('integration only!', t => {
     await fixture.partial('app+page.html', null, ctx, func);
 
     expect(td.explain(func).callCount).toEqual(1);
-    expect(td.explain(ctx.write).callCount).toEqual(11);
+    expect(td.explain(ctx.write).callCount).toEqual(12);
 
     expect(td.explain(console.info).callCount).toEqual(2);
     expect(td.explain(ctx.conn.someStuff).callCount).toEqual(1);

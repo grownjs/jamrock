@@ -58,6 +58,6 @@ export async function render(content) {
 
   return html.split('\0')
     .reduce((memo, _) => memo
-      .concat(_ ? { type: 'text', content: _ } : [])
+      .concat(_ ? { type: 'element', name: 'fragment', attributes: { '@html': _ } } : [])
       .concat(nodes.length > 0 ? nodes.shift() : []), []);
 }
