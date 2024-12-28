@@ -13,6 +13,10 @@
     fields = fields.split('|');
   }
 
+  function value(object) {
+    return typeof object === 'object' ? JSON.stringify(object) : String(object);
+  }
+
   const [{ filtered, query }, setState] = useState({ filtered: data, query: '' });
 
   let t;
@@ -22,10 +26,7 @@
       setState({
         query: q,
         filtered: data.filter(item => {
-          const subject = (!Array.isArray(item)
-            ? Object.entries(item).reduce((memo, [k, v]) => memo.concat(fields.includes(k) ? v : []), [])
-            : item).join('\t').toLowerCase();
-
+          const subject = JSON.stringify(item).toLowerCase();
           return subject.includes(q.toLowerCase());
         }),
       });
@@ -89,11 +90,11 @@
             {#if key === main}
               <th align="right">{item[key]}</th>
             {:else}
-              <td>{item[key]}</td>
+              <td>{value(item[key])}</td>
             {/if}
           {:else}
             <th align="left">{item[0]}</th>
-            <td>{item[1]}</td>
+            <td>{value(item[1])}</td>
           {/each}
         </tr>
       {/each}

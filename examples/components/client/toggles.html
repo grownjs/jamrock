@@ -9,7 +9,7 @@
 
   async function selectThis(offset) {
     await setTab(offset);
-    requestAnimationFrame(() => self.element.querySelector('[aria-selected=true]').focus());
+    requestAnimationFrame(() => self.querySelector('[aria-selected=true]').focus());
   }
 
   // FIXME: otherwise, functions like this,
@@ -25,8 +25,8 @@
   }
   export function updateTab() {
     requestAnimationFrame(() => {
-      const tabs = self.element.querySelectorAll('[role=tab]');
-      const tab = self.element.querySelector('[role=tab]:focus');
+      const tabs = self.querySelectorAll('[role=tab]');
+      const tab = self.querySelector('[role=tab]:focus');
 
       if (!tab) return;
 
@@ -39,7 +39,7 @@
     });
   }
   export function selectTab() {
-    self.element.querySelector('[aria-selected=true] label').click();
+    self.querySelector('[aria-selected=true] label').click();
   }
 </script>
 

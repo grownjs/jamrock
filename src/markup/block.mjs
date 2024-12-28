@@ -275,7 +275,7 @@ ${this.context === 'client'
     });
 
     const js = `/* eslint-disable */${mod}
-export const __handler = async ($$props, __loader) => {
+export const __handler = async ($$props, __loader${this.context === 'client' ? ', self' : ''}) => {
 ${[prelude, main].join('\n')}
 ${this.context === 'client'
     ? `\tconst __runtime = await __loader('jamrock');

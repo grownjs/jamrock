@@ -46,7 +46,7 @@ export function clientComponent(mod, context, filepath) {
 
     let vnode;
     if (mod.__handler) {
-      const main = await mod.__handler({ ...props }, loader);
+      const main = await mod.__handler({ ...props }, loader, el);
       const store = await main.__self();
       const data = await store.loop();
 
