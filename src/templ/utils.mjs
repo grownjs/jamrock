@@ -38,7 +38,7 @@ export class ParseError extends SyntaxError {
   }
 }
 
-export function stringify(result, callback = null) {
+export function stringify(result, prefix = '', callback = null) {
   let content = '';
   callback = callback || (value => {
     content += value;
@@ -52,7 +52,7 @@ export function stringify(result, callback = null) {
     Object.keys(result.styles).forEach(key => {
       if (result.styles[key].length > 0) {
         result.styles[key].forEach(_ => {
-          callback(`<link rel=stylesheet href="@/${_}" />`);
+          callback(`<link rel=stylesheet href="${(prefix ? `${prefix}/` : '') + _}" />`);
         });
       }
     });

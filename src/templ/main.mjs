@@ -214,7 +214,7 @@ export class Template {
 
   static async resolve(component, filepath, context, props, cb) {
     const response = await Template.reduce(component, filepath, context, props, cb);
-    if (context.write) stringify(response, context.write);
+    if (context.write) stringify(response, context.prefix, context.write);
     return response;
   }
 

@@ -167,7 +167,7 @@ export function create404(env, conn, client, message) {
 </table>${config}${environment}${client}`;
 }
 
-export async function createBody(env, conn, clients, { uuid, client, matches }) {
+export async function createBody(env, conn, clients, { uuid, client, matches, options }) {
   let status;
   let body;
   try {
@@ -301,7 +301,7 @@ export async function createBody(env, conn, clients, { uuid, client, matches }) 
       }
 
       let buffer = [];
-      Template.stringify(body, chunk => buffer.push(chunk));
+      Template.stringify(body, options.prefix || '@', chunk => buffer.push(chunk));
 
       const payload = [
         `\n\t__defaults: ${JSON.stringify(ctx.queue.get(uuid))},`,
@@ -337,7 +337,7 @@ export async function createModuleResponse(env, conn) {
   })];
 }
 
-export async function createPageResponse(env, conn, clients) {
+export async function createPageResponse(env, conn, clients, options) {
   const { uuid, client } = getClientCode(conn, env.version, conn.base_url);
 
   let matches;
@@ -352,7 +352,7 @@ export async function createPageResponse(env, conn, clients) {
   let headers = null;
   let body = null;
   if (matches) {
-    const result = await createBody(env, conn, clients, { uuid, client, matches });
+    const result = await createBody(env, conn, clients, { uuid, client, matches, options });
 
     cookies = result.cookies || cookies;
     headers = result.headers || headers;
@@ -367,7 +367,7 @@ export async function createPageResponse(env, conn, clients) {
   return [body, status, cookies === false ? null : conn.resp_cookies, headers || conn.resp_headers];
 }
 
-export async function createResponse(env, conn, clients) {
+export async function createResponse(env, conn, clients, options) {
   if (conn.path_info[0] === PATH_LOADER_PREFIX) {
     // FIXME: here we could validate paths!!
     if (conn.path_info.length > 1) {
@@ -411,7 +411,7 @@ export async function createResponse(env, conn, clients) {
       },
     });
   }
-  return createPageResponse(env, conn, clients);
+  return createPageResponse(env, conn, clients, options);
 }
 
 export function parseLocation(options) {

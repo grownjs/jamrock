@@ -185,7 +185,7 @@ fixture.partial = async (src, props, shared, callback) => {
     const tpl = await build(`./${rebase(src)}`);
     const out = await Template.resolve(tpl.module, 'generated/tpl.mjs', shared, props, callback);
     if (out.status) shared.conn.res.status(out.status);
-    return stringify(out);
+    return stringify(out, shared.prefix);
   } finally {
     reset();
   }
