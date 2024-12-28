@@ -13,6 +13,9 @@ export const Is = Object.assign(is, {
 
 export { pick, noop, sleep } from './shared.mjs';
 
+// we transform well-known entities into unicode (?)
+// since serialized text is already encoded on the back-end
+// (see: src/markup/utils.mjs#encode for more details)
 export function decode(v) {
   const txt = new DOMParser().parseFromString(v, 'text/html');
   return txt.documentElement.textContent;

@@ -2,8 +2,13 @@ import { Expr } from './expr.mjs';
 import { ents } from '../render/hooks.mjs';
 import { Is, repeat, encodeText } from '../utils/server.mjs';
 
+// encoding is required to keep the resulting text JSON-friendly
+// with the transport-layer, for some reason the response is
+// broken otherwise...
 export function encode(value) {
-  return encodeText(value, { quotes: false, unsafe: true });
+  return encodeText(value, { quotes: false, unsafe: true })
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;');
 }
 
 export function compact(chunk) {
