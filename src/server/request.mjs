@@ -278,17 +278,25 @@ export async function createBody(env, conn, clients, { uuid, client, matches, op
     }
 
     if (!Util.Is.str(body)) {
+      const state = [];
+
+      // we should skip hook-fns from this payload...
+      // as we'll import that as a separate module!
+      Object.entries(ctx.queue.get(uuid))
+        .filter(([key]) => key.charAt() !== '!')
+        .forEach(([key, data]) => state.push(`"${key}":${data}`));
+
       if (conn.is_xhr) {
-        body = Markup.encode(JSON.stringify({
-          fragments: body.fragments,
-          scripts: body.scripts,
-          styles: body.styles,
-          attrs: body.attrs,
-          head: body.head,
-          body: body.body,
-          doc: body.doc,
-          _: ctx.queue.get(uuid),
-        }));
+        body = Markup.encode(`{${[
+          `"fragments":${JSON.stringify(body.fragments)}`,
+          `"scripts":${JSON.stringify(body.scripts)}`,
+          `"styles":${JSON.stringify(body.styles)}`,
+          `"attrs":${JSON.stringify(body.attrs)}`,
+          `"head":${JSON.stringify(body.head)}`,
+          `"body":${JSON.stringify(body.body)}`,
+          `"doc":${JSON.stringify(body.doc)}`,
+          `"_":{${state.join(',\n')}}`,
+        ].join(',\n')}}`);
 
         const headers = new Headers({
           'content-type': 'application/json',
@@ -302,7 +310,7 @@ export async function createBody(env, conn, clients, { uuid, client, matches, op
       Template.stringify(body, options.prefix, chunk => buffer.push(chunk));
 
       const payload = [
-        `\n\t__defaults: ${JSON.stringify(ctx.queue.get(uuid))},`,
+        `\n\t__defaults: {${state.join(',\n')}},`,
         `\n\t__scripts: ${JSON.stringify(body.scripts)},\n`,
       ].join('');
 

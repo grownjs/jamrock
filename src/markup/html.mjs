@@ -291,39 +291,27 @@ export function taggify(vnode, callback) {
   });
 }
 
-export function serialize(vnode, parent, callback, fragments) {
+export function serialize(vnode, parent, callback) {
   if (Is.vnode(vnode)) {
     const hooks = [];
     const name = vnode[0];
     const props = vnode[1] = extend(vnode[0], { ...vnode[1] }, hooks);
 
-    if (Is.vnode(vnode[2])) {
-      vnode[2] = [vnode[2]];
-    }
-
-    const children = name !== 'textarea'
-      ? serialize(vnode[2], { name, props }, callback, fragments)
+    const children = !['pre', 'textarea'].includes(name)
+      ? serialize(vnode[2], { name, props }, callback)
       : vnode[2];
 
     vnode[2] = children;
     vnode.length = 3;
 
     enhance(vnode, parent);
-    if (Is.func(callback)) {
-      callback(vnode, hooks);
-    }
-    if (fragments && (vnode[0] === 'fragment' || vnode[1]['@fragment'])) {
-      // FIXME: capture and update... but how?
-      // fragments[vnode[1]['@fragment']] = vnode;
-      // return null;
-    }
+    if (Is.func(callback)) callback(vnode, hooks);
     return vnode;
   }
 
   if (Is.arr(vnode)) {
     return vnode.reduce((memo, cur) => {
-      if (Is.arr(cur) && !cur.length) return memo;
-      memo.push(serialize(cur, parent, callback, fragments));
+      memo.push(serialize(cur, parent, callback));
       return memo;
     }, []);
   }

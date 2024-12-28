@@ -249,9 +249,8 @@ export class Components {
     if (defaults) Object.assign(this.defaults, defaults);
   }
 
-  ref(node, reference) {
-    console.log('[REF]', node, reference);
-    this.import(reference).then(hook => {
+  ref(node, script) {
+    this.import(script).then(hook => {
       if (hook.__execute) return hook.__execute(node);
     });
   }
@@ -270,7 +269,7 @@ export class Components {
       }
 
       if (ev?.node) {
-        console.log('[HOOK]', ev.node, ev.params, this);
+        console.log('[HOOK]', ev.node, ev.params);
         // const [uuid, ...parts] = ev.params.source.split('/');
         // const key = `${ev.params.name}.${uuid}@${parts.join('/')}`;
 

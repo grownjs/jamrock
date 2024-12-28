@@ -178,13 +178,12 @@ export class Template {
   }
 
   static async finalize(e, self, chunk, mixins, filepath) {
-    const fragments = self.is_json ? {} : null;
+    const fragments = {};
 
     // FIXME: use this technique when executing from fragments over ws/sse
-    await Promise.all([
-      serialize(chunk.body, null, (_, x) => decorate(chunk, self, _, x), fragments),
-      serialize(chunk.head, null, (_, x) => decorate(chunk, self, _, x), fragments),
-    ]);
+    // also, how in the hell we're going to capture fragment and such?
+    serialize(chunk.body, null, (vnode, hooks) => decorate(chunk, self, vnode, hooks));
+    serialize(chunk.head, null, (vnode, hooks) => decorate(chunk, self, vnode, hooks));
 
     mixins.forEach(mixin => {
       // FIXME: how to check dupes?

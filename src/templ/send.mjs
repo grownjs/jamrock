@@ -8,8 +8,7 @@ export function decorate($, ctx, vnode, hooks) {
   if (hooks.length) {
     hooks.forEach(fn => {
       const state = {};
-      const _key = `${vnode[1]['@location'].split(':')[0]}/${ctx.depth}`;
-      const key = ctx.ref;
+      const key = `${vnode[1]['@location'].split(':')[0]}/${ctx.depth}`;
       const hook = fn[0]({
         ctx,
         key,
@@ -20,15 +19,13 @@ export function decorate($, ctx, vnode, hooks) {
         children: vnode[2],
       });
 
-      // FIXME: this should be sent through ws...
-      if (process.env.DEBUG) console.info('SAVE HOOK STATE?', { state, hook, key, _key });
-      // if (Is.func(hook) && ctx.conn.store) {
-      //   ctx.conn.store.set(`${fn[1]}@${key}?data`, JSON.stringify(state));
-      //   ctx.conn.store.set(`${fn[1]}@${key}?mod`, hook.toString());
-      // }
+      if (Is.func(hook)) {
+        ctx.queue.set(ctx.uuid, `!${key}`, hook.toString());
+        ctx.queue.set(ctx.uuid, key, state);
 
-      vnode[1]['@enhance'] = true;
-      vnode[1][`@use:${dashCase(fn[1])}`] = key;
+        vnode[1]['@enhance'] = true;
+        vnode[1][`@use:${dashCase(fn[1])}`] = key;
+      }
     });
   }
 

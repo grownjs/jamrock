@@ -22,7 +22,7 @@ export class MemoryHub {
 
   save(uuid, key, data) {
     const set = this.cache.get(uuid) || {};
-    set[key] = { ...set[key], ...data };
+    set[key] = JSON.stringify(data);
     this.cache.set(uuid, set);
     clearTimeout(this.ttls[`${uuid}@${key}`]);
     this.ttls[`${uuid}@${key}`] = setTimeout(() => { delete set[key]; }, this.timeout);
