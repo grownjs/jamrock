@@ -177,6 +177,9 @@ fixture`./api/+server.mjs
 // eslint-disable-next-line no-unused-expressions
 fixture`./+server.mjs
   export function http() {}
+  export default {
+    ['GET /api/v1']: true,
+  };
 `;
 
 // eslint-disable-next-line no-unused-expressions
@@ -315,6 +318,7 @@ test.group('integration only!', t => {
       'GET /campaigns',
       'GET /markdown',
       'GET /pages/:slug',
+      'GET /api/v1',
       'GET /hooks',
       'GET /stuff',
       'PATCH /app/:id',

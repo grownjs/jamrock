@@ -382,10 +382,10 @@ export function createEnvironment({ fs, path }, options, external) {
 
       await this.serve();
 
-      for (const route of compiler[ROUTES_PROPERTY].filter(_ => _.verb === 'GET')) {
+      for (const route of compiler[ROUTES_PROPERTY].filter(_ => _.kind === 'page')) {
         const destFile = path.join(options.dest, 'public', route.path, 'index.html');
 
-        console.log('GET', route.path, destFile);
+        console.log(route.verb, route.path, destFile);
 
         try {
           const resp = await fetch(`http://${location.host}${route.path}`);

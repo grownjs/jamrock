@@ -27,7 +27,9 @@
         query: q,
         filtered: data.filter(item => {
           const subject = JSON.stringify(item).toLowerCase();
-          return subject.includes(q.toLowerCase());
+          return q.includes(':')
+            ? subject.includes(`"${q.split(':').join('":"')}"`)
+            : subject.includes(q.toLowerCase());
         }),
       });
     }, 120);

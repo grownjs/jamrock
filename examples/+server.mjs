@@ -7,3 +7,7 @@ export async function http(conn) {
 export async function csrf(conn) {
   await conn.req.csrfProtect();
 }
+
+export default {
+  ['GET /api/v1']: true,
+};

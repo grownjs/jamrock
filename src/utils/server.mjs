@@ -35,6 +35,10 @@ Object.assign(Is, {
 
 export * from './shared.mjs';
 
+export function concat(a, b) {
+  return ((a === '/' ? '' : a) + b).replace(/\/$/, '');
+}
+
 export function rtrim(value) {
   return value.replace(/\/$/, '');
 }

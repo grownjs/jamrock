@@ -1,6 +1,6 @@
 import { rankify, routify, extract, rematch, rebase } from './utils.mjs';
+import { Is, set, concat } from '../utils/server.mjs';
 import { Template } from '../templ/main.mjs';
-import { Is, set } from '../utils/server.mjs';
 import { req } from './match.mjs';
 
 const RE_DEFAULT_NAME = /export\s+default\s*\{[^{};]*\bas\s*:\s*(["'])([\w.]+)\1/;
@@ -70,6 +70,7 @@ export function controllers(cwd, from) {
 
     route.options.all = route.all('page', rebase);
     route.options.src = route.options.all[0];
+    route.options.kind = 'page';
 
     delete route.options.page;
     delete route.options.parent;
@@ -82,7 +83,7 @@ export function controllers(cwd, from) {
     route.options.name = route.options.name || key[2];
 
     matches.forEach(subroute => {
-      const path = (route.options.path + subroute.path).replace(/\/$/, '');
+      const path = concat(route.options.path, subroute.path);
       const { depth, params } = rankify(path);
 
       subroute.middleware = route.options.middleware;
@@ -94,6 +95,7 @@ export function controllers(cwd, from) {
       subroute.lvl = depth;
       subroute.all = route.options.all;
       subroute.src = route.options.src;
+      subroute.kind = 'api';
       push(rematch(subroute));
     });
 
@@ -107,15 +109,16 @@ export function controllers(cwd, from) {
     const matches = extract(code);
 
     matches.forEach(subroute => {
-      const path = (route + subroute.path).replace(/\/$/, '');
+      const path = concat(route, subroute.path);
       const { depth, params } = rankify(path);
 
       subroute.middlewares = [];
-      subroute.middleware = src;
+      subroute.middleware = rebase(src);
       subroute.base = subroute.path;
       subroute.keys = params;
       subroute.path = path;
       subroute.lvl = depth;
+      subroute.kind = 'api';
       push(rematch(subroute));
 
       const parts = src.split('/');
@@ -128,7 +131,7 @@ export function controllers(cwd, from) {
         parts.pop();
 
         if (_middlewares.includes(key)) {
-          subroute.middlewares.push(key);
+          subroute.middlewares.push(rebase(key));
         }
       }
     });
