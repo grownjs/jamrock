@@ -332,6 +332,12 @@ export async function createModuleResponse(env, conn) {
   if (Template.exists(src)) {
     mod = Template.read(src);
     status = 200;
+  } else {
+    const key = file.replace('.hooks.mjs', '.html');
+    const _mod = await Template.reload(env.files[key].filepath);
+
+    status = 200;
+    mod = _mod.__functions.map(_ => `export ${_.toString()}\n`).join('');
   }
 
   return [mod, status, null, new Headers({

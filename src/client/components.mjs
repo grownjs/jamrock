@@ -269,19 +269,15 @@ export class Components {
       }
 
       if (ev?.node) {
-        console.log('[HOOK]', ev.node, ev.params);
-        // const [uuid, ...parts] = ev.params.source.split('/');
-        // const key = `${ev.params.name}.${uuid}@${parts.join('/')}`;
+        const key = ev.params.source;
+        const src = key.replace(/\.html(?:\/\d+)?$/, '.hooks.mjs');
 
-        // memo.push(this.import(key).then(mod => {
-        // if (mod.__hook) {
-        //   const off = mod.__hook(node, mod.__data);
-
-        //   if (Is.func(off)) {
-        //     node.__hooks.push(off);
-        //   }
-        // }
-        // }));
+        memo.push(this.import(src)
+          .then(mod => {
+            // console.log('[HOOK]', ev.node, ev.params);
+            const off = mod[ev.params.name](node);
+            if (Is.func(off)) node.__hooks.push(off);
+          }));
       }
 
       return memo;
