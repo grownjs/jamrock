@@ -7,15 +7,17 @@ import {
 export function decorate($, ctx, vnode, hooks) {
   if (hooks.length) {
     hooks.forEach(fn => {
-      if (Is.func(fn[0])) {
-        const state = {};
-        const key = `${fn[0].$}/${ctx.depth}`;
-
-        ctx.queue.set(ctx.uuid, key, state);
-
-        vnode[1]['@enhance'] = true;
-        vnode[1][`@use:${dashCase(fn[1])}`] = key;
+      if (!Is.func(fn[0]) || !fn[0].$)  {
+        throw new TypeError(`Unknown function '${fn[0].name}'`);
       }
+
+      const state = {};
+      const key = `${fn[0].$}/${ctx.depth}`;
+
+      ctx.queue.set(ctx.uuid, key, state);
+
+      vnode[1]['@enhance'] = true;
+      vnode[1][`@use:${dashCase(fn[1])}`] = key;
     });
   }
 

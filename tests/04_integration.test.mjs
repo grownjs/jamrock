@@ -376,7 +376,7 @@ test.group('integration only!', t => {
     ].join('\n'));
   });
 
-  test('pin: should allow to hook functions into nodes', async ({ expect }) => {
+  test('should allow to hook functions into nodes', async ({ expect }) => {
     ctx.queue = {
       set: td.func('write'),
     };

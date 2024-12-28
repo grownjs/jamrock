@@ -198,7 +198,7 @@ export const __attributes = ${this.$attributes};
   }
 
   toString() {
-    const defaults = '__src,__dest,__context,__snippets,__fragments,__scripts,__styles,__doctype,__metadata,__attributes,__functions,__template';
+    const defaults = '__src,__dest,__context,__snippets,__fragments,__scripts,__styles,__doctype,__metadata,__attributes,__template';
     const template = reduce(this.markup.content, this.context, 1);
 
     if (!this.script) {
@@ -272,7 +272,7 @@ ${this.$prefix}
 export const __template = async ($$) => [${Block.wrap(template)}];
 export const __exported = ${JSON.stringify(exported)};
 export const __functions = [${functions.join(',')}];
-export default {${defaults},__exported,__handler,__routes};
+export default {${defaults},__functions,__exported,__handler,__routes};
 `;
 
     const code = lets.length > 0

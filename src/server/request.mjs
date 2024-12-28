@@ -278,6 +278,8 @@ export async function createBody(env, conn, clients, { uuid, client, matches, op
     }
 
     if (!Util.Is.str(body)) {
+      const state = [];
+
       Object.entries(ctx.queue.get(uuid))
         .forEach(([key, data]) => state.push(`"${key}":${data}`));
 

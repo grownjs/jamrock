@@ -250,10 +250,6 @@ export class Template {
     context.depth = context.depth || 0;
     context.node = context.node || Template.tag(context);
 
-    component.__functions.forEach(fn => {
-      fn.$ = fn.$ || component.__src;
-    });
-
     const tasks = [];
 
     try {
@@ -299,6 +295,10 @@ export class Template {
     ctx.ref = ctx.stack && component.__context !== 'static'
       ? `${component.__src}/${++ctx.depth}`
       : component.__src;
+
+    component.__functions?.forEach(fn => {
+      fn.$ = fn.$ || component.__src;
+    });
 
     const scripts = { [component.__src]: component.__scripts };
     const styles = { [component.__src]: component.__styles };
