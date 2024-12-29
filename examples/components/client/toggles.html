@@ -1,23 +1,23 @@
 <script context="client">
-  import { useState, useEffect } from "jamrock";
+  import { useState, useEffect } from 'jamrock';
 
   export const names = [];
-  export const prefix = "check-";
+  export const prefix = 'check-';
   export const checked = 0;
 
   // FIXME: focus vs selection?
   const [selected, setTab] = useState(checked);
 
-  function prevTab() {
+  export function prevTab() {
     if (selected > 0) setTab(selected - 1);
   }
-  function nextTab() {
+  export function nextTab() {
     if (selected < names.length - 1) setTab(selected + 1);
   }
-  function updateTab() {
+  export function updateTab() {
     requestAnimationFrame(() => {
-      const tabs = self.querySelectorAll("[role=tab]");
-      const tab = self.querySelector("[role=tab]:focus");
+      const tabs = self.querySelectorAll('[role=tab]');
+      const tab = self.querySelector('[role=tab]:focus');
 
       if (!tab) return;
 
@@ -29,12 +29,12 @@
       setTab(offset);
     });
   }
-  function selectTab() {
-    self.querySelector("[aria-selected=true] label").click();
+  export function selectTab() {
+    self.querySelector('[aria-selected=true] label').click();
   }
 
   useEffect(() => {
-    setTimeout(() => self.querySelector("[aria-selected=true]").focus(), 60);
+    setTimeout(() => self.querySelector('[aria-selected=true]').focus(), 60);
   }, [selected]);
 </script>
 

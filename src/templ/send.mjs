@@ -7,7 +7,7 @@ import {
 export function decorate($, ctx, vnode, hooks) {
   if (hooks.length) {
     hooks.forEach(fn => {
-      if (!Is.func(fn[0]) || !fn[0].$)  {
+      if (!Is.func(fn[0]) || !fn[0].$) {
         throw new TypeError(`Unknown function '${fn[0].name}'`);
       }
 
