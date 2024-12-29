@@ -40,7 +40,7 @@ export function clientComponent(mod, context, filepath) {
   });
   const next = data => render(mod.__template, data, mod.__src);
   const mount = async (el, props, _events) => {
-    if (el.current) {
+    if (el.__state) {
       throw new Error('Component already mounted');
     }
 
@@ -51,9 +51,9 @@ export function clientComponent(mod, context, filepath) {
       const data = await store.loop();
 
       store.patch = async peek => {
-        Object.assign(el.current, peek.__scope);
-
-        const patch = await next(el.current);
+        Object.assign(el.__state, peek.__scope);
+        const patch = await next(el.__state);
+        el.current = peek.__actions;
 
         // eslint-disable-next-line no-return-assign
         return typeof process !== 'undefined'
@@ -63,7 +63,8 @@ export function clientComponent(mod, context, filepath) {
       };
 
       if (el.__store) el.__store.clear();
-      el.current = { ...props, ...data.__scope };
+      el.current = data.__actions;
+      el.__state = { ...props, ...data.__scope };
       el.__store = store;
     }
 
@@ -71,13 +72,13 @@ export function clientComponent(mod, context, filepath) {
     el.__update = (_mod, _props) => {
       console.log('[UPDATE]', _props);
       if (el.__store) el.__store.clear();
-      el.current = null;
+      el.__state = null;
       el.__defer = el.__defer
         .then(() => clientComponent.call(this, _mod, context).mount(el, _props));
     };
 
-    // console.log('[RENDER]', props, el.current);
-    vnode = await next(el.current);
+    // console.log('[RENDER]', props, el.__state);
+    vnode = await next(el.__state);
 
     if (context?.sync) {
       context.sync(vnode, _events);

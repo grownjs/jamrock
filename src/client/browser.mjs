@@ -32,7 +32,7 @@ export class Browser {
         Object.values(payload.styles)
           .forEach(set => set.forEach(_ => {
             payload.head.push(['link', { rel: 'stylesheet', href: `${this.prefix}/${_}` }]);
-          }))
+          }));
 
         this.attrs(document.documentElement, payload.doc);
         this.patch(document.head, payload.head);

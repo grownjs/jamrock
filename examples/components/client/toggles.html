@@ -6,15 +6,19 @@
   export const checked = 0;
 
   // FIXME: focus vs selection?
+  const [focused, setFocus] = useState(null);
   const [selected, setTab] = useState(checked);
 
-  export function prevTab() {
+  function selectTab() {
+    requestAnimationFrame(() => self.querySelector('[aria-selected=true] label').click());
+  }
+  function prevTab() {
     if (selected > 0) setTab(selected - 1);
   }
-  export function nextTab() {
+  function nextTab() {
     if (selected < names.length - 1) setTab(selected + 1);
   }
-  export function updateTab() {
+  function updateTab() {
     requestAnimationFrame(() => {
       const tabs = self.querySelectorAll('[role=tab]');
       const tab = self.querySelector('[role=tab]:focus');
@@ -29,13 +33,39 @@
       setTab(offset);
     });
   }
-  export function selectTab() {
-    self.querySelector('[aria-selected=true] label').click();
+
+  let skip;
+  function skipTabs(shift) {
+    skip = true;
+    setFocus(true);
+    setTimeout(() => { skip = false; }, 60);
+
+    const tabs = self.querySelectorAll('[role=tab]');
+
+    if (shift) {
+      tabs[0].focus();
+    } else {
+      tabs[tabs.length - 1].focus();
+    }
+  }
+  function focusTabs() {
+    if (skip || focused === null) return;
+    setFocus(null);
+    updateTab();
   }
 
   useEffect(() => {
     setTimeout(() => self.querySelector('[aria-selected=true]').focus(), 60);
   }, [selected]);
+
+  export default {
+    prevTab,
+    nextTab,
+    updateTab,
+    selectTab,
+    skipTabs,
+    focusTabs,
+  };
 </script>
 
 <style>
@@ -44,7 +74,7 @@
   }
   li[aria-selected] {
     font-weight: bold;
-    background-color: #fff !important;
+    background-color: rgba(0, 0, 0, .1);
   }
 </style>
 

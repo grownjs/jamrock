@@ -351,6 +351,7 @@ export default {${defaults},__functions,__exported,__handler,__routes};
     const info = [
       source ? `\nexport const __src = '${source}';` : '',
       target ? `\nexport const __dest = '${target}';` : '',
+      // `\nexport const __filename = import.meta.url;`,
     ].join('');
 
     const base = source ? Template.dirname(source) : null;

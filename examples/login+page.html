@@ -24,14 +24,13 @@
     async POST() {
       const user = await User.verifyAuth({ email, password, exception: true });
 
-      if (user) {
-        session.user = {
-          currentInfo: user.record,
-          expirationDate: Date.now() + 864000,
-        };
-        flash('success', "You've been logged in!");
-        redirect('/login');
-      }
+      session.user = {
+        currentInfo: user.record,
+        expirationDate: Date.now() + 864000,
+      };
+
+      flash('success', "You've been logged in!");
+      redirect('/login');
     },
 
     async DELETE() {

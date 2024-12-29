@@ -373,7 +373,10 @@ export class Template {
 
       return { scripts, styles, body: [['pre', {}, ents(this.failure.stack)]] };
     } finally {
-      if (ctx.stack) ctx.stack.pop();
+      if (ctx.stack) {
+        ctx.stack.pop();
+        ctx.ref = ctx.stack.at(-1);
+      }
     }
   }
 
