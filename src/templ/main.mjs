@@ -296,6 +296,8 @@ export class Template {
       ? `${component.__src}/${++ctx.depth}`
       : component.__src;
 
+    // FIXME: check this with external modules... like adding
+    // a __filename field on the module with the actual/imported path
     component.__functions?.forEach(fn => {
       fn.$ = fn.$ || component.__src;
     });

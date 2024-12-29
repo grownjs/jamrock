@@ -337,7 +337,7 @@ export async function createModuleResponse(env, conn) {
     const _mod = await Template.reload(env.files[key].filepath);
 
     status = 200;
-    mod = _mod.__functions.map(_ => `export ${_.toString()}\n`).join('');
+    mod = `/* ${file} */\n${_mod.__functions.map(_ => `export ${_.toString()}\n`).join('')}`;
   }
 
   return [mod, status, null, new Headers({

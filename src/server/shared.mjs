@@ -418,10 +418,11 @@ export function createEnvironment({ fs, path }, options, external) {
       for (const [file, mod] of Object.entries(compiler[FILES_PROPERTY])) {
         if (!mod.module?.__functions || !mod.module.__functions.length) continue;
 
-        const destFile = path.join(options.dest, 'public', options.prefix, path.relative(options.dest, file));
-        const code = mod.module.__functions.map(_ => `export ${_.toString()}\n`).join('');
+        const key = file.replace('.generated.', '.hooks.');
+        const destFile = path.join(options.dest, 'public', options.prefix, path.relative(options.dest, key));
+        const code = `/* ${key} */\n${mod.module.__functions.map(_ => `export ${_.toString()}\n`).join('')}`;
 
-        write(destFile.replace('.generated.', '.hooks.'), code);
+        write(destFile, code);
         count++;
       }
 
