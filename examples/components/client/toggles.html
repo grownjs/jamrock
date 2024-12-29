@@ -1,32 +1,23 @@
 <script context="client">
-  import { useState } from 'jamrock';
+  import { useState, useEffect } from "jamrock";
 
   export const names = [];
-  export const prefix = 'check-';
+  export const prefix = "check-";
   export const checked = 0;
 
+  // FIXME: focus vs selection?
   const [selected, setTab] = useState(checked);
 
-  async function selectThis(offset) {
-    await setTab(offset);
-    requestAnimationFrame(() => self.querySelector('[aria-selected=true]').focus());
+  function prevTab() {
+    if (selected > 0) setTab(selected - 1);
   }
-
-  // FIXME: otherwise, functions like this,
-  // are overriden on each state update... (see tabss/inspect)
-  // I think exported functions should be preserved anyways... at
-  // least for client-side components that are NOT stateless it's required!!
-
-  export function prevTab() {
-    if (selected > 0) selectThis(selected - 1);
+  function nextTab() {
+    if (selected < names.length - 1) setTab(selected + 1);
   }
-  export function nextTab() {
-    if (selected < names.length - 1) selectThis(selected + 1);
-  }
-  export function updateTab() {
+  function updateTab() {
     requestAnimationFrame(() => {
-      const tabs = self.querySelectorAll('[role=tab]');
-      const tab = self.querySelector('[role=tab]:focus');
+      const tabs = self.querySelectorAll("[role=tab]");
+      const tab = self.querySelector("[role=tab]:focus");
 
       if (!tab) return;
 
@@ -35,16 +26,30 @@
         if (tabs[i] === tab) break;
         offset++;
       }
-      selectThis(offset);
+      setTab(offset);
     });
   }
-  export function selectTab() {
-    self.querySelector('[aria-selected=true] label').click();
+  function selectTab() {
+    self.querySelector("[aria-selected=true] label").click();
   }
+
+  useEffect(() => {
+    setTimeout(() => self.querySelector("[aria-selected=true]").focus(), 60);
+  }, [selected]);
 </script>
 
+<style>
+  li {
+    transition: background-color .2s;
+  }
+  li[aria-selected] {
+    font-weight: bold;
+    background-color: #fff !important;
+  }
+</style>
+
 {#each names as tab, i}
-  <li aria-selected="{selected === i ? 'true' : null}" role="tab" tabindex="0">
-    <label for="{prefix}{i}" on:click="{() => selectThis(i)}">{tab}</label>
-  </li>
+<li aria-selected="{selected === i ? 'true' : null}" role="tab" tabindex="0">
+  <label for="{prefix}{i}" on:click="{() => setTab(i)}">{tab}</label>
+</li>
 {/each}
