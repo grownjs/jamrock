@@ -596,7 +596,7 @@ test.group('integration only!', t => {
       '<!DOCTYPE html>\n',
       '<html data-location="_hidden/stuff+page.html"><head>\n',
       '<meta charset="utf-8" /><base href="/" /><link rel=stylesheet href="__/main(0).css" /></head><body>\n',
-      '<div data-component="generated/empty.html" data-location="_hidden/stuff+page.html:4:1"><div data-location="main.html:42:1">',
+      '<div data-component="generated/main.html/2" data-location="_hidden/stuff+page.html:4:1"><div data-location="main.html:42:1">',
       '<button data-location="main.html:44:3" class="jam-420" data-source="generated/main.html/2" data-on:click="true" name="_action" value=onclick>insight</button>',
       '<button data-location="main.html:45:3" class="jam-420" data-source="generated/main.html/2" data-on:click="true" name="_action" value=fixme>truth</button>',
       '<p data-location="main.html:46:3" data-on:somethingelse="callme">Your answer: FIXME</p>Just an EMPTY component\n\n',
@@ -651,7 +651,7 @@ test.group('integration only!', t => {
     const tpl = await fixture.partial('context.html', null, ctx);
 
     expect(tpl).toContain('Got: 42\nGot: 42');
-    expect(tpl).toContain('(CHECK: undefined)');
+    expect(tpl).toContain('(CHECK: object)');
     expect(td.explain(console.info).callCount).toEqual(2);
   });
 });

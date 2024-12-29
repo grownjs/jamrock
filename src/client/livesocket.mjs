@@ -136,7 +136,7 @@ export class LiveSocket {
       });
     };
 
-    window.onbeforeunload = () => this.close() || null;
+    // window.onbeforeunload = () => this.close() || null;
 
     function connect(doc, uuid, ready) {
       return new Promise(ok => {
