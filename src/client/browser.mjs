@@ -3,10 +3,11 @@ import { LiveSocket } from './livesocket.mjs';
 import { EventHub } from './events.mjs';
 
 export class Browser {
-  constructor(state, version, headless) {
+  constructor(state, prefix, version, headless) {
     console.info('check', state.patch, version);
 
     this.paused = false;
+    this.prefix = prefix;
     this.version = version;
     this.headless = headless;
     this.csrf_token = state.csrf;
@@ -28,8 +29,13 @@ export class Browser {
         // FIXME: how to patch fragments?
         window.Jamrock.Components.set(payload._, payload.scripts, payload.fragments);
 
-        this.patch(document.head, payload.head.concat([['style', null, Object.values(payload.styles).join('\n')]]));
+        Object.values(payload.styles)
+          .forEach(set => set.forEach(_ => {
+            payload.head.push(['link', { rel: 'stylesheet', href: `${this.prefix}/${_}` }]);
+          }))
+
         this.attrs(document.documentElement, payload.doc);
+        this.patch(document.head, payload.head);
         this.attrs(document.body, payload.attrs);
 
         await callback(() => this.patch(document.body, payload.body));
@@ -135,7 +141,7 @@ export class Browser {
   }
 
   static init(Components, version, headless, prefix, state, data) {
-    const browser = new Browser(state, version, headless);
+    const browser = new Browser(state, prefix, version, headless);
     const sockets = new LiveSocket(browser);
     const events = new EventHub(sockets);
 
