@@ -376,6 +376,15 @@ export function createEnvironment({ fs, path }, options, external) {
     }
   }
 
+  function copy(source, target) {
+    fs.mkdirSync(path.dirname(target), { recursive: true });
+    fs.copyFileSync(source, target);
+  }
+  function write(target, contents) {
+    fs.mkdirSync(path.dirname(target), { recursive: true });
+    fs.writeFileSync(target, contents);
+  }
+
   async function _static() {
     try {
       const start = Date.now();
@@ -387,11 +396,32 @@ export function createEnvironment({ fs, path }, options, external) {
       fs.mkdirSync(path.join(options.dest, 'public'));
 
       let count = 0;
+      for (const route of compiler[ROUTES_PROPERTY].filter(_ => _.kind === 'page')) {
+        const destFile = path.join(options.dest, 'public', route.path, 'index.html');
+
+        // console.log(route.verb, route.path, destFile);
+
+        const resp = await fetch(`http://${location.host}${route.path}`);
+        const html = await resp.text();
+
+        write(destFile, html);
+        count++;
+      }
+
       for (const bundle of Template.glob(path.join(options.dest, '/**/*.{css,bundled.mjs}'))) {
         const destFile = path.join(options.dest, 'public', options.prefix, path.relative(options.dest, bundle));
 
-        fs.mkdirSync(path.dirname(destFile), { recursive: true });
-        fs.copyFileSync(bundle, destFile);
+        copy(bundle, destFile);
+        count++;
+      }
+
+      for (const [file, mod] of Object.entries(compiler[FILES_PROPERTY])) {
+        if (!mod.module?.__functions || !mod.module.__functions.length) continue;
+
+        const destFile = path.join(options.dest, 'public', options.prefix, path.relative(options.dest, file));
+        const code = mod.module.__functions.map(_ => `export ${_.toString()}\n`).join('');
+
+        write(destFile.replace('.generated.', '.hooks.'), code);
         count++;
       }
 
@@ -403,23 +433,6 @@ export function createEnvironment({ fs, path }, options, external) {
 
         fs.copyFileSync(srcFile, destFile);
         count++;
-      }
-
-      for (const route of compiler[ROUTES_PROPERTY].filter(_ => _.kind === 'page')) {
-        const destFile = path.join(options.dest, 'public', route.path, 'index.html');
-
-        // console.log(route.verb, route.path, destFile);
-
-        try {
-          const resp = await fetch(`http://${location.host}${route.path}`);
-          const html = await resp.text();
-
-          fs.mkdirSync(path.dirname(destFile), { recursive: true });
-          fs.writeFileSync(destFile, html);
-          count++;
-        } catch (e) {
-          console.log('Failed', e, route);
-        }
       }
 
       console.log(`${count} file${count === 1 ? '' : 's'} written (${Util.ms(start)})`);
