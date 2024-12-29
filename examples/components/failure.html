@@ -12,8 +12,8 @@
   }
 
   if (fromError instanceof Error) {
-    debug = debug || fromError.sample;
-    caption = caption || fromError[key];
+    debug = debug || fromError.stack;
+    caption = caption || fromError.message;
     if (Array.isArray(fromError.errors)) {
       messages.push(...fromError.errors.map(x => x[key]));
     }
@@ -48,20 +48,26 @@
   }
 </style>
 
-{#if enabled} {@render $$props.before?.()} {#if caption}
-  <pre test:id="{prefix}failure">{caption}</pre>
-{/if}
+{#if enabled}
+<details>
+  {@render $$props.before?.()}
 
-{#if debug}
-  <pre>{@html sources(debug)}</pre>
-{/if}
+  {#if caption}
+    <summary test:id="{prefix}failure">{caption}</summary>
+  {/if}
 
-{#if messages.length}
-  <ul test:id="{prefix}failure.errors">
-    {#each messages as msg}
-      <li>{@html msg}</li>
-    {/each}
-  </ul>
-{/if}
+  {#if debug}
+    <pre>{@html sources(debug)}</pre>
+  {/if}
 
-{@render $$props.after?.()} {/if}
+  {#if messages.length}
+    <ul test:id="{prefix}failure.errors">
+      {#each messages as msg}
+        <li>{@html msg}</li>
+      {/each}
+    </ul>
+  {/if}
+
+  {@render $$props.after?.()}
+</details>
+{/if}
