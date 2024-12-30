@@ -459,8 +459,7 @@ export class Template {
 
     if (ctx.queue) {
       ctx.queue.set(ctx.uuid, ctx.ref, component.__exported.reduce((memo, key) => {
-        const value = props[key];
-        if (Is.data(value)) memo[key] = value;
+        if (Is.data(props[key])) memo[key] = props[key];
         return memo;
       }, {}));
     }

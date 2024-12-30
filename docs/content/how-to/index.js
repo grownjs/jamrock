@@ -1,6 +1,6 @@
-import env from 'jamrock/nodejs';
+import createEnvironment from 'jamrock/nodejs';
 
-env({
+const env = createEnvironment({
   uws: false,
   watch: true,
   redis: false,
@@ -9,4 +9,10 @@ env({
   generators: {
     less: await import('less'),
   },
-})[process.argv.includes('--build') ? 'build' : 'serve']();
+});
+
+if (process.argv.includes('--build')) {
+  env.build();
+} else {
+  env.serve();
+}
