@@ -138,12 +138,14 @@ export class Template {
 
   async render(props = {}, ctx = {}, cb = null) {
     const result = await Template.render(this.module, null, props, ctx, cb);
-    const html = taggify(result.body);
-    const css = result.styles[this.module.__src];
-    const js = result.scripts[this.module.__src];
-    const doc = result.doc;
-    const meta = result.head;
-    const attrs = result.attrs;
+    const output = await Template.finalize(null, ctx, result, [], this.module.__src)
+
+    const html = taggify(output.body);
+    const css = output.styles[this.module.__src];
+    const js = output.scripts[this.module.__src];
+    const doc = output.doc;
+    const meta = output.head;
+    const attrs = output.attrs;
 
     return { attrs, meta, html, doc, css, js };
   }

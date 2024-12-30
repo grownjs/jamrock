@@ -174,10 +174,6 @@ export function extend(tagName, props, fn) {
       delete props[key];
     }
 
-    if (key.indexOf('@ws:') === 0) {
-      props['@trigger'] = true;
-    }
-
     if (key.indexOf('class:') === 0) {
       if (props[key] && props[key] !== '0') {
         props.class = `${props.class || ''} ${key.substr(6)}`.trim();
@@ -190,7 +186,7 @@ export function extend(tagName, props, fn) {
       delete props[key];
     }
 
-    if (key.indexOf('on') === 0 && Is.func(props[key])) {
+    if (key.indexOf('on') === 0) {
       props[`@${key.replace('on', 'on:')}`] = Is.func(props[key]) ? props[key].name : props[key];
       delete props[key];
     }

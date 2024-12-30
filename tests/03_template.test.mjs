@@ -225,7 +225,7 @@ fixture`./server.html
     const data = [1,2,3];
   </script>
   <main id="app">
-    <Client {data} class="red">OSOM</Client>
+    <Client {data} class="red" on:idle>OSOM</Client>
   </main>
 `;
 
@@ -331,11 +331,13 @@ NOOP(FIXME)
 ROUTER(FIXME)
 
 
-[HTML: <element tag=del data-location="nested/path/to/static.html:6:1">!!</element>]`);
+[HTML: <del data-location="nested/path/to/static.html:6:1">!!</del>]`);
 
     expect({ attrs, meta }).toEqual({
       attrs: { class: 'main x-42', '@ref': 'x' },
       meta: [
+        ['meta', { charset: 'utf-8' }],
+        ['base', { href: '/' }],
         ['title', {}, ['Untitled "', '42', '"']],
       ],
     });
@@ -359,7 +361,7 @@ ROUTER(FIXME)
 
     expect(html).toEqual([
       '<main id=app data-location="server.html:5:1">',
-      '<div data-component="generated/root.html" class=red data-location="server.html:6:3">',
+      '<div data-component="generated/root.html" class=red data-location="server.html:6:3" data-on:idle="true">',
       '<section data-location="root.html:4:1">OSOM</section></div></main>',
     ].join(''));
   });
@@ -384,7 +386,7 @@ ul:where(.jam-420) li span:where(.jam-420){color:pink;}
       '<ul data-location="scoping.html:12:1" class="jam-420"><li data-location="scoping.html:13:3">',
       '<span class="name 42 jam-420" data-location="scoping.html:13:7">OSOM</span>',
       '<span data-location="scoping.html:13:52" class="jam-420">💣</span></li></ul>',
-      '<a class:name="1" data-location="scoping.html:15:1" class="jam-420"></a>',
+      '<a data-location="scoping.html:15:1" class="jam-420 name"></a>',
     ].join(''));
   });
 
