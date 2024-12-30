@@ -222,9 +222,10 @@ fixture`./nested/path/to/transformed.html
 fixture`./server.html
   <script>
     import Client from './client.html';
+    const data = [1,2,3];
   </script>
   <main id="app">
-    <Client>OSOM</Client>
+    <Client {data} class="red">OSOM</Client>
   </main>
 `;
 
@@ -232,6 +233,7 @@ fixture`./server.html
 fixture`./client.html
   <script context="client">
     import Root from './root.html';
+    export let data = [];
   </script>
   <Root>{@render $$props.children?.()}</Root>
 `;
@@ -356,8 +358,8 @@ ROUTER(FIXME)
     const { html } = await tpl.render();
 
     expect(html).toEqual([
-      '<main id=app data-location="server.html:4:1">',
-      '<div data-component="generated/root.html" data-location="server.html:5:3">',
+      '<main id=app data-location="server.html:5:1">',
+      '<div data-component="generated/root.html" class=red data-location="server.html:6:3">',
       '<section data-location="root.html:4:1">OSOM</section></div></main>',
     ].join(''));
   });
