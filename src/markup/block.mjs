@@ -187,7 +187,14 @@ export const __attributes = ${this.$attributes};
     }
 
     await visit(this.markup.content, async node => {
-      if (elements?.[node.name]) {
+      if (node.name === 'mkd') {
+        const inline = node.elements.length === 1
+          && node.elements[0].inline;
+
+        node.name = inline ? node.attributes.tag || 'p' : 'template';
+        node.elements = await render(node.elements, inline);
+        delete node.attributes.tag;
+      } else if (elements?.[node.name]) {
         const newNode = await elements[node.name](node);
         if (newNode) return newNode;
       }

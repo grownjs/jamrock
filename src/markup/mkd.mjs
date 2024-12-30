@@ -23,7 +23,7 @@ hljs.registerLanguage('javascript', jsLang);
 
 import { Expr } from './expr.mjs';
 
-export async function render(content) {
+export async function render(content, inline) {
   const nodes = [];
   const buffer = content.reduce((memo, token) => {
     if (token instanceof Expr) {
@@ -76,7 +76,7 @@ export async function render(content) {
   };
 
   renderer.paragraph = text => {
-    return text.charAt() === '\0' ? text : `<p>${text}</p>`;
+    return inline || text.charAt() === '\0' ? text : `<p>${text}</p>`;
   };
 
   const tree = parseMarkup(await kramed(s(buffer.join('')), { renderer }));

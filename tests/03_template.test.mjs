@@ -275,7 +275,10 @@ fixture`./markdown+page.html
   TEXT
 
   <blockquote>
-    <p>SOME STUFF</p>
+    <mkd tag="code">SOME _STUFF_</mkd>
+    <mkd>
+      ### OSOM
+    </mkd>
   </blockquote>
 `;
 
@@ -385,8 +388,10 @@ ROUTER(FIXME)
         </pre>
         <p>TEXT</p>
         <blockquote data-location="markdown+page.html:25:1">
-          <p data-location="markdown+page.html:26:3">SOME STUFF</p>
-        </blockquote>
+          <code data-location="markdown+page.html:26:3">SOME <em>STUFF</em>
+        </code>
+        <h3 id=osom>OSOM</h3>
+      </blockquote>
     `).trim());
   });
 

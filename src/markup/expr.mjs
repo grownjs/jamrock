@@ -48,6 +48,10 @@ export class Expr {
     Object.defineProperty(this, 'locate', { value: context?.locate });
   }
 
+  get inline() {
+    return !this.expr.some(_ => _.content?.includes('\n'));
+  }
+
   toString() {
     return this.expr
       .filter(x => x.type === 'text')
