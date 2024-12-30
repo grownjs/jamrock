@@ -1,0 +1,32 @@
+<style global lang="less">
+  @import './lib/styles.less';
+</style>
+
+<head>
+  <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1" />
+  <meta name="HandheldFriendly" content="true" />
+  <meta
+    name="viewport"
+    content="width=device-width, initial-scale=1,maximum-scale=1,user-scalable=no"
+  />
+  <meta name="release" content="{process.env.GIT_REVISION}" />
+  <link rel="stylesheet" href="//unpkg.com/highlight.js@10.7.3/styles/tomorrow.css" inline />
+  <link rel="stylesheet" href="//fonts.googleapis.com/css?family=Montserrat" inline />
+</head>
+
+<body class="reset">
+  import(from='sprites.svg')
+  <main class="body min">
+    <div class="center">
+      <span class="welcome">
+        @import from="welcome.svg"
+      </span>
+      <h1 class="meteorite floating">
+        <a href="/" data-version="pkg.version">
+          @import from="jamrock-meteorite.svg"
+        </a>
+      </h1>
+    </div>
+    {@render $$props.children?.()}
+  </main>
+</body>

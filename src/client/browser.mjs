@@ -63,9 +63,10 @@ export class Browser {
           && el.firstChild.nodeType === 3
           && !el.firstChild.nodeValue.trim()) el.removeChild(el.firstChild);
 
-        el.__vnode = el.__vnode || this.children(el);
+        el.__vnode = this.children(el)[2];
       }
 
+      // console.log('[PATCH]', el.__vnode, vdom);
       return patchNode(el, !force ? el.__vnode : null, el.__vnode = vdom); // eslint-disable-line
     };
 

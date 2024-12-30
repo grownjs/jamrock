@@ -278,10 +278,13 @@ export async function createBody(env, conn, clients, { uuid, client, matches, op
     }
 
     if (!Util.Is.str(body)) {
+      const data = ctx.queue.get(uuid);
       const state = [];
 
-      Object.entries(ctx.queue.get(uuid))
-        .forEach(([key, data]) => state.push(`"${key}":${data}`));
+      if (data) {
+        Object.entries(data)
+          .forEach(([key, data]) => state.push(`"${key}":${data}`));
+      }
 
       if (conn.is_xhr) {
         body = Markup.encode(`{${[

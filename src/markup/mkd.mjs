@@ -1,3 +1,22 @@
+import hljs from 'highlight.js';
+
+import bashLang from 'highlight.js/lib/languages/bash';
+import lessLang from 'highlight.js/lib/languages/less';
+import scssLang from 'highlight.js/lib/languages/scss';
+import cssLang from 'highlight.js/lib/languages/css';
+import xmlLang from 'highlight.js/lib/languages/xml';
+import jsLang from 'highlight.js/lib/languages/javascript';
+
+import { jamLang } from '../templ/lang.mjs';
+
+hljs.registerLanguage('xml', xmlLang);
+hljs.registerLanguage('css', cssLang);
+hljs.registerLanguage('less', lessLang);
+hljs.registerLanguage('sass', scssLang);
+hljs.registerLanguage('bash', scssLang);
+hljs.registerLanguage('jamrock', jamLang);
+hljs.registerLanguage('javascript', jsLang);
+
 import s from 'tiny-dedent';
 import kramed from 'kramed';
 
@@ -24,6 +43,14 @@ export async function render(content) {
   }, []);
 
   const renderer = new kramed.Renderer();
+
+  renderer.code = (text, lang) => {
+    const code = lang
+      ? hljs.highlight(lang, text).value
+      : hljs.highlightAuto(text).value;
+
+    return `<pre class="hljs" data-lang="${lang}">${code}</pre>`;
+  };
 
   renderer.table = (headers, rows) => {
     return [
@@ -53,7 +80,7 @@ export async function render(content) {
     return text.charAt() === '\0' ? text : `<p>${text}</p>`;
   };
 
-  const opts = { renderer, highlight };
+  const opts = { renderer };
   const html = await kramed(s(buffer.join('')), opts);
 
   return html.split('\0')

@@ -1,6 +1,7 @@
 import AnsiUp from 'ansi_up';
 import { emphasize } from 'emphasize/lib/core.js';
 
+import bashLang from 'highlight.js/lib/languages/bash';
 import lessLang from 'highlight.js/lib/languages/less';
 import scssLang from 'highlight.js/lib/languages/scss';
 import cssLang from 'highlight.js/lib/languages/css';
@@ -14,13 +15,11 @@ import { Is, stack, ignore } from '../utils/shared.mjs';
 const RE_MATCH_LINES = /(?:<anonymous>|[.+](?:page|error|layout|generated)\.mjs(?:[^:]+?)):(\d+)(?::(\d+))?/;
 const RE_MATCH_OFFSETS = /\/\*!#(\d+):(\d+)\*\//;
 
-// const RE_MATCH_IMPORTS = /import\s*(.+?)\s*from\s*([^\n;]+)/g;
-// const RE_MATCH_EXPORTS = /export (\w+)/g;
-
 emphasize.registerLanguage('xml', xmlLang);
 emphasize.registerLanguage('css', cssLang);
 emphasize.registerLanguage('less', lessLang);
 emphasize.registerLanguage('sass', scssLang);
+emphasize.registerLanguage('bash', scssLang);
 emphasize.registerLanguage('jamrock', jamLang);
 emphasize.registerLanguage('javascript', jsLang);
 
@@ -67,13 +66,10 @@ export function stringify(result, prefix = '', callback = null) {
   return content;
 }
 
-export function highlight(code, markup) {
-  const language = Is.str(markup) ? markup : 'jamrock';
-  const result = emphasize.highlight(language, code).value;
+export function highlight(code, lang, _convert) {
+  const result = emphasize.highlight(lang || 'jamrock', code).value;
 
-  return markup === true
-    ? convert.ansi_to_html(result)
-    : result;
+  return _convert ? convert.ansi_to_html(result) : result;
 }
 
 export function sample(block, info, tail, err, ok) {

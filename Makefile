@@ -69,11 +69,12 @@ ts-check-nodejs:
 	@npx tsx scripts/check.ts
 
 docs:
-	@npm run docs -- -w
+	@bin/node serve --watch --src userguide
 
 live:
 	@npm pack
 	@mv jamrock-0.0.0.tgz build/
+	@npm run live -- -w
 
 local: live
 	@./install.sh

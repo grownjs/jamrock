@@ -39,7 +39,7 @@
     "coverage:unit": "npm run coverage -- npm run test:unit",
     "codecov": "codecov --file=coverage/lcov.info",
     "report": "c8 report",
-    "docs": "mortero --esm -Mn -dcpublic:. -ecss.less -Dbuild -rdocs/**:{filepath/2} -Rdocs/helpers.mjs --kramed.highlight=true --headers Cross-Origin-Embedder-Policy:require-corp --headers Cross-Origin-Opener-Policy:same-origin --platform browser docs/content",
+    "live": "mortero --esm -Mn -dcpublic:. -ecss.less -Dbuild -rlive/**:{filepath/2} -Rlive/helpers.mjs --kramed.highlight=true --headers Cross-Origin-Embedder-Policy:require-corp --headers Cross-Origin-Opener-Policy:same-origin --platform browser live/content",
     "dist": "npm-run-all -s dist:lib dist:all -- --no-minify",
     "dist:all": "npm run build -- -ysrc/client.js -ysrc/main.js",
     "dist:min": "npm-run-all -s dist:dom dist:ssr dist:lib postdist",

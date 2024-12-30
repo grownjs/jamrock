@@ -1,0 +1,45 @@
+**Jamrock** is a framework for the server-side,
+
+1. It compiles your `.html` files into components, the markup is transformed into objects that can be called to produce something like an AST.
+2. The server will execute them against the request, the resulting changes are sent as JSON or HTML depending on the context.
+3. The browser will render the HTML as is, but if JavaScript is available the framework will take the JSON response and patch the DOM with the changes, resulting on smoother updates.
+
+## Want to give it a try?
+
+Use the script below to download the package and uncompress it locally at your `$HOME`.
+
+```
+  curl -L get.jamrock.dev | bash
+  jamrock init my-app
+  ...
+  cd my-app
+  npm install
+  bin/node dev
+```
+
+You should get something like this:
+
+```
+  ■ Jamrock v#[pkg.version] (node {process.version})
+  Processing ./pages to ./build
+  Listening on <a href="http://localhost:8080" target="_blank">http://localhost:8080</a>
+```
+
+Open that URL in your browser and explore!
+
+<blockquote>
+  <p class="gap-sm flex centered">
+    @icon src="#beaker" size="20"
+    <span>Continue reading the <a href="//docs.jamrock.dev">available documentation</a>.</span>
+  </p>
+</blockquote>
+
+Text below is broken once reloaded...
+
+```jamrock
+&lt;h1&gt;WUT&#123;42&#125;&lt;/h1&gt;
+```
+
+&lt;WUT&gt;
+
+Well... it seems encoding sucks!!
