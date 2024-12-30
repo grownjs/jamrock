@@ -4,7 +4,7 @@ import { Is } from './shared.mjs';
 
 export { default as $ } from 'picocolors';
 
-export { enable, disable, findAll, encodeText, parseMarkup, markupAdapter } from 'somedom/ssr';
+export { format, enable, disable, findAll, encodeText, decodeEnts, parseMarkup, markupAdapter } from 'somedom/ssr';
 
 function upper(value) {
   return value.charCodeAt() >= 65 && value.charCodeAt() <= 90;

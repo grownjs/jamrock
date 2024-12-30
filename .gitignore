@@ -10,7 +10,6 @@ cache.json
 index.toml
 templates.json
 node_modules
-src/chalk.mjs
 generated
 coverage
 build

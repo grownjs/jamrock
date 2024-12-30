@@ -37,8 +37,13 @@ export async function transpile(code, src, save, prefix = 'generated/') {
   fs.writeFileSync(file, Block.unwrap(code, src, rebase(file, cwd)));
 
   if (!save) {
-    const mod = await import(`${file}?_=${inc++}`);
-    return mod;
+    try {
+      const mod = await import(`${file}?_=${inc++}`);
+      return mod;
+    } catch (e) {
+      console.log(file);
+      console.log(e);
+    }
   }
 }
 

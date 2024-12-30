@@ -197,22 +197,22 @@ fixture`./campaigns/[campaign_id]/participations/[participation_id]+page.html
     export let campaign_id;
     export let participation_id;
   </script>
-  ParticipationDetail: {campaign_id}, {participation_id}
+  <div>ParticipationDetail: {campaign_id}, {participation_id}</div>
 `;
 
 // eslint-disable-next-line no-unused-expressions
 fixture`./campaigns/[campaign_id]/participations/index+page.html
-  Participations: {@render $$props.children?.()}
+  <div>Participations: {@render $$props.children?.()}</div>
 `;
 
 // eslint-disable-next-line no-unused-expressions
 fixture`./campaigns/[campaign_id]/index+page.html
-  CampaignDetail: {@render $$props.children?.()}
+  <div>CampaignDetail: {@render $$props.children?.()}</div>
 `;
 
 // eslint-disable-next-line no-unused-expressions
 fixture`./campaigns/index+page.html
-  Campaigns: {@render $$props.children?.()}
+  <div>Campaigns: {@render $$props.children?.()}</div>
 `;
 
 // eslint-disable-next-line no-unused-expressions
@@ -369,11 +369,12 @@ test.group('integration only!', t => {
     expect(td.explain(ctx.conn.routes.namedRoute.url).callCount).toEqual(1);
 
     expect(markup).toEqual([
-      '<!DOCTYPE html>',
-      '<html data-location=app+page.html><head>',
-      '<meta charset="utf-8" /><base href="/" /><title>OSOM</title></head><body>',
-      '<h1 data-location="app+page.html:7:1" class=active>Hello World</h1>\n\n<a href="/app/123" data-location="app+page.html:25:3">LINK</a>\n</body></html>',
-    ].join('\n'));
+      '<!DOCTYPE html>\n',
+      '<html data-location=app+page.html><head>\n',
+      '<meta charset="utf-8" /><base href="/" /><title>OSOM</title></head><body>\n',
+      '<h1 data-location="app+page.html:7:1" class=active>Hello World</h1>',
+      '<a href="/app/123" data-location="app+page.html:25:3">LINK</a></body></html>',
+    ].join(''));
   });
 
   test('should allow to hook functions into nodes', async ({ expect }) => {
@@ -396,7 +397,7 @@ test.group('integration only!', t => {
     await fixture.partial('app+page.html', null, ctx, func);
 
     expect(td.explain(func).callCount).toEqual(1);
-    expect(td.explain(ctx.write).callCount).toEqual(12);
+    expect(td.explain(ctx.write).callCount).toEqual(11);
 
     expect(td.explain(console.info).callCount).toEqual(2);
     expect(td.explain(ctx.conn.someStuff).callCount).toEqual(1);
@@ -493,9 +494,7 @@ test.group('integration only!', t => {
               }
 
               const props = { ...ctx.conn.req.params };
-              const result = await fixture.partial(found.src.replace(`${cwd}/generated`, '.'), props, ctx, middleware);
-              // console.log({ result });
-              ctx.write(result);
+              await fixture.partial(found.src.replace(`${cwd}/generated`, '.'), props, ctx, middleware);
             } catch (e) {
               console.log('E_REQUEST', e, found);
             } finally {
@@ -533,7 +532,6 @@ test.group('integration only!', t => {
       if (conn.request_path) {
         if (conn.request_path.indexOf(ctx.conn.current_path) === 0) {
           ctx.conn.current_route = {};
-
           const result = await fixture.partial(ctx.conn.current_module, {}, ctx, middleware);
           ctx.write(result);
         }

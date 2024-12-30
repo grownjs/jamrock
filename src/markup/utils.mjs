@@ -211,11 +211,13 @@ export async function visit(chunk, callback, locations) {
   } else {
     await Promise.all(chunk.map(node => {
       if (node.elements) {
-        Object.defineProperty(node, 'locals', {
-          value: [...new Set(locations
-            .filter(x => x.offset[0] > node.offset.close && x.offset[0] < node.offset.end)
-            .reduce((memo, k) => memo.concat(k.locals.map(u => u.name)), []))],
-        });
+        if (node.offset) {
+          Object.defineProperty(node, 'locals', {
+            value: [...new Set(locations
+              .filter(x => x.offset[0] > node.offset.close && x.offset[0] < node.offset.end)
+              .reduce((memo, k) => memo.concat(k.locals.map(u => u.name)), []))],
+          });
+        }
 
         return Promise.resolve()
           .then(() => visit(node.elements, callback, locations))

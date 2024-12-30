@@ -138,7 +138,7 @@ export class Template {
 
   async render(props = {}, ctx = {}, cb = null) {
     const result = await Template.render(this.module, null, props, ctx, cb);
-    const output = await Template.finalize(null, ctx, result, [], this.module.__src)
+    const output = await Template.finalize(null, ctx, result, [], this.module.__src);
 
     const html = taggify(output.body);
     const css = output.styles[this.module.__src];

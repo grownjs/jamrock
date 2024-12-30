@@ -283,7 +283,7 @@ export async function createBody(env, conn, clients, { uuid, client, matches, op
 
       if (data) {
         Object.entries(data)
-          .forEach(([key, data]) => state.push(`"${key}":${data}`));
+          .forEach(([k, v]) => state.push(`"${k}":${v}`));
       }
 
       if (conn.is_xhr) {

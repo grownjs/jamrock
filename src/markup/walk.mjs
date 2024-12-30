@@ -1,5 +1,3 @@
-import { decodeEnts } from 'somedom/ssr';
-
 import { Expr } from './expr.mjs';
 import { Is, repeat, identifier } from '../utils/server.mjs';
 
@@ -17,14 +15,14 @@ const HEAD_ELEMENTS = ['title', 'meta', 'link', 'base'];
 const HTML_ELEMENTS = ['body', 'html'];
 
 export function traverse(obj, html, parent, context, counter = 0) {
-  const preserve = context.file.includes('+page');
+  const preserve = context.file?.includes('+page');
   const stack = [];
   const copy = [];
 
   let inSnippet;
   let chunk = [];
   obj.forEach(node => {
-    const tokenStart = { ...node.position.start };
+    const tokenStart = { ...node.position?.start };
 
     if (node.type === 'element') {
       if (NOT_SUPPORTED.includes(node.rawTagName)) {
@@ -39,7 +37,7 @@ export function traverse(obj, html, parent, context, counter = 0) {
         throw new ReferenceError(`Element '${node.rawTagName}' cannot be nested inside '${parent.name}'`);
       }
 
-      if (!NOT_ANCHORS.includes(node.rawTagName)) {
+      if (!NOT_ANCHORS.includes(node.rawTagName) && node.position) {
         if (!(node.rawTagName === 'input' && node.attributes.some(x => x.key === 'hidden' || (x.key === 'type' && x.value === 'hidden')))) {
           node.attributes.push({
             key: '@location',
@@ -78,21 +76,23 @@ export function traverse(obj, html, parent, context, counter = 0) {
         return;
       }
 
-      node.attributes.forEach(({ key, value }) => {
-        let newClass;
-        if (key.indexOf('class:') === 0) newClass = key.substr(6);
-        if (key === 'class') newClass = value.replace(/\{[^{}]+?\}/g, '').trim();
-        if (newClass && !context.response.rules.includes(newClass)) context.response.rules.push(newClass);
-      });
+      if (context.response?.rules) {
+        node.attributes.forEach(({ key, value }) => {
+          let newClass;
+          if (key.indexOf('class:') === 0) newClass = key.substr(6);
+          if (key === 'class') newClass = value.replace(/\{[^{}]+?\}/g, '').trim();
+          if (newClass && !context.response.rules.includes(newClass)) context.response.rules.push(newClass);
+        });
+      }
 
       const newNode = {
         type: 'element',
         name: node.rawTagName,
-        offset: {
+        offset: node.position ? {
           start: tokenStart,
           end: node.position.end.index,
           close: html.indexOf('>', tokenStart.index),
-        },
+        } : null,
         snippets: {},
         attributes: node.attributes
           ? Expr.params(node.attributes, context, tokenStart)
@@ -138,8 +138,20 @@ export function traverse(obj, html, parent, context, counter = 0) {
         copy.push(newNode);
       }
     } else if (node.type === 'text' && node.content.trim().length) {
+      if (context.stack) {
+        if (node.content.includes('\0')) {
+          copy.push(...node.content.split('\0')
+            .reduce((memo, _, i, c) => memo
+              .concat(_ ? { type: 'text', content: _ } : [])
+              .concat(i < c.length - 1 ? context.stack.shift() : []), []));
+        } else {
+          copy.push(node);
+        }
+        return;
+      }
+
       const pre = preserve || ['pre', 'textarea'].includes(parent?.name);
-      const tokens = Expr.unwrap(decodeEnts(node.content), tokenStart, context, pre);
+      const tokens = Expr.unwrap(node.content, tokenStart, context, pre);
       const newTokens = [];
 
       tokens.expr.forEach(token => {

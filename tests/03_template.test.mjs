@@ -7,8 +7,10 @@ import { Readable } from 'stream';
 import * as td from 'testdouble';
 import * as path from 'path';
 import * as fs from 'fs';
+import s from 'tiny-dedent';
 
 import { Block } from '../src/markup/block.mjs';
+import { format } from '../src/utils/server.mjs';
 import { Template } from '../src/templ/main.mjs';
 import { createTranspiler } from '../src/server/helpers.mjs';
 import { fixture, render, compile, build, setup, reset } from './helpers/utils.mjs';
@@ -259,6 +261,22 @@ fixture`./markdown+page.html
 
   ## sub
   - other
+
+  &lt;WUT&gt;
+
+  CODE:
+
+  \`\`\`bash
+  ■ Jamrock v#[pkg.version] (node {process.version})
+  Processing ./pages to ./build
+  Listening on <a href="http://localhost:8080" target="_blank">http://localhost:8080</a>
+  \`\`\`
+
+  TEXT
+
+  <blockquote>
+    <p>SOME STUFF</p>
+  </blockquote>
 `;
 
 test.group('template transformation', t => {
@@ -347,12 +365,29 @@ ROUTER(FIXME)
     const tpl = await build('./markdown+page.html');
     const { html } = await tpl.render();
 
-    expect(html).toEqual([
-      '<h1 id="it-works">It works.</h1>\n',
-      '<ul>\n<li>OSOM</li>\n</ul>\n',
-      '<b data-location="markdown+page.html:8:1">OK</b>',
-      '<h2 id="sub">sub</h2>\n<ul>\n<li>other</li>\n</ul>\n',
-    ].join(''));
+    expect(format(html)).toEqual(s(`
+      <h1 id="it-works">It works.</h1>
+      <ul>
+        <li>OSOM</li>
+      </ul>
+      <b data-location="markdown+page.html:8:1">OK</b>
+      <h2 id=sub>sub</h2>
+      <ul>
+        <li>other</li>
+      </ul>
+      <p>&lt;WUT&gt;</p>
+      <p>CODE:</p>
+      <pre class=hljs data-lang=bash>
+        <code>■ Jamrock v#[pkg.version] (node v23.1.0)
+          Processing ./pages to ./build
+            Listening on <a href="http://localhost:8080" target="_blank" data-location="markdown+page.html:20:14">http://localhost:8080</a>
+          </code>
+        </pre>
+        <p>TEXT</p>
+        <blockquote data-location="markdown+page.html:25:1">
+          <p data-location="markdown+page.html:26:3">SOME STUFF</p>
+        </blockquote>
+    `).trim());
   });
 
   test('should manage server/client components', async ({ expect }) => {

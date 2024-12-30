@@ -9,10 +9,6 @@ async function check(code, opts, props) {
 }
 
 test.group('generated markup', () => {
-  test('should decode entities', async ({ expect }) => {
-    expect(await check('&times;')).toEqual('×');
-  });
-
   test('should relax html parsing', async ({ expect }) => {
     expect(await check('<foo bar />'))
       .toEqual('<foo bar data-location="source.html:1:1"></foo>');

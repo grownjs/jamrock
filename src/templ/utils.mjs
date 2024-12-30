@@ -1,5 +1,5 @@
 import AnsiUp from 'ansi_up';
-import { emphasize } from 'emphasize/lib/core.js';
+import { createEmphasize } from 'emphasize';
 
 import bashLang from 'highlight.js/lib/languages/bash';
 import lessLang from 'highlight.js/lib/languages/less';
@@ -15,13 +15,15 @@ import { Is, stack, ignore } from '../utils/shared.mjs';
 const RE_MATCH_LINES = /(?:<anonymous>|[.+](?:page|error|layout|generated)\.mjs(?:[^:]+?)):(\d+)(?::(\d+))?/;
 const RE_MATCH_OFFSETS = /\/\*!#(\d+):(\d+)\*\//;
 
-emphasize.registerLanguage('xml', xmlLang);
-emphasize.registerLanguage('css', cssLang);
-emphasize.registerLanguage('less', lessLang);
-emphasize.registerLanguage('sass', scssLang);
-emphasize.registerLanguage('bash', scssLang);
-emphasize.registerLanguage('jamrock', jamLang);
-emphasize.registerLanguage('javascript', jsLang);
+const emphasize = createEmphasize();
+
+emphasize.register('xml', xmlLang);
+emphasize.register('css', cssLang);
+emphasize.register('less', lessLang);
+emphasize.register('sass', scssLang);
+emphasize.register('bash', bashLang);
+emphasize.register('jamrock', jamLang);
+emphasize.register('javascript', jsLang);
 
 // eslint-disable-next-line new-cap
 const convert = new AnsiUp.default();
@@ -66,9 +68,8 @@ export function stringify(result, prefix = '', callback = null) {
   return content;
 }
 
-export function highlight(code, lang, _convert) {
+export function highlight(code, markup, _convert) {
   const result = emphasize.highlight(lang || 'jamrock', code).value;
-
   return _convert ? convert.ansi_to_html(result) : result;
 }
 
