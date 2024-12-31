@@ -377,6 +377,7 @@ ROUTER(FIXME)
     });
   });
 
+  // FIX: enable svg-sprites!
   test('pin: should render markdown on pages', async ({ expect }) => {
     const tpl = await build('./markdown+page.html');
     const { html } = await tpl.render();
