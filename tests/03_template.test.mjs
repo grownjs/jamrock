@@ -249,6 +249,13 @@ fixture`./root.html
 `;
 
 // eslint-disable-next-line no-unused-expressions
+fixture`./pause-icon.svg
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" width="16" height="16">
+    <path d="M4 4h10v24h-10zM18 4h10v24h-10z" />
+  </svg>
+`;
+
+// eslint-disable-next-line no-unused-expressions
 fixture`./markdown+page.html
   <script>
     const value = 'OSOM';
@@ -280,6 +287,12 @@ fixture`./markdown+page.html
       ### OSOM
     </mkd>
   </blockquote>
+
+  <svg>
+    <path d="M6 4l20 12-20 12z" />
+  </svg>
+
+  <svg src="./pause-icon.svg" />
 `;
 
 test.group('template transformation', t => {
@@ -364,7 +377,7 @@ ROUTER(FIXME)
     });
   });
 
-  test('should render markdown on pages', async ({ expect }) => {
+  test('pin: should render markdown on pages', async ({ expect }) => {
     const tpl = await build('./markdown+page.html');
     const { html } = await tpl.render();
 
@@ -392,6 +405,12 @@ ROUTER(FIXME)
         </code>
         <h3 id=osom>OSOM</h3>
       </blockquote>
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" width=16 height=16>
+        <path d="M6 4l20 12-20 12z" data-location="markdown+page.html:33:3" />
+        </svg>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" width=16 height=16>
+          <path d="M4 4h10v24h-10zM18 4h10v24h-10z" />
+          </svg>
     `).trim());
   });
 

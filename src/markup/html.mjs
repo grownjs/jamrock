@@ -8,10 +8,6 @@ import { Is, stack, findAll } from '../utils/server.mjs';
 
 const RE_QUOTES_REQUIRED = /[\s"'`=</_:>-]/;
 
-const SELF_CLOSE_TAGS = [
-  'area', 'base', 'br', 'col', 'embed', 'hr', 'img', 'input', 'link', 'meta', 'param', 'source', 'track', 'wbr',
-];
-
 const UNSCOPED_ELEMENTS = ['head', 'meta', 'base', 'link', 'title', 'style', 'script'];
 
 export function attrs(data) {
@@ -267,11 +263,12 @@ export function taggify(vnode, callback) {
     }
 
     let tag = `<${tagName}${attrs(props)}`;
-    if (SELF_CLOSE_TAGS.includes(tagName)) tag += ' />';
+    if (!vnode[2].length) tag += ' />';
     else tag += '>';
 
     if (!Is.func(callback)) {
-      return `${tag}${raw ? vnode[2] : taggify(vnode[2])}</${tagName}>`;
+      const suffix = vnode[2].length > 0 ? `</${tagName}>` : '';
+      return `${tag}${raw ? vnode[2] : taggify(vnode[2])}${suffix}`;
     }
     callback(tag);
     if (raw) {
@@ -279,7 +276,7 @@ export function taggify(vnode, callback) {
     } else if (vnode.length > 1) {
       taggify(vnode[2], callback);
     }
-    if (!SELF_CLOSE_TAGS.includes(tagName)) callback(`</${tagName}>`);
+    if (vnode[2].length > 0) callback(`</${tagName}>`);
     return;
   }
   if (!Is.func(callback)) {

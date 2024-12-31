@@ -113,7 +113,7 @@ export class Template {
       set.unshift({ content: styles, dest: destFile });
     }
 
-    let result = await this.partial.transform(this.elements);
+    let result = await this.partial.transform(this.elements, resources);
     if (isStatic) {
       set.unshift(result = { content: result, src: filepath, dest: target, js: true });
     } else {

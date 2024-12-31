@@ -1,9 +1,7 @@
 import AnsiUp from 'ansi_up';
 import { createEmphasize } from 'emphasize';
 
-import bashLang from 'highlight.js/lib/languages/bash';
 import lessLang from 'highlight.js/lib/languages/less';
-import scssLang from 'highlight.js/lib/languages/scss';
 import cssLang from 'highlight.js/lib/languages/css';
 import xmlLang from 'highlight.js/lib/languages/xml';
 import jsLang from 'highlight.js/lib/languages/javascript';
@@ -20,8 +18,6 @@ const emphasize = createEmphasize();
 emphasize.register('xml', xmlLang);
 emphasize.register('css', cssLang);
 emphasize.register('less', lessLang);
-emphasize.register('sass', scssLang);
-emphasize.register('bash', bashLang);
 emphasize.register('jamrock', jamLang);
 emphasize.register('javascript', jsLang);
 

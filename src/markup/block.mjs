@@ -181,22 +181,57 @@ export const __attributes = ${this.$attributes};
 `;
   }
 
-  async transform(elements) {
+  async transform(elements, resources) {
     if (this.src.includes('+page')) {
       this.markup.content = await render(this.markup.content);
+      console.log(resources);
     }
 
     await visit(this.markup.content, async node => {
-      if (node.name === 'mkd') {
-        const inline = node.elements.length === 1
-          && node.elements[0].inline;
+      switch (node.name) {
+        case 'mkd':
+          const inline = node.elements.length === 1
+            && node.elements[0].inline;
 
-        node.name = inline ? node.attributes.tag || 'p' : 'template';
-        node.elements = await render(node.elements, inline);
-        delete node.attributes.tag;
-      } else if (elements?.[node.name]) {
-        const newNode = await elements[node.name](node);
-        if (newNode) return newNode;
+          node.name = inline ? node.attributes.tag || 'p' : 'template';
+          node.elements = await render(node.elements, inline);
+          delete node.attributes.tag;
+          break;
+
+        case 'svg':
+          const size = node.attributes.size || 16;
+          const src = node.attributes.src;
+          delete node.attributes.size;
+          delete node.attributes.src;
+
+          if (src) {
+            const base = `${this.opts.cwd || '.'}/`;
+            const file = Template.join(base, this.src, '..', src);
+
+            // FIXME: try different strategies, inline is NOT default?
+            if (Template.exists(file)) {
+              const props = { ...node.attributes };
+              const text = Template.read(file);
+              const tree = parseMarkup(text);
+              const [result] = traverse(tree, text, null, { file });
+              Object.assign(node, result);
+              Object.assign(node.attributes, props);
+            }
+          } else {
+            node.attributes.xmlns = node.attributes.xmlns || 'http://www.w3.org/2000/svg';
+            node.attributes.viewBox = node.attributes.viewBox || '0 0 16 16';
+            node.attributes.width = node.attributes.width || size;
+            node.attributes.height = node.attributes.height || size;
+          }
+          // console.log(node.attributes);
+          break;
+
+        default:
+          if (elements?.[node.name]) {
+            const newNode = await elements[node.name](node);
+            if (newNode) return newNode;
+          }
+          break;
       }
       return node;
     }, this.locations);

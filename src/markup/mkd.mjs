@@ -2,9 +2,9 @@ import hljs from 'highlight.js';
 import s from 'tiny-dedent';
 import kramed from 'kramed';
 
+import shellLang from 'highlight.js/lib/languages/shell';
 import bashLang from 'highlight.js/lib/languages/bash';
 import lessLang from 'highlight.js/lib/languages/less';
-import scssLang from 'highlight.js/lib/languages/scss';
 import cssLang from 'highlight.js/lib/languages/css';
 import xmlLang from 'highlight.js/lib/languages/xml';
 import jsLang from 'highlight.js/lib/languages/javascript';
@@ -16,8 +16,7 @@ import { parseMarkup, decodeEnts } from '../utils/server.mjs';
 hljs.registerLanguage('xml', xmlLang);
 hljs.registerLanguage('css', cssLang);
 hljs.registerLanguage('less', lessLang);
-hljs.registerLanguage('sass', scssLang);
-hljs.registerLanguage('bash', bashLang);
+hljs.registerLanguage('shell', shellLang);
 hljs.registerLanguage('jamrock', jamLang);
 hljs.registerLanguage('javascript', jsLang);
 
