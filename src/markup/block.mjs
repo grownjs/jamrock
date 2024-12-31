@@ -144,8 +144,8 @@ export class Block {
   get $fragments() {
     return Object.entries(this.fragments)
       .map(([fn, _]) => `\n\t'${fn}': {
-    attrs: async ($$) => ({${Block.wrap(Expr.props(_.attributes, '\t'))}}),
-    render: async ($$) => [${Block.wrap(reduce(_.elements, this.context, 1))}] },`)
+    a: async ($$) => ({${Block.wrap(Expr.props(_.attributes, '\t'))}}),
+    r: async ($$) => [${Block.wrap(reduce(_.elements, this.context, 1))}] },`)
       .join('');
   }
 

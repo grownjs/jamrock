@@ -35,9 +35,9 @@ export function reduce(tree, context, indent = 0) {
 
       if (node.type === 'fragment') {
         if (node.attributes.frame) {
-          memo.push(`${_tabs}${prefix} $$.e('fragment', await __fragments['${node.ref}'].attrs($$), [])`);
+          memo.push(`${_tabs}${prefix} $$.e('fragment', await __fragments['${node.ref}'].a($$), [])`);
         } else {
-          memo.push(`${_tabs}${prefix} $$.e('fragment', await __fragments['${node.ref}'].attrs($$), await __fragments['${node.ref}'].render($$))`);
+          memo.push(`${_tabs}${prefix} $$.e('fragment', await __fragments['${node.ref}'].a($$), await __fragments['${node.ref}'].r($$))`);
         }
       } else if (Is.upper(node.name)) {
         // console.log(node.scope, node.props);

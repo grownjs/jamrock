@@ -262,13 +262,15 @@ export function taggify(vnode, callback) {
       raw = true;
     }
 
+    const children = vnode[2] && vnode[2].length > 0;
+
     let tag = `<${tagName}${attrs(props)}`;
-    if (!vnode[2].length) tag += ' />';
+    if (!children) tag += ' />';
     else tag += '>';
 
     if (!Is.func(callback)) {
-      const suffix = vnode[2].length > 0 ? `</${tagName}>` : '';
-      return `${tag}${raw ? vnode[2] : taggify(vnode[2])}${suffix}`;
+      const suffix = children ? `</${tagName}>` : '';
+      return `${tag}${raw ? children : taggify(vnode[2])}${suffix}`;
     }
     callback(tag);
     if (raw) {
@@ -276,7 +278,7 @@ export function taggify(vnode, callback) {
     } else if (vnode.length > 1) {
       taggify(vnode[2], callback);
     }
-    if (vnode[2].length > 0) callback(`</${tagName}>`);
+    if (children) callback(`</${tagName}>`);
     return;
   }
   if (!Is.func(callback)) {
