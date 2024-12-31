@@ -49,7 +49,7 @@ export class Expr {
   }
 
   get inline() {
-    return !this.expr.some(_ => _.content?.includes('\n'));
+    return !this.expr.some(_ => Is.str(_.content) && _.content?.includes('\n'));
   }
 
   toString() {

@@ -146,8 +146,9 @@ export class Template {
     const doc = output.doc;
     const meta = output.head;
     const attrs = output.attrs;
+    const files = output.files;
 
-    return { attrs, meta, html, doc, css, js };
+    return { files, attrs, meta, html, doc, css, js };
   }
 
   static async preflight(main, ctx, cb) {
@@ -193,6 +194,7 @@ export class Template {
 
       Object.assign(chunk.doc, mixin.doc);
       Object.assign(chunk.attrs, mixin.attrs);
+      Object.assign(chunk.files, mixin.files);
       Object.assign(chunk.styles, mixin.styles);
       Object.assign(chunk.scripts, mixin.scripts);
     });
@@ -306,6 +308,7 @@ export class Template {
 
     const scripts = { [component.__src]: component.__scripts };
     const styles = { [component.__src]: component.__styles };
+    const files = { [component.__src]: component.__files };
 
     const hooks = component.__context === 'module'
       ? Template.hooks(ctx, parent)
@@ -364,7 +367,7 @@ export class Template {
       }
 
       return {
-        scripts, styles, attrs, head, body, doc,
+        scripts, styles, files, attrs, head, body, doc,
       };
     } catch (e) {
       this.failure = debug({
@@ -375,7 +378,7 @@ export class Template {
 
       if (ctx.route?.error) throw this.failure;
 
-      return { scripts, styles, body: [['pre', {}, ents(this.failure.stack)]] };
+      return { scripts, styles, files, body: [['pre', {}, ents(this.failure.stack)]] };
     } finally {
       if (ctx.stack) {
         ctx.stack.pop();
@@ -547,6 +550,12 @@ export class Template {
     const diff = b.slice(c.length, b.length);
 
     return [...Array.from({ length: backtracks }).fill('..'), ...diff].join('/');
+  }
+
+  static filename(path, ext) {
+    let name = path.split('/').pop();
+    if (ext) name = name.replace(ext, '');
+    return name;
   }
 
   static dirname(path) {

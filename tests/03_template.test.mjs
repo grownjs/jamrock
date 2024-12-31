@@ -256,6 +256,17 @@ fixture`./pause-icon.svg
 `;
 
 // eslint-disable-next-line no-unused-expressions
+fixture`./resources+page.html
+  <embed src="pause-icon.svg" />
+
+  <svg>
+    <path d="M6 4l20 12-20 12z" />
+  </svg>
+
+  <svg src="./pause-icon.svg" class="osom" />
+`;
+
+// eslint-disable-next-line no-unused-expressions
 fixture`./markdown+page.html
   <script>
     const value = 'OSOM';
@@ -287,12 +298,6 @@ fixture`./markdown+page.html
       ### OSOM
     </mkd>
   </blockquote>
-
-  <svg>
-    <path d="M6 4l20 12-20 12z" />
-  </svg>
-
-  <svg src="./pause-icon.svg" />
 `;
 
 test.group('template transformation', t => {
@@ -377,8 +382,29 @@ ROUTER(FIXME)
     });
   });
 
-  // FIX: enable svg-sprites!
-  test('pin: should render markdown on pages', async ({ expect }) => {
+  test('should collect assets from components', async ({ expect }) => {
+    const tpl = await build('./resources+page.html');
+    const { files, html } = await tpl.render();
+
+    expect(files).toEqual({
+      'resources+page.html': [
+        'embed:generated/pause-icon.svg',
+        'svg:generated/pause-icon.svg',
+      ],
+    });
+
+    expect(format(html)).toEqual(s(`
+      <embed src="@/generated/pause-icon.svg" />
+        <svg width=16 height=16 xmlns="http://www.w3.org/2000/svg">
+          <path d="M6 4l20 12-20 12z" data-location="resources+page.html:4:3" />
+          </svg>
+          <svg class=osom width=16 height=16>
+            <use xlink:href="#pause-icon" />
+            </svg>
+    `).trim());
+  });
+
+  test('should render markdown on pages', async ({ expect }) => {
     const tpl = await build('./markdown+page.html');
     const { html } = await tpl.render();
 
@@ -406,12 +432,6 @@ ROUTER(FIXME)
         </code>
         <h3 id=osom>OSOM</h3>
       </blockquote>
-      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" width=16 height=16>
-        <path d="M6 4l20 12-20 12z" data-location="markdown+page.html:33:3" />
-        </svg>
-        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" width=16 height=16>
-          <path d="M4 4h10v24h-10zM18 4h10v24h-10z" />
-          </svg>
     `).trim());
   });
 
@@ -446,7 +466,7 @@ ul:where(.jam-420) li span:where(.jam-420){color:pink;}
       '<ul data-location="scoping.html:12:1" class="jam-420"><li data-location="scoping.html:13:3">',
       '<span class="name 42 jam-420" data-location="scoping.html:13:7">OSOM</span>',
       '<span data-location="scoping.html:13:52" class="jam-420">💣</span></li></ul>',
-      '<a data-location="scoping.html:15:1" class="jam-420 name"></a>',
+      '<a data-location="scoping.html:15:1" class="jam-420 name" />',
     ].join(''));
   });
 

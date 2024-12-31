@@ -30,7 +30,7 @@ export class Block {
     Object.defineProperty(this, 'doc', { value: {} });
     Object.defineProperty(this, 'meta', { value: [] });
     Object.defineProperty(this, 'attrs', { value: {} });
-    Object.defineProperty(this, 'assets', { value: { js: [], css: [] } });
+    Object.defineProperty(this, 'assets', { value: { js: [], css: [], files: [] } });
 
     const { locations } = blocks(this.code, false);
 
@@ -51,6 +51,7 @@ export class Block {
         styles: [],
         markup: {},
         rules: [],
+        files: [],
       },
       locate,
       lexer,
@@ -163,7 +164,12 @@ export class Block {
     return this.assets.css.map(([id]) => [this.opts.cwd ? rebase(id, this.opts.cwd) : id]);
   }
 
+  get $assets() {
+    return this.assets.files.map(([k, v]) => `${k}:${v}`);
+  }
+
   get $prefix() {
+    const resources = JSON.stringify(this.$assets);
     const javascript = JSON.stringify(this.$scripts);
     const stylesheets = JSON.stringify(this.$styles);
 
@@ -173,6 +179,7 @@ export const __fragments = {${this.$fragments}};
 
 export const __scripts = ${javascript};
 export const __styles = ${stylesheets};
+export const __files = ${resources};
 
 export const __context = ${JSON.stringify(this.context)};
 export const __doctype = ${this.$doctype};
@@ -182,9 +189,10 @@ export const __attributes = ${this.$attributes};
   }
 
   async transform(elements, resources) {
+    const base = Template.dirname(Template.join(`${this.opts.cwd || '.'}`, this.src));
+
     if (this.src.includes('+page')) {
       this.markup.content = await render(this.markup.content);
-      console.log(resources);
     }
 
     await visit(this.markup.content, async node => {
@@ -193,37 +201,53 @@ export const __attributes = ${this.$attributes};
           const inline = node.elements.length === 1
             && node.elements[0].inline;
 
-          node.name = inline ? node.attributes.tag || 'p' : 'template';
+          node.name = node.attributes.tag || (inline ? 'p' : 'template');
           node.elements = await render(node.elements, inline);
           delete node.attributes.tag;
           break;
 
+        case 'link':
+          if (node.attributes.rel !== 'icon') break;
+
+        case 'source':
+        case 'embed':
+        case 'track':
         case 'svg':
-          const size = node.attributes.size || 16;
-          const src = node.attributes.src;
+          const path = node.attributes.src || node.attributes.href;
+          const file = path && Template.join(base, path);
           delete node.attributes.size;
-          delete node.attributes.src;
 
-          if (src) {
-            const base = `${this.opts.cwd || '.'}/`;
-            const file = Template.join(base, this.src, '..', src);
-
-            // FIXME: try different strategies, inline is NOT default?
-            if (Template.exists(file)) {
-              const props = { ...node.attributes };
-              const text = Template.read(file);
-              const tree = parseMarkup(text);
-              const [result] = traverse(tree, text, null, { file });
-              Object.assign(node, result);
-              Object.assign(node.attributes, props);
+          if (file) {
+            if (!Template.exists(file)) {
+              throw new Error(`File not found '${path}' (${this.src})`);
             }
-          } else {
-            node.attributes.xmlns = node.attributes.xmlns || 'http://www.w3.org/2000/svg';
-            node.attributes.viewBox = node.attributes.viewBox || '0 0 16 16';
+
+            this.children.push(file);
+            resources.files.push([node.name, file]);
+          }
+
+          if (node.name === 'svg') {
+            const size = node.attributes.size || 16;
+
+            delete node.attributes.href;
+            delete node.attributes.src;
+
             node.attributes.width = node.attributes.width || size;
             node.attributes.height = node.attributes.height || size;
+
+            if (node.elements.length > 0) {
+              node.attributes.xmlns = node.attributes.xmlns || 'http://www.w3.org/2000/svg';
+            } else {
+              node.elements.push({
+                name: 'use',
+                type: 'element',
+                attributes: { 'xlink:href': `#${Template.filename(path, '.svg')}` },
+              });
+            }
+          } else {
+            if (node.attributes.href) node.attributes.href = `@/${file}`;
+            if (node.attributes.src) node.attributes.src = `@/${file}`;
           }
-          // console.log(node.attributes);
           break;
 
         default:

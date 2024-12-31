@@ -313,6 +313,7 @@ test.group('integration only!', t => {
       'GET /pages/:slug/osom',
       'GET /campaigns/:campaign_id',
       'GET /api/some/:stuff',
+      'GET /resources',
       'GET /campaigns',
       'GET /markdown',
       'GET /pages/:slug',
