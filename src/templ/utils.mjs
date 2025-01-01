@@ -8,7 +8,7 @@ import jsLang from 'highlight.js/lib/languages/javascript';
 
 import { jamLang } from './lang.mjs';
 import { attrs, taggify } from '../markup/html.mjs';
-import { Is, stack, ignore } from '../utils/shared.mjs';
+import { stack, ignore } from '../utils/shared.mjs';
 
 const RE_MATCH_LINES = /(?:<anonymous>|[.+](?:page|error|layout|generated)\.mjs(?:[^:]+?)):(\d+)(?::(\d+))?/;
 const RE_MATCH_OFFSETS = /\/\*!#(\d+):(\d+)\*\//;
@@ -64,7 +64,7 @@ export function stringify(result, prefix = '', callback = null) {
   return content;
 }
 
-export function highlight(code, markup, _convert) {
+export function highlight(code, lang, _convert) {
   const result = emphasize.highlight(lang || 'jamrock', code).value;
   return _convert ? convert.ansi_to_html(result) : result;
 }

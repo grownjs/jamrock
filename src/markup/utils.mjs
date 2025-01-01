@@ -206,6 +206,7 @@ export function extend(tagName, props, fn) {
 }
 
 export async function visit(chunk, callback, locations) {
+  if (!chunk) return;
   if (!Is.arr(chunk)) {
     await visit(chunk.elements || [], callback, locations);
   } else {

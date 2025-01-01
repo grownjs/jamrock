@@ -3,7 +3,6 @@ import s from 'tiny-dedent';
 import kramed from 'kramed';
 
 import shellLang from 'highlight.js/lib/languages/shell';
-import bashLang from 'highlight.js/lib/languages/bash';
 import lessLang from 'highlight.js/lib/languages/less';
 import cssLang from 'highlight.js/lib/languages/css';
 import xmlLang from 'highlight.js/lib/languages/xml';

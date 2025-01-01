@@ -300,8 +300,10 @@ export function serialize(vnode, parent, callback) {
       ? serialize(vnode[2], { name, props }, callback)
       : vnode[2];
 
-    vnode[2] = children;
-    vnode.length = 3;
+    if (vnode[2] && vnode[2].length > 0) {
+      vnode[2] = children;
+      vnode.length = 3;
+    }
 
     enhance(vnode, parent);
     if (Is.func(callback)) callback(vnode, hooks);

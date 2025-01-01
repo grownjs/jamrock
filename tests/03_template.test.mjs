@@ -264,6 +264,12 @@ fixture`./resources+page.html
   </svg>
 
   <svg src="./pause-icon.svg" class="osom" />
+
+  <head>
+    <link rel="icon" href="pause-icon.svg" />
+  </head>
+
+  <img src="pause-icon.svg" />
 `;
 
 // eslint-disable-next-line no-unused-expressions
@@ -384,12 +390,16 @@ ROUTER(FIXME)
 
   test('should collect assets from components', async ({ expect }) => {
     const tpl = await build('./resources+page.html');
-    const { files, html } = await tpl.render();
+    const { files, html, meta } = await tpl.render();
+
+    expect(meta[2]).toEqual(['link', { rel: 'icon', href: '@/generated/pause-icon.svg' }, []]);
 
     expect(files).toEqual({
       'resources+page.html': [
+        'link:generated/pause-icon.svg',
         'embed:generated/pause-icon.svg',
         'svg:generated/pause-icon.svg',
+        'img:generated/pause-icon.svg',
       ],
     });
 
@@ -401,6 +411,7 @@ ROUTER(FIXME)
           <svg class=osom width=16 height=16>
             <use xlink:href="#pause-icon" />
             </svg>
+            <img src="@/generated/pause-icon.svg" data-location="resources+page.html:13:1" />
     `).trim());
   });
 

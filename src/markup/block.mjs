@@ -22,9 +22,12 @@ export class Block {
     const dest = rebase(`${base}${src}`);
     const id = opts.scope || identifier('jam', src).join('-');
 
+    const __dirname = Template.dirname(`${base}/${src}`);
+
     Object.defineProperty(this, 'id', { value: id });
     Object.defineProperty(this, 'src', { value: src });
     Object.defineProperty(this, 'dest', { value: dest });
+    Object.defineProperty(this, 'base', { value: __dirname });
     Object.defineProperty(this, 'code', { value: tpl });
     Object.defineProperty(this, 'opts', { value: opts });
     Object.defineProperty(this, 'doc', { value: {} });
@@ -113,16 +116,14 @@ export class Block {
       lexer(Block.module(this.module.code), { position: { line: 1, col: this.module.code.indexOf('\n') } });
       lexer(Block.module(this.script.code, true), { position: { line: 1, col: this.script.code.indexOf('\n') } });
 
-      const __dirname = Template.dirname(`${this.opts.cwd || '.'}/${src}`);
-
       children = this.module.children.concat(this.script.children)
         .filter(_ => _.includes('.html'))
-        .map(_ => ({ ref: _, src: Template.join(__dirname, _) }))
+        .map(_ => ({ ref: _, src: Template.join(this.base, _) }))
         .map(_ => Object.defineProperty(_, 'code', { get: () => Template.read(_.src) }));
 
       imports = this.module.children.concat(this.script.children)
         .filter(_ => !_.includes('.html') && _.charAt() === '.')
-        .map(_ => ({ ref: _, src: Template.join(__dirname, _) }));
+        .map(_ => ({ ref: _, src: Template.join(this.base, _) }));
     }
 
     Object.defineProperty(this, 'locations', { value: locations });
@@ -188,66 +189,95 @@ export const __attributes = ${this.$attributes};
 `;
   }
 
-  async transform(elements, resources) {
-    const base = Template.dirname(Template.join(`${this.opts.cwd || '.'}`, this.src));
+  resolve(node, resources) {
+    const path = node.attributes.src || node.attributes.href;
+    const file = path && Template.join(this.base, path);
+    delete node.attributes.size;
 
+    if (file) {
+      if (!Template.exists(file)) {
+        throw new Error(`File not found '${path}' (${this.src})`);
+      }
+
+      this.children.push(file);
+      resources.files.push([node.name, file]);
+    }
+
+    if (node.name === 'svg') {
+      const size = node.attributes.size || 16;
+
+      delete node.attributes.href;
+      delete node.attributes.src;
+
+      node.attributes.width = node.attributes.width || size;
+      node.attributes.height = node.attributes.height || size;
+
+      if (node.elements.length > 0) {
+        node.attributes.xmlns = node.attributes.xmlns || 'http://www.w3.org/2000/svg';
+      } else {
+        node.elements.push({
+          name: 'use',
+          type: 'element',
+          attributes: { 'xlink:href': `#${Template.filename(path, '.svg')}` },
+        });
+      }
+    } else {
+      if (node.attributes.href) node.attributes.href = `@/${file}`;
+      if (node.attributes.src) node.attributes.src = `@/${file}`;
+    }
+  }
+
+  async markdown(node, resources) {
+    const inline = node.elements.length === 1
+      && node.elements[0].inline;
+
+    node.name = node.attributes.tag || (inline ? 'p' : 'template');
+    node.elements = await render(node.elements, inline);
+    delete node.attributes.tag;
+
+    await visit(node.elements, async _node => {
+      if (_node.name === 'img') {
+        this.resolve(_node, resources);
+      }
+      return node;
+    });
+  }
+
+  async transform(elements, resources) {
     if (this.src.includes('+page')) {
       this.markup.content = await render(this.markup.content);
     }
 
+    await visit(this.markup.metadata, async node => {
+      switch (node.name) {
+        case 'link':
+          if (node.attributes.rel === 'icon') {
+            this.resolve(node, resources);
+          }
+          break;
+
+        default:
+          if (elements?.[node.name]) {
+            const newNode = await elements[node.name](node);
+            if (newNode) return newNode;
+          }
+          break;
+      }
+      return node;
+    }, this.locations);
+
     await visit(this.markup.content, async node => {
       switch (node.name) {
         case 'mkd':
-          const inline = node.elements.length === 1
-            && node.elements[0].inline;
-
-          node.name = node.attributes.tag || (inline ? 'p' : 'template');
-          node.elements = await render(node.elements, inline);
-          delete node.attributes.tag;
+          this.markdown(node, resources);
           break;
-
-        case 'link':
-          if (node.attributes.rel !== 'icon') break;
 
         case 'source':
         case 'embed':
         case 'track':
         case 'svg':
-          const path = node.attributes.src || node.attributes.href;
-          const file = path && Template.join(base, path);
-          delete node.attributes.size;
-
-          if (file) {
-            if (!Template.exists(file)) {
-              throw new Error(`File not found '${path}' (${this.src})`);
-            }
-
-            this.children.push(file);
-            resources.files.push([node.name, file]);
-          }
-
-          if (node.name === 'svg') {
-            const size = node.attributes.size || 16;
-
-            delete node.attributes.href;
-            delete node.attributes.src;
-
-            node.attributes.width = node.attributes.width || size;
-            node.attributes.height = node.attributes.height || size;
-
-            if (node.elements.length > 0) {
-              node.attributes.xmlns = node.attributes.xmlns || 'http://www.w3.org/2000/svg';
-            } else {
-              node.elements.push({
-                name: 'use',
-                type: 'element',
-                attributes: { 'xlink:href': `#${Template.filename(path, '.svg')}` },
-              });
-            }
-          } else {
-            if (node.attributes.href) node.attributes.href = `@/${file}`;
-            if (node.attributes.src) node.attributes.src = `@/${file}`;
-          }
+        case 'img':
+          this.resolve(node, resources);
           break;
 
         default:
@@ -264,7 +294,7 @@ export const __attributes = ${this.$attributes};
   }
 
   toString() {
-    const defaults = '__src,__dest,__context,__snippets,__fragments,__scripts,__styles,__doctype,__metadata,__attributes,__template';
+    const defaults = '__src,__dest,__files,__context,__snippets,__fragments,__scripts,__styles,__doctype,__metadata,__attributes,__template';
     const template = reduce(this.markup.content, this.context, 1);
 
     if (!this.script) {
