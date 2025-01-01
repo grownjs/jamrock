@@ -196,7 +196,6 @@ export const __attributes = ${this.$attributes};
     if (path && !Is.str(path)) return;
 
     const file = path && Template.join(this.base, path);
-    delete node.attributes.size;
 
     if (file) {
       if (!Template.exists(file)) {
@@ -211,13 +210,16 @@ export const __attributes = ${this.$attributes};
     }
 
     if (node.name === 'svg') {
-      const size = node.attributes.size || 16;
+      const size = node.attributes.size;
 
+      delete node.attributes.size;
       delete node.attributes.href;
       delete node.attributes.src;
 
-      node.attributes.width = node.attributes.width || size;
-      node.attributes.height = node.attributes.height || size;
+      if (size) {
+        node.attributes.width = node.attributes.width || size;
+        node.attributes.height = node.attributes.height || size;
+      }
 
       if (node.elements.length > 0) {
         node.attributes.xmlns = node.attributes.xmlns || 'http://www.w3.org/2000/svg';

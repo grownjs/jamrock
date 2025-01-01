@@ -404,13 +404,18 @@ ROUTER(FIXME)
 
     expect(format(html)).toEqual(s(`
       <embed src="@/generated/pause-icon.svg" />
-        <svg width=16 height=16 xmlns="http://www.w3.org/2000/svg">
+        <svg xmlns="http://www.w3.org/2000/svg">
           <path d="M6 4l20 12-20 12z" data-location="resources+page.html:4:3" />
           </svg>
-          <svg class=osom width=16 height=16>
+          <svg class=osom>
             <use xlink:href="#pause-icon" />
             </svg>
             <img src="@/generated/pause-icon.svg" data-location="resources+page.html:13:1" />
+              <svg width=0 height=0 style="position:absolute" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
+                <symbol id="pause-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" width="16" height="16">
+                  <path d="M4 4h10v24h-10zM18 4h10v24h-10z" />
+                  </symbol>
+                </svg>
     `).trim());
   });
 

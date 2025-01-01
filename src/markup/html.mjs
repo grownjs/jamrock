@@ -266,6 +266,7 @@ export function taggify(vnode, callback) {
     if (props['@html']) {
       tagName = props['@tag'] || vnode[0];
       vnode[2] = props['@html'];
+      delete props['@html'];
       vnode.length = 3;
       raw = true;
     }
@@ -280,7 +281,7 @@ export function taggify(vnode, callback) {
 
     if (!Is.func(callback)) {
       const suffix = !close ? `</${tagName}>` : '';
-      return `${tag}${raw ? children : taggify(vnode[2])}${suffix}`;
+      return `${tag}${raw ? vnode[2] : taggify(vnode[2])}${suffix}`;
     }
     callback(tag);
     if (raw) {

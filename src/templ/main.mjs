@@ -199,10 +199,31 @@ export class Template {
       Object.assign(chunk.scripts, mixin.scripts);
     });
 
+    const images = [];
+
+    // FIXME: check if we could prebuilt these files...
     for (const asset of new Set([].concat(...Object.values(chunk.files)))) {
-      // console.log({ asset });
-      // no no, we dont wriet here, just collect... and read
-      // console.log({asset}, Template.write);
+      if (asset.includes('.svg')) {
+        const svg = Template.read(asset)
+          .trim()
+          .replace(/>\s*</g, '><')
+          .replace('</svg>', '</symbol>')
+          .replace('<svg ', `<symbol id="${Template.filename(asset, '.svg')}" `);
+
+        images.push(svg);
+      }
+    }
+
+    // FIXME: after or before?
+    if (images.length > 0) {
+      chunk.body.push(['svg', {
+        width: 0,
+        height: 0,
+        style: 'position:absolute',
+        xmlns: 'http://www.w3.org/2000/svg',
+        'xmlns:xlink': 'http://www.w3.org/1999/xlink',
+        '@html': images.join('\n'),
+      }]);
     }
 
     // chunk.prelude = (chunk.prelude || []).concat(mixins.map(x => x.prelude));
@@ -578,7 +599,7 @@ export class Template {
 
   // interesting...
   static file(path) {
-    return {};
+    return { path };
   }
 
   static glob() {
