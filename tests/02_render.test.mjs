@@ -11,23 +11,23 @@ async function check(code, opts, props) {
 test.group('generated markup', () => {
   test('should relax html parsing', async ({ expect }) => {
     expect(await check('<foo bar />'))
-      .toEqual('<foo bar data-location="source.html:1:1" />');
+      .toEqual('<foo bar data-location="source.html:1:1"></foo>');
     expect(await check('<foo $bar />'))
-      .toEqual('<foo $bar data-location="source.html:1:1" />');
+      .toEqual('<foo $bar data-location="source.html:1:1"></foo>');
     expect(await check('<foo $bar=x />'))
-      .toEqual('<foo $bar=x data-location="source.html:1:1" />');
+      .toEqual('<foo $bar=x data-location="source.html:1:1"></foo>');
     expect(await check('<foo @bar />'))
-      .toEqual('<foo data-bar data-location="source.html:1:1" />');
+      .toEqual('<foo data-bar data-location="source.html:1:1"></foo>');
     expect(await check('<foo @bar=x />'))
-      .toEqual('<foo data-bar=x data-location="source.html:1:1" />');
+      .toEqual('<foo data-bar=x data-location="source.html:1:1"></foo>');
     expect(await check('<foo {bar} />', { props: ['bar'] }, { bar: 42 }))
-      .toEqual('<foo bar=42 data-location="source.html:1:1" />');
+      .toEqual('<foo bar=42 data-location="source.html:1:1"></foo>');
     expect(await check('<foo bar={baz} />', { props: ['baz'] }, { baz: true }))
-      .toEqual('<foo bar data-location="source.html:1:1" />');
+      .toEqual('<foo bar data-location="source.html:1:1"></foo>');
     expect(await check('<foo bar="{baz}" />', { props: ['baz'] }, { baz: true }))
-      .toEqual('<foo bar data-location="source.html:1:1" />');
+      .toEqual('<foo bar data-location="source.html:1:1"></foo>');
     expect(await check('<foo bar="" buzz=bazzinga />'))
-      .toEqual('<foo bar="" buzz=bazzinga data-location="source.html:1:1" />');
+      .toEqual('<foo bar="" buzz=bazzinga data-location="source.html:1:1"></foo>');
   });
 });
 

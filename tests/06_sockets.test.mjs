@@ -126,7 +126,7 @@ test.group('streaming support', () => {
     expect(markup).toContain('4. OSOM\n');
     expect(markup).toContain('5. in a life');
 
-    expect(markup).toContain('<button data-location="iterators.html:39:1" data-source="iterators.html/1" data-on:click="true" name="_action" value=onChange />');
+    expect(markup).toContain('<button data-location="iterators.html:39:1" data-source="iterators.html/1" data-on:click="true" name="_action" value=onChange></button>');
     expect(markup).toContain('<h1 data-location="hello.html:4:1">Hi, OSOM.</h1>');
   });
 

@@ -10,6 +10,14 @@ const RE_QUOTES_REQUIRED = /[\s"'`=</_:>-]/;
 
 const UNSCOPED_ELEMENTS = ['head', 'meta', 'base', 'link', 'title', 'style', 'script'];
 
+const SELF_CLOSE_TAGS = [
+  'area', 'base', 'br', 'col', 'embed', 'hr', 'img', 'input', 'link', 'meta', 'param', 'source', 'track', 'wbr',
+];
+
+const SVG_CLOSE_TAGS = [
+  'a', 'use', 'rect', 'path', 'circle',
+];
+
 export function attrs(data) {
   if (!data) return '';
 
@@ -263,13 +271,15 @@ export function taggify(vnode, callback) {
     }
 
     const children = vnode[2] && vnode[2].length > 0;
+    const close = SELF_CLOSE_TAGS.includes(vnode[0])
+      || (!children && SVG_CLOSE_TAGS.includes(vnode[0]));
 
     let tag = `<${tagName}${attrs(props)}`;
-    if (!children) tag += ' />';
+    if (close) tag += ' />';
     else tag += '>';
 
     if (!Is.func(callback)) {
-      const suffix = children ? `</${tagName}>` : '';
+      const suffix = !close ? `</${tagName}>` : '';
       return `${tag}${raw ? children : taggify(vnode[2])}${suffix}`;
     }
     callback(tag);
@@ -278,7 +288,7 @@ export function taggify(vnode, callback) {
     } else if (vnode.length > 1) {
       taggify(vnode[2], callback);
     }
-    if (children) callback(`</${tagName}>`);
+    if (!close) callback(`</${tagName}>`);
     return;
   }
   if (!Is.func(callback)) {
