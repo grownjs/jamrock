@@ -574,11 +574,6 @@ export class Template {
     return [];
   }
 
-  static eval(code) {
-    // eslint-disable-next-line no-new-func
-    return new Function('', `return(${code})`)();
-  }
-
   static join(...args) {
     let parts = [];
     for (let i = 0, l = args.length; i < l; i++) {

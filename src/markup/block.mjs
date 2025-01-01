@@ -190,7 +190,11 @@ export const __attributes = ${this.$attributes};
   }
 
   resolve(node, resources) {
-    const path = node.attributes.src || node.attributes.href;
+    const { src, href } = node.attributes;
+    const path = src || href;
+
+    if (path && !Is.str(path)) return;
+
     const file = path && Template.join(this.base, path);
     delete node.attributes.size;
 

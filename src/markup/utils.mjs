@@ -222,7 +222,8 @@ export async function visit(chunk, callback, locations) {
 
         return Promise.resolve()
           .then(() => visit(node.elements, callback, locations))
-          .then(() => callback && callback(node));
+          .then(() => callback && callback(node))
+          .catch(e => console.log('E_VISIT', e.message, node));
       }
       return null;
     }));
