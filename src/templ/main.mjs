@@ -199,6 +199,12 @@ export class Template {
       Object.assign(chunk.scripts, mixin.scripts);
     });
 
+    for (const asset of new Set([].concat(...Object.values(chunk.files)))) {
+      // console.log({ asset });
+      // no no, we dont wriet here, just collect... and read
+      // console.log({asset}, Template.write);
+    }
+
     // chunk.prelude = (chunk.prelude || []).concat(mixins.map(x => x.prelude));
     chunk.head.unshift(['base', { href: self.base_url || '/' }]);
     chunk.head.unshift(['meta', { charset: 'utf-8' }]);
@@ -568,6 +574,11 @@ export class Template {
 
   static read() {
     return '';
+  }
+
+  // interesting...
+  static file(path) {
+    return {};
   }
 
   static glob() {

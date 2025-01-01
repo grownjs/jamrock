@@ -166,7 +166,7 @@ export class Block {
   }
 
   get $assets() {
-    return this.assets.files.map(([k, v]) => `${k}:${v}`);
+    return this.assets.files;
   }
 
   get $prefix() {
@@ -204,7 +204,10 @@ export const __attributes = ${this.$attributes};
       }
 
       this.children.push(file);
-      resources.files.push([node.name, file]);
+
+      if (!resources.files.includes(file)) {
+        resources.files.push(file);
+      }
     }
 
     if (node.name === 'svg') {

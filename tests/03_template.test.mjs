@@ -8,6 +8,7 @@ import * as td from 'testdouble';
 import * as path from 'path';
 import * as fs from 'fs';
 import s from 'tiny-dedent';
+import mime from 'mime/lite';
 
 import { Block } from '../src/markup/block.mjs';
 import { format } from '../src/utils/server.mjs';
@@ -326,6 +327,7 @@ test.group('template transformation', t => {
     Template.cache = new Map();
     td.replace(Template, 'load', loader);
     td.replace(Template, 'read', x => fs.readFileSync(x).toString());
+    td.replace(Template, 'file', x => new Blob([fs.readFileSync(x)], { name: x, type: mime.getType(x) }));
     td.replace(Template, 'exists', x => fs.existsSync(x) && fs.statSync(x).isFile());
     td.replace(Template, 'transpile', createTranspiler({ fs, path, Readable, Template, getESbuildModule: () => import('esbuild') }));
   });
@@ -396,10 +398,7 @@ ROUTER(FIXME)
 
     expect(files).toEqual({
       'resources+page.html': [
-        'link:generated/pause-icon.svg',
-        'embed:generated/pause-icon.svg',
-        'svg:generated/pause-icon.svg',
-        'img:generated/pause-icon.svg',
+        'generated/pause-icon.svg',
       ],
     });
 
