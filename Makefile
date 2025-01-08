@@ -64,9 +64,9 @@ test-nodejs:
 	@node scripts/node-testing.mjs
 	@JS_DOM=1 node scripts/node-testing.mjs
 	@HAPPY_DOM=1 node scripts/node-testing.mjs
-	@make -s seed:node ts-check-nodejs e2e:node
-ts-check-nodejs:
-	@npx tsx scripts/check.ts
+	@make -s seed:node
+	@node scripts/check.ts
+	@make -s e2e:node
 
 docs:
 	@bin/node serve --watch --src userguide

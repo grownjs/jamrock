@@ -436,7 +436,7 @@ ROUTER(FIXME)
       <p>&lt;WUT&gt;</p>
       <p>CODE:</p>
       <pre class=hljs data-lang=bash>
-        <code>■ Jamrock v#[pkg.version] (node v23.1.0)
+        <code>■ Jamrock v#[pkg.version] (node ${process.version})
           Processing ./pages to ./build
             Listening on <a href="http://localhost:8080" target="_blank" data-location="markdown+page.html:20:14">http://localhost:8080</a>
           </code>
