@@ -17,6 +17,8 @@ export class Browser {
     this.warn = (e, msg) => import('./debugger.mjs').then(({ showDebug }) => showDebug(e, msg));
 
     this.sync = async (payload, callback) => {
+      const { scrollLeft, scrollTop } = document.documentElement;
+
       window.Jamrock.LiveSocket.start();
       window.Jamrock.Components.off();
 
@@ -40,6 +42,9 @@ export class Browser {
 
         await callback(() => this.patch(document.body, payload.body));
       } finally {
+        document.documentElement.scrollLeft = scrollLeft;
+        document.documentElement.scrollTop = scrollTop;
+
         window.Jamrock.Components.on();
       }
     };
@@ -116,7 +121,9 @@ export class Browser {
       this.paused = false;
 
       clearTimeout(block);
-      block = setTimeout(() => { block = null; }, 260);
+      block = setTimeout(() => {
+        block = null;
+      }, 90);
 
       if (window.Jamrock.Fragment) window.Jamrock.Fragment.subscribe();
     };
