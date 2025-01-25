@@ -23,15 +23,15 @@ export class Expr {
     this.expr = [].concat(value);
 
     if (this.expr.length > 0) {
-      if (this.expr[0][1] === '%') {
+      if (this.head[1] === '%') {
         this.comment = true;
-      } else if (':#/@'.includes(this.expr[0][1])) {
-        this.tag = this.expr[0].includes(' ')
-          ? this.expr[0].substr(1, this.expr[0].indexOf(' ') - 1)
-          : this.expr[0].substr(1, this.expr[0].length - 2);
+      } else if (':#/@'.includes(this.head[1])) {
+        this.tag = this.head.includes(' ')
+          ? this.head.substr(1, this.head.indexOf(' ') - 1)
+          : this.head.substr(1, this.head.length - 2);
 
         if (this.tag === '#snippet') {
-          const matches = this.expr[0].match(/ (\w+)(?:\((.+?)\))?/);
+          const matches = this.head.match(/ (\w+)(?:\((.+?)\))?/);
 
           this.name = matches[1];
           this.args = matches[2]
@@ -39,17 +39,37 @@ export class Expr {
             : [];
         }
 
-        this.open = this.expr[0][1] === '#';
+        this.open = this.head[1] === '#';
         this.block = true;
       }
     }
 
     Object.defineProperty(this, 'token', { value: position });
     Object.defineProperty(this, 'locate', { value: context?.locate });
+    Object.defineProperty(this, 'context', { value: {} });
   }
 
   get inline() {
     return !this.expr.some(_ => Is.str(_.content) && _.content?.includes('\n'));
+  }
+
+  get offset() {
+    return this.locate(this.token.index, this.head);
+  }
+
+  get inner() {
+    if (!Is.str(this.head)) {
+      return '';
+    }
+
+    return this.expr.map(_ => _.replace(/^\{|\}$/g, ''))
+      .join('')
+      .replace(this.tag, '')
+      .trim();
+  }
+
+  get head() {
+    return this.expr[0];
   }
 
   toString() {
@@ -70,6 +90,9 @@ export class Expr {
   }
 
   wrap(prefix, expression, isSpreading) {
+    const ctx = Object.entries(this.context)
+      .map(([k, v]) => `\n/*!#${v.position.line}:${v.position.col}*/const ${k}=${v.value};`).join(prefix || '');
+
     const sep = isSpreading || expression !== false ? '\n,' : '\n+';
     const out = this.expr.reduce((memo, token) => {
       if (!token) return memo;
@@ -93,9 +116,9 @@ export class Expr {
       if (_expr.indexOf('#each') === 0) {
         const [subj, locals] = _expr.replace(RE_CLEAN_BLOCKS, '').split(RE_AS_LOCAL);
 
-        _expr = `await $$.map(${subj}, async (${locals || ''}) => { return [`;
+        _expr = `await $$.map(${subj}, async (${locals || ''}) => { ${ctx}return [`;
       } else if (_expr.indexOf('#if') === 0) {
-        _expr = `await $$.if(${_expr.replace(RE_CLEAN_BLOCKS, '')}, async () => { return [`;
+        _expr = `await $$.if(${_expr.replace(RE_CLEAN_BLOCKS, '')}, async () => { ${ctx}return [`;
       } else if (_expr.indexOf('/each') === 0) {
         _expr = ']; /*each*/ }),';
         _ref = null;
@@ -103,15 +126,13 @@ export class Expr {
         _expr = ']; /*if*/ }),';
         _ref = null;
       } else if (_expr.replace(/\s+/g, ' ').indexOf(':else if') === 0) {
-        _expr = `]; /*elseif*/ }, () => { if (${_expr.replace(RE_CLEAN_BLOCKS, '')}) return async () => [`;
+        _expr = `]; /*elseif*/ }, () => { ${ctx}if (${_expr.replace(RE_CLEAN_BLOCKS, '')}) return async () => [`;
       } else if (_expr.indexOf(':else') === 0) {
-        _expr = ']; /*else*/ }, async () => { return [';
+        _expr = `]; /*else*/ }, async () => { ${ctx}return [`;
       } else if (_expr.indexOf('@render ') === 0) {
         _expr = `await $$.r(${_expr.substr(7)})?.($$)`;
       } else if (_expr.indexOf('@debug ') === 0) {
         _expr = `$$.d({ ${_expr.substr(7)} })`;
-      } else if (_expr.indexOf('@const ') === 0) {
-        _expr = `(${_expr.substr(6)}, void 0)`;
       } else if (_expr.indexOf('@html ') === 0) {
         _expr = `$$.h(${_expr.substr(6)})`;
       } else if (_expr.indexOf('@raw ') === 0) {

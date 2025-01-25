@@ -5,6 +5,14 @@ import { test } from '@japa/runner';
 import { fixture } from './helpers/utils.mjs';
 
 // eslint-disable-next-line no-unused-expressions
+fixture`./constants.html
+  {#if true}
+    {@const truth = 42}
+    {truth}
+  {/if}
+`;
+
+// eslint-disable-next-line no-unused-expressions
 fixture`./components.html
   <script context="module">
     import Component from './component.html';
@@ -174,5 +182,13 @@ test.group('new compiler', () => {
     ].map(_ => _.trim()).join('');
 
     expect(html).toEqual(sample);
+  });
+
+  test('should handle @const expressions', async ({ expect }) => {
+    const tpl = await fixture.use('./constants.html');
+    expect(tpl.code).toContain('/*!#2:3*/const truth=42;');
+
+    const result = await tpl.render();
+    expect(result.html).toEqual('42');
   });
 });

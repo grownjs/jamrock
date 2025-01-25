@@ -157,6 +157,17 @@ export function traverse(obj, html, parent, context, counter = 0) {
       tokens.expr.forEach(token => {
         const current = stack.at(-1);
 
+        if (token.content.tag === '@const') {
+          if (!current || !current.block) {
+            throw new SyntaxError(`Unexpected @const after ${tokenStart.line + 1}:${tokenStart.column + 1}`);
+          }
+
+          const [key, value] = token.content.inner.split(/\s*=\s*/);
+          const { position } = token.content.offset;
+          current.context[key] = { value, position };
+          return;
+        }
+
         if (token.content.block && token.content.tag.charAt() !== '@') {
           if (token.content.open) {
             stack.push(token.content);

@@ -432,6 +432,33 @@ test.group('parsing', t => {
     });
   });
 
+  test('should attach constants to blocks', ({ expect }) => {
+    const tpl = load(`
+      {#if true}
+        {@const truth = 42}
+        Got: {truth}
+      {/if}
+    `, 'constants.html');
+
+    expect(tpl.markup).toEqual({
+      content: [{
+        expr: [
+          { type: 'code', content: { block: true, expr: ['{#if true}'], open: true, raw: [], tag: '#if' } },
+          { type: 'text', content: '\n        Got: ' },
+          { type: 'code', content: { expr: ['{truth}'], raw: [] } },
+          { type: 'code', content: { block: true, expr: ['{/if}'], open: false, raw: [], tag: '/if' } },
+        ],
+        raw: [],
+      }],
+    });
+    expect(tpl.markup.content[0].expr[0].content.context).toEqual({
+      truth: {
+        value: '42',
+        position: { col: 9, line: 3 },
+      },
+    });
+  });
+
   test('should build an AST from given markup', ({ expect }) => {
     expect(load(`
       <!DOCTYPE html>
