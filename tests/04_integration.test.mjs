@@ -5,7 +5,7 @@ import * as td from 'testdouble';
 import * as hooks from 'nohooks';
 
 import {
-  createView, fixture, server, setup, reset, build,
+  createView, generated, fixture, server, setup, reset, build,
 } from './helpers/utils.mjs';
 
 import { Template } from '../src/templ/main.mjs';
@@ -382,6 +382,13 @@ test.group('integration only!', t => {
     ctx.queue = {
       set: td.func('write'),
     };
+
+    const mod = fixture.use('./hooks+page.html', { raw: true });
+    await mod.transform();
+    const tpl = await generated(mod);
+
+    expect(tpl.__functions.test.toString()).toContain('function test');
+    expect(tpl.__functions.doStuff.toString()).toContain('function doStuff');
 
     const markup = await fixture.partial('hooks+page.html', null, ctx);
 

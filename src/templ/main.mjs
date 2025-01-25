@@ -113,7 +113,9 @@ export class Template {
       set.unshift({ content: styles, dest: destFile });
     }
 
-    let result = await this.partial.transform(this.elements, resources);
+    await this.partial.transform(this.elements, resources)
+
+    let result = this.partial.toString();
     if (isStatic) {
       set.unshift(result = { content: result, src: filepath, dest: target, js: true });
     } else {
@@ -326,12 +328,6 @@ export class Template {
     ctx.ref = ctx.stack && component.__context !== 'static'
       ? `${component.__src}/${++ctx.depth}`
       : component.__src;
-
-    // FIXME: check this with external modules... like adding
-    // a __filename field on the module with the actual/imported path
-    component.__functions?.forEach(fn => {
-      fn.$ = fn.$ || component.__src;
-    });
 
     const scripts = { [component.__src]: component.__scripts };
     const styles = { [component.__src]: component.__styles };

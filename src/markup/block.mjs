@@ -129,6 +129,7 @@ export class Block {
     Object.defineProperty(this, 'locations', { value: locations });
     Object.defineProperty(this, 'children', { value: children });
     Object.defineProperty(this, 'imports', { value: imports });
+    Object.defineProperty(this, 'calls', { value: new Set() });
   }
 
   get $attributes() {
@@ -276,6 +277,10 @@ export const __attributes = ${this.$attributes};
     }, this.locations);
 
     await visit(this.markup.content, async node => {
+      Object.keys(node.attributes).forEach(key => {
+        if (key.indexOf('@use:') === 0) this.calls.add(key.split(':')[1]);
+      });
+
       switch (node.name) {
         case 'mkd':
           this.markdown(node, resources);
@@ -298,8 +303,6 @@ export const __attributes = ${this.$attributes};
       }
       return node;
     }, this.locations);
-
-    return this.toString();
   }
 
   toString() {
@@ -327,6 +330,7 @@ export default {${defaults}};
 
     const functions = this.module.deps.filter(_ => this.module.locals[_] === 'function');
     const exported = keys.filter(x => ['let', 'const', 'export'].includes(locals[x])).map(x => aliases[x] || x);
+    const calls = [...this.calls].filter(_ => functions.includes(_));
     const { prelude, interlude } = Block.imports(this.script.code);
     const matched = extract(interlude, true);
 
@@ -376,8 +380,9 @@ export const __routes = ${JSON.stringify(matched.routes)};
 ${this.$prefix}
 export const __template = async ($$) => [${Block.wrap(template)}];
 export const __exported = ${JSON.stringify(exported)};
-export const __functions = [${functions.join(',')}];
+export const __functions = {${calls.join(',')}};
 export default {${defaults},__functions,__exported,__handler,__routes};
+for (const [, fn] of Object.entries(__functions)) fn.$ = __src;
 `;
 
     const code = lets.length > 0
