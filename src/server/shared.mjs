@@ -422,7 +422,7 @@ export function createEnvironment({ fs, path }, options, external) {
 
         const key = file.replace('.generated.', '.hooks.');
         const destFile = path.join(options.dest, 'public', options.prefix, path.relative(options.dest, key));
-        const code = `/* ${key} */\n${mod.module.__functions.map(_ => `export ${_.toString()}\n`).join('')}`;
+        const code = `/* ${key} */\n${Object.values(mod.module.__functions).map(_ => `export ${_.toString()}\n`).join('')}`;
 
         write(destFile, code);
         count++;

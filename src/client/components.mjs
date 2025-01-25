@@ -141,10 +141,11 @@ export class Conditions {
 }
 
 export class Components {
-  constructor(browser, prefix, { __defaults, __scripts }) {
+  constructor(browser, prefix, { __defaults, __scripts, __calls }) {
     this.headless = browser.headless;
     this.browser = browser;
     this.prefix = prefix;
+    this.calls = __calls || {};
     this.scripts = __scripts || {};
     this.defaults = __defaults || {};
 
@@ -159,7 +160,7 @@ export class Components {
       }
     });
 
-    this.scripts = new Map();
+    this.loaded = new Map();
     this.modules = new Map();
     this.imports = [];
     this.on();
@@ -173,7 +174,7 @@ export class Components {
 
   async resolve(key) {
     await this.import(key);
-    return this.scripts.get(key);
+    return this.loaded.get(key);
   }
 
   async import(url, reload) {
@@ -189,9 +190,9 @@ export class Components {
       mod = mod.default || mod;
       this.modules.set(url, mod);
       if (url.includes('.html')) {
-        const old = this.scripts.get(url);
+        const old = this.loaded.get(url);
         this.defaults[url] = { ...mod.__data, ...this.defaults[url] };
-        this.scripts.set(url, { ...old, ...mod, __data: this.defaults[url] });
+        this.loaded.set(url, { ...old, ...mod, __data: this.defaults[url] });
       }
     }
     if (!this.modules.has(url)) {
@@ -243,8 +244,9 @@ export class Components {
     this.elements.forEach(node => this.delete(node));
   }
 
-  set(defaults, scripts, fragments) {
+  set(defaults, calls, scripts, fragments) {
     console.log('[FRAGMENTS]', fragments);
+    if (calls) Object.assign(this.calls, calls);
     if (scripts) Object.assign(this.scripts, scripts);
     if (defaults) Object.assign(this.defaults, defaults);
   }

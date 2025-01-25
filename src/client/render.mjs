@@ -53,7 +53,7 @@ export function clientComponent(mod, context, filepath) {
       store.patch = async peek => {
         Object.assign(el.__state, peek.__scope);
         const patch = await next(el.__state);
-        el.current = peek.__actions;
+        el.current = peek.__default;
 
         // eslint-disable-next-line no-return-assign
         return typeof process !== 'undefined'
@@ -63,7 +63,7 @@ export function clientComponent(mod, context, filepath) {
       };
 
       if (el.__store) el.__store.clear();
-      el.current = data.__actions;
+      el.current = data.__default;
       el.__state = { ...props, ...data.__scope };
       el.__store = store;
     }

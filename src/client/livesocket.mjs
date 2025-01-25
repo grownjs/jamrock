@@ -194,6 +194,9 @@ export class LiveSocket {
     this.next = _uuid => {
       if (ws && ws.readyState === ws.OPEN) ws.send(`rpc:reconnect ${this.browser.request_uuid = _uuid}`);
     };
+
+    // FIXME: we could add a layer after some time of inactivity, once we detect
+    // we not longer have ws connectivity... then, once clicked we reconnect and so!
     this.start = () => !this.headless && (!ws || ws.readyState !== ws.OPEN) && connect(this.document, this.uuid, open).then(socket => {
       this.ready = true;
 

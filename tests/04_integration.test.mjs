@@ -48,6 +48,13 @@ fixture`./hooks+page.html
   </script>
   <button use:test="foo|bar">FOO</button>
   <button use:doStuff>BAR</button>
+  <script>
+    export default {
+      actions: {
+        truthy: () => 42,
+      },
+    };
+  </script>
 `;
 
 // eslint-disable-next-line no-unused-expressions
@@ -378,7 +385,7 @@ test.group('integration only!', t => {
     ].join(''));
   });
 
-  test('should allow to hook functions into nodes', async ({ expect }) => {
+  test('pin: should allow to hook functions into nodes', async ({ expect }) => {
     ctx.queue = {
       set: td.func('write'),
     };

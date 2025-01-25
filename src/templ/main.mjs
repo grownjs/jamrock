@@ -149,28 +149,29 @@ export class Template {
     const meta = output.head;
     const attrs = output.attrs;
     const files = output.files;
+    const actions = output.actions;
 
-    return { files, attrs, meta, html, doc, css, js };
+    return { actions, files, attrs, meta, html, doc, css, js };
   }
 
   static async preflight(main, ctx, cb) {
     let response;
     try {
-      if (main.__actions && cb) {
-        let _chunk = await cb(ctx, main.__actions);
+      if (main.__default && cb) {
+        let _chunk = await cb(ctx, main.__default);
         _chunk = Template.response(_chunk);
         if (_chunk instanceof Response) response = _chunk;
       }
     } catch (e) {
       // console.log('E_ACTIONS', e);
-      if (Is.func(main.__actions?.catch)) {
-        await main.__actions.catch(e);
+      if (Is.func(main.__default?.catch)) {
+        await main.__default.catch(e);
       } else {
         throw e;
       }
     } finally {
-      if (Is.func(main.__actions?.finally)) {
-        await main.__actions.finally();
+      if (Is.func(main.__default?.finally)) {
+        await main.__default.finally();
       }
     }
     if (response) return response;
@@ -199,6 +200,7 @@ export class Template {
       Object.assign(chunk.files, mixin.files);
       Object.assign(chunk.styles, mixin.styles);
       Object.assign(chunk.scripts, mixin.scripts);
+      Object.assign(chunk.actions, mixin.actions);
     });
 
     const images = [];
@@ -371,6 +373,8 @@ export class Template {
 
     try {
       const data = main?.__scope ?? main?.__callback?.();
+      const calls = main?.__default?.actions || {};
+      const actions = { [ctx.ref]: calls };
 
       let state = { ...props, ...data };
       if (ctx.locals) state = await ctx.locals.wrap(state);
@@ -390,7 +394,7 @@ export class Template {
       }
 
       return {
-        scripts, styles, files, attrs, head, body, doc,
+        actions, scripts, styles, files, attrs, head, body, doc,
       };
     } catch (e) {
       this.failure = debug({

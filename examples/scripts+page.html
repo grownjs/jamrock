@@ -1,3 +1,28 @@
+<script context="module">
+  function click(node) {
+    console.log('[HANDLE]', node);
+    async function onClick() {
+      // FIXME: probably these should be a map, with all exported
+      // actions from the render tree... so we can prevalidate calls
+      // and such!
+      const result = await Jamrock.Browser.actions.callme();
+      console.log({ result });
+    }
+    node.addEventListener('click', onClick);
+    return () => node.removeEventListener('click', onClick);
+  }
+</script>
+
+<script>
+  export default {
+    actions: {
+      callme() {
+        return 'MAYBE';
+      },
+    },
+  };
+</script>
+
 <div>
   FIXME!!
   <script global scoped>
@@ -13,3 +38,7 @@
     });
 </script>
 </div>
+
+<button use:click>
+  Click
+</button>

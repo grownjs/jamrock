@@ -6,15 +6,30 @@ export class Browser {
   constructor(state, prefix, version, headless) {
     console.info('check', state.patch, version);
 
+    const actions = new Proxy({}, {
+      get: (_, prop) => (...args) => this.call(prop, ...args),
+    });
+
     this.paused = false;
     this.prefix = prefix;
     this.version = version;
+    this.actions = actions;
     this.headless = headless;
     this.csrf_token = state.csrf;
     this.request_uuid = state.uuid;
     this.request_method = state.method;
 
     this.warn = (e, msg) => import('./debugger.mjs').then(({ showDebug }) => showDebug(e, msg));
+
+    this.call = async (key, ...args) => {
+      for (const [mod, calls] of Object.entries(window.Jamrock.Components.calls)) {
+        if (calls.includes(key)) {
+          console.log('[REMOTE CALL]', mod, key, args);
+          return true;
+        }
+      }
+      throw new Error(`Invoked action is not defined, given '${key}'`);
+    };
 
     this.sync = async (payload, callback) => {
       const { scrollLeft, scrollTop } = document.documentElement;
@@ -29,7 +44,7 @@ export class Browser {
 
         // normalize keys!!
         // FIXME: how to patch fragments?
-        window.Jamrock.Components.set(payload._, payload.scripts, payload.fragments);
+        window.Jamrock.Components.set(payload._, payload.$, payload.scripts, payload.fragments);
 
         Object.values(payload.styles)
           .forEach(set => set.forEach(_ => {

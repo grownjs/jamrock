@@ -278,8 +278,13 @@ export async function createBody(env, conn, clients, { uuid, client, matches, op
     }
 
     if (!Util.Is.str(body)) {
-      const data = ctx.queue.get(uuid);
       const state = [];
+      const data = ctx.queue.get(uuid);
+      const calls = Object.entries(body.actions)
+        .reduce((memo, [_mod, _actions]) => {
+          memo[_mod] = Object.keys(_actions);
+          return memo;
+        }, {});
 
       if (data) {
         Object.entries(data)
@@ -295,6 +300,7 @@ export async function createBody(env, conn, clients, { uuid, client, matches, op
           `"head":${JSON.stringify(body.head)}`,
           `"body":${JSON.stringify(body.body)}`,
           `"doc":${JSON.stringify(body.doc)}`,
+          `"$":${JSON.stringify(calls)}`,
           `"_":{${state.join(',\n')}}`,
         ].join(',\n')}}`);
 
@@ -312,6 +318,7 @@ export async function createBody(env, conn, clients, { uuid, client, matches, op
       const payload = [
         `\n\t__defaults: {${state.join(',\n')}},`,
         `\n\t__scripts: ${JSON.stringify(body.scripts)},\n`,
+        `\n\t__calls: ${JSON.stringify(calls)},\n`,
       ].join('');
 
       buffer.push(client.replace('this', `{${payload}}`));
@@ -340,7 +347,7 @@ export async function createModuleResponse(env, conn) {
     const _mod = await Template.reload(env.files[key].filepath);
 
     status = 200;
-    mod = `/* ${file} */\n${_mod.__functions.map(_ => `export ${_.toString()}\n`).join('')}`;
+    mod = `/* ${file} */\n${Object.values(_mod.__functions).map(_ => `export ${_.toString()}\n`).join('')}`;
   }
 
   return [mod, status, null, new Headers({

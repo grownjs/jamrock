@@ -352,13 +352,13 @@ export default {${defaults}};
       .concat(Object.keys(this.snippets))
       .concat(this.opts.props || []);
 
-    const main = `\tasync function __context(__actions = {}) {
+    const main = `\tasync function __context(__default = {}) {
 ${Object.keys(this.snippets).map(_ => `const ${_} = $$props.${_} ?? __snippets.${_};`)}
 ${matched.code}
 ${this.context === 'client'
-    ? `\t\treturn {__actions,__scope:{${lets.join(',')}}};`
+    ? `\t\treturn {__default,__scope:{${lets.join(',')}}};`
     : `\t\tconst __callback = () => ({${lets.join(',')}});
-\t\treturn {__actions,__callback};`}
+\t\treturn {__default,__callback};`}
 \t}`;
 
     let mod = this.module?.code || '';
@@ -401,7 +401,7 @@ for (const [, fn] of Object.entries(__functions)) fn.$ = __src;
       .replace(/\bexport\s+(let|const)\s+(\w+)\s*(?=[\n;])/g, '$1 $2 = $$$$props.$2')
       .replace(/\bexport\s+(let|const)\s+(\w+)\s*=/g, '$1 $2 = $$$$props.$2 ??')
       .replace(/\bexport\s+function\s+(\w+)\s*\(/g, 'let $1 = $$$$props.$1 ?? function $1(')
-      .replace(/\bexport\s+default\b/, '__actions =')
+      .replace(/\bexport\s+default\b/, '__default =')
       .replace(/\bexport\s*\{([^;]+?)\}/g, (_, $1) => $1.split(',').map(expr => {
         const [a, b] = expr.trim().split(/\sas\s/);
         return a && b ? `${a} = $$props.${b} ?? ${a};\n` : '';
