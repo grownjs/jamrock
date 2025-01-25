@@ -1,26 +1,24 @@
 **Jamrock** is a framework for the server-side,
 
-1. It compiles your `.html` files into components, the markup is transformed into objects that can be called to produce something like an AST.
-2. The server will execute them against the request, the resulting changes are sent as JSON or HTML depending on the context.
-3. The browser will render the HTML as is, but if JavaScript is available the framework will take the JSON response and patch the DOM with the changes, resulting on smoother updates.
-
-## Want to give it a try?
+1. It compiles your `.html` files into something that can be called server-components.
+2. The server will execute them against the request, it responds with JSON or HTML.
+3. The browser will render the HTML as is &mdash; but if JavaScript is available the framework will take the JSON response and patch the DOM with the changes, resulting on smoother updates.
 
 Use the script below to download the package and uncompress it locally at your `$HOME`.
 
 ```
-  curl -L get.jamrock.dev | bash
-  jamrock init my-app
-  ...
-  cd my-app
-  npm install
-  bin/node dev
+curl -L get.jamrock.dev | bash
+jamrock init my-app
+...
+cd my-app
+npm install
+bin/node dev
 ```
 
 You should get something like this:
 
 ```
-■ Jamrock v#[pkg.version] (node {process.version})
+■ Jamrock v0.0.0 (node {process.version})
 Processing ./pages to ./build
 Listening on <a href="http://localhost:8080" target="_blank">http://localhost:8080</a>
 ```
