@@ -25,14 +25,14 @@ export function attrs(data) {
   const props = Object.entries(data).reduce((memo, [key, value]) => {
     if (key === '@html') return memo;
 
-    if (key.charAt() === '@') {
+    if (key[0] === '@') {
       key = key.replace('@', 'data-');
       value = Is.str(value)
         ? value.replace('@', 'data-')
         : value;
     }
 
-    if (key.charAt() === ':') {
+    if (key[0] === ':') {
       key = key.substr(1);
       reset.push(key);
       memo.push(` data-is:${key}`);
@@ -203,7 +203,7 @@ export function cssify(styles) {
 
   styles.forEach(css => {
     if (Is.arr(css)) {
-      if (css[0].charAt() === '@') {
+      if (css[0][0] === '@') {
         if (css[1].length > 0) {
           out.push(`${css[0]}{${css[1].join('\n')}}`);
         }

@@ -56,8 +56,8 @@ export function rankify(route) {
 
   let depth = -1;
   for (let i = 0; i < parts.length; i++) {
-    if (':*'.includes(parts[i].charAt())) {
-      depth += parts[i].charAt() === '*' ? 1 : 2;
+    if (':*'.includes(parts[i][0])) {
+      depth += parts[i][0] === '*' ? 1 : 2;
       params.push(parts[i]);
     } else {
       depth += parts[i].length * 3;
@@ -95,9 +95,9 @@ export function routify(cwd, set) {
     while (parts.length > 0) {
       const key = parts.shift();
 
-      if (key.charAt() === '+') {
+      if (key[0] === '+') {
         let route = path.replace(/\/\+\w+/g, '');
-        route = route.charAt() !== '/' ? `/${route}` : route;
+        route = route[0] !== '/' ? `/${route}` : route;
 
         if (key === '+server') {
           leaf.options.middleware = rebase(src);

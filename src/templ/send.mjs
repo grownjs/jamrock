@@ -113,7 +113,7 @@ export function streamify(ctx) {
     const values = [];
 
     for (const key of keys) {
-      if (key.charAt() === '@') continue;
+      if (key[0] === '@') continue;
 
       const value = state[key];
 

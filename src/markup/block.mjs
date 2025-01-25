@@ -122,7 +122,7 @@ export class Block {
         .map(_ => Object.defineProperty(_, 'code', { get: () => Template.read(_.src) }));
 
       imports = this.module.children.concat(this.script.children)
-        .filter(_ => !_.includes('.html') && _.charAt() === '.')
+        .filter(_ => !_.includes('.html') && _[0] === '.')
         .map(_ => ({ ref: _, src: Template.join(this.base, _) }));
     }
 
@@ -435,7 +435,7 @@ export default {${defaults},__functions,__exported,__handler,__routes};
         return `${symbols} = await __loader('${$3}')`;
       }
 
-      if ($3.charAt() === '.' && !$3.includes('.html')) {
+      if ($3[0] === '.' && !$3.includes('.html')) {
         fixed += 21;
         return `${symbols} = await /*@@*/__resolve('${$3}')`;
       }

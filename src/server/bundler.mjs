@@ -11,13 +11,13 @@ export const createTransform = ({ Template, fetchSource }) => ({
     build.onResolve({ filter: RE_HTTPS_URL }, args => ({ path: args.path, namespace: HTTP_NS }));
 
     build.onResolve({ filter: RE_MATCH_ALL }, async args => {
-      if (args.namespace === HTTP_NS || args.path.charAt() === '/') return;
+      if (args.namespace === HTTP_NS || args.path[0] === '/') return;
       if (RE_HTTPS_URL.test(args.path)) return { path: args.path, namespace: HTTP_NS };
 
       const name = args.path.split('/')[0];
       const ext = args.path.split('.').pop();
 
-      if (name.charAt() === '.' && !ALLOWED_EXTENSIONS.includes(ext)) {
+      if (name[0] === '.' && !ALLOWED_EXTENSIONS.includes(ext)) {
         const src = Template.join(args.resolveDir.replace(process.cwd(), '.'), args.path);
 
         return { path: src, external: true };

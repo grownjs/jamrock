@@ -150,7 +150,7 @@ export function lexer(code, token) {
     return;
   }
 
-  const offset = '#@'.includes(code.charAt())
+  const offset = '#@'.includes(code[0])
     ? code.indexOf(' ')
     : 0;
 

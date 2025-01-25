@@ -34,7 +34,9 @@ export const createWatcher = ({ fs }, watcher, compiler) => {
     sources = [];
 
     if (!quiet) {
+      console.log('[CHANGE]', changed);
       clients.forEach(ws => {
+        console.log('[SOCKET]', changed);
         ws.send(`reload ${changed.join(' ')}`);
       });
     }
@@ -100,7 +102,7 @@ export const createWatcher = ({ fs }, watcher, compiler) => {
       if (req.url.split('/').pop().includes('.')) return;
       if (req.method === 'GET') {
         try {
-          const url = req.url.charAt() === '/' ? req.url : new URL(req.url).pathname;
+          const url = req.url[0] === '/' ? req.url : new URL(req.url).pathname;
           const found = compiler.matches(url);
 
           if (found.route) {

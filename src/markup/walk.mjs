@@ -168,7 +168,7 @@ export function traverse(obj, html, parent, context, counter = 0) {
           return;
         }
 
-        if (token.content.block && token.content.tag.charAt() !== '@') {
+        if (token.content.block && token.content.tag[0] !== '@') {
           if (token.content.open) {
             stack.push(token.content);
 

@@ -437,7 +437,7 @@ export class Template {
     }
 
     if (resolved && Template.exists(resolved)) {
-      return resolved.charAt() === '/'
+      return resolved[0] === '/'
         ? Template.reload(`file://${resolved}`)
         : Template.reload(`file://${process.cwd()}/${resolved}`);
     }
@@ -449,7 +449,7 @@ export class Template {
     if (!force && Template.cache?.has(id)) {
       return Template.cache.get(id).module;
     }
-    if (force && id.charAt() === '/') {
+    if (force && id[0] === '/') {
       return import(`file://${id}?d=${Date.now()}`);
     }
     return import(id);
@@ -540,7 +540,7 @@ export class Template {
         const src = $4 || $3 || $2 || $1;
         const source = base ? Template.join(base, src) : src;
 
-        if (src.charAt() !== '.' || filepath === source) return _;
+        if (src[0] !== '.' || filepath === source) return _;
 
         const key = rebase(source, process.cwd());
 
@@ -629,7 +629,7 @@ export class Template {
     const paths = [];
 
     if (mod.indexOf('node:') === 0) return mod;
-    if (!mod.includes(':') && mod.charAt() === '/') paths.push(mod);
+    if (!mod.includes(':') && mod[0] === '/') paths.push(mod);
     else if (Template.exists(`node_modules/${mod.split(':')[0]}/package.json`)) return mod;
 
     for (let i = 0; i < paths.length; i += 1) {

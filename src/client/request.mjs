@@ -79,7 +79,7 @@ export function loadPage({ el, wait, target, fragment }, url, data, method, _hea
 
   return doRequest.call(this, url || _location, data, method, _headers).then(body => sleep(ms).then(() => {
     if (!body) return _callback && _callback(target, null);
-    if (!(body.charAt() === '{' && body.substr(-1) === '}')) {
+    if (!(body[0] === '{' && body.substr(-1) === '}')) {
       if (hasHTML(body)) {
         spaNavigate(() => redrawPage(body));
       } else if (body) {

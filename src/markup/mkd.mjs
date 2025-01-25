@@ -74,7 +74,7 @@ export async function render(content, inline) {
   };
 
   renderer.paragraph = text => {
-    return inline || text.charAt() === '\0' ? text : `<p>${text}</p>`;
+    return inline || text[0] === '\0' ? text : `<p>${text}</p>`;
   };
 
   const tree = parseMarkup(await kramed(s(buffer.join('')), { renderer }));

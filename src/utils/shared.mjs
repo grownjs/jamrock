@@ -59,7 +59,7 @@ export function omit(obj, keys) {
 
 export function pick(obj, keys) {
   return Object.keys(obj).reduce((memo, key) => {
-    if ((!keys || key.charAt() === '@' || keys.includes(key)) && typeof obj[key] !== 'undefined' && obj[key] !== null) {
+    if ((!keys || key[0] === '@' || keys.includes(key)) && typeof obj[key] !== 'undefined' && obj[key] !== null) {
       memo[key] = obj[key];
     }
     return memo;
