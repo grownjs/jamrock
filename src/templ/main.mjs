@@ -184,13 +184,6 @@ export class Template {
   }
 
   static async finalize(e, self, chunk, mixins, filepath) {
-    const fragments = {};
-
-    // FIXME: use this technique when executing from fragments over ws/sse
-    // also, how in the hell we're going to capture fragment and such?
-    serialize(chunk.body, null, (vnode, hooks) => decorate(chunk, self, vnode, hooks));
-    serialize(chunk.head, null, (vnode, hooks) => decorate(chunk, self, vnode, hooks));
-
     mixins.forEach(mixin => {
       // FIXME: how to check dupes?
       chunk.head = (chunk.head || []).concat(mixin.head);
@@ -203,7 +196,13 @@ export class Template {
       Object.assign(chunk.actions, mixin.actions);
     });
 
+    // FIXME: use this technique when executing from fragments over ws/sse
+    // also, how in the hell we're going to capture fragment and such?
+    serialize(chunk.body, null, (vnode, hooks) => decorate(chunk, self, vnode, hooks));
+    serialize(chunk.head, null, (vnode, hooks) => decorate(chunk, self, vnode, hooks));
+
     const images = [];
+    const fragments = {};
 
     // FIXME: check if we could prebuilt these files...
     for (const asset of new Set([].concat(...Object.values(chunk.files)))) {

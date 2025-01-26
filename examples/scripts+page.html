@@ -1,11 +1,12 @@
 <script context="module">
   function click(node) {
+    const { callme } = Jamrock.Browser.actions;
     console.log('[HANDLE]', node);
     async function onClick() {
       // FIXME: probably these should be a map, with all exported
       // actions from the render tree... so we can prevalidate calls
       // and such!
-      const result = await Jamrock.Browser.actions.callme();
+      const result = await callme();
       console.log({ result });
     }
     node.addEventListener('click', onClick);
@@ -27,7 +28,7 @@
   FIXME!!
   <script global scoped>
     import moment from 'https://cdn.skypack.dev/moment';
-    console.log(self === window, self.textContent);
+    // console.log(self === window, self.textContent);
     self.textContent = moment().format('hh:mm:ss');
     const t = setInterval(() => {
       self.textContent = moment().format('hh:mm:ss');
