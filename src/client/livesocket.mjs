@@ -165,10 +165,10 @@ export class LiveSocket {
       };
     }
 
-    // const eventSource = new EventSource('/@');
-    // eventSource.onmessage = event => {
-    // console.log(event.data);
-    // };
+    const eventSource = new EventSource('/@');
+    eventSource.onmessage = event => {
+      console.log('@@', event.data);
+    };
 
     const queue = [];
 
