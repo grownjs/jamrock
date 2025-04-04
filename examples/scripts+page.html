@@ -1,6 +1,6 @@
 <script context="module">
   function click(node) {
-    const { callme } = Jamrock.Browser.actions;
+    const { callme } = window.Jamrock.Browser.actions;
     console.log('[HANDLE]', node);
     async function onClick() {
       // FIXME: probably these should be a map, with all exported

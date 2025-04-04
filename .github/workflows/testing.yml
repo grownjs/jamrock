@@ -50,7 +50,7 @@ jobs:
 
       - name: Configure pocketbase
         run: |
-          docker exec ${{ job.services.backend.id }} sh -c 'pocketbase admin create yo@soypache.co Password.123'
+          docker exec ${{ job.services.backend.id }} sh -c 'pocketbase superuser create yo@soypache.co Password.123'
 
       - name: Run all tests
         run: make ci DIST_TASK=dist:min CODECOV_TOKEN=${{ secrets.CODECOV_TOKEN }}
