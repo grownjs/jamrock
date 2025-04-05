@@ -213,11 +213,16 @@ export class LiveSocket {
           // FIXME: here we should get a list of files changed... and then,
           // we should remove them from the import-memory and such...
           if (!sources.length || sources.includes(this.document)) {
-            if (e.isTrusted) {
-              // window.frames.top.Jamrock.Components.reload(e.data);
-              window.frames.top.Jamrock.Browser.reload(null, true);
-            } else {
-              // window.Jamrock.Components.reload(e.data);
+            try {
+              if (e.isTrusted) {
+                // window.frames.top.Jamrock.Components.reload(e.data);
+                window.frames.top.Jamrock.Browser.reload(null, true);
+              } else {
+                // window.Jamrock.Components.reload(e.data);
+                window.Jamrock.Browser.reload(null, true);
+              }
+            } catch (error) {
+              console.error('Error reloading:', error);
               window.Jamrock.Browser.reload(null, true);
             }
           } else {
