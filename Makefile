@@ -85,7 +85,7 @@ seed\:%: clean-ts
 
 admin:
 	@pocketbase migrate
-	@pocketbase admin create yo@soypache.co Password.123
+	@pocketbase superuser create yo@soypache.co Password.123
 
 start\:%:
 	@bin/$* serve --port 3000 --unocss --src examples $(START_FLAGS)

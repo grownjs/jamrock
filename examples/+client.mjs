@@ -1,5 +1,5 @@
 // import { actions } from 'jamrock:browser';
-
+const actions = {};
 export function click(node) {
   console.log('[HANDLE]', node);
   async function onClick() {
