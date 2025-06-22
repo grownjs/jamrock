@@ -32,15 +32,17 @@ export function spaNavigate(callback) {
     : callback();
 }
 
-export function findNodes(key, node) {
+export function findNodes(key, node, skip) {
   if (!node) return;
-  if (node[`@${key}`]) return node[`@${key}`];
-
   let root = node;
   while (root && root.parentNode) {
     if (root === document.body) break;
     if (key in root.dataset) {
-      node[`@${key}`] = root;
+      if (skip > 0) {
+        root = root.parentNode;
+        skip--;
+        continue;
+      }
       return root;
     }
     if ('fragment' in root.dataset) break;

@@ -3,7 +3,7 @@ import { Is, repeat, identifier } from '../utils/server.mjs';
 
 const NOT_ANCHORS = [
   'br', 'hr', 'wbr', 'area', 'html', 'head', 'title', 'base', 'meta', 'link', 'style', 'script', 'track', 'option',
-  'embed', 'object', 'param', 'source', 'portal', 'svg', 'math', 'canvas', 'noscript', 'datalist', 'slot', '!DOCTYPE',
+  'embed', 'object', 'param', 'source', 'portal', 'math', 'canvas', 'noscript', 'datalist', 'slot', '!DOCTYPE',
 ];
 
 const NOT_SUPPORTED = [

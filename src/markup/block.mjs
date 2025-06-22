@@ -228,7 +228,10 @@ export const __attributes = ${this.$attributes};
         node.elements.push({
           name: 'use',
           type: 'element',
-          attributes: { 'xlink:href': `#${Template.filename(path, '.svg')}` },
+          attributes: {
+            'xlink:href': `#${Template.filename(path, '.svg')}`,
+            'data-location': file,
+          },
         });
       }
     } else {
