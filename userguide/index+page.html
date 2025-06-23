@@ -1,13 +1,14 @@
-**Jamrock** is a framework for the server-side,
+**Jamrock** is a framework for making web pages,
 
-1. It compiles your `.html` files into something that can be called server-components.
-2. The server will execute them against the request and responds with HTML or JSON as needed.
-3. The browser will take the HTML as is &mdash; but if JavaScript is available the framework will get JSON to patch the DOM with the changes, resulting on smoother updates.
+1. It compiles your `.html` files into something that can be called pages and components.
+2. The server will execute them against the request and responds with plain old HTML.
+3. The browser already knows what to do!
 
 Use the script below to download the package and uncompress it locally at your `$HOME`.
 
-```
+```bash
 curl -L get.jamrock.dev | bash
+...
 jamrock init my-app
 ...
 cd my-app
