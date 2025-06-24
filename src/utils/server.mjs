@@ -1,5 +1,5 @@
 import { isNot as not, isArray as arr, isPlain as plain, isString as str, isScalar as scalar, isFunction as func } from 'somedom/ssr';
-
+import mime from 'mime/lite';
 import { Is } from './shared.mjs';
 
 export { default as $ } from 'picocolors';
@@ -34,6 +34,10 @@ Object.assign(Is, {
 });
 
 export * from './shared.mjs';
+
+export function mimeType(file) {
+  return mime.getType(file);
+}
 
 export function concat(a, b) {
   return ((a === '/' ? '' : a) + b).replace(/\/$/, '');

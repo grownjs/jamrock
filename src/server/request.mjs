@@ -478,10 +478,9 @@ export function serveFrom(env, dest, editor) {
 
     const asset = Template.join(env.options.src, path);
 
-    // FIXME: determine right mime-type
     if (env.assets.includes(asset)) {
       const headers = {
-        'content-type': 'image/svg+xml',
+        'content-type': Util.mimeType(path),
       };
 
       return new Response(Template.read(asset), { headers });
