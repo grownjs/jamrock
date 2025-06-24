@@ -466,7 +466,7 @@ export function finalResponse(result) {
 }
 
 export function serveFrom(env, dest, editor) {
-  const files = Template.glob(`${dest}/*.js`).map(x => x.replace(`${dest}/`, ''));
+  const files = Template.glob(`${dest}/*.{js,css}`).map(x => x.replace(`${dest}/`, ''));
 
   return req => {
     const path = req.url.split('/').slice(3).join('/');
@@ -488,7 +488,7 @@ export function serveFrom(env, dest, editor) {
 
     if (files.includes(path)) {
       const headers = {
-        'content-type': 'application/javascript',
+        'content-type': Util.mimeType(path),
       };
 
       return new Response(Template.read(`${dest}/${path}`), { headers });
