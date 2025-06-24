@@ -23,18 +23,17 @@ they're transformed using the following rules:
 
 | Filename | Route |
 | - | - |
-| `pages/index+page.html` | `/` |
-| `pages/login+page.html` | `/login` |
-| `pages/(lang).blog+page.html` | `/:lang?/blog` |
-| `pages/($lang).blog+page.html` | `/:lang?/blog` |
-| `pages/hello.[name]+page.html` | `/hello/:name` |
-| `pages/posts/$post_id+page.html` | `/posts/:post_id` |
-| `pages/_site/sitemap[.xml]+page.html` | `/sitemap.xml` |
-| `pages/_site/articles/[...slug]+page.html` | `/articles/*slug` |
+| `index+page.html` | `/` |
+| `login+page.html` | `/login` |
+| `(lang).blog+page.html` | `/:lang?/blog` |
+| `hello.[name]+page.html` | `/hello/:name` |
+| `posts/$post_id+page.html` | `/posts/:post_id` |
+| `_site/sitemap[.xml]+page.html` | `/sitemap.xml` |
+| `_site/articles/[...slug]+page.html` | `/articles/*slug` |
 
 > [!NOTE]
 > Path parameters can be declared as `$param` or `[param]`,
-> optional parameters as `($param)` or just `(param)`,
+> optional parameters use parentheses (e.g. `(param)`),
 > and catch-all parameters as `[...param]`.
 >
 > Segments are taken from nested folders or `.` separators,
