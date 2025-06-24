@@ -392,11 +392,11 @@ ROUTER(FIXME)
 
   test('should collect assets from components', async ({ expect }) => {
     const tpl = await build('./resources+page.html');
-    const { files, html, meta } = await tpl.render();
+    const { media, html, meta } = await tpl.render();
 
     expect(meta[2]).toEqual(['link', { rel: 'icon', href: '@/generated/pause-icon.svg' }, []]);
 
-    expect(files).toEqual({
+    expect(media).toEqual({
       'resources+page.html': [
         'generated/pause-icon.svg',
       ],

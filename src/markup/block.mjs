@@ -33,7 +33,7 @@ export class Block {
     Object.defineProperty(this, 'doc', { value: {} });
     Object.defineProperty(this, 'meta', { value: [] });
     Object.defineProperty(this, 'attrs', { value: {} });
-    Object.defineProperty(this, 'assets', { value: { js: [], css: [], files: [] } });
+    Object.defineProperty(this, 'assets', { value: { js: [], css: [], media: [] } });
 
     const { locations } = blocks(this.code, false);
 
@@ -54,7 +54,7 @@ export class Block {
         styles: [],
         markup: {},
         rules: [],
-        files: [],
+        media: [],
       },
       locate,
       lexer,
@@ -167,7 +167,7 @@ export class Block {
   }
 
   get $assets() {
-    return this.assets.files;
+    return this.assets.media;
   }
 
   get $prefix() {
@@ -181,7 +181,7 @@ export const __fragments = {${this.$fragments}};
 
 export const __scripts = ${javascript};
 export const __styles = ${stylesheets};
-export const __files = ${resources};
+export const __media = ${resources};
 
 export const __context = ${JSON.stringify(this.context)};
 export const __doctype = ${this.$doctype};
@@ -195,6 +195,7 @@ export const __attributes = ${this.$attributes};
     const path = src || href;
 
     if (path && !Is.str(path)) return;
+    if (path.charAt() === '/') return;
 
     const file = path && Template.join(this.base, path);
 
@@ -205,8 +206,8 @@ export const __attributes = ${this.$attributes};
 
       this.children.push(file);
 
-      if (!resources.files.includes(file)) {
-        resources.files.push(file);
+      if (!resources.media.includes(file)) {
+        resources.media.push(file);
       }
     }
 
@@ -309,7 +310,7 @@ export const __attributes = ${this.$attributes};
   }
 
   toString() {
-    const defaults = '__src,__dest,__files,__context,__snippets,__fragments,__scripts,__styles,__doctype,__metadata,__attributes,__template';
+    const defaults = '__src,__dest,__media,__context,__snippets,__fragments,__scripts,__styles,__doctype,__metadata,__attributes,__template';
     const template = reduce(this.markup.content, this.context, 1);
 
     if (!this.script) {

@@ -46,6 +46,7 @@ export class Template {
   }
 
   async transform(cb, bundle, options, imported = []) {
+    const defaults = this.partial.opts;
     const resources = this.partial.assets;
     const context = this.partial.context;
     const filepath = this.partial.src;
@@ -89,6 +90,12 @@ export class Template {
       tasks.push(cb(this.partial.styles, 'css', options)
         .then(css => set.unshift(...css.map((x, i) => {
           const destFile = `${target.replace('.html', '')}(${i}).css`;
+
+          // FIXME: extract file for public/ usage
+          x.content = x.content.replace(/url\((.+?)\)/g, (_, $1) => {
+            resources.media.push(Template.join(defaults.src, $1));
+            return `url(/${$1})`;
+          });
 
           let styles;
           if (!x.params.global) {
@@ -148,10 +155,10 @@ export class Template {
     const doc = output.doc;
     const meta = output.head;
     const attrs = output.attrs;
-    const files = output.files;
+    const media = output.media;
     const actions = output.actions;
 
-    return { actions, files, attrs, meta, html, doc, css, js };
+    return { actions, media, attrs, meta, html, doc, css, js };
   }
 
   static async preflight(main, ctx, cb) {
@@ -190,7 +197,7 @@ export class Template {
 
       Object.assign(chunk.doc, mixin.doc);
       Object.assign(chunk.attrs, mixin.attrs);
-      Object.assign(chunk.files, mixin.files);
+      Object.assign(chunk.media, mixin.media);
       Object.assign(chunk.styles, mixin.styles);
       Object.assign(chunk.scripts, mixin.scripts);
       Object.assign(chunk.actions, mixin.actions);
@@ -205,7 +212,7 @@ export class Template {
     const fragments = {};
 
     // FIXME: check if we could prebuilt these files...
-    for (const asset of new Set([].concat(...Object.values(chunk.files)))) {
+    for (const asset of new Set([].concat(...Object.values(chunk.media)))) {
       if (asset.includes('.svg')) {
         const svg = Template.read(asset)
           .trim()
@@ -332,7 +339,7 @@ export class Template {
 
     const scripts = { [component.__src]: component.__scripts };
     const styles = { [component.__src]: component.__styles };
-    const files = { [component.__src]: component.__files };
+    const media = { [component.__src]: component.__media };
 
     const hooks = component.__context === 'module'
       ? Template.hooks(ctx, parent)
@@ -393,7 +400,7 @@ export class Template {
       }
 
       return {
-        actions, scripts, styles, files, attrs, head, body, doc,
+        actions, scripts, styles, media, attrs, head, body, doc,
       };
     } catch (e) {
       this.failure = debug({
@@ -404,7 +411,7 @@ export class Template {
 
       if (ctx.route?.error) throw this.failure;
 
-      return { scripts, styles, files, body: [['pre', {}, ents(this.failure.stack)]] };
+      return { scripts, styles, media, body: [['pre', {}, ents(this.failure.stack)]] };
     } finally {
       if (ctx.stack) {
         ctx.stack.pop();

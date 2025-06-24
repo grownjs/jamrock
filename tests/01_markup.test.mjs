@@ -277,7 +277,7 @@ test.group('parsing', t => {
       </body>
     `, 'page.html')).toEqual({
       context: 'module',
-      files: [],
+      media: [],
       markup: {
         attributes: { '@location': 'page.html:5:7', '@ref': 'x04nym8e' },
         content: [],
@@ -323,7 +323,7 @@ test.group('parsing', t => {
       {/snippet}
     `, 'snippets.html')).toEqual({
       context: 'static',
-      files: [],
+      media: [],
       fragments: {},
       snippets: {
         sum: {
@@ -381,7 +381,7 @@ test.group('parsing', t => {
       </body>
     `, 'snippets.html')).toEqual({
       context: 'static',
-      files: [],
+      media: [],
       fragments: {},
       snippets: {
         sum: {
@@ -474,7 +474,7 @@ test.group('parsing', t => {
       </style>
     `, 'markup.html')).toEqual({
       context: 'module',
-      files: [],
+      media: [],
       fragments: {},
       snippets: {},
       markup: {
