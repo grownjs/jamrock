@@ -12,16 +12,20 @@
   <meta name="release" content="{process.env.GIT_REVISION}" />
   <link rel="stylesheet" href="//unpkg.com/highlight.js@10.7.3/styles/tomorrow.css" inline />
   <link rel="stylesheet" href="//fonts.googleapis.com/css?family=Montserrat" inline />
+  <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png" />
+  <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png" />
+  <link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png" />
+  <link rel="manifest" href="/site.webmanifest" />
 </head>
 
 <body class="reset">
   <main class="body min">
     <div class="center">
-      <span class="welcome">
+      <a class="welcome" href="/welcome">
         <svg src="./images/welcome.svg" height="32" />
-      </span>
+      </a>
       <h1 class="meteorite floating">
-        <a href="/" data-version="{process.env.GIT_REVISON || 'HEAD'}">
+        <a href="/" data-version="{process.env.GIT_REVISION}">
           <svg src="./images/jamrock-meteorite.svg" size="420" />
         </a>
       </h1>
