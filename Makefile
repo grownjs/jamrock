@@ -69,7 +69,7 @@ test-nodejs:
 	@make -s e2e:node
 
 docs:
-	@bin/node serve --watch --src userguide
+	@bin/node serve --watch --src ./userguide
 
 live:
 	@npm pack
