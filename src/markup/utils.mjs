@@ -7,6 +7,11 @@ import { Is, repeat, encodeText } from '../utils/server.mjs';
 // broken otherwise...
 //
 
+export function decode(value) {
+  return value
+    .replace(/&amp;/g, '&');
+}
+
 export function unsafe(value) {
   return value
     .replace(/\{/g, '&lbrace;')

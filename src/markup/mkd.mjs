@@ -8,9 +8,9 @@ import cssLang from 'highlight.js/lib/languages/css';
 import xmlLang from 'highlight.js/lib/languages/xml';
 import jsLang from 'highlight.js/lib/languages/javascript';
 
-import { unsafe } from './utils.mjs';
 import { traverse } from './walk.mjs';
 import { jamLang } from '../templ/lang.mjs';
+import { unsafe, decode } from './utils.mjs';
 import { parseMarkup, decodeEnts } from '../utils/server.mjs';
 
 hljs.registerLanguage('xml', xmlLang);
@@ -83,6 +83,10 @@ export async function render(content, inline, chunks) {
 
   renderer.paragraph = text => {
     return inline || text[0] === '\0' ? text : `<p>${text}</p>`;
+  };
+
+  renderer.codespan = text => {
+    return `<code>${decode(text)}</code>`;
   };
 
   const tree = parseMarkup(await kramed(s(buffer.join('')), { renderer }));
