@@ -183,13 +183,13 @@ export class Components {
     const path = this.rebase(url, reload);
 
     if (!this.imports[path]) {
-      const src = path.replace(/\.html(?:\/\d+)?/, '.bundled.mjs');
+      const src = path.replace(/\.(?:md|html)(?:\/\d+)?/, '.bundled.mjs');
 
       this.imports[path] = Date.now();
       let mod = await import(src);
       mod = mod.default || mod;
       this.modules.set(url, mod);
-      if (url.includes('.html')) {
+      if (url.includes('.md') || url.includes('.html')) {
         const old = this.loaded.get(url);
         this.defaults[url] = { ...mod.__data, ...this.defaults[url] };
         this.loaded.set(url, { ...old, ...mod, __data: this.defaults[url] });
@@ -272,7 +272,7 @@ export class Components {
 
       if (ev?.node) {
         const key = ev.params.source;
-        const src = key.replace(/\.html(?:\/\d+)?$/, '.hooks.mjs');
+        const src = key.replace(/\.(?:md|html)(?:\/\d+)?$/, '.hooks.mjs');
 
         memo.push(this.import(src)
           .then(mod => {

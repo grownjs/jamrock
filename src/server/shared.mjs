@@ -74,7 +74,7 @@ export const createWatcher = ({ fs }, watcher, compiler) => {
     }
 
     (changes.length ? changes : [src]).forEach(file => {
-      if (!file.includes('.html')) return;
+      if (!(file.includes('.md') || file.includes('.html'))) return;
       if (!sources.includes(file)) {
         clearTimeout(t);
         t = setTimeout(sync, 60);
@@ -163,7 +163,7 @@ export const createCompiler = ({ fs, path }, options, external) => {
 
   function handlers() {
     const api = Template.glob(`${options.src}/**/+server.mjs`);
-    const pages = Template.glob(`${options.src}/**/*.html`);
+    const pages = Template.glob(`${options.src}/**/*.{md,html}`);
 
     const sources = pages.concat(api).map(x => x.replace(cwd, '.'));
     const routes = Handler.controllers(options.src, sources.filter(x => /\+(?:page|error|layout|server)/.test(x)));
@@ -255,7 +255,7 @@ export const createCompiler = ({ fs, path }, options, external) => {
       const src = file.replace(cwd, '.');
       const key = Handler.rebase(src);
 
-      if (!key.includes('.html')) {
+      if (!(key.includes('.md') || key.includes('.html'))) {
         this[FILES_PROPERTY][key] = { filepath: key, children: [] };
         continue;
       }
@@ -274,7 +274,7 @@ export const createCompiler = ({ fs, path }, options, external) => {
 
             results.push([{ content: `export * from '${relative}';\n` }, Handler.rebase(destFile)]);
           } else {
-            const destFile = Template.join(options.dest, chunk.dest).replace('.html', '.generated.mjs');
+            const destFile = Template.join(options.dest, chunk.dest).replace(/\.(?:md|html)/, '.generated.mjs');
 
             printLog(`  ${Util.$.green('write')} ${Util.$.gray(destFile)}`);
 

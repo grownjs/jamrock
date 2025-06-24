@@ -343,8 +343,10 @@ export async function createModuleResponse(env, conn) {
     mod = Template.read(src);
     status = 200;
   } else {
-    const key = file.replace('.hooks.mjs', '.html');
-    const _mod = await Template.reload(env.files[key].filepath);
+    const _mkd = file.replace('.hooks.mjs', '.md');
+    const _html = file.replace('.hooks.mjs', '.html');
+    const _file = env.files[_mkd] || env.files[_html];
+    const _mod = await Template.reload(_file.filepath);
 
     status = 200;
     mod = `/* ${file} */\n${Object.values(_mod.__functions).map(_ => `export ${_.toString()}\n`).join('')}`;

@@ -124,12 +124,12 @@ export class Block {
       lexer(Block.module(this.script.code, true), { position: { line: 1, col: this.script.code.indexOf('\n') } });
 
       children = this.module.children.concat(this.script.children)
-        .filter(_ => _.includes('.html'))
+        .filter(_ => _.includes('.md') || _.includes('.html'))
         .map(_ => ({ ref: _, src: Template.join(this.base, _) }))
         .map(_ => Object.defineProperty(_, 'code', { get: () => Template.read(_.src) }));
 
       imports = this.module.children.concat(this.script.children)
-        .filter(_ => !_.includes('.html') && _[0] === '.')
+        .filter(_ => !(_.includes('.md') || _.includes('.html')) && _[0] === '.')
         .map(_ => ({ ref: _, src: Template.join(this.base, _) }));
     }
 
@@ -374,7 +374,7 @@ ${this.context === 'client'
 
     let mod = this.module?.code || '';
     this.module?.children.forEach(_ => {
-      mod = mod.replace(_, _.replace('.html', '.generated.mjs'));
+      mod = mod.replace(_, _.replace(/\.(?:md|html)/, '.generated.mjs'));
     });
 
     const js = `/* eslint-disable */${mod}
@@ -451,13 +451,13 @@ for (const [, fn] of Object.entries(__functions)) fn.$ = __src;
         return `${symbols} = await __loader('${$3}')`;
       }
 
-      if ($3[0] === '.' && !$3.includes('.html')) {
+      if ($3[0] === '.' && !($3.includes('.md') || $3.includes('.html'))) {
         fixed += 21;
         return `${symbols} = await /*@@*/__resolve('${$3}')`;
       }
 
-      fixed += $3.includes('.html') ? 21 : 12;
-      return `${symbols} = await import('${$3.replace('.html', '.generated.mjs')}')`;
+      fixed += $3.includes('.md') || $3.includes('.html') ? 21 : 12;
+      return `${symbols} = await import('${$3.replace(/\.(?:md|html)/, '.generated.mjs')}')`;
     });
 
     offset += fixed;

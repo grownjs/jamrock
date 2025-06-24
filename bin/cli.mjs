@@ -29,13 +29,13 @@ console.log(`■ Jamrock v${pkg.version}`, Util.$.gray(`(${runtime}, ${version})
 const USAGE_INFO = `
 Usage: ${!existsSync('package.json') ? 'jamrock' : './bin/{node,deno,bun}'} <COMMAND> [OPTIONS]
 
-  build  Compiles *.html sources into server-components
+  build  Compiles *.{md,html} sources into server-components
   serve  Starts the web-server on the given --port and --host
   route  Prints the available routes found${!existsSync('package.json') ? '\n  init   Generates a new application' : ''}
 
 Options:
 
-  --src      Directory of *.html files to compile (default is ./src)
+  --src      Directory of *.{md,html} files to compile (default is ./src)
   --dest     Destination for compiled files (default is ./dest)
   --watch    Enable file-watching on the web-server
   --prefix   Prefix for bundled resources

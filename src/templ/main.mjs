@@ -81,7 +81,7 @@ export class Template {
       tasks.push(cb(this.partial.scripts
         .filter(x => x.root || x.attributes.scoped || x.attributes.global), 'js', options)
         .then(js => set.unshift(...js.map((x, i) => {
-          const destFile = `${target.replace('.html', '')}(${i}).js`;
+          const destFile = `${target.replace(/\.(?:md|html)/, '')}(${i}).js`;
 
           resources.js.push([x.parent, destFile]);
           return { content: x.content, dest: destFile };
@@ -89,7 +89,7 @@ export class Template {
 
       tasks.push(cb(this.partial.styles, 'css', options)
         .then(css => set.unshift(...css.map((x, i) => {
-          const destFile = `${target.replace('.html', '')}(${i}).css`;
+          const destFile = `${target.replace(/\.(?:md|html)/, '')}(${i}).css`;
 
           // FIXME: extract file for public/ usage
           x.content = x.content.replace(/url\((.+?)\)/g, (_, $1) => {
@@ -113,7 +113,7 @@ export class Template {
 
     if (this.generators?.css) {
       const { css } = await this.generators.css.generate(this.partial.rules.join(' '));
-      const destFile = target.replace('.html', '.css');
+      const destFile = target.replace(/\.(?:md|html)/, '.css');
       const styles = cssify(rulify(css, target));
 
       resources.css.push([destFile]);
@@ -438,7 +438,7 @@ export class Template {
       return Template.cache.get(resolved || id).module;
     }
 
-    if (resolved && (resolved.includes('.html'))) {
+    if (resolved && (resolved.includes('.md') || resolved.includes('.html'))) {
       throw new Error(`Cannot import '${resolved}' file as module`);
     }
 
