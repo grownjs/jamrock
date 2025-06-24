@@ -18,8 +18,9 @@ Everything starts from somewhere:
 
 ## Routes
 
-Files ending with `+page.html` will be used to declare routes,
-they're transformed using the following rules:
+Files ending with `+page.html` will be used to declare routes.
+
+They're transformed using the following rules:
 
 | Filename | Route |
 | - | - |
@@ -43,7 +44,9 @@ they're transformed using the following rules:
 
 ## Handlers
 
-Pages can declare its own routes as well method handlers, to allow a certain method just set its value as `true`, e.g.
+Pages can declare its own route handlers through the `export&nbsp;default` object.
+
+They can be set as boolean, to enable certain methods, or functions to handle the whole request, e.g.
 
 ```html
 <script>
@@ -120,12 +123,12 @@ export default {
 This way you can setup shared behaviour in your applications,
 like authentication, shared props or state, etc.
 
-- Routes declared on the `exxport default` object are evaluated if they match,
+- Routes declared on the `export&nbsp;default` object are evaluated if they match,
   here is where you need to place api-routes as they don't require a page to exists.
 - The `+server.mjs` file can be placed at any level within the pages directory, following the same strategy as `+layout.html` or `+error.html` resolution.
 - These functions will receive the `jamrock:conn` first, any given options will be passed as the second argument.
   Those options should be set like this, e.g. `use: [['name', &lbrace; ... }]]`
-You can define `catch` and `finally` handlers on the `exxport default` object as well,
+You can define `catch` and `finally` handlers on the `export&nbsp;default` object as well,
 they'll receive the error/response and connection respectively.
 
 
