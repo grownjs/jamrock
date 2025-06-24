@@ -8,6 +8,7 @@ import cssLang from 'highlight.js/lib/languages/css';
 import xmlLang from 'highlight.js/lib/languages/xml';
 import jsLang from 'highlight.js/lib/languages/javascript';
 
+import { unsafe } from './utils.mjs';
 import { traverse } from './walk.mjs';
 import { jamLang } from '../templ/lang.mjs';
 import { parseMarkup, decodeEnts } from '../utils/server.mjs';
@@ -21,7 +22,7 @@ hljs.registerLanguage('javascript', jsLang);
 
 import { Expr } from './expr.mjs';
 
-export async function render(content, inline) {
+export async function render(content, inline, chunks) {
   const nodes = [];
   const buffer = content.reduce((memo, token) => {
     if (token instanceof Expr) {
@@ -43,10 +44,17 @@ export async function render(content, inline) {
   const renderer = new kramed.Renderer();
 
   renderer.code = (text, lang) => {
+    if (text === '\n' && chunks.length > 0) {
+      text = chunks.shift().code;
+      text = text.charAt() === ' '
+        ? s(text)
+        : text;
+    }
+
     const code = lang ? hljs.highlight(decodeEnts(text), { language: lang }).value : text;
     const attrs = lang ? ` data-lang="${lang}"` : '';
 
-    return `<pre class="hljs"${attrs}><code>${code}</code></pre>`;
+    return `<pre class="hljs"${attrs}><code>${unsafe(code)}</code></pre>`;
   };
 
   renderer.table = (headers, rows) => {
@@ -78,6 +86,7 @@ export async function render(content, inline) {
   };
 
   const tree = parseMarkup(await kramed(s(buffer.join('')), { renderer }));
-  const result = traverse(tree, '', null, { stack: nodes });
+  const result = traverse(tree, '', null, { stack: nodes, file: '+page.md' });
+
   return result;
 }

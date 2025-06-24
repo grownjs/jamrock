@@ -137,16 +137,12 @@ export function traverse(obj, html, parent, context, counter = 0) {
       } else {
         copy.push(newNode);
       }
-    } else if (node.type === 'text' && node.content.trim().length) {
-      if (context.stack) {
-        if (node.content.includes('\0')) {
-          copy.push(...node.content.split('\0')
-            .reduce((memo, _, i, c) => memo
-              .concat(_ ? { type: 'text', content: _ } : [])
-              .concat(i < c.length - 1 ? context.stack.shift() : []), []));
-        } else {
-          copy.push(node);
-        }
+    } else if (node.type === 'text' && (preserve || node.content.trim().length)) {
+      if (context.stack && node.content.includes('\0')) {
+        copy.push(...node.content.split('\0')
+          .reduce((memo, _, i, c) => memo
+            .concat(_ ? { type: 'text', content: _ } : [])
+            .concat(i < c.length - 1 ? context.stack.shift() : []), []));
         return;
       }
 

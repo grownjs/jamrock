@@ -5,6 +5,14 @@ import { Is, repeat, encodeText } from '../utils/server.mjs';
 // encoding is required to keep the resulting text JSON-friendly
 // with the transport-layer, for some reason the response is
 // broken otherwise...
+//
+
+export function unsafe(value) {
+  return value
+    .replace(/\{/g, '&lbrace;')
+    .replace(/\}/g, '&rbrace;');
+}
+
 export function encode(value) {
   return encodeText(value, { quotes: false, unsafe: true })
     .replace(/</g, '&lt;')

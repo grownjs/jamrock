@@ -23,6 +23,12 @@ export class Block {
     const id = opts.scope || identifier('jam', src).join('-');
 
     const __dirname = Template.dirname(`${base}/${src}`);
+    const chunks = [];
+
+    tpl = tpl.replace(/```(\w+\n)?([^]*?)```/g, (_, $1, $2) => {
+      chunks.push({ code: $2 });
+      return ['```', $1 || '', $2.replace(/\S/g, ' '), '\n```'].join('');
+    });
 
     Object.defineProperty(this, 'id', { value: id });
     Object.defineProperty(this, 'src', { value: src });
@@ -33,6 +39,7 @@ export class Block {
     Object.defineProperty(this, 'doc', { value: {} });
     Object.defineProperty(this, 'meta', { value: [] });
     Object.defineProperty(this, 'attrs', { value: {} });
+    Object.defineProperty(this, 'chunks', { value: chunks });
     Object.defineProperty(this, 'assets', { value: { js: [], css: [], media: [] } });
 
     const { locations } = blocks(this.code, false);
@@ -259,7 +266,7 @@ export const __attributes = ${this.$attributes};
 
   async transform(elements, resources) {
     if (this.src.includes('+page')) {
-      this.markup.content = await render(this.markup.content);
+      this.markup.content = await render(this.markup.content, null, this.chunks);
     }
 
     await visit(this.markup.metadata, async node => {
