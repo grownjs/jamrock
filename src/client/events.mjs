@@ -57,8 +57,8 @@ export class EventHub {
 
   onHandle(kind) {
     return e => {
-      if (e.metaKey && kind === 'click') {
-        let ref = findNodes('location', e.target, e.shiftKey ? 1 : 0);
+      if (e.metaKey && (e.shiftKey || e.altKey) && kind === 'click') {
+        let ref = findNodes('location', e.target, e.altKey ? 1 : 0);
         if (e.target === document.documentElement || e.target === document.body) {
           ref = document.documentElement;
         }
