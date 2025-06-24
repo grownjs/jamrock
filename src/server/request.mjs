@@ -465,7 +465,7 @@ export function finalResponse(result) {
   return !(body instanceof Response) ? new Response(body, { status, headers }) : body;
 }
 
-export function serveFrom(dest, editor) {
+export function serveFrom(env, dest, editor) {
   const files = Template.glob(`${dest}/*.js`).map(x => x.replace(`${dest}/`, ''));
 
   return req => {
@@ -476,14 +476,23 @@ export function serveFrom(dest, editor) {
       return new Response(null, { status: 204 });
     }
 
-    if (files.includes(path)) {
-      const file = `${dest}/${path}`;
+    const asset = Template.join(env.options.src, path);
 
+    // FIXME: determine right mime-type
+    if (env.assets.includes(asset)) {
+      const headers = {
+        'content-type': 'image/svg+xml',
+      };
+
+      return new Response(Template.read(asset), { headers });
+    }
+
+    if (files.includes(path)) {
       const headers = {
         'content-type': 'application/javascript',
       };
 
-      return new Response(Template.read(file), { headers });
+      return new Response(Template.read(`${dest}/${path}`), { headers });
     }
   };
 }

@@ -488,6 +488,7 @@ export function createEnvironment({ fs, path }, options, external) {
     serve, build, locate, request, compiler, static: _static,
   }, {
     files: { get: () => compiler[FILES_PROPERTY] },
+    assets: { get: () => compiler[ASSETS_PROPERTY] },
     routes: { get: () => compiler[ROUTES_PROPERTY] },
     version: { get: () => compiler[VERSION_PROPERTY] },
   });
