@@ -77,11 +77,12 @@ blockquote {
     }
   }
 
-  &.is-note::before { content: "NOTE"; color: @information; background-image: url('./images/note.svg'); }
-  &.is-tip::before { content: "TIP"; color: @mantis; background-image: url('./images/tip.svg'); }
-  &.is-important::before { content: "IMPORTANT"; color: @important; background-image: url('./images/important.svg'); }
-  &.is-warning::before { content: "WARNING"; color: @attention; background-image: url('./images/warning.svg'); }
-  &.is-caution::before { content: "CAUTION"; color: @failure; background-image: url('./images/caution.svg'); }
+  &.is-note::before { content: "NOTE"; color: @information; background-image: url('../images/note.svg'); }
+  &.is-tip::before { content: "TIP"; color: @mantis; background-image: url('../images/tip.svg'); }
+  &.is-important::before { content: "IMPORTANT"; color: @important; background-image: url('../images/important.svg'); }
+
+  &.is-warning::before { content: "WARNING"; color: @attention; background-image: url('../images/warning.svg'); }
+  &.is-caution::before { content: "CAUTION"; color: @failure; background-image: url('../images/caution.svg'); }
 
   &.is-note { border-color: @information; }
   &.is-tip { border-color: @mantis; }
