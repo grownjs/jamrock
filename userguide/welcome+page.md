@@ -8,7 +8,7 @@
 2. The server will execute them against the request and responds with plain old HTML.
 3. That's it, like it used to be.
 
-## Sounds familiar? Give it a try!
+## Feels nostalgic? Give it a try!
 
 Install **jamrock** in your `$HOME`:
 
