@@ -4,6 +4,7 @@ import { createFSWatcher } from './helpers.mjs';
 import { createConnection } from './connection.mjs';
 
 const FILES_PROPERTY = Symbol('@@files');
+const ASSETS_PROPERTY = Symbol('@@assets');
 const ROUTES_PROPERTY = Symbol('@@routes');
 const VERSION_PROPERTY = Symbol('@@version');
 
@@ -134,7 +135,7 @@ export const createCompiler = ({ fs, path }, options, external) => {
 
   const config = Template.exists(index)
     ? JSON.parse(Template.read(index))
-    : { files: {}, routes: [] };
+    : { files: {}, assets: [], routes: [] };
 
   const cache = new Map();
 
@@ -152,6 +153,7 @@ export const createCompiler = ({ fs, path }, options, external) => {
         memo[k] = { ...v, module: undefined, source: undefined };
         return memo;
       }, dependencies || {}),
+      assets: this[ASSETS_PROPERTY].slice(),
       routes: this[ROUTES_PROPERTY].map(route => ({
         ...route,
         re: undefined,
@@ -267,6 +269,12 @@ export const createCompiler = ({ fs, path }, options, external) => {
         const mod = compile(Template.read(src), src, shared);
         const result = await Template.compile(compile, mod, shared, imported);
 
+        mod.assets.media.forEach(asset => {
+          if (!this[ASSETS_PROPERTY].includes(asset)) {
+            this[ASSETS_PROPERTY].push(asset);
+          }
+        });
+
         result.forEach(chunk => {
           if (!chunk.dest) {
             const destFile = Template.join(options.dest, chunk.src);
@@ -335,6 +343,9 @@ export const createCompiler = ({ fs, path }, options, external) => {
   }, {
     [FILES_PROPERTY]: {
       get: () => config.files,
+    },
+    [ASSETS_PROPERTY]: {
+      get: () => config.assets,
     },
     [ROUTES_PROPERTY]: {
       get: () => config.routes,
