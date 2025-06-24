@@ -46,9 +46,9 @@ export async function render(content, inline, chunks) {
   renderer.code = (text, lang) => {
     if (text === '\n' && chunks.length > 0) {
       text = chunks.shift().code;
-      text = text.charAt() === ' '
-        ? s(text)
-        : text;
+      text = text.charAt() !== ' '
+        ? text.trim()
+        : s(text);
     }
 
     const code = lang ? hljs.highlight(decodeEnts(text), { language: lang }).value : text;
