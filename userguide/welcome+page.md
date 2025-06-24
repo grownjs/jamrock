@@ -1,3 +1,7 @@
+<head>
+  <title>Jamrock | The herbsman's web framework</title>
+</head>
+
 **Jamrock** is a framework for making web pages,
 
 1. It compiles your `.html` files into something that can be called pages and components.
@@ -8,13 +12,13 @@
 
 Install **jamrock** in your `$HOME`:
 
-```
+```bash
 curl -L get.jamrock.dev | bash
 ```
 
 And create a sample application:
 
-```
+```bash
 jamrock init my-app
 cd my-app
 npm install

@@ -1,17 +1,20 @@
-Jamrock will enable you to write web apps once, you won't need to deal with back-end vs front-end nuances anymore!
+<head>
+  <title>Jamrock | Command Line</title>
+</head>
 
-The idea is straight-forward: run everything on the server-side.
+**Jamrock** will enable you to write web pages the old way, you won't need to deal with back-end vs front-end nuances anymore!
 
-Well, if it's possible to use JavaScript, some stuff may run on the browser too!
+Just run everything on the server and keep JavaScript usage low on the browser.
 
 ## The building blocks
 
-We have a couple of concepts to learn before digging:
+Everything starts from somewhere:
 
 1. Routes are the entry-point for our application, and they are defined through pages or middleware.
-2. Route handlers are taken from the `default export` object on evaluated modules.
-3. The `Request` object is available through the `jamrock:conn` module.
-4. The `Response` is calculated by the framework.
+3. The `Request` object is available through the `jamrock:conn` module,
+   it provides most stuff for common chores.
+4. The `Response` is calculated by the framework, but you can also provide your own
+  (this is what the `redirect()` helper does).
 
 ## Routes
 
@@ -44,8 +47,8 @@ they're transformed using the following rules:
 Pages can declare its own routes as well method handlers, to allow a certain method just set its value as `true`, e.g.
 
 ```html
-&lt;script&gt;
-  export default &lbrace;
+<script>
+  export default {
     // middleware to invoke, see below
     use: ['csrf'],
 
@@ -53,30 +56,29 @@ Pages can declare its own routes as well method handlers, to allow a certain met
     POST: true,
 
     // action for DELETE requests
-    DELETE() &lbrace;
+    DELETE() {
       // do something
     },
 
     // route-handlers for this component
-    ['GET /:article_id'](&lbrace; article_id }) &lbrace;
-      console.log(&lbrace; article_id });
+    ['GET /:article_id']({ article_id }) {
+      console.log({ article_id });
     },
 
-    catch(e) &lbrace;
+    catch(e) {
       // handle error
     },
-    finally() &lbrace;
+    finally() {
       // this always run
     },
 
-    someAction() &lbrace;
+    someAction() {
       // used on form actions
     },
   };
-&lt;/script&gt;
+</script>
 ```
 
-<!--
 By default all pages will respond to GET requests, depending on their handlers they can respond to other methods.
 
 If you don't want to execute certain page through the GET method just use `GET: false` to disable it.
@@ -87,7 +89,7 @@ If you don't want to execute certain page through the GET method just use `GET: 
 >
 > If you declare a `catch` or `finally` handler they'll be called as result of evaluating the requested handlers.
 >
-> Additional handlers may be invoked if they match a requested action, usually from a `<form action="?/someAction">` declaration.
+> Additional handlers may be invoked if they match a requested action, usually from a `&lt;form action="?/someAction"&gt;` declaration.
 
 In some cases you may want to run some code prior executing your handlers, to enable such behavior you must declare a `use` property.
 
@@ -119,14 +121,14 @@ export default {
 This way you can setup shared behaviour in your applications,
 like authentication, shared props or state, etc.
 
-- Routes declared on the `export default` object are evaluated if they match,
+- Routes declared on the `exxport default` object are evaluated if they match,
   here is where you need to place api-routes as they don't require a page to exists.
 - The `+server.mjs` file can be placed at any level within the pages directory, following the same strategy as `+layout.html` or `+error.html` resolution.
 - These functions will receive the `jamrock:conn` first, any given options will be passed as the second argument.
   Those options should be set like this, e.g. `use: [['name', &lbrace; ... }]]`
-
-You can define `catch` and `finally` handlers on the `export default` object as well,
+You can define `catch` and `finally` handlers on the `exxport default` object as well,
 they'll receive the error/response and connection respectively.
+
 
 > [!WARNING]
 > Make sure you return the given or modified `response` argument in your `finally` handler,
@@ -137,15 +139,15 @@ they'll receive the error/response and connection respectively.
 In order to retrieve more stuff from the request you'll need to access the `jamrock:conn` module, e.g.
 
 ```html
-&lt;script&gt;
+<script>
   import { method, headers, redirect } from 'jamrock:conn';
 
   if (method === 'GET' && !headers.has('token')) {
     redirect('/login');
   }
-&lt;/script&gt;
+</script>
 
-&lt;h1&gt;It works.&lt;/h1&gt;
+<h1>It works.</h1>
 ```
 
 > [!IMPORTANT]
@@ -221,4 +223,3 @@ In turn, page components will return an AST that can be serialized as HTML or se
 >
 > Otherwise, the framework will try to extract the `status`, `body`,
 > and `headers` parameters from your value.
--->
