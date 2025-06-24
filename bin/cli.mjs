@@ -24,7 +24,7 @@ const runtime = typeof Deno !== 'undefined'
     ? `bun ${Bun.version}`
     : `node ${process.version}`;
 
-console.log(`■ Jamrock v${pkg.version}`, Util.$.gray(`(${runtime}, ${version})`));
+console.log(Util.$.bold(`■ Jamrock v${pkg.version}`), Util.$.gray(`(${runtime}, ${version})`));
 
 const USAGE_INFO = `
 Usage: ${!existsSync('package.json') ? 'jamrock' : './bin/{node,deno,bun}'} <COMMAND> [OPTIONS]
