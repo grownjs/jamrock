@@ -12,23 +12,23 @@
 
 Install **jamrock** in your `$HOME`:
 
-```bash
-curl -L get.jamrock.dev | bash
+```
+<b>curl</b> -L get.jamrock.dev | <b>bash</b>
 ```
 
 And create a sample application:
 
-```bash
-jamrock init my-app
-cd my-app
-npm install
-bin/node dev
+```
+<b>jamrock</b> init my-app
+<b>cd</b> my-app
+<b>npm</b> install
+<b>bin/node</b> dev
 ```
 
 You should get something like this:
 
 ```
-■ Jamrock v0.0.0 (node {process.version})
+<b>■ Jamrock v0.0.0</b> (node v23.6.0)
 Processing ./pages to ./build
 Listening on <a href="http://localhost:8080" target="_blank">http://localhost:8080</a>
 ```
