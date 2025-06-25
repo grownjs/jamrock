@@ -114,7 +114,7 @@ export function createBundler({ Template, esbuild, ...deps }) {
         source: outputFiles[0].text,
         children: (metafile?.inputs[__filename]?.imports || [])
           .filter(_ => _.path.indexOf('http-url:') === -1)
-          .map(_ => _.path).concat(tpl.children || []),
+          .map(_ => Template.join(__dirname, _.path)).concat(tpl.children || []),
       };
     }
 

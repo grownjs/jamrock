@@ -69,8 +69,8 @@ export const createWatcher = ({ fs }, watcher, compiler) => {
       changes.push(src);
     } else {
       Object.entries(compiler[FILES_PROPERTY]).forEach(([k, v]) => {
+        // if (v.dependencies?.includes(src)) changes.push(k);
         if (v.children?.includes(src)) changes.push(k);
-        if (v.deps?.includes(src)) changes.push(k);
       });
     }
 
@@ -149,7 +149,7 @@ export const createCompiler = ({ fs, path }, options, external) => {
     config.routes = routes || config.routes;
     Template.write(index, JSON.stringify({
       files: Object.entries(this[FILES_PROPERTY]).reduce((memo, [k, v]) => {
-        if (dependencies?.[v.filepath]) v.deps = [...new Set(dependencies[v.filepath].children.concat(v.deps || []))];
+        // if (dependencies?.[v.filepath]) v.dependencies = [...new Set(dependencies[v.filepath].children.concat(v.dependencies || []))];
         memo[k] = { ...v, module: undefined, source: undefined };
         return memo;
       }, dependencies || {}),
@@ -306,7 +306,6 @@ export const createCompiler = ({ fs, path }, options, external) => {
 
     results.forEach(([chunk, destFile]) => {
       Template.write(destFile, Markup.Block.unwrap(chunk.content, chunk.src, destFile));
-
       if (chunk.src) {
         this[FILES_PROPERTY][chunk.src] = {
           filepath: destFile,

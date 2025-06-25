@@ -56,6 +56,7 @@ export class Template {
 
     const set = [];
     const tasks = [];
+    const children = [];
     const isStatic = context === 'static';
     const isClient = bundle || context === 'client';
 
@@ -83,6 +84,7 @@ export class Template {
         .then(js => set.unshift(...js.map((x, i) => {
           const destFile = `${target.replace(/\.(?:md|html)/, '')}(${i}).js`;
 
+          children.push(...x.children);
           resources.js.push([x.parent, destFile]);
           return { content: x.content, dest: destFile };
         }))));
@@ -104,6 +106,7 @@ export class Template {
             styles = rulify(x.content, target);
           }
 
+          children.push(...x.children);
           resources.css.push([destFile]);
           return { content: cssify(styles), dest: destFile };
         }))));
@@ -122,19 +125,13 @@ export class Template {
 
     await this.partial.transform(this.elements, resources);
 
+    const _children = [...new Set(this.partial.children.concat(children))];
+
     let result = this.partial.toString();
     if (isStatic) {
-      set.unshift(result = { content: result, src: filepath, dest: target, js: true });
+      set.unshift(result = { content: result, children: _children, src: filepath, dest: target, js: true });
     } else {
-      const children = [...new Set(this.partial.children.map(x => x.src))];
-
-      result = { content: result, src: filepath, children, dest: target, js: true };
-
-      if (isClient) {
-        set.unshift({ ...result, client: true });
-      } else {
-        set.unshift(result);
-      }
+      set.unshift(result = { children: _children, content: result, client: isClient, src: filepath, dest: target, js: true });
     }
     return set;
   }
