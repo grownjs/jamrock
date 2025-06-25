@@ -15,6 +15,7 @@ export function unsafe(value) {
 
 export function encode(value) {
   return encodeText(value, { quotes: false, unsafe: true })
+    .replace(/&quot;/g, '\\"')
     .replace(/</g, '&lt;')
     .replace(/>/g, '&gt;');
 }

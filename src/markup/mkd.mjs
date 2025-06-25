@@ -51,10 +51,10 @@ export async function render(content, inline, chunks) {
         : s(text);
     }
 
-    const code = lang ? hljs.highlight(text, { language: lang }).value : text;
+    const code = lang ? hljs.highlight(decodeEnts(text), { language: lang }).value : text;
     const attrs = lang ? ` data-lang="${lang}"` : '';
 
-    return `<pre class="hljs"${attrs}><code>${unsafe(decodeEnts(code))}</code></pre>`;
+    return `<pre class="hljs"${attrs}><code>${unsafe(code)}</code></pre>`;
   };
 
   renderer.table = (headers, rows) => {
