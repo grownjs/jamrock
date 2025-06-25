@@ -1,6 +1,5 @@
-
 @sidebar: 11em;
-@content: 48em;
+@content: 34em;
 
 @light: #8A8A8A;
 @white: #FEFEFE;
@@ -16,8 +15,6 @@
 @spring-bud: #B3E72D;
 @gunmetal: #13272D;
 
-@import './layout.less';
-
 * { box-sizing: border-box; }
 
 *::after,
@@ -30,7 +27,7 @@
 }
 
 body {
-  font-family: Montserrat, 'Sorts Mill Goudy';
+  font-family: Montserrat;
   background-color: @rich-black;
   color: @lighter;
   line-height: 1.33;
@@ -109,6 +106,7 @@ pre code {
   padding: .5rem;
   font-size: .75rem;
 }
+li code,
 p code { color: @white; }
 code {
   background-color: rgba(255, 255, 255, .1);
@@ -243,8 +241,12 @@ h1, h2, h3, h4 {
   margin: auto;
 
   &.min {
-    max-width: 30em;
+    max-width: @content;
     margin-bottom: 50px;
+  }
+
+  nav:last-child {
+    margin-top: 50px;
   }
 }
 

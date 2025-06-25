@@ -1,5 +1,5 @@
 <head>
-  <title>Jamrock | Command Line</title>
+  <title>Jamrock | Introduction</title>
 </head>
 
 **Jamrock** will enable you to write web pages the old way, you won't need to deal with back-end vs front-end nuances anymore!
@@ -12,7 +12,7 @@ Everything starts from somewhere:
 
 1. Routes are the entry-point for our application, and they are defined through pages or middleware.
 3. The `Request` object is available through the `jamrock:conn` module,
-   it provides most stuff for common chores.
+  it provides most stuff for common chores.
 4. The `Response` is calculated by the framework, but you can also provide your own
   (this is what the `redirect()` helper does).
 
@@ -219,9 +219,17 @@ They all are functions and they can return anything:
 In turn, page components will return an AST that can be serialized as HTML or sent as JSON.
 
 > [!IMPORTANT]
->
 > If you want to return an array, like a list of values, use an object with a property
 > containing its value instead.
 >
 > Otherwise, the framework will try to extract the `status`, `body`,
 > and `headers` parameters from your value.
+
+<nav class="flex gap-sm between">
+  <span>
+    ➯ Next: <a href="/command-line">Command Line</a>
+  </span>
+  <a href="javascript:document.body.scrollTop=0">
+    &uarr; Back to the top
+  </a>
+</nav>
