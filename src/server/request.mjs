@@ -476,14 +476,16 @@ export function serveFrom(env, dest, editor) {
       return new Response(null, { status: 204 });
     }
 
-    const asset = Template.join(env.options.src, path);
+    if (env.options.src) {
+      const asset = Template.join(env.options.src, path);
 
-    if (env.assets.includes(asset)) {
-      const headers = {
-        'content-type': Util.mimeType(path),
-      };
+      if (env.assets.includes(asset)) {
+        const headers = {
+          'content-type': Util.mimeType(path),
+        };
 
-      return new Response(Template.read(asset), { headers });
+        return new Response(Template.read(asset), { headers });
+      }
     }
 
     if (files.includes(path)) {

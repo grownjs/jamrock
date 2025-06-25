@@ -38,9 +38,9 @@ test: dist
 	@make -s test-deno || true
 
 test-ci:
-	@make -s test-deno
-	@make -s test-bun
 	@make -s test-nodejs
+	@make -s test-bun
+	@make -s test-deno
 
 test-bun:
 	@echo "== bun =="

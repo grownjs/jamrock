@@ -56,9 +56,9 @@ export class Template {
 
     const set = [];
     const tasks = [];
-    const children = [];
     const isStatic = context === 'static';
     const isClient = bundle || context === 'client';
+    const children = this.partial.children.map(_ => _.src);
 
     if (!imported.includes(target)) {
       imported.push(target);
@@ -93,7 +93,6 @@ export class Template {
         .then(css => set.unshift(...css.map((x, i) => {
           const destFile = `${target.replace(/\.(?:md|html)/, '')}(${i}).css`;
 
-          // FIXME: extract file for public/ usage
           if (defaults.src) {
             x.content = x.content.replace(/url\((.+?)\)/g, (_, $1) => {
               resources.media.push(Template.join(defaults.src, $1));
@@ -127,7 +126,7 @@ export class Template {
 
     await this.partial.transform(this.elements, resources);
 
-    const _children = [...new Set(this.partial.children.concat(children))];
+    const _children = [...new Set(children)];
 
     let result = this.partial.toString();
     if (isStatic) {
