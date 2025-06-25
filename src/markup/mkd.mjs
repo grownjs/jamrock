@@ -54,7 +54,7 @@ export async function render(content, inline, chunks) {
     const code = lang ? hljs.highlight(text, { language: lang }).value : text;
     const attrs = lang ? ` data-lang="${lang}"` : '';
 
-    return `<pre class="hljs"${attrs}><code>${unsafe(code)}</code></pre>`;
+    return `<pre class="hljs"${attrs}><code>${unsafe(decodeEnts(code))}</code></pre>`;
   };
 
   renderer.table = (headers, rows) => {
@@ -86,7 +86,7 @@ export async function render(content, inline, chunks) {
   };
 
   renderer.codespan = text => {
-    return `<code>${decodeEnts(text)}</code>`;
+    return `<code>${unsafe(decodeEnts(text))}</code>`;
   };
 
   const tree = parseMarkup(await kramed(s(buffer.join('')), { renderer }));
