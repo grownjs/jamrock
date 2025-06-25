@@ -94,10 +94,12 @@ export class Template {
           const destFile = `${target.replace(/\.(?:md|html)/, '')}(${i}).css`;
 
           // FIXME: extract file for public/ usage
-          x.content = x.content.replace(/url\((.+?)\)/g, (_, $1) => {
-            resources.media.push(Template.join(defaults.src, $1));
-            return `url(/${$1})`;
-          });
+          if (defaults.src) {
+            x.content = x.content.replace(/url\((.+?)\)/g, (_, $1) => {
+              resources.media.push(Template.join(defaults.src, $1));
+              return `url(/${$1})`;
+            });
+          }
 
           let styles;
           if (!x.params.global) {

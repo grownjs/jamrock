@@ -127,7 +127,7 @@ test.group('new compiler', () => {
     const { code, render } = await fixture.use('./example.html');
 
     expect(code).toContain('"path":"/:stuff"');
-    expect(code).toContain('__actions = {\n    DELETE');
+    expect(code).toContain('__default = {\n    DELETE');
     expect(code).toContain('let value = $$props.value ?? 0;');
     expect(code).toContain('const sum = $$props.sum ?? __snippets.sum;');
 

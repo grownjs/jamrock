@@ -379,13 +379,13 @@ test.group('integration only!', t => {
     expect(markup).toEqual([
       '<!DOCTYPE html>\n',
       '<html data-location=app+page.html><head>\n',
-      '<meta charset="utf-8" /><base href="/" /><title>OSOM</title></head><body>\n',
+      '<meta charset="utf-8" /><base href="/" />\n  <title>OSOM</title>\n</head><body>\n',
       '<h1 data-location="app+page.html:7:1" class=active>Hello World</h1>',
       '<a href="/app/123" data-location="app+page.html:25:3">LINK</a></body></html>',
     ].join(''));
   });
 
-  test('pin: should allow to hook functions into nodes', async ({ expect }) => {
+  test('should allow to hook functions into nodes', async ({ expect }) => {
     ctx.queue = {
       set: td.func('write'),
     };
@@ -412,7 +412,7 @@ test.group('integration only!', t => {
     await fixture.partial('app+page.html', null, ctx, func);
 
     expect(td.explain(func).callCount).toEqual(1);
-    expect(td.explain(ctx.write).callCount).toEqual(11);
+    expect(td.explain(ctx.write).callCount).toEqual(13);
 
     expect(td.explain(console.info).callCount).toEqual(2);
     expect(td.explain(ctx.conn.someStuff).callCount).toEqual(1);

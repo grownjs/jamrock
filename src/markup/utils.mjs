@@ -232,7 +232,7 @@ export async function visit(chunk, callback, locations) {
         return Promise.resolve()
           .then(() => visit(node.elements, callback, locations))
           .then(() => callback && callback(node))
-          .catch(e => console.log('E_VISIT', e.message, node));
+          .catch(e => console.log('E_VISIT', e.stack, node));
       }
       return null;
     }));
