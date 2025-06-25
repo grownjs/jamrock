@@ -8,13 +8,13 @@ Just run everything on the server and keep JavaScript usage low on the browser.
 
 ## The building blocks
 
-Everything starts from somewhere:
+Everything starts from somewhere,
 
-1. Routes are the entry-point for our application, and they are defined through pages or middleware.
-3. The `Request` object is available through the `jamrock:conn` module,
-  it provides most stuff for common chores.
-4. The `Response` is calculated by the framework, but you can also provide your own
-  (this is what the `redirect()` helper does).
+1. Routes are the entry-point for your application, and they are defined through page components or middleware.
+2. The `Request` object is available through the `jamrock:conn` module,
+   it provides most stuff for common chores.
+3. The `Response` is calculated by the framework, but you can also provide your own
+   (this is what the `redirect()` helper does).
 
 ## Routes
 

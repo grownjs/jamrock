@@ -8,7 +8,7 @@
 2. The server will execute them against the request and responds with plain old HTML.
 3. That's it, like it used to be.
 
-## Feels nostalgic? Give it a try!
+## Sounds fun? Give it a try!
 
 Install **jamrock** in your `$HOME`:
 
@@ -16,7 +16,7 @@ Install **jamrock** in your `$HOME`:
 <b>curl</b> -L get.jamrock.dev | <b>bash</b>
 ```
 
-And create a sample application:
+Create a sample application:
 
 ```
 <b>jamrock</b> init my-app
