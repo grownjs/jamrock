@@ -67,12 +67,12 @@ export const createWatcher = ({ fs }, watcher, compiler) => {
       && Template.exists(old.filepath.replace('.generated.', '.bundled.'))
     ) {
       changes.push(src);
-    } else {
-      Object.entries(compiler[FILES_PROPERTY]).forEach(([k, v]) => {
-        // if (v.dependencies?.includes(src)) changes.push(k);
-        if (v.children?.includes(src)) changes.push(k);
-      });
     }
+
+    Object.entries(compiler[FILES_PROPERTY]).forEach(([k, v]) => {
+      // if (v.dependencies?.includes(src)) changes.push(k);
+      if (v.children?.includes(src)) changes.push(k);
+    });
 
     (changes.length ? changes : [src]).forEach(file => {
       if (!(file.includes('.md') || file.includes('.html'))) return;

@@ -76,6 +76,7 @@ export function loadPage({ el, wait, target, fragment }, url, data, method, _hea
   window.Jamrock.LiveSocket.next(_headers['request-uuid']);
 
   const ms = wait ? wait.dataset.wait : null;
+  const anchor = (url || _location).split('#').pop();
 
   return doRequest.call(this, url || _location, data, method, _headers).then(body => sleep(ms).then(() => {
     if (!body) return _callback && _callback(target, null);
@@ -89,10 +90,12 @@ export function loadPage({ el, wait, target, fragment }, url, data, method, _hea
     }
 
     console.log('[PAGE]', url || _location);
-    this.browser.sync(JSON.parse(decode(body)), spaNavigate)
+    this.browser.sync(JSON.parse(decode(body)), spaNavigate, anchor)
       .then(() => _callback && _callback(target, body));
   })).then(() => {
-    if (parent && method === 'GET') updatePage('', _location);
+    if (parent && method === 'GET') {
+      updatePage('', _location);
+    }
   }).catch(e => {
     if (hasHTML(e.message)) return redrawPage(e.message);
     this.browser.warn(e, 'Request Failure');

@@ -31,7 +31,7 @@ export class Browser {
       throw new Error(`Invoked action is not defined, given '${key}'`);
     };
 
-    this.sync = async (payload, callback) => {
+    this.sync = async (payload, callback, element) => {
       const { scrollLeft, scrollTop } = document.documentElement;
 
       window.Jamrock.LiveSocket.start();
@@ -57,9 +57,13 @@ export class Browser {
 
         await callback(() => this.patch(document.body, payload.body));
       } finally {
-        document.documentElement.scrollLeft = scrollLeft;
-        document.documentElement.scrollTop = scrollTop;
-
+        if (element) {
+          const node = document.getElementById(element);
+          if (node) node.scrollIntoView({ behavior: 'smooth' });
+        } else {
+          document.documentElement.scrollLeft = scrollLeft;
+          document.documentElement.scrollTop = scrollTop;
+        }
         window.Jamrock.Components.on();
       }
     };
