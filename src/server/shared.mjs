@@ -30,6 +30,8 @@ export const createWatcher = ({ fs }, watcher, compiler) => {
       .map(([k, v]) => ({ ...v, src: v.src || k }))
       .sort((a, b) => b.hits - a.hits);
 
+    // console.log('SYNC', changeset);
+
     const modified = changeset.filter(_ => _.type === 'compile').map(_ => _.src);
     const refreshed = changeset.filter(_ => _.type === 'refresh').map(_ => _.src);
 
@@ -66,6 +68,7 @@ export const createWatcher = ({ fs }, watcher, compiler) => {
     if (!sources[src]) {
       sources[src] = { src, type, hits: 0 };
     } else {
+      sources[src].type = type;
       sources[src].hits++;
     }
   }
@@ -81,9 +84,13 @@ export const createWatcher = ({ fs }, watcher, compiler) => {
       printLog(`  ${Util.$.red('delete')} ${Util.$.gray(src)}`);
     }
 
+    // FIXME: trigger tree changes... say, we got a dependency,
+    // we lookup for its consumer, and read from styles/scripts/media
+    // we can then check if touched file is within, and send sources to reload
+
     changes.push([src, 'refresh']);
 
-    if (/\.(?:md|html)/.test(src)) {
+    if (/\.(?:md|html)$/.test(src)) {
       changes.push([src, 'compile']);
     }
 
@@ -123,6 +130,7 @@ export const createWatcher = ({ fs }, watcher, compiler) => {
 
   return {
     rebuild: async req => {
+      // console.log('request', reloading, req.url);
       if (reloading) return;
       if (req.url.split('/').pop().includes('.')) return;
       if (req.method === 'GET') {
@@ -136,7 +144,10 @@ export const createWatcher = ({ fs }, watcher, compiler) => {
             if (found.route.error && !compiler.has(found.route.error)) push(found.route.error, 'compile');
             if (found.route.src) push(found.route.src, 'compile');
             reloading = true;
+            // console.log('RECOMPILE', sources);
             await sync(true, found.routes);
+          } else {
+            console.log('NOT FOUND', url);
           }
         } catch (e) {
           console.error('E_REBUILD', e);
@@ -173,8 +184,7 @@ export const createCompiler = ({ fs, path }, options, external) => {
     config.routes = routes || config.routes;
     Template.write(index, JSON.stringify({
       files: Object.entries(this[FILES_PROPERTY]).reduce((memo, [k, v]) => {
-        // if (dependencies?.[v.filepath]) v.dependencies = [...new Set(dependencies[v.filepath].children.concat(v.dependencies || []))];
-        memo[k] = { ...v, module: undefined, source: undefined };
+        memo[k] = { ...memo[k], ...v };
         return memo;
       }, dependencies || {}),
       assets: this[ASSETS_PROPERTY].slice(),
