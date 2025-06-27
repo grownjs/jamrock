@@ -229,19 +229,17 @@ export const createCompiler = ({ fs, path }, options, external) => {
 
       let mod = await Template.reload(path.resolve(v.filepath), true);
       if (!k.includes('+server')) {
-        this[FILES_PROPERTY][v.filepath] = {
-          ...this[FILES_PROPERTY][v.filepath],
+        mod = {
           module: mod.default || mod,
           source: Template.read(k),
         };
       } else {
-        this[FILES_PROPERTY][v.filepath] = {
-          ...this[FILES_PROPERTY][v.filepath],
+        mod = {
           module: mod,
         };
       }
 
-      Template.cache.set(v.filepath, this[FILES_PROPERTY][v.filepath]);
+      Template.cache.set(v.filepath, mod);
     }
   }
 
@@ -487,15 +485,12 @@ export function createEnvironment({ fs, path }, options, external) {
 
     if (!mod) throw new Error(`Could not locate '${key}' file`);
 
-    if (compiler[FILES_PROPERTY][mod.filepath]) {
-      const result = compiler[FILES_PROPERTY][mod.filepath].module;
+    const dest = Template.cache.get(mod.filepath);
 
-      if (!result) {
-        throw new Error(`Could not locate '${key}' module (${mod.filepath})`);
-      }
-      return result;
+    if (!dest?.module) {
+      throw new Error(`Could not locate '${key}' module (${mod.filepath})`);
     }
-    return mod.module;
+    return dest.module;
   }
 
   function request(params = {}) {
