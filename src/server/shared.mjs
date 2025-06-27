@@ -12,27 +12,41 @@ export function printLog(...msg) {
   console.log(...msg);
 }
 
+// FIXME: we need to implement a file watcher that yield two kind of events,
+// recompile and/or reload specific sources, recompile only touched sources,
+// but reload consumers only (unless they recompile as well), so we can
+// just reload an svg, file, component, etc. if consumer did not changed,
+// make sure the clear import() cache from all environments as needed...
+// actually we can add tests for this mechanism... right?
+
 export const createWatcher = ({ fs }, watcher, compiler) => {
   const clients = [];
   const before = [];
 
   let reloading;
-  let sources = [];
+  let sources = {};
   async function sync(quiet, routes) {
+    const changeset = Object.entries(sources)
+      .map(([k, v]) => ({ ...v, src: v.src || k }))
+      .sort((a, b) => b.hits - a.hits);
+
+    const modified = changeset.filter(_ => _.type === 'compile').map(_ => _.src);
+    const refreshed = changeset.filter(_ => _.type === 'refresh').map(_ => _.src);
+
     try {
-      await Promise.all(before.map(fn => fn(sources)));
-      const deps = await compiler.recompile(sources);
-      await compiler.save(routes, deps);
+      await Promise.all(before.map(fn => fn(changeset)));
+      const newdeps = await compiler.recompile([...new Set(modified)]);
+      await compiler.save(routes, newdeps);
       await compiler.reload();
     } catch (e) {
       // FIXME: decorate errors...
       console.error('E_COMPILE', e);
     }
 
-    const changed = sources.filter(_ => !/\+(?:layout|error|server)/.test(_));
+    const changed = [...new Set(refreshed)].filter(_ => !/\+(?:layout|error|server)/.test(_));
 
     reloading = true;
-    sources = [];
+    sources = {};
 
     if (!quiet) {
       console.log('[CHANGE]', changed);
@@ -48,6 +62,14 @@ export const createWatcher = ({ fs }, watcher, compiler) => {
     }, 1260);
   }
 
+  function push(src, type) {
+    if (!sources[src]) {
+      sources[src] = { src, type, hits: 0 };
+    } else {
+      sources[src].hits++;
+    }
+  }
+
   const cache = new Map();
 
   let t;
@@ -59,35 +81,37 @@ export const createWatcher = ({ fs }, watcher, compiler) => {
       printLog(`  ${Util.$.red('delete')} ${Util.$.gray(src)}`);
     }
 
-    const old = compiler[FILES_PROPERTY][src];
+    changes.push([src, 'refresh']);
 
-    if (
-      old?.filepath
-      && old.filepath.includes('.generated.')
-      && Template.exists(old.filepath.replace('.generated.', '.bundled.'))
-    ) {
-      changes.push(src);
+    if (/\.(?:md|html)/.test(src)) {
+      changes.push([src, 'compile']);
     }
 
     Object.entries(compiler[FILES_PROPERTY]).forEach(([k, v]) => {
-      // if (v.dependencies?.includes(src)) changes.push(k);
-      if (v.children?.includes(src)) changes.push(k);
+      if (v.children?.includes(src)) {
+        if (!/\.(?:md|html)/.test(src)) {
+          changes.push([k, 'compile']);
+        }
+        changes.push([k, 'refresh']);
+      }
     });
 
-    (changes.length ? changes : [src]).forEach(file => {
-      if (!(file.includes('.md') || file.includes('.html'))) return;
-      if (!sources.includes(file)) {
+    changes.forEach(([file, kind]) => {
+      if (!sources[file]) {
         clearTimeout(t);
+        // FIXME: configure this
         t = setTimeout(sync, 60);
 
-        if (type === 'unlink' || !fs.existsSync(file)) {
+        if (!fs.existsSync(file)) {
           Template.cache.delete(file);
           cache.delete(file);
         } else {
           const mtime = fs.statSync(file).mtime;
           cache.set(file, mtime);
-          sources.push(file);
+          push(file, kind);
         }
+      } else {
+        push(file, kind);
       }
     });
 
@@ -107,10 +131,10 @@ export const createWatcher = ({ fs }, watcher, compiler) => {
           const found = compiler.matches(url);
 
           if (found.route) {
-            if (found.route.middleware && !compiler.has(found.route.middleware)) sources.push(found.route.middleware);
-            if (found.route.layout && !compiler.has(found.route.layout)) sources.push(found.route.layout);
-            if (found.route.error && !compiler.has(found.route.error)) sources.push(found.route.error);
-            if (found.route.src) sources.push(found.route.src);
+            if (found.route.middleware && !compiler.has(found.route.middleware)) push(found.route.middleware, 'compile');
+            if (found.route.layout && !compiler.has(found.route.layout)) push(found.route.layout, 'compile');
+            if (found.route.error && !compiler.has(found.route.error)) push(found.route.error, 'compile');
+            if (found.route.src) push(found.route.src, 'compile');
             reloading = true;
             await sync(true, found.routes);
           }
