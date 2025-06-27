@@ -85,7 +85,7 @@ export class Template {
           const destFile = `${target.replace(/\.(?:md|html)/, '')}(${i}).js`;
 
           children.push(...x.children);
-          resources.js.push([x.parent, destFile]);
+          resources.js.push([x.parent, destFile, x.children]);
           return { content: x.content, dest: destFile };
         }))));
 
@@ -108,7 +108,7 @@ export class Template {
           }
 
           children.push(...x.children);
-          resources.css.push([destFile]);
+          resources.css.push([destFile, x.children]);
           return { content: cssify(styles), dest: destFile };
         }))));
     }
@@ -335,8 +335,8 @@ export class Template {
       ? `${component.__src}/${++ctx.depth}`
       : component.__src;
 
-    const scripts = { [component.__src]: component.__scripts };
-    const styles = { [component.__src]: component.__styles };
+    const scripts = { [component.__src]: component.__scripts.map(_ => _[1]) };
+    const styles = { [component.__src]: component.__styles.map(_ => _[0]) };
     const media = { [component.__src]: component.__media };
 
     const hooks = component.__context === 'module'

@@ -166,11 +166,11 @@ export class Block {
   }
 
   get $scripts() {
-    return this.assets.js.map(([ref, id]) => [ref, this.opts.cwd ? rebase(id, this.opts.cwd) : id]);
+    return this.assets.js.map(([ref, id, deps]) => [ref, this.opts.cwd ? rebase(id, this.opts.cwd) : id, deps]);
   }
 
   get $styles() {
-    return this.assets.css.map(([id]) => [this.opts.cwd ? rebase(id, this.opts.cwd) : id]);
+    return this.assets.css.map(([id, deps]) => [this.opts.cwd ? rebase(id, this.opts.cwd) : id, deps]);
   }
 
   get $assets() {
@@ -178,6 +178,7 @@ export class Block {
   }
 
   get $prefix() {
+    // FIXME: try to dedupe/minify/compress strings?
     const resources = JSON.stringify(this.$assets);
     const javascript = JSON.stringify(this.$scripts);
     const stylesheets = JSON.stringify(this.$styles);

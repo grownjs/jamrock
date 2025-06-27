@@ -45,7 +45,7 @@ export const createWatcher = ({ fs }, watcher, compiler) => {
       console.error('E_COMPILE', e);
     }
 
-    const changed = [...new Set(refreshed)].filter(_ => !/\+(?:layout|error|server)/.test(_));
+    const changed = [...new Set(refreshed)].filter(_ => !/\+(?:layout|error|server)\.(?:md|html)$/.test(_));
 
     reloading = true;
     sources = {};
@@ -78,6 +78,7 @@ export const createWatcher = ({ fs }, watcher, compiler) => {
   let t;
   watcher.tap((type, src) => {
     const changes = [];
+    const pending = [];
 
     if (type === 'unlink') {
       delete compiler[FILES_PROPERTY][src];
@@ -88,8 +89,6 @@ export const createWatcher = ({ fs }, watcher, compiler) => {
     // we lookup for its consumer, and read from styles/scripts/media
     // we can then check if touched file is within, and send sources to reload
 
-    changes.push([src, 'refresh']);
-
     if (/\.(?:md|html)$/.test(src)) {
       changes.push([src, 'compile']);
     }
@@ -99,17 +98,42 @@ export const createWatcher = ({ fs }, watcher, compiler) => {
         if (!/\.(?:md|html)/.test(src)) {
           changes.push([k, 'compile']);
         }
+
+        const mod = Template.cache.get(compiler[FILES_PROPERTY][k].filepath);
+
+        if (mod?.module) {
+          if (mod.module.__media.includes(src)) {
+            changes.push([src, 'refresh']);
+          }
+
+          for (const [key, children] of mod.module.__styles) {
+            if (children?.includes(src)) {
+              pending.push(key);
+              changes.push([k, 'compile']);
+              changes.push([key, 'refresh']);
+              return;
+            }
+          }
+        }
+
         changes.push([k, 'refresh']);
       }
     });
 
+    if (!changes.length) {
+      changes.push([src, 'refresh']);
+    }
+
+    // console.log(changes);
     changes.forEach(([file, kind]) => {
       if (!sources[file]) {
         clearTimeout(t);
         // FIXME: configure this
         t = setTimeout(sync, 60);
 
-        if (!fs.existsSync(file)) {
+        if (pending.includes(file)) {
+          push(file, kind);
+        } else if (!fs.existsSync(file)) {
           Template.cache.delete(file);
           cache.delete(file);
         } else {
@@ -121,7 +145,7 @@ export const createWatcher = ({ fs }, watcher, compiler) => {
         push(file, kind);
       }
     });
-
+    // console.log({changes,sources});
     if (/\+(?:error|layout|server)/.test(src)) {
       clearTimeout(t);
       t = setTimeout(sync, 60);
