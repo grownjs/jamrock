@@ -165,9 +165,30 @@ export class LiveSocket {
       };
     }
 
-    const eventSource = new EventSource('/@');
-    eventSource.onmessage = event => {
-      console.log('@@', event.data);
+    let eventSource;
+    this.start = () => {
+      eventSource?.close();
+      eventSource = new EventSource('/@');
+      eventSource.onopen = () => {
+        this.ready = false;
+        ws?.close();
+        ws = null;
+        this.sync();
+      };
+      eventSource.onerror = () => {
+        if (ws && this.ready) {
+          this.ready = false;
+          ws.close();
+          ws = null;
+        }
+
+        if (eventSource.readyState === EventSource.CLOSED) {
+          console.log('[RECONNECT SSE]');
+        }
+      };
+      eventSource.onmessage = event => {
+        console.log('@@', event.data);
+      };
     };
 
     const queue = [];
@@ -197,7 +218,7 @@ export class LiveSocket {
 
     // FIXME: we could add a layer after some time of inactivity, once we detect
     // we not longer have ws connectivity... then, once clicked we reconnect and so!
-    this.start = () => !this.headless && (!ws || ws.readyState !== ws.OPEN) && connect(this.document, this.uuid, open).then(socket => {
+    this.sync = () => !this.headless && (!ws || ws.readyState !== ws.OPEN) && connect(this.document, this.uuid, open).then(socket => {
       this.ready = true;
 
       let t;
@@ -213,6 +234,7 @@ export class LiveSocket {
           // FIXME: here we should get a list of files changed... and then,
           // we should remove them from the import-memory and such...
           if (!sources.length || sources.includes(this.document)) {
+            console.log('RELOADING PAGE');
             try {
               if (e.isTrusted) {
                 // window.frames.top.Jamrock.Components.reload(e.data);
@@ -226,8 +248,8 @@ export class LiveSocket {
               window.Jamrock.Browser.reload(null, true);
             }
           } else {
-            console.log('SYNC?', sources);
-            sources.forEach(_ => console.log('>>>', document.querySelector(`[data-component^="${_}"]`)));
+            console.log('SYNC FROM:', sources);
+            // sources.forEach(_ => console.log('>>>', document.querySelector(`[data-component^="${_}"]`)));
           }
         } else if (e.data.indexOf('welcome ') === 0) {
           console.debug(e.data, this.location);
