@@ -351,7 +351,7 @@ test.group('template transformation', t => {
     expect(tpl.module.name).toEqual('OSOM');
 
     expect(tpl.partial.assets.js).toEqual([
-      [null, 'generated/nested/path/to/transformed(0).js', [
+      ['x', 'generated/nested/path/to/transformed(0).js', [
         'generated/nested/path/to/generated/nested/path/module.mjs',
       ]],
       ['x', 'generated/nested/path/to/transformed(1).js', []],

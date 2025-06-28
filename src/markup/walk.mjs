@@ -52,8 +52,6 @@ export function traverse(obj, html, parent, context, counter = 0) {
         if (src && node.rawTagName === 'script') return;
 
         const baseNode = {
-          ref: parent?.__ref || null,
-          root: parent?.name || null,
           identifier: `${context.file.replace(/\.\w+$/, '')}(${counter})`,
           attributes: node.attributes
             ? node.attributes.reduce((memo, { key, value }) => {
@@ -73,6 +71,8 @@ export function traverse(obj, html, parent, context, counter = 0) {
 
           const fixedNode = {
             ...baseNode,
+            ref: parent?.__ref || null,
+            root: parent?.name || null,
             offset: node.children[0].position.start,
             content: prefix + node.children[0].content,
           };
