@@ -294,7 +294,7 @@ test.group('parsing', t => {
         identifier: 'page(1)',
         content: '                                                                           \n\n\n\n               \n          console.log(42);\n        ',
         offset: { column: 16, index: 94, line: 5 },
-        ref: 'x04nym8e',
+        ref: null,
         root: 'body',
       }],
       fragments: {},
