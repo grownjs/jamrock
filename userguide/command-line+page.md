@@ -2,6 +2,8 @@
   <title>Jamrock | Command Line</title>
 </head>
 
+# Command line
+
 **Jamrock** gets installed on `/usr/local/bin/jamrock` for regular use.
 
 Additional arguments like `FOO=bar` will expand the `process.env` object,
@@ -77,9 +79,9 @@ Just make sure you have built your pages first.
 
 <nav class="flex gap-sm between">
   <span>
-    ➯ Next: <a href="/components">Components</a>
+    ➯ Next: <a href="/components#top">Components</a>
   </span>
-  <a href="javascript:document.body.scrollTop=0">
+  <a href="/command-line#top">
     &uarr; Back to the top
   </a>
 </nav>

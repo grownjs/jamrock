@@ -2,6 +2,8 @@
   <title>Jamrock | Introduction</title>
 </head>
 
+# Introduction
+
 **Jamrock** will enable you to write web pages the old way, you won't need to deal with back-end vs front-end nuances anymore!
 
 Just run everything on the server and keep JavaScript usage low on the browser.
@@ -40,7 +42,7 @@ They're transformed using the following rules:
 > Segments are taken from nested folders or `.` separators,
 > any of them starting with `_` are just ignored from final paths.
 >
-> Extensions can be preserved by using the `[.ext]` syntax.
+> File extensions are preserved by using the `[.ext]` syntax.
 
 ## Handlers
 
@@ -91,7 +93,7 @@ If you don't want to execute certain page through the GET method just use `GET: 
 >
 > If you declare a `catch` or `finally` handler they'll be called as result of evaluating the requested handlers.
 >
-> Additional handlers may be invoked if they match a requested action, usually from a `&lt;form action="?/someAction"&gt;` declaration.
+> Additional handlers may be invoked if they match a requested action, e.g. `&lt;form action="?/someAction" method="POST"&gt;`.
 
 In some cases you may want to run some code prior executing your handlers, to enable such behavior you must declare a `use` property.
 
@@ -123,14 +125,14 @@ export default {
 This way you can setup shared behaviour in your applications,
 like authentication, shared props or state, etc.
 
-- Routes declared on the `export&nbsp;default` object are evaluated if they match,
-  here is where you need to place api-routes as they don't require a page to exists.
-- The `+server.mjs` file can be placed at any level within the pages directory, following the same strategy as `+layout.html` or `+error.html` resolution.
-- These functions will receive the `jamrock:conn` first, any given options will be passed as the second argument.
-  Those options should be set like this, e.g. `use: [['name', &lbrace; ... }]]`
-You can define `catch` and `finally` handlers on the `export&nbsp;default` object as well,
-they'll receive the error/response and connection respectively.
+1. Routes declared on the `export&nbsp;default` object are evaluated if they match,
+   here is where you need to place api-routes as they don't require a page to exists.
+2. The `+server.mjs` file can be placed at any level within the pages directory, following the same strategy as `+layout.html` or `+error.html` resolution.
+3. These functions will receive the `jamrock:conn` first, any given options will be passed as the second argument.
+   Those options should be set like this, e.g. `use: [['name', &lbrace; ... }]]`
 
+You can define `catch` and `finally` handlers on this object as well,
+they'll receive the error/response and connection respectively.
 
 > [!WARNING]
 > Make sure you return the given or modified `response` argument in your `finally` handler,
@@ -138,7 +140,7 @@ they'll receive the error/response and connection respectively.
 
 ## Request
 
-In order to retrieve more stuff from the request you'll need to access the `jamrock:conn` module, e.g.
+To play with the request you'll need the `jamrock:conn` module:
 
 ```html
 <script>
@@ -151,9 +153,6 @@ In order to retrieve more stuff from the request you'll need to access the `jamr
 
 <h1>It works.</h1>
 ```
-
-> [!IMPORTANT]
-> Modules starting with `jamrock:` are available only within page components.
 
 Requests to page components will always render something,
 however `redirect` calls can stop any further rendering.
@@ -200,7 +199,7 @@ Below is a list of all sort of things you may use:
 - `unsafe(value)` &mdash; `true` if value is already unsafe
 - `toJSON()` &mdash; serialized verson of the `conn` object (safe)
 
-> [!NOTE]
+> [!WARNING]
 > Unsafe values are omitted if found during the rendering of page components,
 > it prevents from leaking sensitive values by mistake.
 
@@ -227,9 +226,9 @@ In turn, page components will return an AST that can be serialized as HTML or se
 
 <nav class="flex gap-sm between">
   <span>
-    ➯ Next: <a href="/command-line">Command Line</a>
+    ➯ Next: <a href="/command-line#top">Command Line</a>
   </span>
-  <a href="javascript:document.body.scrollTop=0">
+  <a href="/#top">
     &uarr; Back to the top
   </a>
 </nav>

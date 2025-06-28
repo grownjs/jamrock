@@ -26,6 +26,8 @@
   100% { transform: translateY(0%); }
 }
 
+#top { position: absolute; bottom: 0; }
+
 body {
   font-family: Montserrat;
   background-color: @rich-black;
@@ -245,7 +247,11 @@ h1, h2, h3, h4 {
     margin-bottom: 50px;
   }
 
-  nav:last-child {
+  > header {
+    position: relative;
+  }
+
+  nav {
     margin-top: 50px;
   }
 }
@@ -260,6 +266,9 @@ h1, h2, h3, h4 {
   &.gap-sm { gap: 5px; }
   &.gap-md { gap: 10px; }
   &.gap-lg { gap: 20px; }
+  &.wrap { flex-wrap: wrap; }
+  &.end { justify-content: end; }
+  &.justify { justify-content: center; }
   &.between { justify-content: space-between; }
   &.centered { align-items: center; }
   &.vertical { flex-direction: column; }

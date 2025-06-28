@@ -2,6 +2,8 @@
   <title>Jamrock | Components</title>
 </head>
 
+# Components
+
 **Jamrock** supports components for different purposes:
 
 1. Page components will be used to generate the markup for your web pages,
@@ -104,9 +106,9 @@ It would yield: `Got: -1 42`
 
 <nav class="flex gap-sm between">
   <span>
-    ➯ Next: <a href="/fragments">Fragments</a>
+    ➯ Next: <a href="/fragments#top">Fragments</a>
   </span>
-  <a href="javascript:document.body.scrollTop=0">
+  <a href="/components#top">
     &uarr; Back to the top
   </a>
 </nav>

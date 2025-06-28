@@ -38,6 +38,6 @@ Open that URL in your browser and explore!
 <blockquote>
   <p class="gap-sm flex centered">
     <svg src="./images/beaker.svg" size="16" />
-    <span>Continue reading the <a href="/">available documentation</a>.</span>
+    <span>Continue reading the <a href="/#top">available documentation</a>.</span>
   </p>
 </blockquote>
