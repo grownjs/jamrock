@@ -136,6 +136,33 @@ export class LiveSocket {
       });
     };
 
+    this.patchSVG = async src => {
+      for (const node of document.querySelectorAll(`[data-location="${src}"]`)) {
+        const result = await fetch(`@${src}`).then(resp => resp.text());
+        const target = document.createElement('div');
+        target.innerHTML = result;
+        target.childNodes[0].setAttribute('data-location', src);
+
+        if (node.tagName === 'use') {
+          document.querySelector(node.getAttribute('xlink:href')).remove();
+          node.parentNode.replaceWith(target.childNodes[0]);
+        } else {
+          node.replaceWith(target.childNodes[0]);
+        }
+      }
+    };
+
+    this.patchCSS = src => {
+      console.log('CSS', src);
+    };
+
+    this.patch = sources => {
+      for (const src of sources) {
+        if (src.includes('.svg')) this.patchSVG(src);
+        if (src.includes('.css')) this.patchCSS(src);
+      }
+    };
+
     // window.onbeforeunload = () => this.close() || null;
 
     function connect(doc, uuid, ready) {
@@ -248,8 +275,7 @@ export class LiveSocket {
               window.Jamrock.Browser.reload(null, true);
             }
           } else {
-            console.log('SYNC FROM:', sources);
-            // sources.forEach(_ => console.log('>>>', document.querySelector(`[data-component^="${_}"]`)));
+            this.patch(sources);
           }
         } else if (e.data.indexOf('welcome ') === 0) {
           console.debug(e.data, this.location);

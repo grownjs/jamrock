@@ -51,9 +51,9 @@ export const createWatcher = ({ fs }, watcher, compiler) => {
     sources = {};
 
     if (!quiet) {
-      console.log('[CHANGE]', changed);
+      // console.log('[CHANGE]', changed);
       clients.forEach(ws => {
-        console.log('[SOCKET]', changed);
+        // console.log('[SOCKET]', changed);
         ws.send(`reload ${changed.join(' ')}`);
       });
     }

@@ -117,9 +117,8 @@ export function getRawBody(req, limit) {
 export function getClientCode(conn, patch, baseURL, _uuid, _prefix) {
   const uuid = _uuid || conn.headers['request-uuid'] || `0.${Date.now().toString(36).replace(/.{3}/g, '$&-')}`;
   const state = JSON.stringify({ uuid, patch, csrf: conn.csrf_token, method: conn.method });
-  const client = `<script>(${
-    generateClientCode.toString().replace(/𝐢𝐦𝐩𝐨𝐫𝐭/g, 'import')
-  })(${state}, ${JSON.stringify(_prefix)}, ${process.env.HEADLESS ? 'true' : 'undefined'});</script>
+  const client = `<script>(${generateClientCode.toString().replace(/𝐢𝐦𝐩𝐨𝐫𝐭/g, 'import')
+    })(${state}, ${JSON.stringify(_prefix)}, ${process.env.HEADLESS ? 'true' : 'undefined'});</script>
 `.replaceAll('./', baseURL);
 
   return { uuid, client };
@@ -158,9 +157,8 @@ export function create404(env, conn, client, message) {
     .map(([k, v]) => `<dt>${k}</dt><dd>${v}</dd>`).join('')}</dl>`;
 
   return `${style}${message}<table><caption>Available routes</caption>${env.routes.map(route => `
-<tr><td align=right style="width:1%">${route.verb}</td><td>${
-  route.verb === 'GET' ? `<a href="${route.path}">${route.path}</a>` : route.path
-}</tr>`).join('')}
+<tr><td align=right style="width:1%">${route.verb}</td><td>${route.verb === 'GET' ? `<a href="${route.path}">${route.path}</a>` : route.path
+    }</tr>`).join('')}
 <tfoot><tr><th colspan="2">${conn.req.url} &mdash; ${now}</th></tr></tfoot>
 </table>${config}${environment}${client}`;
 }
@@ -346,10 +344,13 @@ export async function createModuleResponse(env, conn) {
     const _mkd = file.replace('.hooks.mjs', '.md');
     const _html = file.replace('.hooks.mjs', '.html');
     const _file = env.files[_mkd] || env.files[_html];
-    const _mod = await Template.reload(_file.filepath);
 
-    status = 200;
-    mod = `/* ${file} */\n${Object.values(_mod.__functions).map(_ => `export ${_.toString()}\n`).join('')}`;
+    if (_file) {
+      const _mod = await Template.reload(_file.filepath);
+
+      status = 200;
+      mod = `/* ${file} */\n${Object.values(_mod.__functions).map(_ => `export ${_.toString()}\n`).join('')}`;
+    }
   }
 
   return [mod, status, null, new Headers({
@@ -481,13 +482,24 @@ export function serveFrom(env, dest, editor) {
 
       if (env.assets.includes(asset)) {
         const headers = {
-          'content-type': Util.mimeType(path),
+          'content-type': Util.mimeType(asset),
         };
 
         return new Response(Template.read(asset), { headers });
       }
     }
 
+    if (path.charAt() === '@') {
+      const src = path.substr(1);
+
+      if (env.assets.includes(src)) {
+        const headers = {
+          'content-type': Util.mimeType(src),
+        };
+
+        return new Response(Template.read(src), { headers });
+      }
+    }
     if (files.includes(path)) {
       const headers = {
         'content-type': Util.mimeType(path),
