@@ -113,7 +113,7 @@ export function createBundler({ Template, esbuild, ...deps }) {
         root: tpl.ref,
         source: outputFiles[0].text,
         children: (metafile?.inputs[__filename]?.imports || [])
-          .filter(_ => _.path.indexOf('http-url:') === -1)
+          .filter(_ => !/^(?:http-url:|https?:\/\/)/.test(_.path))
           .map(_ => Template.join(__dirname, _.path)).concat(tpl.children || []),
       };
     }

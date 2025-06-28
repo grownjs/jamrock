@@ -312,7 +312,7 @@ test.group('template transformation', t => {
     const Inspect = {
       __src: '',
       __dest: '',
-      __styles: '',
+      __styles: [],
       __scripts: [],
       __doctype: () => ({}),
       __template: () => ['FIXME'],
@@ -351,20 +351,22 @@ test.group('template transformation', t => {
     expect(tpl.module.name).toEqual('OSOM');
 
     expect(tpl.partial.assets.js).toEqual([
-      ['x', 'generated/nested/path/to/transformed(0).js'],
-      ['x', 'generated/nested/path/to/transformed(1).js'],
-      ['x', 'generated/nested/path/to/transformed(2).js'],
+      ['x', 'generated/nested/path/to/transformed(0).js', [
+        'generated/nested/path/to/generated/nested/path/module.mjs',
+      ]],
+      ['x', 'generated/nested/path/to/transformed(1).js', []],
+      ['x', 'generated/nested/path/to/transformed(2).js', []],
     ]);
 
     const { attrs, meta, html, css, js } = await tpl.render();
 
     expect(js).toEqual([
-      ['x', 'nested/path/to/transformed(0).js'],
-      ['x', 'nested/path/to/transformed(1).js'],
-      ['x', 'nested/path/to/transformed(2).js'],
+      'nested/path/to/transformed(0).js',
+      'nested/path/to/transformed(1).js',
+      'nested/path/to/transformed(2).js',
     ]);
 
-    expect(css).toEqual([['nested/path/to/transformed(0).css']]);
+    expect(css).toEqual(['nested/path/to/transformed(0).css']);
 
     expect(Template.read('generated/nested/path/to/transformed(0).css'))
       .toContain('p:where(.jam-420){color:#ff0;}\n@font-face{font-family:Alpha;src:url(generated/fonts/Bravo.otf);}');
@@ -463,7 +465,7 @@ ROUTER(FIXME)
     const tpl = await build('./scoping.html');
     const { html, css } = await tpl.render({ bar: 42 });
 
-    expect(css).toEqual([['scoping(0).css']]);
+    expect(css).toEqual(['scoping(0).css']);
 
     expect(Template.read('generated/scoping(0).css'))
       .toContain(`p:where(.jam-420){color:red;}
@@ -487,7 +489,7 @@ ul:where(.jam-420) li span:where(.jam-420){color:pink;}
     const tpl = await build('./nested.html');
     const { html, css } = await tpl.render();
 
-    expect(css).toEqual([['nested(0).css'], ['nested(1).css']]);
+    expect(css).toEqual(['nested(0).css', 'nested(1).css']);
 
     expect(Template.read('generated/nested(1).css'))
       .toContain(`@font-face{font-family:Alpha;src:url(generated/fonts/Bravo.otf);}
@@ -517,7 +519,7 @@ ul:where(.jam-420) li span:where(.jam-420){color:pink;}
     const tpl = await build('./unocss.html', { generators });
     const { css } = await tpl.render();
 
-    expect(css).toEqual([['unocss.css']]);
+    expect(css).toEqual(['unocss.css']);
     expect(Template.read('generated/unocss.css')).toContain('.m-1{margin:0.25rem;}');
   });
 });
