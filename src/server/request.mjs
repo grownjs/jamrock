@@ -118,7 +118,7 @@ export function getClientCode(conn, patch, baseURL, _uuid, _prefix) {
   const uuid = _uuid || conn.headers['request-uuid'] || `0.${Date.now().toString(36).replace(/.{3}/g, '$&-')}`;
   const state = JSON.stringify({ uuid, patch, csrf: conn.csrf_token, method: conn.method });
   const client = `<script>(${generateClientCode.toString().replace(/𝐢𝐦𝐩𝐨𝐫𝐭/g, 'import')
-    })(${state}, ${JSON.stringify(_prefix)}, ${process.env.HEADLESS ? 'true' : 'undefined'});</script>
+  })(${state}, ${JSON.stringify(_prefix)}, ${process.env.HEADLESS ? 'true' : 'undefined'});</script>
 `.replaceAll('./', baseURL);
 
   return { uuid, client };
@@ -158,7 +158,7 @@ export function create404(env, conn, client, message) {
 
   return `${style}${message}<table><caption>Available routes</caption>${env.routes.map(route => `
 <tr><td align=right style="width:1%">${route.verb}</td><td>${route.verb === 'GET' ? `<a href="${route.path}">${route.path}</a>` : route.path
-    }</tr>`).join('')}
+}</tr>`).join('')}
 <tfoot><tr><th colspan="2">${conn.req.url} &mdash; ${now}</th></tr></tfoot>
 </table>${config}${environment}${client}`;
 }
