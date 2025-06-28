@@ -153,7 +153,9 @@ export class LiveSocket {
     };
 
     this.patchCSS = src => {
-      console.log('CSS', src);
+      const node = document.querySelector(`link[href^="@/${src}"]`);
+      const href = node.getAttribute('href').split('?')[0];
+      node.href = `${href}?_${Date.now()}`;
     };
 
     this.patch = sources => {

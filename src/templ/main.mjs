@@ -95,8 +95,9 @@ export class Template {
 
           if (defaults.src) {
             x.content = x.content.replace(/url\((.+?)\)/g, (_, $1) => {
+              if ($1.charAt() === '/' || $1.indexOf('http') === 0) return _;
               resources.media.push(Template.join(defaults.src, $1));
-              return `url(/${$1})`;
+              return `url(/${$1}?_${Date.now()})`;
             });
           }
 
