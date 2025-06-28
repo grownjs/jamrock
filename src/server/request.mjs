@@ -489,7 +489,7 @@ export function serveFrom(env, dest, editor) {
       }
     }
 
-    if (path.charAt() === '@') {
+    if (path.charAt() === env.options.prefix) {
       const src = path.substr(1);
 
       if (env.assets.includes(src)) {

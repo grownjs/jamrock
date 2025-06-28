@@ -138,22 +138,32 @@ export class LiveSocket {
 
     this.patchSVG = async src => {
       for (const node of document.querySelectorAll(`[data-location="${src}"]`)) {
-        const result = await fetch(`@${src}`).then(resp => resp.text());
+        const result = await fetch(`${this.browser.prefix}${src}`).then(resp => resp.text());
         const target = document.createElement('div');
+        const source = node.tagName === 'use'
+          ? node.parentNode
+          : node;
+
+        const width = source.getAttribute('width');
+        const height = source.getAttribute('height');
         target.innerHTML = result;
-        target.childNodes[0].setAttribute('data-location', src);
+
+        const svg = target.childNodes[0];
+        svg.setAttribute('data-location', src);
+        svg.setAttribute('width', width);
+        svg.setAttribute('height', height);
 
         if (node.tagName === 'use') {
           document.querySelector(node.getAttribute('xlink:href')).remove();
-          node.parentNode.replaceWith(target.childNodes[0]);
+          node.parentNode.replaceWith(svg);
         } else {
-          node.replaceWith(target.childNodes[0]);
+          node.replaceWith(svg);
         }
       }
     };
 
     this.patchCSS = src => {
-      const node = document.querySelector(`link[href^="@/${src}"]`);
+      const node = document.querySelector(`link[href^="${this.browser.prefix}/${src}"]`);
       const href = node.getAttribute('href').split('?')[0];
       node.href = `${href}?_${Date.now()}`;
     };
@@ -197,7 +207,7 @@ export class LiveSocket {
     let eventSource;
     this.start = () => {
       eventSource?.close();
-      eventSource = new EventSource('/@');
+      eventSource = new EventSource(`/${this.browser.prefix}`);
       eventSource.onopen = () => {
         this.ready = false;
         ws?.close();
