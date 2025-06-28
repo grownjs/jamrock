@@ -123,7 +123,7 @@ export class Block {
         if (_.attributes.src) {
           const ext = _.attributes.src.split('.').pop();
 
-          _.content = Template.read(Template.join(this.base, _.attributes.src));
+          _.content = `@import "${_.attributes.src}";`;
           if (ext !== 'css') _.attributes.lang = ext;
           delete _.attributes.src;
         }
