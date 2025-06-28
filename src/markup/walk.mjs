@@ -46,7 +46,23 @@ export function traverse(obj, html, parent, context, counter = 0) {
         }
       }
 
-      if ((node.rawTagName === 'script' || node.rawTagName === 'style') && !node.attributes.some(x => x.key === 'src')) {
+      if (node.rawTagName === 'script' || node.rawTagName === 'style') {
+        const src = node.attributes.find(x => x.key === 'src');
+
+        if (src && node.rawTagName === 'script') return;
+
+        const baseNode = {
+          ref: parent?.__ref || null,
+          root: parent?.name || null,
+          identifier: `${context.file.replace(/\.\w+$/, '')}(${counter})`,
+          attributes: node.attributes
+            ? node.attributes.reduce((memo, { key, value }) => {
+              memo[key] = value === null ? true : value;
+              return memo;
+            }, {})
+            : {},
+        };
+
         if (node.children[0]) {
           const { line, column, index } = node.children[0].position.start;
           const prefix = repeat(' ', index - (line + column) + 3) + repeat('\n', line) + repeat(' ', column);
@@ -56,21 +72,20 @@ export function traverse(obj, html, parent, context, counter = 0) {
           }
 
           const fixedNode = {
-            ref: parent?.__ref || null,
-            root: parent?.name || null,
+            ...baseNode,
             offset: node.children[0].position.start,
             content: prefix + node.children[0].content,
-            identifier: `${context.file.replace(/\.\w+$/, '')}(${counter})`,
-            attributes: node.attributes
-              ? node.attributes.reduce((memo, { key, value }) => {
-                memo[key] = value === null ? true : value;
-                return memo;
-              }, {})
-              : {},
           };
 
           if (node.rawTagName === 'script') context.response.scripts.push(fixedNode);
           if (node.rawTagName === 'style') context.response.styles.push(fixedNode);
+          counter += 1;
+        } else if (src && node.rawTagName === 'style') {
+          context.response.styles.push({
+            ...baseNode,
+            content: '',
+            offset: node.position.start,
+          });
           counter += 1;
         }
         return;

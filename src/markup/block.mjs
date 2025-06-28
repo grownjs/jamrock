@@ -119,6 +119,16 @@ export class Block {
         }
       });
 
+      this.styles.forEach(_ => {
+        if (_.attributes.src) {
+          const ext = _.attributes.src.split('.').pop();
+
+          _.content = Template.read(Template.join(this.base, _.attributes.src));
+          if (ext !== 'css') _.attributes.lang = ext;
+          delete _.attributes.src;
+        }
+      });
+
       // FIXME: use jslint here?
       lexer(Block.module(this.module.code), { position: { line: 1, col: this.module.code.indexOf('\n') } });
       lexer(Block.module(this.script.code, true), { position: { line: 1, col: this.script.code.indexOf('\n') } });
