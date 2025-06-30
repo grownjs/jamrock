@@ -14,7 +14,7 @@ export function decorate($, ctx, vnode, hooks) {
       const state = {};
       const key = `${fn[0].$}/${ctx.depth}`;
 
-      ctx.queue.set(ctx.uuid, key, state);
+      ctx.emitter.set(ctx.uuid, key, state);
 
       vnode[1]['@enhance'] = true;
       vnode[1][`@use:${dashCase(fn[1])}`] = key;

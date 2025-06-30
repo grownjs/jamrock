@@ -1,34 +1,8 @@
-export class MemoryStore {
-  constructor() {
-    this.storage = new Map();
-    this.timeouts = new Map();
-  }
-
-  pop(sid) {
-    const value = this.get(sid);
-    this.del(sid);
-    return value;
-  }
-
-  get(sid, or = null) {
-    return this.storage.get(sid) || or;
-  }
-
-  set(sid, data, expire = 300) {
-    clearTimeout(this.timeouts.get(sid));
-    this.storage.set(sid, data);
-    this.timeouts.set(sid, setTimeout(() => this.del(sid), expire * 1000));
-  }
-
-  del(sid) {
-    this.storage.delete(sid);
-    this.timeouts.delete(sid);
-  }
-}
+import { MemoryStore } from './store.mjs';
 
 export async function createStore(hash, options) {
   const secret = options.secret || '__UNSAFE__';
-  const shared = options.store || new MemoryStore();
+  const shared = options.store || new MemoryStore(options);
 
   function encode(value = Date.now()) {
     return hash.encode(value, secret);

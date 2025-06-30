@@ -174,8 +174,8 @@ export async function createBody(env, conn, clients, { uuid, client, matches, op
       stack: [],
       called: true,
       route: matches,
-      queue: env.queue,
       routes: env.routes,
+      emitter: env.emitter,
     };
 
     ctx.uuid = uuid;
@@ -277,7 +277,10 @@ export async function createBody(env, conn, clients, { uuid, client, matches, op
 
     if (!Util.Is.str(body)) {
       const state = [];
-      const data = ctx.queue.get(uuid);
+
+      // FIXME: is still needed?
+      const data = await ctx.emitter.get(uuid);
+
       const calls = Object.entries(body.actions)
         .reduce((memo, [_mod, _actions]) => {
           memo[_mod] = Object.keys(_actions);
@@ -396,6 +399,8 @@ export async function createResponse(env, conn, clients, options) {
       return createModuleResponse(env, conn);
     }
 
+    // console.log(conn.req)
+
     let cancelled;
     return new Response(new ReadableStream({
       start(controller) {
@@ -411,7 +416,7 @@ export async function createResponse(env, conn, clients, options) {
           } else {
             sendSSEMessage('Hello, World!');
           }
-        }, 1000);
+        }, 10000);
 
         sendSSEMessage('READY');
 

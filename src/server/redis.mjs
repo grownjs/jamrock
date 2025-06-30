@@ -4,36 +4,24 @@ export class RedisStore {
     this.options = options;
   }
 
-  async pop(sid) {
-    const value = await this.get(sid);
-    this.del(sid);
-    return value;
+  unset(key) {
+    this.client.del(key);
   }
 
-  async get(sid, or = null) {
-    const data = await this.client.get(sid);
+  async get(key, or) {
+    const data = await this.client.get(key);
     return data ? JSON.parse(data) : or;
   }
 
-  set(sid, data, expire = 10) {
-    this.client.set(sid, JSON.stringify(data), { EX: expire });
-  }
-
-  del(sid) {
-    this.client.del(sid);
+  set(key, data, expire = 10) {
+    this.client.set(key, JSON.stringify(data), { EX: expire });
   }
 }
 
 export class RedisHub {
   constructor(redis, options, subscriber) {
-    this.emitters = new Map();
-
     this.client = redis;
     this.options = options;
     this.subscriber = subscriber;
-  }
-
-  off(key) {
-    this.client.unsubscribe(key);
   }
 }

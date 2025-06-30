@@ -1,5 +1,5 @@
 import { Is } from '../utils/client.mjs';
-import { createQueue } from './pubsub.mjs';
+import { createPubSub } from './pubsub.mjs';
 import { createBundler } from './bundler.mjs';
 import { RedisHub, RedisStore } from './redis.mjs';
 
@@ -61,7 +61,7 @@ export async function createRedisConnection(env, options, getRedisModule) {
     Object.assign(options, { store, pubsub });
   }
 
-  env.queue = createQueue(options);
+  env.emitter = createPubSub(options);
 }
 
 export const createTranspiler = ({ getESbuildModule, ...deps }) => {
