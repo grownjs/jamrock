@@ -43,7 +43,7 @@ export async function render(content, inline, chunks) {
 
   const renderer = new kramed.Renderer();
 
-  renderer.code = (text, lang) => {
+  renderer.code = (text, language) => {
     if (text === '\n' && chunks.length > 0) {
       text = chunks.shift().code;
       text = text.charAt() !== ' '
@@ -51,9 +51,23 @@ export async function render(content, inline, chunks) {
         : s(text);
     }
 
-    const code = lang ? hljs.highlight(decodeEnts(text), { language: lang }).value : text;
-    const attrs = lang ? ` data-lang="${lang}"` : '';
+    if (!language) {
+      const label = text.match(/\w+\s*\|\s*[^\n]+?\n/);
 
+      if (label) {
+        language = label[0].trim();
+        text = text.substr(label[0].length);
+      }
+    }
+
+    const [lang, label] = language ? language.split('|') : [];
+
+    const code = lang ? hljs.highlight(decodeEnts(text), { language: lang.trim() }).value : text;
+    const attrs = lang ? ` data-lang="${lang.trim()}"` : '';
+
+    if (label) {
+      return `<details><summary>${label}</summary><pre class="hljs"${attrs}><code>${unsafe(code)}</code></pre></details>`
+    }
     return `<pre class="hljs"${attrs}><code>${unsafe(code)}</code></pre>`;
   };
 
