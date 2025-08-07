@@ -336,7 +336,7 @@ export class Template {
       ? `${component.__src}/${++ctx.depth}`
       : component.__src;
 
-    const scripts = { [component.__src]: component.__scripts.map(_ => _[1]) };
+    const scripts = { [component.__src]: component.__scripts.map(_ => [_[0], _[1]]) };
     const styles = { [component.__src]: component.__styles.map(_ => _[0]) };
     const media = { [component.__src]: component.__media };
 
