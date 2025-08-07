@@ -28,7 +28,15 @@
 
 #top { position: absolute; bottom: 0; }
 
+.pagefind-ui__result-thumb:empty { display: none; }
+
 body {
+  --pagefind-ui-primary: #eeeeee;
+  --pagefind-ui-text: #eeeeee;
+  --pagefind-ui-background: #152028;
+  --pagefind-ui-border: #152028;
+  --pagefind-ui-tag: #152028;
+
   font-family: Montserrat;
   background-color: @rich-black;
   color: @lighter;
@@ -53,6 +61,36 @@ a {
   &:hover { color: @spring-bud; }
 }
 main + nav { margin-top: 30px; }
+details {
+  margin-bottom: 20px;
+  summary {
+    background-color: rgba(0, 0, 0, .3);
+    position: sticky;
+    top: 10px;
+    text-shadow: 1px 1px 1px #000;
+    border: 1px dashed rgba(255, 255, 255, .5);
+    font-size: 1rem;
+    border-radius: 3px;
+    cursor: pointer;
+    padding: 10px;
+    color: @white;
+    &::after {
+      top: 0;
+      bottom: 0;
+      margin: auto;
+      width: 16px;
+      height: 16px;
+      content: '';
+      color: red;
+      right: 10px;
+      position: absolute;
+      background-image: url('../images/list.svg');
+    }
+  }
+  &:has(.hljs) summary::after {
+    background-image: url('../images/code.svg');
+  }
+}
 blockquote {
   margin: 0;
   position: relative;
@@ -116,7 +154,7 @@ code {
   padding: 0 2px;
   color: @light;
 }
-ul, ol {
+ul, .body > ol {
   list-style-position: inside;
   list-style-type: square;
   padding-left: 1rem;
@@ -124,7 +162,7 @@ ul, ol {
 ul li + li {
   margin-top: .3rem;
 }
-ol {
+.body > ol {
   list-style: none;
   counter-reset: steps;
   li {
@@ -234,6 +272,7 @@ h1, h2, h3, h4 {
 
 .hljs {
   padding: 0;
+  border-radius: 3px;
   background-color: rgba(0, 0, 0, .3);
   code { background-color: unset;  }
 }

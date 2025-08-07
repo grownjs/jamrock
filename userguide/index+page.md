@@ -50,7 +50,7 @@ Pages can declare its own route handlers through the `export&nbsp;default` objec
 
 They can be set as boolean, to enable certain methods, or functions to handle the whole request, e.g.
 
-```html
+```html | Example of module handlers
 <script>
   export default {
     // middleware to invoke, see below
@@ -99,7 +99,7 @@ In some cases you may want to run some code prior executing your handlers, to en
 
 Then, define some functions through a `+server.mjs` script, e.g.
 
-```js
+```js | Example of middleware module
 export function http(conn) {
   // `http` handler executes on every request!
 }
@@ -142,7 +142,7 @@ they'll receive the error/response and connection respectively.
 
 To play with the request you'll need the `jamrock:conn` module:
 
-```html
+```html | Example of request handling
 <script>
   import { method, headers, redirect } from 'jamrock:conn';
 
@@ -159,45 +159,51 @@ however `redirect` calls can stop any further rendering.
 
 Below is a list of all sort of things you may use:
 
-#### Available properties
+<details>
+  <summary>Available properties</summary>
+  <mkd>
+    - `req` &mdash; the original `Request` object
+    - `store` &mdash; reference to shared `Map` store
+    - `method` &mdash; `GET` | `PUT` | `POST` | `PATCH` | `DELETE`
+    - `server` &mdash; instantiated server object
+    - `status_code` &mdash; get/set the response status code
+    - `resp_body` &mdash; get/set the response body
+    - `base_url` &mdash; get/set the `&lt;base href="/" /&gt;` path
+    - `cookies` &mdash; request cookies as object
+    - `headers` &mdash; request headers as object
+    - `session` &mdash; saved session from store
+    - `options` &mdash; framework options
+    - `aborted` &mdash; `true` if request has ended
+    - `params` &mdash; mixed _path_, _query_ and _body_ params
+    - `path_info` &mdash; list of path segments
+    - `path_params` &mdash; route parameters
+    - `body_params` &mdash; request body as object
+    - `request_path` &mdash; requested url's pathname
+    - `query_string` &mdash; requested url's query string
+    - `query_params` &mdash; requested url's query as object
+    - `csrf_token` &mdash; calculated token for the request
+    - `resp_cookies` &mdash; response cookies (readonly)
+    - `resp_headers` &mdash; response headers (readonly)
+    - `has_body` &mdash; `true` if the response has a body value
+    - `has_status` &mdash; `true` if the response has a status code
+    - `is_xhr` &mdash; `true` if the request is `XMLHttpRequest`
+    - `env` &mdash; safe copy of `process.env` (readonly)
+  </mkd>
+</details>
 
-- `req` &mdash; the original `Request` object
-- `store` &mdash; reference to shared `Map` store
-- `method` &mdash; `GET` | `PUT` | `POST` | `PATCH` | `DELETE`
-- `server` &mdash; instantiated server object
-- `status_code` &mdash; get/set the response status code
-- `resp_body` &mdash; get/set the response body
-- `base_url` &mdash; get/set the `&lt;base href="/" /&gt;` path
-- `cookies` &mdash; request cookies as object
-- `headers` &mdash; request headers as object
-- `session` &mdash; saved session from store
-- `options` &mdash; framework options
-- `aborted` &mdash; `true` if request has ended
-- `params` &mdash; mixed _path_, _query_ and _body_ params
-- `path_info` &mdash; list of path segments
-- `path_params` &mdash; route parameters
-- `body_params` &mdash; request body as object
-- `request_path` &mdash; requested url's pathname
-- `query_string` &mdash; requested url's query string
-- `query_params` &mdash; requested url's query as object
-- `csrf_token` &mdash; calculated token for the request
-- `resp_cookies` &mdash; response cookies (readonly)
-- `resp_headers` &mdash; response headers (readonly)
-- `has_body` &mdash; `true` if the response has a body value
-- `has_status` &mdash; `true` if the response has a status code
-- `is_xhr` &mdash; `true` if the request is `XMLHttpRequest`
-- `env` &mdash; safe copy of `process.env` (readonly)
-
-#### Available methods
-
-- `cookie(key, value, options)` &mdash; set response cookies
-- `header(key, value)` &mdash; set response headers
-- `redirect(url, code)` &mdash; ends request with a redirection
-- `flash(group, message)` &mdash; writes to the session flash
-- `raise(code, message)` &mdash; ends the request as failure
-- `protect(value)` &mdash; decorates an unsafe value
-- `unsafe(value)` &mdash; `true` if value is already unsafe
-- `toJSON()` &mdash; serialized verson of the `conn` object (safe)
+<details>
+  <summary>Available methods</summary>
+  <mkd>
+    - `cookie(key, value, options)` &mdash; set response cookies
+    - `header(key, value)` &mdash; set response headers
+    - `redirect(url, code)` &mdash; ends request with a redirection
+    - `flash(group, message)` &mdash; writes to the session flash
+    - `raise(code, message)` &mdash; ends the request as failure
+    - `protect(value)` &mdash; decorates an unsafe value
+    - `unsafe(value)` &mdash; `true` if value is already unsafe
+    - `toJSON()` &mdash; serialized verson of the `conn` object (safe)
+  </mkd>
+</details>
 
 > [!WARNING]
 > Unsafe values are omitted if found during the rendering of page components,
