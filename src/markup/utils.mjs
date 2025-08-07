@@ -161,6 +161,10 @@ export function enhance(vnode, parent) {
     vnode[0] = props.tag;
     delete props.tag;
   }
+
+  if (name === 'script') {
+    delete props.inline;
+  }
 }
 
 export function extend(tagName, props, fn) {

@@ -47,9 +47,24 @@ export function traverse(obj, html, parent, context, counter = 0) {
       }
 
       if (node.rawTagName === 'script' || node.rawTagName === 'style') {
+        const inline = node.attributes.find(x => x.key === 'inline');
         const src = node.attributes.find(x => x.key === 'src');
 
-        if (src && node.rawTagName === 'script') return;
+        if ((src || inline) && node.rawTagName === 'script') {
+          copy.push({
+            type: 'element',
+            name: 'script',
+            attributes: {
+              ...(node.children[0]
+                ? { '@html': node.children[0].content }
+                : {}),
+              ...(node.attributes
+                ? Expr.params(node.attributes, context, tokenStart)
+                : {}),
+            },
+          });
+          return;
+        }
 
         const baseNode = {
           identifier: `${context.file.replace(/\.\w+$/, '')}(${counter})`,
