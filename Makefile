@@ -71,6 +71,11 @@ test-nodejs:
 docs:
 	@bin/node dev --src ./userguide
 
+index:
+	@bin/node build --src ./userguide
+	@bin/node write
+	@npx -y pagefind --site build/public --serve
+
 live:
 	@npm pack
 	@mv jamrock-0.0.0.tgz build/
