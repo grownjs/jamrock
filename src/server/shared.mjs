@@ -3,6 +3,7 @@ import { Template, Runtime, Handler, Markup, Render, Util } from 'jamrock/core';
 import { createFSWatcher } from './helpers.mjs';
 import { createConnection } from './connection.mjs';
 
+const PATH_PROPERTY = Symbol('@@path');
 const FILES_PROPERTY = Symbol('@@files');
 const ASSETS_PROPERTY = Symbol('@@assets');
 const ROUTES_PROPERTY = Symbol('@@routes');
@@ -207,6 +208,7 @@ export const createCompiler = ({ fs, path }, options, external) => {
   function save(routes, dependencies) {
     config.routes = routes || config.routes;
     Template.write(index, JSON.stringify({
+      path: `${(options.src || this[PATH_PROPERTY]).replace('./', '')}`,
       files: Object.entries(this[FILES_PROPERTY]).reduce((memo, [k, v]) => {
         memo[k] = { ...memo[k], ...v };
         return memo;
@@ -396,6 +398,9 @@ export const createCompiler = ({ fs, path }, options, external) => {
     recompile,
     precompile,
   }, {
+    [PATH_PROPERTY]: {
+      get: () => config.path,
+    },
     [FILES_PROPERTY]: {
       get: () => config.files,
     },
@@ -468,6 +473,12 @@ export function createEnvironment({ fs, path }, options, external) {
       if (fs.existsSync(publicDir)) fs.cpSync(publicDir, publicDest, { recursive: true });
 
       let count = 0;
+
+      compiler[ASSETS_PROPERTY].forEach(asset => {
+        fs.cpSync(asset, Template.join(publicDest, asset.replace(compiler[PATH_PROPERTY], '')), { recursive: true });
+        count++;
+      });
+
       for (const route of compiler[ROUTES_PROPERTY].filter(_ => _.kind === 'page')) {
         const destFile = path.join(publicDest, route.path, 'index.html');
 
@@ -543,6 +554,7 @@ export function createEnvironment({ fs, path }, options, external) {
   return Object.defineProperties({
     serve, build, locate, request, compiler, static: _static,
   }, {
+    path: { get: () => compiler[PATH_PROPERTY] },
     files: { get: () => compiler[FILES_PROPERTY] },
     assets: { get: () => compiler[ASSETS_PROPERTY] },
     routes: { get: () => compiler[ROUTES_PROPERTY] },
