@@ -32,6 +32,7 @@ Usage: ${!existsSync('package.json') ? 'jamrock' : './bin/{node,deno,bun}'} <COM
   build  Compiles *.{md,html} sources into server-components
   serve  Starts the web-server on the given --port and --host
   route  Prints the available routes found${!existsSync('package.json') ? '\n  init   Generates a new application' : ''}
+  write  SSG from pre-built sources (use after build)
 
 Options:
 
@@ -39,7 +40,6 @@ Options:
   --dest     Destination for compiled files (default is ./dest)
   --watch    Enable file-watching on the web-server
   --prefix   Prefix for bundled resources
-  --static   SSG from pre-built sources
 
   --port     The port number to bind the web-server
   --host     The host address to bind the web-server
@@ -175,7 +175,6 @@ export type Routes = ${['RouteMap'].concat(typedefs).join('\n& ')};\n`;
 
     const defaults = {};
     const cwd = process.cwd();
-    const _static = Util.has('static', argv);
     const config = Template.path(`${cwd}/dev.config`);
 
     if (config) {
@@ -193,8 +192,13 @@ export type Routes = ${['RouteMap'].concat(typedefs).join('\n& ')};\n`;
         break;
 
       case 'build':
-        console.log(_static ? `Processing from ${dest}` : `Building ${src} to ${dest}`);
-        await env({ ...defaults, ..._options, unocss })[_static ? 'static' : 'build']();
+        console.log(`Building ${src} to ${dest}`);
+        await env({ ...defaults, ..._options, unocss }).build();
+        break;
+
+      case 'write':
+        console.log(`Processing from ${dest}`);
+        await env({ ...defaults, ..._options, unocss }).static();
         break;
 
       case 'route':

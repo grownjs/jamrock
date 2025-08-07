@@ -30,7 +30,7 @@ export const createWatcher = ({ fs }, watcher, compiler) => {
       .map(([k, v]) => ({ ...v, src: v.src || k }))
       .sort((a, b) => b.hits - a.hits);
 
-    // console.log('SYNC', changeset);
+    // printLog('SYNC', changeset);
 
     const modified = changeset.filter(_ => _.type === 'compile').map(_ => _.src);
     const refreshed = changeset.filter(_ => _.type === 'refresh').map(_ => _.src);
@@ -456,18 +456,22 @@ export function createEnvironment({ fs, path }, options, external) {
   async function _static() {
     try {
       const start = Date.now();
+      const publicDir = options.public || 'public';
+      const publicDest = path.join(options.dest, 'public');
 
       process.env.HEADLESS = true;
 
       await this.serve({ quiet: true });
 
-      fs.mkdirSync(path.join(options.dest, 'public'));
+      fs.mkdirSync(publicDest, { recursive: true });
+
+      if (fs.existsSync(publicDir)) fs.cpSync(publicDir, publicDest, { recursive: true });
 
       let count = 0;
       for (const route of compiler[ROUTES_PROPERTY].filter(_ => _.kind === 'page')) {
-        const destFile = path.join(options.dest, 'public', route.path, 'index.html');
+        const destFile = path.join(publicDest, route.path, 'index.html');
 
-        // console.log(route.verb, route.path, destFile);
+        printLog(Util.$.green(route.verb), route.path, Util.$.gray(destFile));
 
         const resp = await fetch(`http://${location.host}${route.path}`);
         const html = await resp.text();
@@ -477,7 +481,7 @@ export function createEnvironment({ fs, path }, options, external) {
       }
 
       for (const bundle of Template.glob(path.join(options.dest, '/**/*.{css,bundled.mjs}'))) {
-        const destFile = path.join(options.dest, 'public', options.prefix, path.relative(options.dest, bundle));
+        const destFile = path.join(publicDest, options.prefix, path.relative(options.dest, bundle));
 
         copy(bundle, destFile);
         count++;
@@ -487,7 +491,7 @@ export function createEnvironment({ fs, path }, options, external) {
         if (!mod.module?.__functions || !mod.module.__functions.length) continue;
 
         const key = file.replace('.generated.', '.hooks.');
-        const destFile = path.join(options.dest, 'public', options.prefix, path.relative(options.dest, key));
+        const destFile = path.join(publicDest, options.prefix, path.relative(options.dest, key));
         const code = `/* ${key} */\n${Object.values(mod.module.__functions).map(_ => `export ${_.toString()}\n`).join('')}`;
 
         write(destFile, code);
@@ -498,15 +502,15 @@ export function createEnvironment({ fs, path }, options, external) {
         if (['client.mjs', 'server.mjs', 'main.mjs'].includes(file)) continue;
 
         const srcFile = path.join(import.meta.dirname, file);
-        const destFile = path.join(options.dest, 'public', file);
+        const destFile = path.join(publicDest, file);
 
         fs.copyFileSync(srcFile, destFile);
         count++;
       }
 
-      console.log(`${count} file${count === 1 ? '' : 's'} written (${Util.ms(start)})`);
+      printLog(`${count} file${count === 1 ? '' : 's'} written (${Util.ms(start)})`);
     } catch (e) {
-      console.log(e);
+      printLog(e);
       process.exit(1);
     } finally {
       process.exit();
