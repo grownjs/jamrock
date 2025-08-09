@@ -66,7 +66,7 @@ export async function render(content, inline, chunks) {
     const attrs = lang ? ` data-lang="${lang.trim()}"` : '';
 
     if (label) {
-      return `<details><summary>${label}</summary><pre class="hljs"${attrs}><code>${unsafe(code)}</code></pre></details>`
+      return `<details><summary>${label}</summary><pre class="hljs"${attrs}><code>${unsafe(code)}</code></pre></details>`;
     }
     return `<pre class="hljs"${attrs}><code>${unsafe(code)}</code></pre>`;
   };
