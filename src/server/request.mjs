@@ -116,9 +116,14 @@ export function getRawBody(req, limit) {
 
 export function getClientCode(conn, patch, baseURL, _uuid, _prefix) {
   const uuid = _uuid || conn.headers['request-uuid'] || `0.${Date.now().toString(36).replace(/.{3}/g, '$&-')}`;
+
+  if (process.env.HEADLESS) {
+    return { uuid, client: '' };
+  }
+
   const state = JSON.stringify({ uuid, patch, csrf: conn.csrf_token, method: conn.method });
   const client = `<script>(${generateClientCode.toString().replace(/𝐢𝐦𝐩𝐨𝐫𝐭/g, 'import')
-  })(${state}, ${JSON.stringify(_prefix)}, ${process.env.HEADLESS ? 'true' : 'undefined'});</script>
+  })(${state}, ${JSON.stringify(_prefix)});</script>
 `.replaceAll('./', baseURL);
 
   return { uuid, client };

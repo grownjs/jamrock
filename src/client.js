@@ -1,4 +1,4 @@
-export const generateClientCode = (state, prefix, headless) => {
+export const generateClientCode = (state, prefix) => {
   function main() {
     const { href } = location;
     const url = href.replace(/[&?]noscript(?:=[^&?=]*?)?/, '');
@@ -9,7 +9,7 @@ export const generateClientCode = (state, prefix, headless) => {
       Promise.all([
         import('./client/browser.mjs'),
         import('./client/components.mjs'),
-      ]).then(([{ Browser }, { Components }]) => Browser.init(Components, process.env.VERSION, headless, prefix, state, this));
+      ]).then(([{ Browser }, { Components }]) => Browser.init(Components, process.env.VERSION, prefix, state, this));
     } else {
       window.Jamrock.Browser.csrf_token = state.csrf;
     }

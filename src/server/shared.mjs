@@ -1,5 +1,6 @@
 import { Template, Runtime, Handler, Markup, Render, Util } from 'jamrock/core';
 
+import { createBody } from './request.mjs';
 import { createFSWatcher } from './helpers.mjs';
 import { createConnection } from './connection.mjs';
 
@@ -461,12 +462,11 @@ export function createEnvironment({ fs, path }, options, external) {
   async function _static() {
     try {
       const start = Date.now();
+      const cwd = options.cwd || process.cwd();
       const publicDir = options.public || 'public';
       const publicDest = path.join(options.dest, 'public');
 
       process.env.HEADLESS = true;
-
-      await this.serve({ quiet: true });
 
       fs.mkdirSync(publicDest, { recursive: true });
 
@@ -479,15 +479,34 @@ export function createEnvironment({ fs, path }, options, external) {
         count++;
       });
 
+      const files = {};
+      const mods = [];
+
+      Object.entries(compiler[FILES_PROPERTY]).forEach(([k, v]) => {
+        if (v.filepath) {
+          const src = Template.join(cwd, v.filepath);
+          mods.push(Template.load(src).then(r => [k, r.default || r]));
+          files[k] = v;
+        }
+      });
+
+      const modules = Object.fromEntries(await Promise.all(mods));
+
+      // FIXME: mock this better!
+      const req = {};
+      const conn = { req, headers: {} };
+      const uuid = '';
+      const client = '';
+
       for (const route of compiler[ROUTES_PROPERTY].filter(_ => _.kind === 'page')) {
         const destFile = path.join(publicDest, route.path, 'index.html');
 
         printLog(Util.$.green(route.verb), route.path, Util.$.gray(destFile));
 
-        const resp = await fetch(`http://${location.host}${route.path}`);
-        const html = await resp.text();
+        const env = { files, locate: k => modules[k], emitter: { get: () => null } };
+        const result = await createBody(env, conn, [], { uuid, client, options, matches: route });
 
-        write(destFile, html);
+        write(destFile, result.body);
         count++;
       }
 

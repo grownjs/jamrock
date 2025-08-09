@@ -73,7 +73,7 @@ docs:
 
 index:
 	@bin/node build --src ./userguide
-	@bin/node write
+	@bin/node write NODE_ENV=production
 	@npx -y pagefind --site build/public --serve
 
 live:

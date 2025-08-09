@@ -16,16 +16,15 @@
   <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png" />
   <link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png" />
   <link rel="manifest" href="/site.webmanifest" />
-  <link href="/pagefind/pagefind-ui.css" rel="stylesheet" />
-  <script src="/pagefind/pagefind-ui.js"></script>
-  <script inline>
-    // FIXME: this is not being attached as expected... also, the front-end
-    // is not fetchand nor loading it... probably we should inline it, right?
-    window.addEventListener('DOMContentLoaded', (event) => {
-      const ui = new PagefindUI({ element: "#search", showSubResults: true });
-      console.log({ui});
-    });
-  </script>
+  {#if process.env.NODE_ENV === 'production'}
+    <link href="/pagefind/pagefind-ui.css" rel="stylesheet" />
+    <script src="/pagefind/pagefind-ui.js"></script>
+    <script inline>
+      window.addEventListener('DOMContentLoaded', (event) => {
+        new PagefindUI({ element: "#search", showSubResults: true });
+      });
+    </script>
+  {/if}
 </head>
 
 <body class="reset">

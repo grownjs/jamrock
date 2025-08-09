@@ -3,7 +3,7 @@ import { LiveSocket } from './livesocket.mjs';
 import { EventHub } from './events.mjs';
 
 export class Browser {
-  constructor(state, prefix, version, headless) {
+  constructor(state, prefix, version) {
     console.info('check', state.patch, version);
 
     const actions = new Proxy({}, {
@@ -14,7 +14,6 @@ export class Browser {
     this.prefix = prefix;
     this.version = version;
     this.actions = actions;
-    this.headless = headless;
     this.csrf_token = state.csrf;
     this.request_uuid = state.uuid;
     this.request_method = state.method;
@@ -167,8 +166,8 @@ export class Browser {
     };
   }
 
-  static init(Components, version, headless, prefix, state, data) {
-    const browser = new Browser(state, prefix, version, headless);
+  static init(Components, version, prefix, state, data) {
+    const browser = new Browser(state, prefix, version);
     const sockets = new LiveSocket(browser);
     const events = new EventHub(sockets);
 
