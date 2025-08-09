@@ -284,7 +284,7 @@ export async function createBody(env, conn, clients, { uuid, client, matches, op
       const state = [];
 
       // FIXME: is still needed?
-      const data = await ctx.emitter.get(uuid);
+      const data = await ctx.emitter?.get(uuid);
 
       const calls = Object.entries(body.actions)
         .reduce((memo, [_mod, _actions]) => {

@@ -462,9 +462,14 @@ export function createEnvironment({ fs, path }, options, external) {
   async function _static() {
     try {
       const start = Date.now();
-      const cwd = options.cwd || process.cwd();
+      const base = compiler[PATH_PROPERTY];
+      const files = compiler[FILES_PROPERTY];
+      const routes = compiler[ROUTES_PROPERTY];
+      const assets = compiler[ASSETS_PROPERTY];
       const publicDir = options.public || 'public';
       const publicDest = path.join(options.dest, 'public');
+
+      await compiler.reload();
 
       process.env.HEADLESS = true;
 
@@ -474,23 +479,12 @@ export function createEnvironment({ fs, path }, options, external) {
 
       let count = 0;
 
-      compiler[ASSETS_PROPERTY].forEach(asset => {
-        fs.cpSync(asset, Template.join(publicDest, asset.replace(compiler[PATH_PROPERTY], '')), { recursive: true });
+      assets.forEach(asset => {
+        fs.cpSync(asset, Template.join(publicDest, asset.replace(base, '')), { recursive: true });
         count++;
       });
 
-      const files = {};
-      const mods = [];
-
-      Object.entries(compiler[FILES_PROPERTY]).forEach(([k, v]) => {
-        if (v.filepath) {
-          const src = Template.join(cwd, v.filepath);
-          mods.push(Template.load(src).then(r => [k, r.default || r]));
-          files[k] = v;
-        }
-      });
-
-      const modules = Object.fromEntries(await Promise.all(mods));
+      const modules = Object.fromEntries(Template.cache.entries());
 
       // FIXME: mock this better!
       const req = {};
@@ -498,12 +492,12 @@ export function createEnvironment({ fs, path }, options, external) {
       const uuid = '';
       const client = '';
 
-      for (const route of compiler[ROUTES_PROPERTY].filter(_ => _.kind === 'page')) {
+      for (const route of routes.filter(_ => _.kind === 'page')) {
         const destFile = path.join(publicDest, route.path, 'index.html');
 
         printLog(Util.$.green(route.verb), route.path, Util.$.gray(destFile));
 
-        const env = { files, locate: k => modules[k], emitter: { get: () => null } };
+        const env = { files, locate: k => modules[files[k].filepath].module };
         const result = await createBody(env, conn, [], { uuid, client, options, matches: route });
 
         write(destFile, result.body);
@@ -517,7 +511,7 @@ export function createEnvironment({ fs, path }, options, external) {
         count++;
       }
 
-      for (const [file, mod] of Object.entries(compiler[FILES_PROPERTY])) {
+      for (const [file, mod] of Object.entries(files)) {
         if (!mod.module?.__functions || !mod.module.__functions.length) continue;
 
         const key = file.replace('.generated.', '.hooks.');
