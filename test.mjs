@@ -3,6 +3,8 @@ import { processCLIArgs, configure, test, run } from '@japa/runner';
 
 const _group = test.group;
 
+test.pin = (desc, cb) => test(`pin: ${desc}`, cb);
+test.skip = (desc, cb) => test(`skip: ${desc}`, cb);
 test.group = (desc, cb) => {
   _group(desc, group => {
     group.tap(t => {

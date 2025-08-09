@@ -50,6 +50,7 @@ export async function transpile(code, src, save, prefix = 'generated/') {
 const TEMPLATE = { ...Template };
 
 export function setup() {
+  process.env.__OLD_ENV = process.env.NODE_ENV;
   Template.cache = new Map();
   Template.glob = x => glob.sync(x);
   Template.read = x => fs.readFileSync(x).toString();
@@ -59,6 +60,7 @@ export function setup() {
 }
 
 export function reset() {
+  process.env.NODE_ENV = process.env.__OLD_ENV;
   delete Template.cache;
   Template.glob = TEMPLATE.glob;
   Template.read = TEMPLATE.read;

@@ -568,6 +568,38 @@ export class Template {
     return ret;
   }
 
+  // FIXME: recursive inline? e.g. urls() and @imports?
+  static async refetch(url, target) {
+    const source = url.replace(/^\/\//, 'http://');
+
+    if (source[0] === '/') return '/* not found */';
+
+    const cached = Template.join(target, url.replace(/[^\w.]/g, '_'));
+
+    if (!Template.exists(cached)) {
+      const text = await fetch(source).then(_ => _.text());
+      Template.write(cached, text);
+    }
+
+    const urls = [];
+
+    let html = Template.read(cached);
+    html = html.replace(/url\((['"]?)(.+?)\1\)/g, (_, _q, v) => {
+      const found = { url: v, fixed: v.replace(/[^\w.]/g, '_') };
+      urls.push(found);
+      return `url(/${found.fixed})`;
+    });
+
+    await Promise.all(urls.map(found => fetch(found.url).then(async result => {
+      const destFile = Template.join(target, found.fixed);
+      const blob = await result.blob();
+
+      Template.write(destFile, Buffer.from([blob], 'binary'));
+    })));
+
+    return html;
+  }
+
   static relative(base, leaf) {
     const c = [];
     const a = base.split('/');

@@ -323,6 +323,7 @@ test.group('integration only!', t => {
       'GET /resources',
       'GET /campaigns',
       'GET /markdown',
+      'GET /inlines',
       'GET /pages/:slug',
       'GET /api/v1',
       'GET /hooks',

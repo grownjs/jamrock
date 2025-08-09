@@ -281,10 +281,15 @@ export const __attributes = ${this.$attributes};
     }
 
     await visit(this.markup.metadata, async node => {
+      // we could accumulate all inlined stuff and render all into a single chunk of css?
       switch (node.name) {
         case 'link':
           if (node.attributes.rel === 'icon') {
             this.resolve(node, resources);
+          }
+          if (node.attributes.rel === 'stylesheet' && node.attributes.inline && process.env.NODE_ENV === 'production') {
+            node.name = 'style';
+            node.attributes = { '@html': await Template.refetch(node.attributes.href, this.base) };
           }
           break;
 

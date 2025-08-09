@@ -307,6 +307,14 @@ fixture`./markdown+page.html
   </blockquote>
 `;
 
+// eslint-disable-next-line no-unused-expressions
+fixture`./inlines+page.html
+  <head>
+    <link rel="stylesheet" href="//unpkg.com/highlight.js@10.7.3/styles/tomorrow.css" inline />
+    <link rel="stylesheet" href="//fonts.googleapis.com/css?family=Montserrat" inline />
+  </head>
+`;
+
 test.group('template transformation', t => {
   t.each.setup(async () => {
     const Inspect = {
@@ -361,9 +369,9 @@ test.group('template transformation', t => {
     const { attrs, meta, html, css, js } = await tpl.render();
 
     expect(js).toEqual([
-      'nested/path/to/transformed(0).js',
-      'nested/path/to/transformed(1).js',
-      'nested/path/to/transformed(2).js',
+      ['x', 'nested/path/to/transformed(0).js'],
+      ['x', 'nested/path/to/transformed(1).js'],
+      ['x', 'nested/path/to/transformed(2).js'],
     ]);
 
     expect(css).toEqual(['nested/path/to/transformed(0).css']);
@@ -448,6 +456,17 @@ ROUTER(FIXME)
             <code data-location="markdown+page.html:27:3">SOME <em>STUFF</em>
         </code>
           <h3 id=osom>OSOM</h3>\n`));
+  });
+
+  test('should inline stylesheets', async ({ expect }) => {
+    setup();
+    process.env.NODE_ENV = 'production';
+    const tpl = await build('./inlines+page.html');
+    const props = await tpl.render();
+    reset();
+
+    expect(props.meta.some(_ => _[0] === 'style' && _[1]['@html'])).toBeTruthy();
+    expect(props.meta.at(-2)[1]['@html']).toContain('/http___fonts');
   });
 
   test('should manage server/client components', async ({ expect }) => {
