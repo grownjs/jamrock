@@ -472,8 +472,17 @@ for (const [, fn] of Object.entries(__functions)) fn.$ = __src;
         return `${symbols} = await /*@@*/__resolve('${$3}')`;
       }
 
-      fixed += $3.includes('.md') || $3.includes('.html') ? 21 : 12;
-      return `${symbols} = await import('${$3.replace(/\.(?:md|html)/, '.generated.mjs')}')`;
+      fixed += 12;
+
+      if ($3.includes('.md') || $3.includes('.html')) {
+        const suffix = String(Date.now());
+
+        fixed += 11 + suffix.length;
+
+        return `${symbols} = await import('${$3.replace(/\.(?:md|html)/, `.generated.mjs?_${suffix}`)}')`;
+      }
+
+      return `${symbols} = await import('${$3}')`;
     });
 
     offset += fixed;

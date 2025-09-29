@@ -97,10 +97,6 @@ export const createWatcher = ({ fs }, watcher, compiler) => {
 
     Object.entries(compiler[FILES_PROPERTY]).forEach(([k, v]) => {
       if (v.children?.includes(src)) {
-        if (!/\.(?:md|html)/.test(src)) {
-          changes.push([k, 'compile']);
-        }
-
         const mod = Template.cache.get(compiler[FILES_PROPERTY][k].filepath);
 
         if (mod?.module) {
@@ -118,7 +114,7 @@ export const createWatcher = ({ fs }, watcher, compiler) => {
           }
         }
 
-        changes.push([k, 'refresh']);
+        changes.push([k, 'compile']);
       }
     });
 

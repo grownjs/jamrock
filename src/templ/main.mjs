@@ -344,11 +344,11 @@ export class Template {
       ? Template.hooks(ctx, parent)
       : null;
 
-    const loader = (...args) => {
-      if (args[0] === 'jamrock') return NO_HOOKS;
-      if (args[0] === 'jamrock:conn') return ctx.conn;
-      if (args[0] === 'jamrock:hooks') return hooks;
-      return Template.load(...args);
+    const loader = id => {
+      if (id === 'jamrock') return NO_HOOKS;
+      if (id === 'jamrock:conn') return ctx.conn;
+      if (id === 'jamrock:hooks') return hooks;
+      return Template.load(id);
     };
 
     const self = component.__handler

@@ -192,8 +192,8 @@ test.group('parsing', t => {
     expect(Block.script(`
       import Test from '../test.html';
 `, true)).toEqual({
-      offset: 60,
-      prelude: "\n      const  Test  = await import('../test.generated.mjs');",
+      offset: 63,
+      prelude: "\n      const  Test  = await import('../test.generated.mjs?_0');",
       interlude: '\n',
     });
 
