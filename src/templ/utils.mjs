@@ -1,4 +1,4 @@
-import AnsiUp from 'ansi_up';
+import { AnsiUp } from 'ansi_up';
 import { createEmphasize } from 'emphasize';
 
 import lessLang from 'highlight.js/lib/languages/less';
@@ -22,7 +22,7 @@ emphasize.register('jamrock', jamLang);
 emphasize.register('javascript', jsLang);
 
 // eslint-disable-next-line new-cap
-const convert = new AnsiUp.default();
+const convert = new AnsiUp();
 
 const AsyncFunction = (async () => null).constructor;
 
