@@ -10,7 +10,7 @@ import { Template } from '../templ/main.mjs';
 import { extract, rebase } from '../handler/utils.mjs';
 import { Is, parseMarkup, identifier, ignore } from '../utils/server.mjs';
 
-const RE_EXPORT_DEFAULT = /\bexport default\b/;
+const RE_EXPORT_DEFAULT = /\nexport default[\s{]/;
 const RE_RESOLVE_IMPORTS = /\/\*@@\*\/__resolve\('(.+?)'\)/g;
 const RE_MATCH_IMPORTS = /\bimport([^;]+?)from\s*(['""])(.+?)\2(?=[\n;])/g;
 
