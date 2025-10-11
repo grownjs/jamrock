@@ -293,14 +293,17 @@ export function taggify(vnode, callback) {
 
 export function serialize(vnode, parent, callback) {
   if (Is.vnode(vnode)) {
-    if (['template', 'textarea', 'pre'].includes(vnode[0])) {
+    if (vnode[0] === 'template') {
       return vnode[2];
     }
 
     const hooks = [];
     const name = vnode[0];
     const props = vnode[1] = extend(vnode[0], { ...vnode[1] }, hooks);
-    const children = serialize(vnode[2], { name, props }, callback);
+
+    const children = !['pre', 'textarea'].includes(name)
+      ? serialize(vnode[2], { name, props }, callback)
+      : vnode[2];
 
     if (vnode[2] && vnode[2].length > 0) {
       vnode[2] = children;
