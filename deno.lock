@@ -201,7 +201,7 @@
         "npm:rewrite-exports@^0.0.28",
         "npm:rewrite-imports@3",
         "npm:serve-static-bun@0.5",
-        "npm:somedom@0.8",
+        "npm:somedom@~0.8.1",
         "npm:testdouble@^3.16.1",
         "npm:tiny-dedent@^1.0.2",
         "npm:undici@^7.2.0"
