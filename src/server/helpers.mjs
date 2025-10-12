@@ -1,5 +1,5 @@
 import { Is } from '../utils/client.mjs';
-import { createStore } from './store.mjs';
+import { createCache } from './store.mjs';
 import { createBundler } from './bundler.mjs';
 import { RedisHub, RedisStore } from './redis.mjs';
 
@@ -61,7 +61,7 @@ export async function createRedisConnection(env, options, getRedisModule) {
     Object.assign(options, { store, pubsub });
   }
 
-  env.cache = createStore(options);
+  env.cache = createCache(options);
 }
 
 export const createTranspiler = ({ getESbuildModule, ...deps }) => {

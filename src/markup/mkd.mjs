@@ -52,7 +52,7 @@ export async function render(content, inline, chunks) {
     }
 
     if (!language) {
-      const label = text.match(/\w+\s*\|\s*[^\n]+?\n/);
+      const label = text.match(/^\w+\s*\|\s*[^\n]+?\n/);
 
       if (label) {
         language = label[0].trim();

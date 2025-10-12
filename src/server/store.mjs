@@ -23,7 +23,7 @@ export class MemoryStore {
   }
 }
 
-export function createStore(options) {
+export function createCache(options) {
   const shared = options.store || new MemoryStore(options);
 
   async function set(uuid, key, value) {
