@@ -29,9 +29,10 @@ console.log(Util.$.bold(`■ Jamrock v${pkg.version}`), Util.$.gray(`(${runtime}
 const USAGE_INFO = `
 Usage: ${!existsSync('package.json') ? 'jamrock' : './bin/{node,deno,bun}'} <COMMAND> [OPTIONS]
 
+  init   Generates a new application into the given directory
   build  Compiles *.{md,html} sources into server-components
   serve  Starts the web-server on the given --port and --host
-  route  Prints the available routes found${!existsSync('package.json') ? '\n  init   Generates a new application' : ''}
+  route  Prints the available routes found
   write  SSG from pre-built sources (use after build)
 
 Options:
