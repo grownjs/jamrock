@@ -387,7 +387,7 @@ test.group('integration only!', t => {
   });
 
   test('should allow to hook functions into nodes', async ({ expect }) => {
-    ctx.emitter = {
+    ctx.cache = {
       set: td.func('write'),
     };
 
@@ -400,7 +400,7 @@ test.group('integration only!', t => {
 
     const markup = await fixture.partial('hooks+page.html', null, ctx);
 
-    expect(td.explain(ctx.emitter.set).callCount).toEqual(1);
+    expect(td.explain(ctx.cache.set).callCount).toEqual(1);
     expect(markup).toContain('data-enhance data-use:do-stuff="hooks+page.html/1"');
   });
 
