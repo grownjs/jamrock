@@ -297,7 +297,7 @@ export async function createBody(env, conn, clients, { uuid, client, matches, op
           .forEach(([k, v]) => state.push(`"${k}":${JSON.stringify(v)}`));
       }
 
-      if (conn.is_xhr) {
+      if (conn.is_json) {
         body = Markup.encode(`{${[
           `"fragments":${JSON.stringify(body.fragments)}`,
           `"scripts":${JSON.stringify(body.scripts)}`,

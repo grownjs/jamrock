@@ -107,6 +107,7 @@ export class Browser {
       method: method || 'GET',
       credentials: 'same-origin',
       headers: {
+        accept: 'application/json',
         'cache-control': 'max-age=0, no-cache, no-store, must-revalidate, post-check=0, pre-check=0',
         'x-requested-with': 'XMLHttpRequest',
         'x-version': this.version,

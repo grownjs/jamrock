@@ -281,7 +281,7 @@ export class Template {
 
   static async execute(component, context, props, cb) {
     context.base_url = context.base_url || context.conn?.base_url;
-    context.is_json = context.is_json || context.conn?.is_xhr;
+    context.is_json = context.is_json || context.conn?.is_json;
     context.streams = context.streams || new Map();
     context.mixins = context.mixins || new Map();
     context.locals = context.locals || streamify(context);

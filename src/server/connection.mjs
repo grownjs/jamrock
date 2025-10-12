@@ -1,20 +1,7 @@
 import { getError, parseCookies } from './request.mjs';
 import { createSession } from './session.mjs';
 
-export function unsafeProtection(key) {
-  const symbol = Symbol(`@@unsafe${key || Date.now()}`);
-  const protect = v => {
-    if (!v || Object.prototype.toString.call(v) !== '[object Object]' || symbol in v) return v;
-    Object.defineProperty(v, symbol, { value: 1 });
-    return v;
-  };
-  const is_unsafe = v => Object.prototype.toString.call(v) === '[object Object]' && symbol in v;
-  return { protect, is_unsafe };
-}
-
 export async function createConnection(store, options, request, location, teardown) {
-  const protection = unsafeProtection(options.key);
-
   const response = {
     headers: new Headers(),
     cookies: new Map(),
@@ -101,12 +88,6 @@ export async function createConnection(store, options, request, location, teardo
       conn.status_code = code || 301;
       response.headers.set('location', _url);
     },
-    protect(v) {
-      return protection.protect(v);
-    },
-    unsafe(v) {
-      return [cookies, session, headers, request, options].includes(v) || protection.is_unsafe(v);
-    },
     toJSON() {
       return {
         csrf: conn.csrf_token,
@@ -134,7 +115,7 @@ export async function createConnection(store, options, request, location, teardo
       return request.signal.aborted;
     },
     get params() {
-      return protection.protect({ ...conn.query_params, ...conn.body_params, ...conn.path_params });
+      return { ...conn.query_params, ...conn.body_params, ...conn.path_params };
     },
     get path_info() {
       return url.split('/').filter(x => x.length > 0);
@@ -143,7 +124,7 @@ export async function createConnection(store, options, request, location, teardo
       return { ...request.params };
     },
     get body_params() {
-      return protection.protect({ ...request.fields });
+      return { ...request.fields };
     },
     get request_path() {
       return url;
@@ -152,17 +133,17 @@ export async function createConnection(store, options, request, location, teardo
       return qs.replace(/=$/, '');
     },
     get query_params() {
-      return request.query;
+      return { ...request.query };
     },
     get csrf_token() {
       // eslint-disable-next-line no-return-assign
       return session.csrf || (session.csrf = nextToken());
     },
     get resp_cookies() {
-      return protection.protect(response.cookies);
+      return response.cookies;
     },
     get resp_headers() {
-      return protection.protect(response.headers);
+      return response.headers;
     },
     get has_body() {
       return conn.resp_body !== null;
@@ -170,11 +151,15 @@ export async function createConnection(store, options, request, location, teardo
     get has_status() {
       return conn.status_code !== null || response.headers.has('location');
     },
+    get is_json() {
+      return headers['content-type'] === 'application/json'
+        || headers.accept?.split(/[\s;,]/).includes('application/json');
+    },
     get is_xhr() {
       return headers['x-requested-with'] === 'XMLHttpRequest';
     },
     get env() {
-      return protection.protect({ ...process.env });
+      return { ...process.env };
     },
   };
 
