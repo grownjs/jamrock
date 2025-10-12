@@ -4,13 +4,25 @@
 
 # Command line
 
-**Jamrock** gets installed on `/usr/local/bin/jamrock` for regular use.
+Ensure you've installed **jamrock**:
+
+```
+<b>curl</b> -L get.jamrock.dev | <b>bash</b>
+...
+<b>jamrock</b> --version
+■ Jamrock v0.0.0 (node v23.6.0, HEAD)
+```
+
+> [!WARNING]
+> **Jamrock** installs at your `$HOME/.local/bin` for global usage.
 
 Additional arguments like `FOO=bar` will expand the `process.env` object,
-e.g. `jamrock build NODE_ENV=production PORT-80`
+e.g. `jamrock build NODE_ENV=production PORT=80`
 
 > [!TIP]
-> You may also use `./bin/&lbrace;node,deno,bun}` if you have the required runtime installed.
+> You can also use `./bin/&lbrace;node,deno,bun}` if you have the required runtime installed.
+>
+> The installation script will ask you for a runtime for global usage only!
 
 ## Usage details
 
