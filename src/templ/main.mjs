@@ -494,12 +494,10 @@ export class Template {
   static client(ctx, body, props, parent, component) {
     if (parent?.__context !== 'module') return;
 
-    if (ctx.emitter) {
-      ctx.emitter.set(ctx.uuid, ctx.ref, component.__exported.reduce((memo, key) => {
-        if (Is.data(props[key])) memo[key] = props[key];
-        return memo;
-      }, {}));
-    }
+    ctx.cache?.set(ctx.uuid, ctx.ref, component.__exported.reduce((memo, key) => {
+      if (Is.data(props[key])) memo[key] = props[key];
+      return memo;
+    }, {}));
 
     const fields = component.__exported.concat('tag');
     const attrs = Object.keys(props).reduce((memo, key) => {

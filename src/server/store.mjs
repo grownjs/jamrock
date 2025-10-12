@@ -22,3 +22,24 @@ export class MemoryStore {
     }, this.timeout);
   }
 }
+
+export function createStore(options) {
+  const shared = options.store || new MemoryStore(options);
+
+  async function set(uuid, key, value) {
+    const data = await shared.get(uuid, {});
+    data[key] = value;
+    shared.set(uuid, data);
+  }
+
+  async function get(uuid) {
+    const all = await shared.get(uuid) || null;
+    shared.unset(uuid);
+    return all;
+  }
+
+  return {
+    get,
+    set,
+  };
+}
