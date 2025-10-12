@@ -1,10 +1,10 @@
 <head>
-  <title>Jamrock | Introduction</title>
+  <title>Jamrock | Welcome</title>
 </head>
 
-# Introduction
+# Welcome
 
-**Jamrock** will enable you to write web pages the old way, you won't need to deal with back-end vs front-end nuances anymore!
+**Jamrock** enables you to write web pages the old way.
 
 Just run everything on the server and keep JavaScript usage low on the browser.
 
@@ -46,9 +46,9 @@ They're transformed using the following rules:
 
 ## Handlers
 
-Pages can declare its own route handlers through the `export&nbsp;default` object.
+Pages can declare its own route handlers through the `export default` object.
 
-They can be set as boolean, to enable certain methods, or functions to handle the whole request, e.g.
+They can be set as boolean, to enable some methods, or functions to handle the whole request, e.g.
 
 ```html | Example of module handlers
 <script>
@@ -70,7 +70,7 @@ They can be set as boolean, to enable certain methods, or functions to handle th
     },
 
     catch(e) {
-      // handle error
+      // handle errors
     },
     finally() {
       // this always run
@@ -85,7 +85,7 @@ They can be set as boolean, to enable certain methods, or functions to handle th
 
 By default all pages will respond to GET requests, depending on their handlers they can respond to other methods.
 
-If you don't want to execute certain page through the GET method just use `GET: false` to disable it.
+If you don't want to execute a page through the GET method just use `GET: false` to disable it.
 
 > [!NOTE]
 > Handlers using the syntax `['METHOD /path/with/:params']` are also registered as routes for the page,
@@ -95,9 +95,11 @@ If you don't want to execute certain page through the GET method just use `GET: 
 >
 > Additional handlers may be invoked if they match a requested action, e.g. `&lt;form action="?/someAction" method="POST"&gt;`.
 
+## Middleware
+
 In some cases you may want to run some code prior executing your handlers, to enable such behavior you must declare a `use` property.
 
-Then, define some functions through a `+server.mjs` script, e.g.
+This is how you can define some middleware functions in a `+server.mjs` script, e.g.
 
 ```js | Example of middleware module
 export function http(conn) {
@@ -109,38 +111,42 @@ export function csrf(conn) {
 }
 
 export default {
-  ['GET /some/:stuff'](conn) {
-    console.log('Got', conn.params.stuff);
+  use: ['http'],
+  
+  ['GET /some/:stuff']({ params }) {
+    console.log('Got', params.stuff);
   },
 
   catch(e, conn) {
     // do something
   },
-  finally(response, conn) {
+  finally(response) {
     return response;
   }
-};
+}
 ```
 
-This way you can setup shared behaviour in your applications,
-like authentication, shared props or state, etc.
+Exported functions are registered as middleware by name,
+these `+server.mjs` scripts are loaded automatically by the framework:
 
-1. Routes declared on the `export&nbsp;default` object are evaluated if they match,
-   here is where you need to place api-routes as they don't require a page to exists.
+1. Routes declared on the `export default` object are evaluated if they match,
+   here is where you need to place api-routes as they don't require a page to exist.
 2. The `+server.mjs` file can be placed at any level within the pages directory, following the same strategy as `+layout.html` or `+error.html` resolution.
-3. These functions will receive the `jamrock:conn` first, any given options will be passed as the second argument.
-   Those options should be set like this, e.g. `use: [['name', &lbrace; ... }]]`
+3. These functions will receive the `jamrock:conn` object as their first argument, any other values will be passed as the second argument, etc.
+   Extra options should be set like this, e.g. `use: [['csrf', ...]]`
 
-You can define `catch` and `finally` handlers on this object as well,
-they'll receive the error/response and connection respectively.
+Declared `catch` and `finally` handlers on this object will receive
+the error and response, with the `jamrock:conn` object as the last argument.
 
 > [!WARNING]
 > Make sure you return the given or modified `response` argument in your `finally` handler,
 > the framework relies on this value to build the final response.
+>
+> Avoid errors within `catch` handlers, otherwise they might not be handled et all!
 
 ## Request
 
-To play with the request you'll need the `jamrock:conn` module:
+To access the request you'll need the `jamrock:conn` module:
 
 ```html | Example of request handling
 <script>
@@ -186,6 +192,7 @@ Below is a list of all sort of things you may use:
     - `resp_headers` &mdash; response headers (readonly)
     - `has_body` &mdash; `true` if the response has a body value
     - `has_status` &mdash; `true` if the response has a status code
+    - `is_json` &mdash; `true` if the request accepts `application/json`
     - `is_xhr` &mdash; `true` if the request is `XMLHttpRequest`
     - `env` &mdash; safe copy of `process.env` (readonly)
   </mkd>
@@ -199,21 +206,13 @@ Below is a list of all sort of things you may use:
     - `redirect(url, code)` &mdash; ends request with a redirection
     - `flash(group, message)` &mdash; writes to the session flash
     - `raise(code, message)` &mdash; ends the request as failure
-    - `protect(value)` &mdash; decorates an unsafe value
-    - `unsafe(value)` &mdash; `true` if value is already unsafe
-    - `toJSON()` &mdash; serialized verson of the `conn` object (safe)
+    - `toJSON()` &mdash; serialized request-info without body
   </mkd>
 </details>
 
-> [!WARNING]
-> Unsafe values are omitted if found during the rendering of page components,
-> it prevents from leaking sensitive values by mistake.
-
 ## Response
 
-We have server routes, actions, handlers and middleware.
-
-They all are functions and they can return anything:
+Handler functions and middleware can return anything:
 
 - `number` &mdash; just the status-code, without body
 - `string` &mdash; just the body, ends with a `200 OK`
@@ -221,7 +220,8 @@ They all are functions and they can return anything:
 - `[number, string, &lbrace; ... }]` &mdash; status, body, and headers
 - `new Response(string | null, ...)` &mdash; standarized `Response`
 
-In turn, page components will return an AST that can be serialized as HTML or sent as JSON.
+Page components will return an AST that can be rendered as HTML or sent as JSON,
+the framework will handle the response for you in such cases.
 
 > [!IMPORTANT]
 > If you want to return an array, like a list of values, use an object with a property
