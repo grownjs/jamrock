@@ -127,20 +127,44 @@ export function routify(cwd, set) {
 }
 
 export function extract(code, modify) {
-  if (modify) {
-    const all = [];
+  const blocks = [];
 
-    code = code.replace(RE_MATCH_ROUTES, (_, verb, path, alias) => {
+  code = code.replace(/```[^]+?```/g, block => {
+    blocks.push(block);
+    return '\0';
+  });
+
+  const isMarkup = !modify && code.includes('<script>');
+
+  let script = code;
+  if (isMarkup) {
+    script = '';
+    code.replace(/<script>[\s\S]*?<\/script>/, _ => {
+      script = _;
+    });
+  }
+
+  if (modify) {
+    const old = script;
+    const matches = [];
+
+    script = script.replace(RE_MATCH_ROUTES, (_, verb, path, alias) => {
       const fixedName = alias ? alias.split(' as ').pop().trim() : undefined;
 
-      all.push({ verb, path: (path || '/').trim(), name: fixedName });
+      matches.push({ verb, path: (path || '/').trim(), name: fixedName });
       return alias ? _.replace(alias, `/*${fixedName}*/`) : _;
     });
 
-    return { code, routes: all };
+    script = isMarkup ? code.replace(old, script) : script;
+    script = script.replace(/\0/g, () => blocks.unshift());
+
+    return {
+      code: script,
+      routes: matches,
+    };
   }
 
-  const test = code.match(RE_MATCH_ROUTES);
+  const test = script.match(RE_MATCH_ROUTES);
 
   return (test || []).map(chunk => {
     const [sub, name] = chunk.split(' as ');
