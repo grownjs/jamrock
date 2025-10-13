@@ -1,14 +1,8 @@
 <head>
-  <title>Jamrock | Welcome</title>
+  <title>Jamrock | Introduction</title>
 </head>
 
-# Welcome
-
-**Jamrock** enables you to write web pages the old way.
-
-Just run everything on the server and keep JavaScript usage low on the browser.
-
-## The building blocks
+# The building blocks
 
 Everything starts from somewhere,
 

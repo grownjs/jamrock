@@ -1,3 +1,7 @@
+<script>
+  import NavLink from '../components/navlink.html';
+</script>
+
 <footer>
   <nav class="px-2" id="nav">
     <ul class="between reset links flex wrap gap-lg">
@@ -5,10 +9,10 @@
         <h3>Overview</h3>
         <ul class="reset links">
           <li>
-            <a href="/#top">Introduction</a>
+            <NavLink href="/" anchor="top">Introduction</NavLink>
           </li>
           <li>
-            <a href="/command-line#top">Command Line</a>
+            <NavLink href="/command-line" anchor="top">Command Line</NavLink>
           </li>
         </ul>
       </li>
@@ -16,16 +20,16 @@
         <h3>Basic usage</h3>
         <ul class="reset links">
           <li>
-            <a href="/components#top">Components</a>
+            <NavLink href="/components" anchor="top">Components</NavLink>
           </li>
           <li>
-            <a href="/fragments#top">Fragments</a>
+            <NavLink href="/fragments" anchor="top">Fragments</NavLink>
           </li>
           <li>
-            <a href="/scripts#top">Scripts</a>
+            <NavLink href="/scripts" anchor="top">Scripts</NavLink>
           </li>
           <li>
-            <a href="/styles#top">Styles</a>
+            <NavLink href="/styles" anchor="top">Styles</NavLink>
           </li>
         </ul>
       </li>
@@ -33,10 +37,10 @@
         <h3>APIs</h3>
         <ul class="reset links">
           <li>
-            <a href="/conn#top">Conn</a>
+            <NavLink href="/conn" anchor="top">Conn</NavLink>
           </li>
           <li>
-            <a href="/hooks#top">Hooks</a>
+            <NavLink href="/hooks" anchor="top">Hooks</NavLink>
           </li>
         </ul>
       </li>

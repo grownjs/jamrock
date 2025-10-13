@@ -2,13 +2,13 @@
   <title>Jamrock | The herbsman's web framework</title>
 </head>
 
-**Jamrock** is a framework for making web pages,
+**Jamrock** is a framework for making web pages.
 
-1. It compiles your `.html` files into something that can be called pages and components.
-2. The server will execute them against the request and responds with plain old HTML.
-3. That's it, like it used to be.
+Just run everything on the server and keep JavaScript usage low on the browser.
 
-## Sounds fun? Give it a try!
+There are many well developed alternatives, use this just for fun, at least for now...
+
+## Give it a try!
 
 Install **jamrock** in your `$HOME`:
 
@@ -22,7 +22,7 @@ Create a sample application:
 <b>jamrock</b> init my-app
 <b>cd</b> my-app
 <b>npm</b> install
-<b>bin/node</b> dev
+<b>npm</b> run dev
 ```
 
 You should get something like this:

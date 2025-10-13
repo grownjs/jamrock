@@ -1,0 +1,18 @@
+<script>
+  import { request_path } from 'jamrock:conn';
+
+  export let href;
+  export let anchor;
+  export let children;
+
+  let fixed_url = href;
+  if (anchor) fixed_url += `#${anchor}`;
+
+  const is_active = request_path === href;
+</script>
+
+{#if is_active}
+  <a aria-current="page">{@render children?.()}</a>
+{:else}
+  <a href={fixed_url}>{@render children?.()}</a>
+{/if}
