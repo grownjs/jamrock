@@ -406,32 +406,32 @@ export async function createResponse(env, conn, clients, options) {
 
     // console.log(conn.req)
 
-    let cancelled;
+    // let cancelled;
     return new Response(new ReadableStream({
       start(controller) {
         console.log('START SEE');
 
         function sendSSEMessage(data) {
-          controller.enqueue(`data: ${JSON.stringify(data)}\n\n`);
+          controller.enqueue(Buffer.from(`data: ${JSON.stringify(data)}\n\n`));
         }
 
-        const interval = setInterval(() => {
-          if (cancelled) {
-            clearInterval(interval);
-          } else {
-            sendSSEMessage('Hello, World!');
-          }
-        }, 10000);
+        // const interval = setInterval(() => {
+        //   if (cancelled) {
+        //     clearInterval(interval);
+        //   } else {
+        //     sendSSEMessage('Hello, World!');
+        //   }
+        // }, 10000);
 
         sendSSEMessage('READY');
 
         conn.req.signal.onabort = () => {
-          clearInterval(interval);
+          // clearInterval(interval);
           controller.close();
         };
       },
       cancel(reason) {
-        cancelled = true;
+        // cancelled = true;
         console.log('STOP SEE', reason);
       },
     }), {
