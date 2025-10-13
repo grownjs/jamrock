@@ -44,6 +44,8 @@ test-ci:
 
 test-bun:
 	@echo "== bun =="
+	@rm -rf node_modules
+	@bun install
 	@make -s bun:build CI=1
 	@bun run scripts/bun-testing.js
 	@HAPPY_DOM=1 bun run scripts/bun-testing.js
@@ -52,6 +54,8 @@ test-bun:
 	@make -s e2e:bun
 test-deno:
 	@echo "== deno =="
+	@rm -rf node_modules
+	@deno install
 	@make -s deno:build CI=1
 	@make -s deno:test
 	@DENO_DOM=1 make -s deno:test
@@ -60,6 +64,8 @@ test-deno:
 	@make -s e2e:deno
 test-nodejs:
 	@echo "== node =="
+	@rm -rf node_modules
+	@npm install
 	@make -s nodejs:build CI=1
 	@node scripts/node-testing.mjs
 	@JS_DOM=1 node scripts/node-testing.mjs
