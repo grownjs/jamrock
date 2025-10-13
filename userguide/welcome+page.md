@@ -4,9 +4,9 @@
 
 **Jamrock** is a framework for making web pages.
 
-Just run everything on the server and keep JavaScript usage low on the browser.
+It runs everything on the server and keep JavaScript usage low on the browser.
 
-There are many well developed alternatives, use this just for fun, at least for now...
+_&mdash; This is just a prototype, mostly hacked, that kinda works!_
 
 ## Give it a try!
 
@@ -16,7 +16,9 @@ Install **jamrock** in your `$HOME`:
 <b>curl</b> -L get.jamrock.dev | <b>bash</b>
 ```
 
-Create a sample application:
+The installer will ask you for a runtime: `node`, `deno` or `bun`.
+
+Let's try `node` and create a sample application:
 
 ```
 <b>jamrock</b> init my-app
