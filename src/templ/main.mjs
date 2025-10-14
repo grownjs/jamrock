@@ -455,7 +455,10 @@ export class Template {
       return Template.cache.get(id).module;
     }
     if (force && id[0] === '/') {
-      return import(`file://${id}?d=${Date.now()}`);
+      if (typeof Bun !== 'undefined') {
+        return require(`${id}?_=${Math.random()}`);
+      }
+      return import(`${id}?_=${Math.random()}`);
     }
     return import(id);
   }
