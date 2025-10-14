@@ -139,7 +139,7 @@ export async function createRequest(req, limit) {
 }
 
 export function createError(e, env, client) {
-  return `<pre>${e.stack.replace(/\((.+?)\)/gm, (_, x) => `<em data-location="${x}">${x}</em>`)}</pre>${client}`;
+  return `<pre>${e.stack?.replace(/\((.+?)\)/gm, (_, x) => `<em data-location="${x}">${x}</em>`)}</pre>${client}`;
 }
 
 // FIXME: use a nice view for these... may be the default +error layout or so?
