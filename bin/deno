@@ -1,4 +1,4 @@
-#!/usr/bin/env -S deno run --allow-all --unstable
+#!/usr/bin/env -S deno run --allow-all --unstable-node-globals --unstable-net
 // @ts-nocheck
 /* global Deno */
 Promise.all([
