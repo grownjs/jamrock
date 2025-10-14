@@ -37,8 +37,6 @@ export class Template {
   }
 
   async regenerate(imported = []) {
-    Template.cache = Template.cache || new Map();
-
     return this.transform(Template.transpile, null, {
       params: this.attributes,
       use: this.generators,
