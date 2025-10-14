@@ -6,7 +6,7 @@
 
 It runs everything on the server and keep JavaScript usage low on the browser.
 
-_&mdash; This is just a prototype, mostly hacked, that kinda works!_
+_&mdash; This is just a prototype, mostly hacked, that kinda works!_ 💣
 
 ## Give it a try!
 
