@@ -2,13 +2,13 @@
   <title>Jamrock | The herbsman's web framework</title>
 </head>
 
-**Jamrock** is a framework for making web pages.
+**Jamrock** is a framework for authoring web pages.
 
-It runs everything on the server and keep JavaScript usage low on the browser.
+It runs everything on the server and keep JavaScript usage on the browser low.
 
-_&mdash; This is just a prototype, mostly hacked, that kinda works!_ 💣
+_&mdash; it ain't much but it's honest work!_ 💣
 
-## Give it a try!
+## Give it a try!!
 
 Install **jamrock** in your `$HOME`:
 
@@ -35,11 +35,11 @@ Processing ./pages to ./build
 Listening on <a href="http://localhost:8080" target="_blank">http://localhost:8080</a>
 ```
 
-Open that URL in your browser and explore!
+Open that URL in your browser and explore.
 
 <blockquote>
   <p class="gap-sm flex centered">
     <svg src="./images/beaker.svg" size="16" />
-    <span>Continue reading the <a href="/#top">available documentation</a>.</span>
+    <span>See the <a href="/#top">available documentation here!</a></span>
   </p>
 </blockquote>

@@ -26,42 +26,75 @@ e.g. `jamrock build NODE_ENV=production PORT=80`
 
 ## Usage details
 
-Without arguments, the executable will yield something like this:
+Run `jamrock --help`:
 
-```text
-■ Jamrock v0.0.0 (node v22.4.0, HEAD)
+```
+<b>■ Jamrock v0.0.0</b> (node v22.4.0, HEAD)
 
-Usage: ./bin/{node,deno,bun} &lt;COMMAND&gt; [OPTIONS]
+<span>Usage:</span> ./bin/{node,deno,bun} <b>&lt;COMMAND&gt;</b> <var>[OPTIONS]</var>
 
-  serve  Starts the web-server on the given --port and --host
-  build  Compiles *.{md,html} sources into page components
-  route  Prints the available routes found
+  <b>init</b>   Generates a new application into the given directory
+  <b>build</b>  Compiles *.{md,html} sources into server-components
+  <b>serve</b>  Starts the web-server on the given <var>--port</var> and <var>--host</var>
+  <b>route</b>  Prints the available routes found
+  <b>write</b>  SSG from pre-built sources (use after build)
 
-Options:
+<span>Options:</span>
 
-  --src      Directory of *.{md,html} files to compile (default is ./src)
-  --dest     Destination for compiled files (default is ./dest)
-  --watch    Enable file-watching on the web-server
+  <var>--src</var>      Directory of *.{md,html} files to compile <em>(default is ./src)</em>
+  <var>--dest</var>     Destination for compiled files <em>(default is ./dest)</em>
+  <var>--watch</var>    Enable file-watching on the web-server
+  <var>--prefix</var>   Prefix for bundled resources
 
-  --port     The port number to bind the web-server
-  --host     The host address to bind the web-server
+  <var>--port</var>     The port number to bind the web-server
+  <var>--host</var>     The host address to bind the web-server
 
-  --uws      Use uWebSockets.js instead of native HTTP (node)
-  --redis    Enable redis for sessions and pub/sub events
-  --unocss   Enable stylesheet pre-compilation with UnoCSS
+  <var>--uws</var>      Use uWebSockets.js instead of native HTTP <em>(node)</em>
+  <var>--redis</var>    Enable redis for sessions and pub/sub events
+  <var>--unocss</var>   Enable stylesheet pre-compilation with UnoCSS
 
-  --dts      Produce the .d.ts definitions from web-server routes
-  --name     Filter routes by name (contains)
-  --path     Filter routes by path (contains)
-  --method   Filter routes by method (exact match)
+  <var>--dts</var>      Produce the .d.ts definitions from web-server routes
+  <var>--name</var>     Filter routes by name <em>(contains)</em>
+  <var>--path</var>     Filter routes by path <em>(contains)</em>
+  <var>--method</var>   Filter routes by method <em>(exact match)</em>
+```
+
+### <b>init</b>
+
+This action create a new project into the target directory, e.g.
+
+```
+<b>jamrock</b> init my-app
 ```
 
 > [!WARNING]
+> If the directory already exists you'll be warned, but you can <var>--force</var>
+> to override everything in the target directory.
+
+### <b>build</b>
+
+### <b>serve</b>
+
+### <b>route</b>
+
+This action will show the registered routes on the source directory.
+
+> [!TIP]
+> You can filter out the matching routes with the
+> <var>--name</var>, <var>--path</var> and <var>--method</var> flags respectively.
+
+By using the <var>--dts</var> flag, this action will write a `routes.d.ts` file.
+
+> [!NOTE]
 > We don't support TypeScript yet, but you should be able to write your own `.ts` modules
-> and consume the generated definitions from your routes.
+> and consume the generated modules from your code on a separate process.
 >
 > As long as you compile your `.ts` modules and they become reachable by `import` calls
 > on runtime, the framework would work fine.
+
+Being said, you may find a proof of concept of this is on the `./scripts/check.ts` file on [this repository](https://github.com/grownjs/jamrock/blob/master/scripts/check.ts).
+
+### <b>write</b>
 
 ## Development
 

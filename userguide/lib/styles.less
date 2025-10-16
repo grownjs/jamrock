@@ -155,6 +155,10 @@ code {
   padding: 0 2px;
   color: @light;
 }
+var {
+  color: @information;
+  white-space: nowrap;
+}
 ul, .body > ol {
   list-style-position: inside;
   list-style-type: square;
@@ -275,7 +279,13 @@ h1, h2, h3, h4 {
   padding: 0;
   border-radius: 3px;
   background-color: rgba(0, 0, 0, .3);
-  code { background-color: unset;  }
+  code { background-color: unset; }
+  span:not([class]) {
+    color: @attention;
+  }
+  a[aria-current=page] {
+    color: @white;
+  }
 }
 
 .body {
