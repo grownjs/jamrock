@@ -114,7 +114,7 @@ export default async function main(env, argv) {
         if ((url || name || method) && (!(
           route.verb === method
           || route.path.includes(url)
-          || route.name.includes(name)
+          || route.name.toLowerCase().includes(name?.toLowerCase())
         ))) return;
 
         found++;
