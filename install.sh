@@ -5,7 +5,12 @@ mkdir -p $HOME/.jamrock
 
 echo "■ Downloading package..."
 
-curl -s https://jamrock.dev/jamrock-0.0.0.tgz | tar zx -C $HOME/.jamrock/
+if [[ $1 == "-" ]]; then
+  rm -f jamrock-*.tgz && npm pack
+  curl -s file://$PWD/jamrock-0.0.0.tgz | tar zx -C $HOME/.jamrock/
+else
+  curl -s https://jamrock.dev/jamrock-0.0.0.tgz | tar zx -C $HOME/.jamrock/
+fi
 
 if [[ ! -d $HOME/.jamrock/package ]]; then
   echo "The package could not be downloaded!"
