@@ -1,5 +1,5 @@
 import { serialize, taggify, scopify, rulify, cssify } from '../markup/html.mjs';
-import { pascalCase, snakeCase, Is } from '../utils/server.mjs';
+import { pascalCase, snakeCase, trace, Is } from '../utils/server.mjs';
 
 import { executeAsync } from '../render/async.mjs';
 import { decorate, streamify } from './send.mjs';
@@ -167,7 +167,7 @@ export class Template {
         if (_chunk instanceof Response) response = _chunk;
       }
     } catch (e) {
-      // console.log('E_ACTIONS', e);
+      trace('E_ACTIONS', e);
       if (Is.func(main.__default?.catch)) {
         await main.__default.catch(e);
       } else {
@@ -271,7 +271,7 @@ export class Template {
 
         result = await Template.execute(_component, context, props, cb);
       } catch (e) {
-        console.log('E_RESOLVE', e);
+        trace('E_RESOLVE', e);
       }
     }
     return result;
@@ -313,7 +313,7 @@ export class Template {
       }
       return result;
     } catch (e) {
-      // console.log('E_ROUTE', e);
+      trace('E_ROUTE', e);
       if (context.route?.error) {
         props = props || {};
         props.failure = e;
@@ -400,6 +400,7 @@ export class Template {
         actions, scripts, styles, media, attrs, head, body, doc,
       };
     } catch (e) {
+      trace(e, 'E_RENDER');
       this.failure = debug({
         file: component.__src,
         html: Template.read(component.__src),
@@ -599,6 +600,7 @@ export class Template {
 
       return html;
     } catch (e) {
+      trace(e, 'E_FETCH');
       return `/* ${e.message} (${source}) */`;
     }
   }

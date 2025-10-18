@@ -43,8 +43,7 @@ export const createWatcher = ({ fs }, watcher, compiler) => {
       await compiler.save(routes, newdeps);
       await compiler.reload();
     } catch (e) {
-      // FIXME: decorate errors...
-      console.error('E_COMPILE', e);
+      Util.trace('E_COMPILE', e);
     }
 
     const changed = [...new Set(refreshed)].filter(_ => !/\+(?:layout|error|server)\.(?:md|html)$/.test(_));
@@ -172,7 +171,7 @@ export const createWatcher = ({ fs }, watcher, compiler) => {
             console.log('NOT FOUND', url);
           }
         } catch (e) {
-          console.error('E_REBUILD', e);
+          Util.trace(e, 'E_REBUILD');
           reloading = false;
         }
       }
@@ -530,6 +529,7 @@ export function createEnvironment({ fs, path }, options, external) {
 
       printLog(`${count} file${count === 1 ? '' : 's'} written (${Util.ms(start)})`);
     } catch (e) {
+      Util.trace(e, 'E_WRITE');
       printLog(e);
       process.exit(1);
     } finally {

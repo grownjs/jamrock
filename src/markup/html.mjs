@@ -4,7 +4,7 @@ import { Expr } from './expr.mjs';
 import { str } from '../render/hooks.mjs';
 import { fixedAdapter } from './adapter.mjs';
 import { enhance, extend } from './utils.mjs';
-import { Is, stack, findAll } from '../utils/server.mjs';
+import { Is, stack, trace, findAll } from '../utils/server.mjs';
 
 const RE_QUOTES_REQUIRED = /[\s"'`=</_:>-]/;
 
@@ -189,7 +189,7 @@ export function scopify(ref, _class, styles, children, filepath) {
 
     return out;
   } catch (e) {
-    console.log('E_HTML', e);
+    trace('E_HTML', e);
     if (e.filename) {
       e.message = `${e.reason} at ${e.filename}:${e.line}:${e.column}`;
       e.stack = stack(css, e.line, e.column);

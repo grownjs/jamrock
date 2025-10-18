@@ -1,6 +1,6 @@
 import { Expr } from './expr.mjs';
 import { ents } from '../render/hooks.mjs';
-import { Is, repeat, encodeText } from '../utils/server.mjs';
+import { Is, trace, repeat, encodeText } from '../utils/server.mjs';
 
 // encoding is required to keep the resulting text JSON-friendly
 // with the transport-layer, for some reason the response is
@@ -236,7 +236,7 @@ export async function visit(chunk, callback, locations) {
         return Promise.resolve()
           .then(() => visit(node.elements, callback, locations))
           .then(() => callback && callback(node))
-          .catch(e => console.log('E_VISIT', e.stack, node));
+          .catch(e => trace('E_VISIT', e));
       }
       return null;
     }));

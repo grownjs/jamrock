@@ -332,7 +332,7 @@ export async function createBody(env, conn, clients, { uuid, client, matches, op
       body = buffer.join('');
     }
   } catch (e) {
-    console.log('E_STATUS', e);
+    Util.trace('E_STATUS', e);
     status = e.status || 500;
     body = createError(e, env, client);
   }

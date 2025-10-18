@@ -11,6 +11,14 @@ const _require = createRequire(import.meta.url);
 
 _require('util')._extend = Object.assign;
 
+Util.onTrace((e, kind, label) => {
+  console.error('__ON__TRACE__');
+  console.error(label);
+  console.error(kind);
+  console.error(e);
+  console.error('__ON__TRACE__');
+});
+
 const pkg = _require('../package.json');
 
 const version = process.env.GIT_REVISION || pkg.revision || 'HEAD';
@@ -240,7 +248,7 @@ export type Routes = ${['RouteMap'].concat(typedefs).join('\n& ')};\n`;
         throw new Error(`Unknown '${argv[0]}' action`);
     }
   } catch (e) {
-    console.error(`${e.message}, add --help for usage info`);
+    Util.trace(e, 'E_CLI', `${e.message}, add --help for usage info`);
     process.exit(1);
   }
 }

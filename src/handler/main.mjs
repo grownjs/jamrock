@@ -1,5 +1,5 @@
 import { rankify, routify, extract, rematch, rebase } from './utils.mjs';
-import { Is, set, concat } from '../utils/server.mjs';
+import { Is, set, trace, concat } from '../utils/server.mjs';
 import { Template } from '../templ/main.mjs';
 import { req } from './match.mjs';
 
@@ -159,6 +159,7 @@ export async function middlewares(ctx, route, modules) {
           result = await mod.default[_method].call(ctx.shared, ctx.conn);
         }
       } catch (e) {
+        trace(e, 'E_MIDDLEWARE');
         if (mod.default?.catch) {
           result = await mod.default.catch.call(ctx.shared, e, ctx.conn);
         } else {
@@ -172,7 +173,7 @@ export async function middlewares(ctx, route, modules) {
       if (result) break;
     }
   } catch (e) {
-    console.log('E_MIDDLEWARES', e);
+    trace(e, 'E_MIDDLEWARES');
   }
   return result;
 }

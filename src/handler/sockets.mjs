@@ -1,4 +1,4 @@
-import { Is } from '../utils/server.mjs';
+import { Is, trace } from '../utils/server.mjs';
 
 export function setup(ctx, env, editor, handler, timeout) {
   ctx.on('open', ws => {
@@ -89,6 +89,7 @@ export function setup(ctx, env, editor, handler, timeout) {
             ws.emit('callback', msg, args, data);
           }
         } catch (e) {
+          trace(e, 'E_TRIGGER');
           ws.emit('failure', {
             e, msg, args, data,
           });

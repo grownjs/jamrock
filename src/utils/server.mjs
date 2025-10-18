@@ -6,6 +6,30 @@ export { default as $ } from 'picocolors';
 
 export { format, enable, disable, findAll, encodeText, decodeEnts, parseMarkup, markupAdapter } from 'somedom/ssr';
 
+const STACK_TRACE = [];
+
+export async function trace(e, kind, label) {
+  kind = kind || 'E_UNKNOWN';
+  label = label || e.message || 'Unknown error';
+
+  let error = e;
+  if (STACK_TRACE.length > 0) {
+    try {
+      for (let c = STACK_TRACE.length; c > 0; c--) {
+        error = await STACK_TRACE[c]?.(error, kind, label);
+      }
+    } catch (_e) {
+      console.error('E_TRACE', _e, e, error, kind, label);
+    }
+  } else {
+    console.error('E_TRACE', error, kind, label);
+  }
+}
+
+export function onTrace(fn) {
+  if (typeof fn === 'function' && !STACK_TRACE.includes(fn)) STACK_TRACE.push(fn);
+}
+
 function upper(value) {
   return value.charCodeAt() >= 65 && value.charCodeAt() <= 90;
 }
