@@ -19,7 +19,7 @@ export async function trace(e, kind, label) {
         error = await STACK_TRACE[c]?.(error, kind, label);
       }
     } catch (_e) {
-      console.error('E_TRACE', _e, e, error, kind, label);
+      console.error('E_FATAL', _e, e, error, kind, label);
     }
   } else {
     console.error('E_TRACE', error, kind, label);
