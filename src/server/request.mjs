@@ -315,7 +315,7 @@ export async function createBody(env, conn, clients, { uuid, client, matches, op
           'content-length': body.length,
         });
 
-        return { body, headers, cookies: false, status: conn.status_code || 200 };
+        return { body, headers, cookies: false, status: conn.status_code };
       }
 
       let buffer = [];
@@ -328,7 +328,7 @@ export async function createBody(env, conn, clients, { uuid, client, matches, op
       ].join('');
 
       buffer.push(client.replace('this', `{${payload}}`));
-      status = conn.status_code || 200;
+      status = conn.status_code;
       body = buffer.join('');
     }
   } catch (e) {

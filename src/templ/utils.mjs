@@ -8,7 +8,7 @@ import jsLang from 'highlight.js/lib/languages/javascript';
 
 import { jamLang } from './lang.mjs';
 import { attrs, taggify } from '../markup/html.mjs';
-import { trace, stack, ignore } from '../utils/server.mjs';
+import { stack, ignore } from '../utils/server.mjs';
 
 const RE_MATCH_LINES = /(?:<anonymous>|[.+](?:page|error|layout|generated)\.mjs(?:[^:]+?)):(\d+)(?::(\d+))?/;
 const RE_MATCH_OFFSETS = /\/\*!#(\d+):(\d+)\*\//;
@@ -162,7 +162,6 @@ export function lexer(code, token) {
     // eslint-disable-next-line no-new-func
     new AsyncFunction('', chunk);
   } catch (e) {
-    trace(e, 'E_LEXER');
     if (process.debug) {
       console.log('---');
       console.log(chunk);

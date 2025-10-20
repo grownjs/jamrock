@@ -5,6 +5,8 @@ export async function createConnection(store, options, request, location, teardo
   const response = {
     headers: new Headers(),
     cookies: new Map(),
+    status: null,
+    body: null,
   };
 
   const headers = Object.fromEntries(request.headers);
@@ -68,8 +70,6 @@ export async function createConnection(store, options, request, location, teardo
     store: store.shared,
     method: request.method,
     server: { teardown, proto, host, port },
-    status_code: response.return || null,
-    resp_body: response.body || null,
     base_url: '/',
     cookies,
     session,
@@ -145,11 +145,29 @@ export async function createConnection(store, options, request, location, teardo
     get resp_headers() {
       return response.headers;
     },
-    get has_body() {
-      return conn.resp_body !== null;
+    get status_code() {
+      return response.status || 200;
+    },
+    set status_code(number) {
+      if (response.status !== null) {
+        throw new Error(`Response status already set: ${response.status}`);
+      }
+      response.status = number;
     },
     get has_status() {
-      return conn.status_code !== null || response.headers.has('location');
+      return response.status !== null || response.headers.has('location');
+    },
+    get resp_body() {
+      return response.body || null;
+    },
+    set resp_body(value) {
+      if (response.body !== null) {
+        throw new Error(`Reponse body already set: ${response.body}`);
+      }
+      response.body = value;
+    },
+    get has_body() {
+      return response.body !== null;
     },
     get is_json() {
       return headers['content-type'] === 'application/json'
