@@ -3,10 +3,10 @@ name: build
 on:
   push:
     branches:
-    - next
+      - next
   pull_request:
     branches:
-    - master
+      - master
 
 jobs:
   build-test:
@@ -34,13 +34,13 @@ jobs:
           - "8090:8090"
 
     steps:
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@v6
         with:
-          node-version: 23.6.0
+          node-version: 24.10.0
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
       - name: Deno setup
-        uses: denoland/setup-deno@v1
+        uses: denoland/setup-deno@v2
         with:
           deno-version: 2.5.4
       - name: Bun setup
