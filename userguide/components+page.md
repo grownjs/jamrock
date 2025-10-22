@@ -133,7 +133,7 @@ So snippets is the way to pass chunks of markup as props.
 
 <nav class="flex gap-sm between">
   <span>
-    ➯ Next: <a href="/fragments#top">Fragments</a>
+    ➯ Next: <a href="/templating#top">Templating</a>
   </span>
   <a href="/components#top">
     &uarr; Back to the top
