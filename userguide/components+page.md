@@ -196,6 +196,11 @@ It'll render the underlying block if the expressions is truthy, i.e.
 You can use `&lbrace;:else}` or `&lbrace;:else if ...}` blocks
 to render as fallbacks from their previous condition.
 
+> [!TIP]
+> These tags are not limited to if's,
+> they can be used to declare fallbacks
+> from `&lbrace;#each ...}` blocks, see below.
+
 ### &lbrace;#each ...}
 
 Allows to iterate values within the template,
@@ -205,6 +210,7 @@ Almost anything that can produce an iterator, e.g.
 
 ```html
 <script>
+  const empty = Promise.resolve([]);
   const numbers = [1, 2, 3];
   function *values() {
     yield 1;
@@ -212,6 +218,12 @@ Almost anything that can produce an iterator, e.g.
     yield 3;
   }
 </script>
+
+{#each empty as _}
+  Not empty
+{:else}
+  Empty
+{/each}
 
 {#each numbers as num}
   {num}
