@@ -55,7 +55,7 @@ Updates are driven by the framework,
 but you can configure certain aspects.
 
 ```html
-<fragment name="x" limit="10" timeout="200" interval="50">
+<fragment name="x" mode="prepend" limit="10" timeout="200" interval="50">
   ...
 </fragment>
 ```
@@ -75,9 +75,18 @@ On timeout iterators will pause, render and resumed later.
 
 Once limit is reached iterators will pause, render and resumed later.
 
+### mode <em>(default: append)</em>
+
+How the patching is applied: `append`, `prepend` or `replace`.
+
 > [!WARNING]
 > Options are applied on any `&lbrace;#each ...}` found within the fragment,
 > try to use one iterator per fragment for simplicity.
+
+Patching operations occur after the framework handles the initial render or patch
+after every request.
+
+Iterators will last for that request only.
 
 <nav class="flex gap-sm between">
   <span>
