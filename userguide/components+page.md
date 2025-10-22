@@ -121,12 +121,15 @@ And then, render them as markup:
 
 So snippets is the way to pass chunks of markup as props.
 
-> [!NOTE]
+> [!IMPORTANT]
 > Here we're using `$$props` as a shortcut,
 > but you can use `export let other;` if you prefer.
 >
 > Component is treated as static as it does not
 > have an initialization script block.
+>
+> Snippets are compiled as functions,
+> try playing around with some arguments!
 
 <nav class="flex gap-sm between">
   <span>
