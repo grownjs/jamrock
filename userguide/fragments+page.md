@@ -65,3 +65,12 @@ Other application of fragments is for rendering markup from dynamic state, like 
 > To make this possible, we capture and accumulate the data as needed, and once the client connects through WebSockets we send the pending markup.
 >
 > This is enabled automatically by the framework if you wrap your loops or conditionales with fragments.
+
+<nav class="flex gap-sm between">
+  <span>
+    ➯ Next: <a href="/scripting#top">Scripting</a>
+  </span>
+  <a href="/#top">
+    &uarr; Back to the top
+  </a>
+</nav>

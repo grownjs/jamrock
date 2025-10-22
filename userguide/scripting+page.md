@@ -1,12 +1,13 @@
 <head>
-  <title>Jamrock | The herbsman's web framework</title>
+  <title>Jamrock | Scripts</title>
 </head>
 
-# Templating
+# Scripts
+
 
 <nav class="flex gap-sm between">
   <span>
-    ➯ Next: <a href="/fragments#top">Fragments</a>
+    ➯ Next: <a href="/styling#top">Styling</a>
   </span>
   <a href="/#top">
     &uarr; Back to the top

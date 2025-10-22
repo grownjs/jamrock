@@ -131,9 +131,127 @@ So snippets is the way to pass chunks of markup as props.
 > Snippets are compiled as functions,
 > try playing around with some arguments!
 
+## Templating
+
+We've been using stuff like `&lbrace;...}`, `&lbrace;@render ...}` and `&lbrace;#snippet ...}`,
+they are template-tags or expressions.
+
+They just render any given values on specific ways,
+enabling you to compose using logical expressions, loops and so on.
+
+Let's explore all the available tags:
+
+### &lbrace;...}
+
+They can render simple values or basic JavaScript expressions.
+
+> [!CAUTION]
+> Try to keep things simple, we don't support fully featured JavaScript expressions to abuse from!
+
+### &lbrace;#snippet ...}
+
+Declare reusable chunks of markup in your components.
+
+They can appear at component root to behave as fallbacks if they're not given as props, i.e.
+
+```html
+<script>
+  export let sample;
+</script>
+
+{#snippet sample(value)}
+  Got: {value}
+{/snippet}
+
+<div>{@render sample(42)}</div>
+```
+
+> [!NOTE]
+> Snippets are values, so they can be passed down as arguments
+> that you can pass again or render, etc.
+
+### &lbrace;@render ...}
+
+Will take any expression to produce markup.
+
+> [!TIP]
+> It's encouraged to call these expressions with `?.()`
+> to avoid unexpected exceptions if you don't control them.
+
+### &lbrace;#if ...}
+
+It'll render the underlying block if the expressions is truthy, i.e.
+
+```html
+{#if true}
+  42
+{/if}
+```
+
+> [!CAUTION]
+> As any other expression given, keep it simple for now!
+
+### &lbrace;:else ...}
+
+You can use `&lbrace;:else}` or `&lbrace;:else if ...}` blocks
+to render as fallbacks from their previous condition.
+
+### &lbrace;#each ...}
+
+Allows to iterate values within the template,
+it can take arrays, generators, promises, etc.
+
+Almost anything that can produce an iterator, e.g.
+
+```html
+<script>
+  const numbers = [1, 2, 3];
+  function *values() {
+    yield 1;
+    yield 2;
+    yield 3;
+  }
+</script>
+
+{#each numbers as num}
+  {num}
+{/each}
+
+{#each values as val}
+  {val}
+{/each}
+```
+
+> [!NOTE]
+> These iterators are limited by time and length, so they'll be stopped once
+> a given limit or maximum execution time is reached.
+>
+> Any value after is discarded [unless you have a fragment](./fragments#top) around,
+> but that'll be explored on the next section!
+
+### &lbrace;@raw ...}
+
+These expressions will be inlined as is on the compiled code,
+be wise and careful if you don't know what to do.
+
+### &lbrace;@html ...}
+
+This will render any given string as HTML.
+
+> [!CAUTION]
+> Its contents is not processed, so it'll be rendered as is.
+
+### &lbrace;@debug ...}
+
+It'll print out the `JSON.stringify(&lbrace; ... })` result from any given argument,
+variables are just treated as object fields.
+
+> [!WARNING]
+> This will not support expressions, just variable names.
+
 <nav class="flex gap-sm between">
   <span>
-    ➯ Next: <a href="/templating#top">Templating</a>
+    ➯ Next: <a href="/fragments#top">Fragments</a>
   </span>
   <a href="/components#top">
     &uarr; Back to the top
