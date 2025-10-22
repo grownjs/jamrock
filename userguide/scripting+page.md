@@ -1,15 +1,14 @@
 <head>
-  <title>Jamrock | Scripts</title>
+  <title>Jamrock | Scripting</title>
 </head>
 
-# Scripts
-
+# Scripting
 
 <nav class="flex gap-sm between">
   <span>
     ➯ Next: <a href="/styling#top">Styling</a>
   </span>
-  <a href="/#top">
+  <a href="/scripting#top">
     &uarr; Back to the top
   </a>
 </nav>

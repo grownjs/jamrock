@@ -82,17 +82,25 @@ How the patching is applied: `append`, `prepend` or `replace`.
 > [!WARNING]
 > Options are applied on any `&lbrace;#each ...}` found within the fragment,
 > try to use one iterator per fragment for simplicity.
+>
+> Patching operations occur after the framework handles the initial render or patch
+> after every request.
+>
+> Iterators will last for that request only.
 
-Patching operations occur after the framework handles the initial render or patch
-after every request.
+## Patching components
 
-Iterators will last for that request only.
+**Jamrock** will handle these updates for you,
+client components are always server-side rendered and can
+be instantiated in several ways.
+
+We'll explore that on the [directives section](/directives#top).
 
 <nav class="flex gap-sm between">
   <span>
     ➯ Next: <a href="/scripting#top">Scripting</a>
   </span>
-  <a href="/#top">
+  <a href="/fragments#top">
     &uarr; Back to the top
   </a>
 </nav>
