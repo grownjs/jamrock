@@ -148,7 +148,7 @@ They can render simple values or basic JavaScript expressions.
 > [!CAUTION]
 > Try to keep things simple, we don't support fully featured JavaScript expressions to abuse from!
 
-### &lbrace;#snippet ...}
+### &lbrace;#snippet ...}...&lbrace;/snippet}
 
 Declare reusable chunks of markup in your components.
 
@@ -178,7 +178,7 @@ Will take any expression to produce markup.
 > It's encouraged to call these expressions with `?.()`
 > to avoid unexpected exceptions if you don't control them.
 
-### &lbrace;#if ...}
+### &lbrace;#if ...}...&lbrace;/if}
 
 It'll render the underlying block if the expressions is truthy, i.e.
 
@@ -201,7 +201,7 @@ to render as fallbacks from their previous condition.
 > they can be used to declare fallbacks
 > from `&lbrace;#each ...}` blocks, see below.
 
-### &lbrace;#each ...}
+### &lbrace;#each ...}...&lbrace;/each}
 
 Allows to iterate values within the template,
 it can take arrays, generators, promises, etc.
