@@ -166,12 +166,10 @@ Below is a list of all sort of things you may use:
     - `store` &mdash; reference to shared `Map` store
     - `method` &mdash; `GET` | `PUT` | `POST` | `PATCH` | `DELETE`
     - `server` &mdash; instantiated server object
-    - `status_code` &mdash; get/set the response status code
-    - `resp_body` &mdash; get/set the response body
-    - `base_url` &mdash; get/set the `&lt;base href="/" /&gt;` path
+    - `base_url` &mdash; _get/set_ the `&lt;base href="/" /&gt;` path
     - `cookies` &mdash; request cookies as object
-    - `headers` &mdash; request headers as object
     - `session` &mdash; saved session from store
+    - `headers` &mdash; request headers as object
     - `options` &mdash; framework options
     - `aborted` &mdash; `true` if request has ended
     - `params` &mdash; mixed _path_, _query_ and _body_ params
@@ -182,13 +180,15 @@ Below is a list of all sort of things you may use:
     - `query_string` &mdash; requested url's query string
     - `query_params` &mdash; requested url's query as object
     - `csrf_token` &mdash; calculated token for the request
-    - `resp_cookies` &mdash; response cookies (readonly)
-    - `resp_headers` &mdash; response headers (readonly)
-    - `has_body` &mdash; `true` if the response has a body value
+    - `resp_cookies` &mdash; response cookies _(readonly)_
+    - `resp_headers` &mdash; response headers _(readonly)_
+    - `status_code` &mdash; _get/set_ the response status code
     - `has_status` &mdash; `true` if the response has a status code
+    - `resp_body` &mdash; _get/set_ the response body
+    - `has_body` &mdash; `true` if the response has a body value
     - `is_json` &mdash; `true` if the request accepts `application/json`
     - `is_xhr` &mdash; `true` if the request is `XMLHttpRequest`
-    - `env` &mdash; safe copy of `process.env` (readonly)
+    - `env` &mdash; safe copy of `process.env` _(readonly)_
   </mkd>
 </details>
 
@@ -198,9 +198,9 @@ Below is a list of all sort of things you may use:
     - `cookie(key, value, options)` &mdash; set response cookies
     - `header(key, value)` &mdash; set response headers
     - `redirect(url, code)` &mdash; ends request with a redirection
+    - `toJSON()` &mdash; serialized request-info without body
     - `flash(group, message)` &mdash; writes to the session flash
     - `raise(code, message)` &mdash; ends the request as failure
-    - `toJSON()` &mdash; serialized request-info without body
   </mkd>
 </details>
 

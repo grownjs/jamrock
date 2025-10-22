@@ -34,10 +34,10 @@ Run `jamrock --help`:
 <span>Usage:</span> ./bin/{node,deno,bun} <b>&lt;COMMAND&gt;</b> <var>[OPTIONS]</var>
 
   <b>init</b>   Generates a new application into the given directory
-  <b>build</b>  Compiles *.{md,html} sources into server-components
   <b>serve</b>  Starts the web-server on the given <var>--port</var> and <var>--host</var>
+  <b>build</b>  Compiles *.{md,html} sources into server-components
+  <b>write</b>  SSG from pre-built sources <em>(use after build)</em>
   <b>route</b>  Prints the available routes found
-  <b>write</b>  SSG from pre-built sources (use after build)
 
 <span>Options:</span>
 
@@ -69,15 +69,35 @@ This action create a new project into the target directory, e.g.
 
 > [!WARNING]
 > If the directory already exists you'll be warned, but you can <var>--force</var>
-> to override everything in the target directory.
-
-### <b>build</b>
+> to overwrite everything in the target directory.
 
 ### <b>serve</b>
 
+Spins up a web-server with optional live-reload support, intended for production and development.
+
+> [!TIP]
+> Use `--watch` to enable the development mode, `--src` and `--dest`
+> to configure the source and destination folders respectively.
+
+### <b>build</b>
+
+Compiles everything down as modules, intended for production.
+
+> [!IMPORTANT]
+> Use the `--prefix` to setup a different path for loading ESM from sources,
+> e.g. `/@/path/to/component.html` (the default is `@`)
+
+### <b>write</b>
+
+Execute all compiled sources to produce static pages.
+
+> [!CAUTION]
+> This removes dynamic client-side JavaScript usage, only compiled
+> components that can be downloaded without server dependencies may work.
+
 ### <b>route</b>
 
-This action will show the registered routes on the source directory.
+This action will show the declared routes from pages and middleware found in the sources.
 
 > [!TIP]
 > You can filter out the matching routes with the
@@ -93,8 +113,6 @@ By using the <var>--dts</var> flag, this action will write a `routes.d.ts` file.
 > on runtime, the framework would work fine.
 
 Being said, you may find a proof of concept of this is on the `./scripts/check.ts` file on [this repository](https://github.com/grownjs/jamrock/blob/master/scripts/check.ts).
-
-### <b>write</b>
 
 ## Development
 

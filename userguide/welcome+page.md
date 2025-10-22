@@ -4,7 +4,7 @@
 
 **Jamrock** is a framework for authoring web pages.
 
-It runs everything on the server and keep JavaScript usage on the browser low.
+Runs everything on the server and keep JavaScript usage on the browser low.
 
 _&mdash; it ain't much but it's honest work!_ 💣
 
