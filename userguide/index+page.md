@@ -157,72 +157,22 @@ To access the request you'll need the `jamrock:conn` module:
 Requests to page components will always render something,
 however `redirect` calls can stop any further rendering.
 
-Below is a list of all sort of things you may use:
-
-<details>
-  <summary>Available properties</summary>
-  <mkd>
-    - `req` &mdash; the original `Request` object
-    - `store` &mdash; reference to shared `Map` store
-    - `method` &mdash; `GET` | `PUT` | `POST` | `PATCH` | `DELETE`
-    - `server` &mdash; instantiated server object
-    - `base_url` &mdash; _get/set_ the `&lt;base href="/" /&gt;` path
-    - `cookies` &mdash; request cookies as object
-    - `session` &mdash; saved session from store
-    - `headers` &mdash; request headers as object
-    - `options` &mdash; framework options
-    - `aborted` &mdash; `true` if request has ended
-    - `params` &mdash; mixed _path_, _query_ and _body_ params
-    - `path_info` &mdash; list of path segments
-    - `path_params` &mdash; route parameters
-    - `body_params` &mdash; request body as object
-    - `request_path` &mdash; requested url's pathname
-    - `query_string` &mdash; requested url's query string
-    - `query_params` &mdash; requested url's query as object
-    - `csrf_token` &mdash; calculated token for the request
-    - `resp_cookies` &mdash; response cookies _(readonly)_
-    - `resp_headers` &mdash; response headers _(readonly)_
-    - `status_code` &mdash; _get/set_ the response status code
-    - `has_status` &mdash; `true` if the response has a status code
-    - `resp_body` &mdash; _get/set_ the response body
-    - `has_body` &mdash; `true` if the response has a body value
-    - `is_json` &mdash; `true` if the request accepts `application/json`
-    - `is_xhr` &mdash; `true` if the request is `XMLHttpRequest`
-    - `env` &mdash; safe copy of `process.env` _(readonly)_
-  </mkd>
-</details>
-
-<details>
-  <summary>Available methods</summary>
-  <mkd>
-    - `cookie(key, value, options)` &mdash; set response cookies
-    - `header(key, value)` &mdash; set response headers
-    - `redirect(url, code)` &mdash; ends request with a redirection
-    - `toJSON()` &mdash; serialized request-info without body
-    - `flash(group, message)` &mdash; writes to the session flash
-    - `raise(code, message)` &mdash; ends the request as failure
-  </mkd>
-</details>
+> [!NOTE]
+> This is because setting a response on the `conn` object
+> tell the framework to stop its execution pipeline.
+>
+> See the [docs](./conn#top) for more context.
 
 ## Response
 
-Handler functions and middleware can return anything:
+Page components will produce an AST that can be rendered as HTML or sent as JSON.
 
-- `number` &mdash; just the status-code, without body
-- `string` &mdash; just the body, ends with a `200 OK`
-- `&lbrace; ... }` &mdash; object-like values will be sent as JSON
-- `[number, string, &lbrace; ... }]` &mdash; status, body, and headers
-- `new Response(string | null, ...)` &mdash; standarized `Response`
+The framework will handle the response for you in such cases.
 
-Page components will return an AST that can be rendered as HTML or sent as JSON,
-the framework will handle the response for you in such cases.
-
-> [!IMPORTANT]
-> If you want to return an array, like a list of values, use an object with a property
-> containing its value instead.
+> [!NOTE]
+> Any value returned from actions, handlers or middleware will be used to produce a response.
 >
-> Otherwise, the framework will try to extract the `status`, `body`,
-> and `headers` parameters from your value.
+> See the [docs](./conn#top) for more context.
 
 <nav class="flex gap-sm between">
   <span>
