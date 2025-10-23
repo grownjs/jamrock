@@ -98,7 +98,7 @@ We'll explore that on the [directives section](/directives#top).
 
 <nav class="flex gap-sm between">
   <span>
-    ➯ Next: <a href="/scripting#top">Scripting</a>
+    ➯ Next: <a href="/directives#top">Directives</a>
   </span>
   <a href="/fragments#top">
     &uarr; Back to the top
