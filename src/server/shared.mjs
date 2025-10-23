@@ -161,7 +161,7 @@ export const createWatcher = ({ fs }, watcher, compiler) => {
       // console.log('RECOMPILE', sources);
       await sync(true, found.routes);
     } else if (retries > 0) {
-      await new Promise(_ => setTimeout(_, 120)).then(() => retryCompile(url, retries - 1));
+      await new Promise(_ => setTimeout(_, 10)).then(() => retryCompile(url, retries - 1));
     } else {
       console.log('NOT FOUND', url);
     }
@@ -169,12 +169,12 @@ export const createWatcher = ({ fs }, watcher, compiler) => {
 
   async function tryRebuild(req) {
     // console.log('request', reloading, req.url);
-    if (reloading) return new Promise(_ => setTimeout(_, 120)).then(() => tryRebuild(req));
+    if (reloading) return;
     if (req.url.split('/').pop().includes('.')) return;
     if (req.method === 'GET') {
       try {
         const url = req.url[0] === '/' ? req.url : new URL(req.url).pathname;
-        await retryCompile(url, 3);
+        await retryCompile(url, 10);
       } catch (e) {
         Util.trace(e, 'E_REBUILD');
         reloading = false;

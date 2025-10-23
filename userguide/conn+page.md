@@ -245,7 +245,7 @@ Set response cookies, if `value` is `null` then the cookie will be set as expire
 
 If options is a _number_ then the expiration is set _N_ seconds in the future (e.g. `&lbrace; expires: Date.now() + N }`).
 
-Supported options are: `&lbrace; value, domain, expires, samesite, path, max_age, secure, partitioned }`.
+Supported options are: `&lbrace; value, maxAge, domain, path, expires, httpOnly, secure, sameSite }`.
 
 > [!NOTE]
 > The `expires` option can be an integer, _Date_ object or a formatted date _string_.

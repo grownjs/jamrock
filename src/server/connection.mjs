@@ -123,7 +123,7 @@ export async function createConnection(store, options, request, location, teardo
       throw getError(code, message, exception);
     },
     send(code, body, _headers) {
-      ([code, body, _headers] = Template.plain(code, body, _headers));
+      ([code, body, _headers] = Template.plain(code, body, _headers))
 
       conn.status_code = code;
       conn.resp_body = body;

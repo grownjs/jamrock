@@ -492,7 +492,8 @@ export class Template {
       body = Template.plain(200, body);
     }
     if (Is.arr(body)) {
-      body = new Response(body[1], { status: body[0], headers: body[2] });
+      const [status, _body, headers] = body;
+      body = new Response(_body, { status, headers });
     }
     if (Is.num(body)) body = new Response(null, { status: body });
     if (Is.str(body)) body = new Response(body, { status: 200 });
