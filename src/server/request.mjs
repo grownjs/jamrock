@@ -35,8 +35,9 @@ export function getCookies(obj) {
   }, []);
 }
 
-export function getError(code, message) {
-  const e = new Error(message);
+export function getError(code, message, exception) {
+  const _Error = exception || Error;
+  const e = new _Error(message);
 
   e.status = code;
   throw e;
@@ -158,7 +159,7 @@ export function create404(env, conn, client, message) {
   const config = `<p>Loaded config</p><dl>${Object.entries(Util.omit(env.options, ['generators']))
     .map(([k, v]) => `<dt>${k}</dt><dd>${typeof v === 'object' ? JSON.stringify(v) : v}</dd>`).join('')}</dl>`;
 
-  const environment = `<p>Loaded env</p><dl>${Object.entries(conn.env)
+  const environment = `<p>Loaded env</p><dl>${Object.entries(process.env)
     .map(([k, v]) => `<dt>${k}</dt><dd>${v}</dd>`).join('')}</dl>`;
 
   return `${style}${message}<table><caption>Available routes</caption>${env.routes.map(route => `

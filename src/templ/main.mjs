@@ -179,8 +179,8 @@ export class Template {
       }
     }
     if (response) return response;
-    if (ctx.conn && ctx.conn.has_status) {
-      return new Response(ctx.conn.body, {
+    if (ctx.conn && ctx.conn.is_close) {
+      return new Response(ctx.conn.resp_body, {
         status: ctx.conn.status_code,
         headers: ctx.conn.resp_headers,
       });
@@ -474,16 +474,22 @@ export class Template {
     });
   }
 
-  static response(body) {
+  // handle Buffer or more values?
+  static plain(code, body, headers) {
     if (Is.plain(body)) {
       body = JSON.stringify(body);
-      body = new Response(body, {
-        status: 200,
-        headers: {
-          'content-type': 'application/json',
-          'content-length': body.length,
-        },
-      });
+      headers = {
+        ...headers,
+        'content-type': 'application/json',
+        'content-length': body.length,
+      };
+    }
+    return [code, body, headers];
+  }
+
+  static response(body) {
+    if (Is.plain(body)) {
+      body = Template.plain(200, body);
     }
     if (Is.arr(body)) {
       body = new Response(body[1], { status: body[0], headers: body[2] });
@@ -712,7 +718,7 @@ export class Template {
         if (context.ref) attrs['@source'] = context.ref;
       }
 
-      if (process.env.HEADLESS || context.conn?.env?.NODE_ENV === 'production') {
+      if (process.env.HEADLESS || process.env.NODE_ENV === 'production') {
         delete attrs['@location'];
         delete attrs['@source'];
         delete attrs['@async'];

@@ -1,5 +1,7 @@
-import { getError, parseCookies } from './request.mjs';
+import { Template } from 'jamrock/core';
+
 import { createSession } from './session.mjs';
+import { getError, parseCookies } from './request.mjs';
 
 export async function createConnection(store, options, request, location, teardown) {
   const response = {
@@ -79,13 +81,21 @@ export async function createConnection(store, options, request, location, teardo
       if (value === null) {
         _options = { expires: new Date(0) };
       }
+      if (typeof _options === 'number') {
+        _options = { expires: Date.now() + (_options * 1000) };
+      }
       response.cookies.set(key, { value, options: _options });
     },
     header(key, value) {
       response.headers.set(key, value);
     },
+    status(code) {
+      conn.status_code = code;
+      response.open = true;
+    },
     redirect(_url, code) {
       conn.status_code = code || 301;
+      response.open = false;
       response.headers.set('location', _url);
     },
     toJSON() {
@@ -105,11 +115,25 @@ export async function createConnection(store, options, request, location, teardo
         return data;
       }
 
+      const timestamp = new Date();
       session.flash = session.flash || [];
-      session.flash.push({ type, value });
+      session.flash.push({ type, value, timestamp });
     },
-    raise(code, message) {
-      throw getError(code, message);
+    raise(code, message, exception) {
+      throw getError(code, message, exception);
+    },
+    send(code, body, _headers) {
+      ([code, body, _headers] = Template.plain(code, body, _headers))
+
+      conn.status_code = code;
+      conn.resp_body = body;
+      response.open = false;
+
+      if (_headers) {
+        Object.entries(_headers).forEach(([k, v]) => {
+          conn.resp_headers.set(k, v);
+        });
+      }
     },
     get aborted() {
       return request.signal.aborted;
@@ -152,10 +176,10 @@ export async function createConnection(store, options, request, location, teardo
       if (response.status !== null) {
         throw new Error(`Response status already set: ${response.status}`);
       }
+      if (!number) {
+        throw new Error(`Response status is required, given '${number}'`);
+      }
       response.status = number;
-    },
-    get has_status() {
-      return response.status !== null || response.headers.has('location');
     },
     get resp_body() {
       return response.body || null;
@@ -169,15 +193,19 @@ export async function createConnection(store, options, request, location, teardo
     get has_body() {
       return response.body !== null;
     },
+    get is_close() {
+      return !response.open && (
+        response.body !== null
+        || response.status !== null
+        || response.headers.has('location')
+      );
+    },
     get is_json() {
       return headers['content-type'] === 'application/json'
         || headers.accept?.split(/[\s;,]/).includes('application/json');
     },
     get is_xhr() {
       return headers['x-requested-with'] === 'XMLHttpRequest';
-    },
-    get env() {
-      return { ...process.env };
     },
   };
 

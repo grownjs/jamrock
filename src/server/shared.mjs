@@ -149,33 +149,41 @@ export const createWatcher = ({ fs }, watcher, compiler) => {
     }
   });
 
-  return {
-    rebuild: async req => {
-      // console.log('request', reloading, req.url);
-      if (reloading) return;
-      if (req.url.split('/').pop().includes('.')) return;
-      if (req.method === 'GET') {
-        try {
-          const url = req.url[0] === '/' ? req.url : new URL(req.url).pathname;
-          const found = compiler.matches(url);
+  async function retryCompile(url, retries) {
+    const found = compiler.matches(url);
 
-          if (found.route) {
-            if (found.route.middleware && !compiler.has(found.route.middleware)) push(found.route.middleware, 'compile');
-            if (found.route.layout && !compiler.has(found.route.layout)) push(found.route.layout, 'compile');
-            if (found.route.error && !compiler.has(found.route.error)) push(found.route.error, 'compile');
-            if (found.route.src) push(found.route.src, 'compile');
-            reloading = true;
-            // console.log('RECOMPILE', sources);
-            await sync(true, found.routes);
-          } else {
-            console.log('NOT FOUND', url);
-          }
-        } catch (e) {
-          Util.trace(e, 'E_REBUILD');
-          reloading = false;
-        }
+    if (found.route) {
+      if (found.route.middleware && !compiler.has(found.route.middleware)) push(found.route.middleware, 'compile');
+      if (found.route.layout && !compiler.has(found.route.layout)) push(found.route.layout, 'compile');
+      if (found.route.error && !compiler.has(found.route.error)) push(found.route.error, 'compile');
+      if (found.route.src) push(found.route.src, 'compile');
+      reloading = true;
+      // console.log('RECOMPILE', sources);
+      await sync(true, found.routes);
+    } else if (retries > 0) {
+      await new Promise(_ => setTimeout(_, 120)).then(() => retryCompile(url, retries - 1));
+    } else {
+      console.log('NOT FOUND', url);
+    }
+  }
+
+  async function tryRebuild(req) {
+    // console.log('request', reloading, req.url);
+    if (reloading) return new Promise(_ => setTimeout(_, 120)).then(() => tryRebuild(req));
+    if (req.url.split('/').pop().includes('.')) return;
+    if (req.method === 'GET') {
+      try {
+        const url = req.url[0] === '/' ? req.url : new URL(req.url).pathname;
+        await retryCompile(url, 3);
+      } catch (e) {
+        Util.trace(e, 'E_REBUILD');
+        reloading = false;
       }
-    },
+    }
+  }
+
+  return {
+    rebuild: tryRebuild,
     close: () => watcher.close(),
     before: cb => before.push(cb),
     observe: (src, cb) => watcher.on(src, cb),
@@ -216,7 +224,7 @@ export const createCompiler = ({ fs, path }, options, external) => {
         lvl: undefined,
         root: undefined,
       })),
-    }, null, options.env === 'production' ? 0 : 2));
+    }, null, process.env.NODE_ENV === 'production' ? 0 : 2));
   }
 
   function handlers() {
