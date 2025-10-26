@@ -65,8 +65,11 @@ iframe {
 <a href="/loops" target="_self">Browser reload...</a>
 
 <p>{limit} - {count}</p>
+
 <fragment tag="ul" name="loop" interval="20" limit={limit}>
-{#each data as x}
-  <li class:red="{x < limit}" class:odd="{x % 2 === 0}">{x + 1}{x < count - 1 ? ',' : ''}&nbsp;</li>
-{/each}
+  {#each data as x}
+    <li class:red="{x < limit}" class:odd="{x % 2 === 0}">
+      {x + 1}{x < count - 1 ? ',' : ''}&nbsp;
+    </li>
+  {/each}
 </fragment>

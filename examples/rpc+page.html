@@ -8,6 +8,8 @@
 </script>
 
 <script>
+  import conn from 'jamrock:conn';
+
   export let someValue;
   export let otherValue;
 
@@ -22,9 +24,10 @@
   async function* aGenerator() {
     let i = 0;
     while (true) {
-      if (i > 2500) break;
+      if (i++ > 2500) break;
+      // console.log(i, conn.is_ready, '?');
       yield { v: Math.random() * 100 + j | 0, i: j++, o: '' };
-      if (i++ > 50 && t) await new Promise(ok => setTimeout(ok, Math.random() * t + 1));
+      if (i > 100 && t) await new Promise(ok => setTimeout(ok, Math.random() * t + 1));
     }
   }
 
@@ -98,7 +101,7 @@
 <ol>
   <li>BEFORE (make a game of this... right?)</li>
   <li>MATH: each match scores, less distance between hits scores higher! they can be letters, numbers, emojis, etc.</li>
-  <fragment name="values" interval="0" mode="prepend">
+  <fragment name="values" interval="0" mode="prepend" limit="50">
     {#each aGenerator as x}
       <li class:match="{x.v === x.i}">
         {x.v === x.i ? 'YES' : 'NO'}: {x.v} ({x.i}{x.o})
