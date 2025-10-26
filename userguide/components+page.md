@@ -263,7 +263,7 @@ variables are just treated as object fields.
 
 <nav class="flex gap-sm between">
   <span>
-    ➯ Next: <a href="/fragments#top">Fragments</a>
+    ➯ Next: <a href="/directives#top">Directives</a>
   </span>
   <a href="/components#top">
     &uarr; Back to the top

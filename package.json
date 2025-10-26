@@ -90,7 +90,7 @@
     "redis": "^5.5.6",
     "rewrite-exports": "^0.0.28",
     "rewrite-imports": "^3.0.0",
-    "somedom": "^0.8.2",
+    "somedom": "^0.8.3",
     "testdouble": "^3.16.1",
     "tiny-dedent": "^1.0.2"
   },
