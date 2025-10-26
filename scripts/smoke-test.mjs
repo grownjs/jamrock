@@ -11,7 +11,7 @@ export function run(test, driver, expect, createSandbox) {
         markup: '<b>OSOM</b>',
         default: () => [Math.random()],
         before: () => [['span', { '@html': '<b>RAW</b>' }]],
-        after: () => [['em', null, 'B']],
+        after: () => [['em', {}, 'B']],
       });
 
       expect([...el.querySelectorAll('button')].map(x => x.outerHTML)).toEqual([
