@@ -1,6 +1,9 @@
 <head>
   <title>Jamrock | Components</title>
 </head>
+<script>
+import NavLink from './components/navlink.html';
+</script>
 
 # Components
 
@@ -172,9 +175,9 @@ Will take any expression to produce markup.
 It'll render the underlying block if the expressions is truthy, i.e.
 
 ```
-<em>{#if true}</em>
+{#if true}
   42
-<em>{/if}</em>
+{/if}
 ```
 
 > [!CAUTION]
@@ -234,7 +237,7 @@ be wise and careful as you're inlining code!
 
 Usually this is required to inline markup on its AST form, e.g.
 
-```html
+```
 {@raw ['h1', {}, 'It works!']}
 ```
 
@@ -253,9 +256,75 @@ variables are just treated as object fields.
 > [!WARNING]
 > This will not support expressions, just variable names.
 
+---
+
+## Markdown
+
+**Jamrock** supports some markdown content through `kramed` on
+`*-page.html` components and on any `*.md` component.
+
+For pages it's allowed on the top-level of the file only.
+
+```html | Example of page component
+<script>
+  export let children;
+</script>
+
+# Markdown works here
+
+- This is the top-level of the file,
+- you don't need to wrap your content
+- in body or head tags on your components
+
+<div>
+  ## Markdown here does not work!
+  
+  {@render children?.()}
+</div>
+```
+
+### &lt;mkd&gt;
+
+You can use the `&lt;mkd&gt;` element to render Markdown within other html nodes,
+it may work with some expressions!
+
+> [!CAUTION]
+> You can import and include other components in your Markdown,
+> that's expected and works out of the box.
+
+### Code blocks
+
+Tagged blocks are ignored by the parser as they are handled by **highlight.js**,
+this produces highlighted code as the resulting markup.
+
+<pre class="hljs"><code>&#96;&#96;&#96;html
+&lt;h1&gt;It works!&lt;/h1&gt;
+&#96;&#96;&#96;</code></pre>
+
+> [!NOTE]
+> **Jamrock** includes support for: `shell`, `less`, `css`, `html`, `xml` and `js` languages for now.
+
+Untagged blocks are parsed by the framework instead,
+this way components can be rendered within.
+
+<pre class="hljs"><code>&#96;&#96;&#96;
+&amp;lt;h1&amp;gt;It works!&amp;lt;/h1&amp;gt;
+&#96;&#96;&#96;</code></pre>
+
+This way the markup is rendered as is,
+so you can decorate the code by yourself
+with components or regular HTML tags.
+
+> [!IMPORTANT]
+> As you noticed, by using tagged block your code is html-encoded
+> while untagged blocks does not.
+>
+> Only `&#96;&#96;&#96;` blocks are considered for this,
+> code blocks made by white-space indentation are ignored.
+
 <nav class="flex gap-sm between">
   <span>
-    ➯ Next: <a href="/directives#top">Directives</a>
+    ➯ Next: <a href="/fragments#top">Fragments</a>
   </span>
   <a href="/components#top">
     &uarr; Back to the top
