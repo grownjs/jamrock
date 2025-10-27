@@ -5,7 +5,7 @@ export function handleCleanup(el) {
 }
 
 // FIXME: handle logic with bindings as well?
-export function handleSubmit(e) {
+export async function handleSubmit(e) {
   if (e.target.checkValidity()) {
     const el = document.activeElement;
     const data = new FormData(e.target);
@@ -19,18 +19,22 @@ export function handleSubmit(e) {
       data.set(el.name, el.value);
     }
 
-    for (const node of e.target.elements) handleCleanup(node);
+    let success;
+    try {
+      if ('trigger' in e.target.dataset) {
+        const source = findNodes('source', e.target);
 
-    if ('trigger' in e.target.dataset) {
-      const source = findNodes('source', e.target);
+        await this.sockets.trigger(e, 'form', source ? source.dataset.source : null, e.target, data);
+      } else {
+        const url = e.target.action;
+        const headers = { 'request-type': 'bind' };
 
-      this.sockets.trigger(e, 'form', source ? source.dataset.source : null, e.target, data);
-      return;
+        success = await this.loadURL(e.target, url, data, method, headers);
+      }
+    } finally {
+      if (success) {
+        for (const node of e.target.elements) handleCleanup(node);
+      }
     }
-
-    const url = e.target.action;
-    const headers = { 'request-type': 'bind' };
-
-    this.loadURL(e.target, url, data, method, headers);
   }
 }

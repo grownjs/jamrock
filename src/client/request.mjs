@@ -36,6 +36,7 @@ export function doRequest(url, data, method, headers) {
   }).then(resp => {
     this.browser.csrf_token = resp.headers.get('x-csrf') || this.browser.csrf_token;
     this.browser.request_failure = resp.status === 404 || resp.status >= 500;
+    this.browser.request_success = resp.status > 199 || resp.status < 300;
 
     if (resp.status === 204) return;
     return resp.text().then(body => {
@@ -104,5 +105,6 @@ export function loadPage({ el, wait, target, fragment }, url, data, method, _hea
       parent.classList.remove('loading');
       if (active) active.focus();
     }
+    return this.browser.request_success;
   });
 }

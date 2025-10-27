@@ -51,7 +51,10 @@ export function decorate($, ctx, vnode, hooks) {
       }
 
       vnode[2].unshift(['input', { type: 'hidden', name: '_self', value: vnode[1]['@source'] }]);
-      vnode[2].unshift(['input', { type: 'hidden', name: '_csrf', value: ctx.conn.csrf_token }]);
+
+      if (ctx.conn) {
+        vnode[2].unshift(['input', { type: 'hidden', name: '_csrf', value: ctx.conn.csrf_token }]);
+      }
     }
   }
 }

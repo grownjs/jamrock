@@ -109,10 +109,12 @@ export function enhance(vnode, parent) {
     }
 
     if (props['@put']) props.method = 'PUT';
+    if (props['@post']) props.method = 'POST';
     if (props['@patch']) props.method = 'PATCH';
     if (props['@delete']) props.method = 'DELETE';
 
     delete props['@put'];
+    delete props['@post'];
     delete props['@patch'];
     delete props['@delete'];
 
@@ -195,7 +197,10 @@ export function extend(tagName, props, fn) {
     }
 
     if (key.indexOf('style:') === 0) {
-      css.push(`${key.substr(6).replace(/[A-Z]/g, _ => `-${_.toLowerCase()}`)}: ${props[key]}`);
+      const value = String(props[key] === 0 || props[key] === '0' ? 0 : props[key] || '').trim();
+      if (value.length > 0) {
+        css.push(`${key.substr(6).replace(/[A-Z]/g, _ => `-${_.toLowerCase()}`)}: ${props[key]}`);
+      }
       delete props[key];
     }
 

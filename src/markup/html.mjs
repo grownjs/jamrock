@@ -271,15 +271,19 @@ export function taggify(vnode, callback) {
 
     if (!Is.func(callback)) {
       const suffix = !close ? `</${tagName}>` : '';
-      return `${tag}${raw ? vnode[2] : taggify(vnode[2])}${suffix}`;
+      return close
+        ? tag + suffix
+        : `${tag}${raw ? vnode[2] : taggify(vnode[2])}${suffix}`;
     }
     callback(tag);
-    if (raw) {
-      callback(vnode[2]);
-    } else if (vnode.length > 1) {
-      taggify(vnode[2], callback);
+    if (!close) {
+      if (raw) {
+        callback(vnode[2]);
+      } else if (vnode.length > 1) {
+        taggify(vnode[2], callback);
+      }
+      callback(`</${tagName}>`);
     }
-    if (!close) callback(`</${tagName}>`);
     return;
   }
   if (!Is.func(callback)) {
@@ -305,10 +309,8 @@ export function serialize(vnode, parent, callback) {
       ? serialize(vnode[2], { name, props }, callback)
       : vnode[2];
 
-    if (vnode[2] && vnode[2].length > 0) {
-      vnode[2] = children;
-      vnode.length = 3;
-    }
+    vnode[2] = children;
+    vnode.length = 3;
 
     enhance(vnode, parent);
     if (Is.func(callback)) callback(vnode, hooks);

@@ -319,6 +319,7 @@ test.group('integration only!', t => {
       'GET /pages/sitemap.xml',
       'GET /pages/:slug/osom',
       'GET /campaigns/:campaign_id',
+      'GET /directives',
       'GET /api/some/:stuff',
       'GET /resources',
       'GET /campaigns',

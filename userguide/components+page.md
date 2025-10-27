@@ -39,6 +39,8 @@ handlers and actions.
 > We save this information with your compiled files for later usage
 > in a `index.json` file, i.e. `jamrock route` use this file.
 
+---
+
 ## Composition
 
 To use other components to _compose_ the UI you need to import them.
@@ -103,33 +105,7 @@ It would yield: `Got: OSOM (number 42)`
 
 In the case of static components without a `&lt;script&gt;` tag you should use `$$props.thing` syntax to access any given prop.
 
-## Snippets
-
-You can declare snippets for your components this way:
-
-```html
-<Example>
-  {#snippet other()}...{/snippet}
-</Example>
-```
-
-And then, render them as markup:
-
-```html
-<div>Got: {@render $$props.other?.()}</div>
-```
-
-So snippets is the way to pass chunks of markup as props.
-
-> [!IMPORTANT]
-> Here we're using `$$props` as a shortcut,
-> but you can use `export let other;` if you prefer.
->
-> Component is treated as static as it does not
-> have an initialization script block.
->
-> Snippets are compiled as functions,
-> try playing around with some arguments!
+---
 
 ## Templating
 
@@ -166,6 +142,19 @@ They can appear at component root to behave as fallbacks if they're not given as
 <div>{@render sample(42)}</div>
 ```
 
+In this example, the component will receive a `sample` prop
+that will fallback to the inlined version if omitted.
+
+```html
+<Example>
+  {#snippet sample(value)}
+    OSOM: {value}
+  {/snippet}
+</Example>
+```
+
+This would yield: `&lt;div&gt;OSOM: 42&lt;/div&gt;`
+
 > [!NOTE]
 > Snippets are values, so they can be passed down as arguments
 > that you can pass again or render, etc.
@@ -176,16 +165,16 @@ Will take any expression to produce markup.
 
 > [!TIP]
 > It's encouraged to call these expressions with `?.()`
-> to avoid unexpected exceptions if you don't control them.
+> to avoid unexpected exceptions if you don't provide them.
 
 ### &lbrace;#if ...}...&lbrace;/if}
 
 It'll render the underlying block if the expressions is truthy, i.e.
 
-```html
-{#if true}
+```
+<em>{#if true}</em>
   42
-{/if}
+<em>{/if}</em>
 ```
 
 > [!CAUTION]
@@ -234,17 +223,20 @@ Almost anything that can produce an iterator, e.g.
 {/each}
 ```
 
-> [!NOTE]
-> These iterators are limited by time and length, so they'll be stopped once
-> a given limit or maximum execution time is reached.
->
-> Any value after is discarded [unless you have a fragment](./fragments#top) around,
-> but that'll be explored on the next section!
+> [!CAUTION]
+> Iterators are constrained by time and length, so they'll be stopped once
+> a given limit or maximum execution time is reached!
 
 ### &lbrace;@raw ...}
 
 These expressions will be inlined as is on the compiled code,
-be wise and careful if you don't know what to do.
+be wise and careful as you're inlining code!
+
+Usually this is required to inline markup on its AST form, e.g.
+
+```html
+{@raw ['h1', {}, 'It works!']}
+```
 
 ### &lbrace;@html ...}
 

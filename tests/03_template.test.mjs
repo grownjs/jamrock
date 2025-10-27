@@ -190,7 +190,7 @@ fixture`./nested/path/to/transformed.html
     <p {...props}>OK: {value / 1.5}</p>
   {/if}
 
-  <!-- directives -->
+  <!-- special tags -->
   {@html markup}
   {@html ['h1', Object.fromEntries([]), 'It works.']}
 
@@ -313,6 +313,23 @@ fixture`./inlines+page.html
     <link rel="stylesheet" href="//unpkg.com/highlight.js@10.7.3/styles/tomorrow.css" inline />
     <link rel="stylesheet" href="//fonts.googleapis.com/css?family=Montserrat" inline />
   </head>
+`;
+
+// eslint-disable-next-line no-unused-expressions
+fixture`./directives+page.html
+  <form @multipart>
+    <textarea value="<h1>It works</h1>" />
+    <select value="42">
+      <option>42</option>
+      <option>-1</option>
+    </select>
+    <button test:id="btn">Click me</button>
+  </form>
+  <form @async />
+  <form @put />
+  <form @post />
+  <form @patch />
+  <form @delete />
 `;
 
 test.group('template transformation', t => {
@@ -467,6 +484,20 @@ ROUTER(FIXME)
 
     expect(props.meta.some(_ => _[0] === 'style' && _[1]['@html'])).toBeTruthy();
     expect(props.meta.at(-2)[1]['@html']).toContain('/http___fonts');
+  });
+
+  test('should handle @tagged enhancements', async ({ expect }) => {
+    const tpl = await build('./directives+page.html');
+    const { html } = await tpl.render();
+
+    expect(html).toContain('enctype="multipart/form-data" method=POST');
+    expect(html).toContain('&lt;h1&gt;It works&lt;/h1&gt;</textarea>');
+    expect(html).toContain('<option selected>42</option>');
+    expect(html).toContain('<button data-test:id="btn"');
+    expect(html).toContain('<form data-async');
+    expect(html).toContain('<input type=hidden name="_method" value=PUT /></form>');
+    expect(html).toContain('<input type=hidden name="_method" value=PATCH /></form>');
+    expect(html).toContain('<input type=hidden name="_method" value=DELETE /></form>');
   });
 
   test('should manage server/client components', async ({ expect }) => {
