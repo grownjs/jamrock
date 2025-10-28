@@ -42,7 +42,7 @@
         "redis": "^5.5.6",
         "rewrite-exports": "^0.0.28",
         "rewrite-imports": "^3.0.0",
-        "somedom": "^0.8.1",
+        "somedom": "^0.8.4",
         "testdouble": "^3.16.1",
         "tiny-dedent": "^1.0.2",
       },
@@ -1470,7 +1470,7 @@
 
     "snapdragon-util": ["snapdragon-util@3.0.1", "", { "dependencies": { "kind-of": "^3.2.0" } }, "sha512-mbKkMdQKsjX4BAL4bRYTj21edOf8cN7XHdYUJEe+Zn99hVEYcMvKPct1IqNe7+AZPirn8BCDOQBHQZknqmKlZQ=="],
 
-    "somedom": ["somedom@0.8.1", "", {}, "sha512-LQxsIvPz6S2zgW/V2fIE/hw+hCb8Z5u03nvAX36DV9bo/jPVy13C6YwunMTbL6U7kehXTNqzk/i8wVFUVknvwg=="],
+    "somedom": ["somedom@0.8.4", "", {}, "sha512-pfH+OWmT8jpCdJuj14kIdGahBKxfGiWQz+aKGqPERpWsAK2CUUKis3br/lPCkj/l1nslLFNylBTyI7naUOM7jg=="],
 
     "source-map": ["source-map@0.6.1", "", {}, "sha512-UjgapumWlbMhkBgzT7Ykc5YXUT46F0iKu8SGXq0bcwP5dz/h0Plj6enJqjz1Zbq2l5WaqYnrVbwWOWMyF3F47g=="],
 

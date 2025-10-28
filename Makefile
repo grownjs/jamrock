@@ -14,7 +14,7 @@ endif
 
 export EDITOR APP_KEY MAILDEV FORCE_COLOR GIT_REVISION
 
-.PHONY: seed dist docs examples
+.PHONY: seed dist docs install examples
 
 ci: install clean dist
 	@npm run lint
@@ -107,7 +107,8 @@ e2e\:%:
 e2e:
 	@make dist
 	@bin/node serve --src examples/ --watch
-
+dev: deps
+	@npm run dev
 shot:
 	@make -sC seed dist
 
