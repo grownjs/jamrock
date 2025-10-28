@@ -122,14 +122,30 @@ fixture`./example.html
   </script>
 `;
 
+// eslint-disable-next-line no-unused-expressions
+fixture`./x-loops.html
+  <script>
+    const [data, limit, count] = createIterator(10);
+  </script>
+  <fragment tag="ul" name="loop">
+    {#each data as x}...{/each}
+  </fragment>
+`;
+
 test.group('new compiler', () => {
+  test('should attach scoped variables into fragments', async ({ expect }) => {
+    const partial = await fixture.use('./x-loops.html', { transform: true });
+    expect(partial.__fragments.loop.s).toEqual(['data']);
+  });
+
   test('should transform components into modules', async ({ expect }) => {
-    const { code, render } = await fixture.use('./example.html');
+    const { code, render } = await fixture.use('./example.html', { transform: true });
 
     expect(code).toContain('"path":"/:stuff"');
     expect(code).toContain('__default = {\n    DELETE');
     expect(code).toContain('let value = $$props.value ?? 0;');
     expect(code).toContain('const sum = $$props.sum ?? __snippets.sum;');
+    expect(code).toContain('s: ["truth"],');
 
     const { html } = await render();
 

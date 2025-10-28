@@ -69,9 +69,8 @@ export class Block {
     };
 
     const tree = parseMarkup(this.code, { includePositions: true });
-    const result = traverse(tree, this.code, null, metadata);
 
-    metadata.response.markup.content = result;
+    metadata.response.markup.content = traverse(tree, this.code, null, metadata);
 
     Object.assign(this, metadata.response);
 
@@ -162,8 +161,11 @@ export class Block {
   }
 
   get $fragments() {
+    const scope = { ...this.module?.locals, ...this.script?.locals };
+
     return Object.entries(this.fragments)
       .map(([fn, _]) => `\n\t'${fn}': {
+    s: ${JSON.stringify(_.locals?.filter(k => scope[k]) || [])},
     a: async ($$) => ({${Block.wrap(Expr.props(_.attributes, '\t'))}}),
     r: async ($$) => [${Block.wrap(reduce(_.elements, this.context, 1))}] },`)
       .join('');
@@ -280,6 +282,8 @@ export const __attributes = ${this.$attributes};
       this.markup.content = await render(this.markup.content, null, this.chunks);
     }
 
+    await this.traverse();
+
     await visit(this.markup.metadata, async node => {
       // we could accumulate all inlined stuff and render all into a single chunk of css?
       switch (node.name) {
@@ -330,6 +334,20 @@ export const __attributes = ${this.$attributes};
       }
       return node;
     }, this.locations);
+  }
+
+  async traverse() {
+    await visit(this.markup.content, node => {
+      if (node.type === 'fragment' && node.offset && this.locations) {
+        Object.defineProperty(node, 'locals', {
+          enumerable: true,
+          writable: false,
+          value: [...new Set(this.locations
+            .filter(x => x.offset[0] > node.offset.close && x.offset[0] < node.offset.end)
+            .reduce((memo, k) => memo.concat(k.locals.map(u => u.name)), []))],
+        });
+      }
+    });
   }
 
   toString() {

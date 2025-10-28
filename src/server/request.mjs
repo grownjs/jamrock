@@ -313,7 +313,7 @@ export async function createBody(env, conn, clients, { uuid, client, matches, op
 
         const headers = new Headers({
           'content-type': 'application/json',
-          'content-length': body.length,
+          // 'content-length': body.length,
         });
 
         return { body, headers, cookies: false, status: conn.status_code };

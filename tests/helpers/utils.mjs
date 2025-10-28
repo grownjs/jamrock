@@ -202,8 +202,10 @@ fixture.load = (source, filepath, options = {}) => {
   try {
     const b = new Block(source, filepath, options);
 
+    if (options.transform) {
+      return b.traverse().then(() => generated(b));
+    }
     if (options.raw) return b;
-
     return generated(b);
   } catch (e) {
     const failure = debug({
