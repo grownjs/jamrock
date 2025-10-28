@@ -228,7 +228,7 @@ Almost anything that can produce an iterator, e.g.
 
 > [!CAUTION]
 > Iterators are constrained by time and length, so they'll be stopped once
-> a given limit or maximum execution time is reached!
+> a given limit or maximum execution-time is reached!
 
 ### &lbrace;@raw ...}
 
