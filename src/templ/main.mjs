@@ -280,9 +280,8 @@ export class Template {
   static async execute(component, context, props, cb) {
     context.base_url = context.base_url || context.conn?.base_url;
     context.is_json = context.is_json || context.conn?.is_json;
-    context.streams = context.streams || new Map();
+    context.stream = context.stream || streamify(context);
     context.mixins = context.mixins || new Map();
-    context.locals = context.locals || streamify(context);
     context.stack = context.stack || [];
     context.scope = context.scope || {};
     context.depth = context.depth || 0;
@@ -380,7 +379,7 @@ export class Template {
       const actions = { [ctx.ref]: calls };
 
       let state = { ...props, ...data };
-      if (ctx.locals) {
+      if (ctx.stream) {
         // FIXME: this can be cached somehow?
         const frags = await Promise.all(Object.entries(component.__fragments).map(async ([k, v]) => ({
           target: k,
@@ -389,7 +388,7 @@ export class Template {
           attributes: await view(v.a, state, `${component.__src}#@${k}`),
         })));
 
-        state = await ctx.locals.wrap(state, async (key, item) => {
+        state = await ctx.stream.wrap(state, async (key, item) => {
           const input = { ...props, ...data, [key]: [item] };
 
           const { target, template } = frags.find(_ => _.variables.includes(key));

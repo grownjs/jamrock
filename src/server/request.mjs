@@ -182,11 +182,14 @@ export async function createBody(env, conn, clients, { uuid, client, matches, op
       route: matches,
       cache: env.cache,
       routes: env.routes,
-      publish: (ref, mode, target, payload) => {
+      publish: async (ref, key, item, mode, render) => {
+        const { target, vnode } = await render(key, item);
+        const payload = Markup.encode(JSON.stringify(vnode));
+
         if (ctx.socket) {
           ctx.socket.send(`rpc:update ${ctx.socket.identity} ${target} ${mode}\t${payload}`);
         } else {
-          console.log('__OUTPUT', ref, mode);
+          console.log('__OUTPUT', ref, mode, target, payload);
         }
       },
     };

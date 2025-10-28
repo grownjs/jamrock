@@ -60,12 +60,6 @@ export function decorate($, ctx, vnode, hooks) {
 }
 
 export function streamify(ctx) {
-  function append(ref, key, item) {
-    // console.log('>>>', process.headless);
-    // ctx.publish?.(ref, mode, result.target, result.vnode);
-    ctx.publish?.(ref, key, item);
-  }
-
   function peek(key, value, render, fragments) {
     const { attributes } = fragments.find(_ => _.variables.includes(key)) || {};
 
@@ -81,14 +75,13 @@ export function streamify(ctx) {
     let done;
     let t = setTimeout(() => { done = true; }, timeout);
 
-    ctx.streams.set(`${ref}/${key}`, {
+    ctx.stream.set(`${ref}/${key}`, {
       cancel() {
         clearTimeout(t);
         cancelled = done = true;
       },
       publish(item) {
-        append(ref, key, item);
-        // append(ref, mode, await render(key, item));
+        ctx.publish?.(ref, key, item, mode, render);
       },
     });
 
@@ -108,8 +101,7 @@ export function streamify(ctx) {
         else if (process.env.HEADLESS || cancelled) break;
         else {
           if (interval > 0) await sleep(interval);
-          if (append(ref, key, item)) break;
-          // if (append(ref, mode, await render(key, item))) break;
+          if (ctx.publish?.(ref, key, item, mode, render)) break;
         }
       }
       if (process.env.HEADLESS || !done) next(values);
@@ -139,5 +131,5 @@ export function streamify(ctx) {
     return state;
   }
 
-  return { wrap };
+  return Object.assign(new Map(), { wrap });
 }

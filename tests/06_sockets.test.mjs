@@ -194,7 +194,7 @@ test.group('streaming support', () => {
       expect(conn.res.body).toContain('<ul data-location="loops.html:10:1" data-fragment=test data-interval=5>');
     });
 
-    ctx.streams.get('loops.html/1/data').cancel();
+    ctx.stream.get('loops.html/1/data').cancel();
     client.send('rpc:trigger');
     await sleep(100);
 
