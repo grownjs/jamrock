@@ -9,6 +9,7 @@
     "lib/**/*.*",
     "import_map.json"
   ],
+  "type": "module",
   "types": "./lib/env.d.ts",
   "exports": {
     ".": {

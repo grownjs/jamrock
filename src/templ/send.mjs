@@ -1,7 +1,6 @@
 import {
   Is, sleep, dashCase,
 } from '../utils/server.mjs';
-import { encode } from '../markup/utils';
 
 // import { ents } from '../render/hooks.mjs';
 
@@ -61,17 +60,19 @@ export function decorate($, ctx, vnode, hooks) {
 }
 
 export function streamify(ctx) {
-  function append(ref, mode, result) {
-    ctx.publish?.(ref, mode, result.target, encode(JSON.stringify(result.vnode)));
+  function append(ref, key, item) {
+    // console.log('>>>', process.headless);
+    // ctx.publish?.(ref, mode, result.target, result.vnode);
+    ctx.publish?.(ref, key, item);
   }
 
   function peek(key, value, render, fragments) {
-    const { attributes } = fragments.find(_ => _.variables.includes(key));
+    const { attributes } = fragments.find(_ => _.variables.includes(key)) || {};
 
-    let interval = +(attributes.interval || 0);
-    let timeout = +(attributes.timeout ?? 50);
-    let limit = +(attributes.limit || 100);
-    let mode = attributes.mode || 'append';
+    let interval = +(attributes?.interval || 0);
+    let timeout = +(attributes?.timeout ?? 50);
+    let limit = +(attributes?.limit || 100);
+    let mode = attributes?.mode || 'append';
 
     const ref = ctx.ref;
     const values = [];
@@ -85,8 +86,9 @@ export function streamify(ctx) {
         clearTimeout(t);
         cancelled = done = true;
       },
-      async publish(item) {
-        append(ref, mode, await render(key, item));
+      publish(item) {
+        append(ref, key, item);
+        // append(ref, mode, await render(key, item));
       },
     });
 
@@ -106,7 +108,8 @@ export function streamify(ctx) {
         else if (process.env.HEADLESS || cancelled) break;
         else {
           if (interval > 0) await sleep(interval);
-          if (append(ref, mode, await render(key, item))) break;
+          if (append(ref, key, item)) break;
+          // if (append(ref, mode, await render(key, item))) break;
         }
       }
       if (process.env.HEADLESS || !done) next(values);
