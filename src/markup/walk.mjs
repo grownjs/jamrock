@@ -154,7 +154,7 @@ export function traverse(obj, html, parent, context, counter = 0) {
         context.response.markup.doctype = newNode.attributes;
       } else if (node.rawTagName === 'fragment') {
         if (!newNode.attributes.name || context.response.fragments[newNode.attributes.name]) {
-          throw new Error(`Fragment requires a name, given '${JSON.stringify(newNode.attributes)}'`);
+          throw new Error(`Fragment requires a unique name, given '${JSON.stringify(newNode.attributes)}'`);
         }
 
         newNode.type = 'fragment';

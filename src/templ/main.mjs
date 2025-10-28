@@ -380,7 +380,24 @@ export class Template {
       const actions = { [ctx.ref]: calls };
 
       let state = { ...props, ...data };
-      if (ctx.locals) state = await ctx.locals.wrap(state);
+      if (ctx.locals) {
+        // FIXME: this can be cached somehow?
+        const frags = await Promise.all(Object.entries(component.__fragments).map(async ([k, v]) => ({
+          target: k,
+          template: v.r,
+          variables: v.s,
+          attributes: await view(v.a, state, `${component.__src}#@${k}`),
+        })));
+
+        state = await ctx.locals.wrap(state, async (key, item) => {
+          const input = { ...props, ...data, [key]: [item] };
+
+          const { target, template } = frags.find(_ => _.variables.includes(key));
+          const vnode = await view(template, input, `${component.__src}#!${key}`);
+
+          return { target, vnode };
+        }, frags);
+      }
 
       let [doc, body, head, attrs] = await Promise.all([
         view(component.__doctype, state, `${component.__src}#doctype`),

@@ -245,7 +245,8 @@ test.group('parsing', t => {
   });
 
   test('should validate given fragments', ({ expect }) => {
-    expect(() => load('<fragment>x</fragment>')).toThrow(/Fragment requires a name/);
+    expect(() => load('<fragment>x</fragment>')).toThrow(/Fragment requires a unique name/);
+    expect(() => load('<fragment name="x">x</fragment><fragment name="x">x</fragment>')).toThrow(/Fragment requires a unique name/);
     expect(load('<fragment name=x>y</fragment>', 'frag.html').fragments).toEqual({
       x: {
         attributes: { '@location': 'frag.html:1:1', name: 'x' },

@@ -1,6 +1,7 @@
 import {
   Is, sleep, dashCase,
 } from '../utils/server.mjs';
+import { encode } from '../markup/utils';
 
 // import { ents } from '../render/hooks.mjs';
 
@@ -60,29 +61,32 @@ export function decorate($, ctx, vnode, hooks) {
 }
 
 export function streamify(ctx) {
-  function append(key, item) {
-    ctx.publish?.(ctx.ref, key, item);
+  function append(ref, mode, result) {
+    ctx.publish?.(ref, mode, result.target, encode(JSON.stringify(result.vnode)));
   }
 
-  function peek(key, value) {
-    let interval = 0;
-    let timeout = 50;
-    let limit = 100;
-    let mode = 'append';
+  function peek(key, value, render, fragments) {
+    const { attributes } = fragments.find(_ => _.variables.includes(key));
 
+    let interval = +(attributes.interval || 0);
+    let timeout = +(attributes.timeout ?? 50);
+    let limit = +(attributes.limit || 100);
+    let mode = attributes.mode || 'append';
+
+    const ref = ctx.ref;
     const values = [];
 
     let cancelled;
     let done;
     let t = setTimeout(() => { done = true; }, timeout);
 
-    ctx.streams.set(`${ctx.ref}/${key}`, {
+    ctx.streams.set(`${ref}/${key}`, {
       cancel() {
         clearTimeout(t);
         cancelled = done = true;
       },
-      publish(item) {
-        append(key, item);
+      async publish(item) {
+        append(ref, mode, await render(key, item));
       },
     });
 
@@ -102,7 +106,7 @@ export function streamify(ctx) {
         else if (process.env.HEADLESS || cancelled) break;
         else {
           if (interval > 0) await sleep(interval);
-          if (this.append(key, item)) break;
+          if (append(ref, mode, await render(key, item))) break;
         }
       }
       if (process.env.HEADLESS || !done) next(values);
@@ -111,7 +115,7 @@ export function streamify(ctx) {
     return new Promise(pull);
   }
 
-  async function wrap(state) {
+  async function wrap(state, render, fragments) {
     const keys = Object.keys(state);
     const values = [];
 
@@ -123,7 +127,7 @@ export function streamify(ctx) {
       if (value && (Is.thenable(value) || Is.generator(value))) {
         values.push(Promise.resolve()
           .then(() => (Is.factory(value) ? value() : value))
-          .then(_ => (Is.iterable(_) ? this.peek(key, _) : _))
+          .then(_ => (Is.iterable(_) ? peek(key, _, render, fragments) : _))
           .then(result => { value.current = result; }));
       }
     }
@@ -132,5 +136,5 @@ export function streamify(ctx) {
     return state;
   }
 
-  return { wrap, peek, append };
+  return { wrap };
 }
