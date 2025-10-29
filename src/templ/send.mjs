@@ -80,8 +80,8 @@ export function streamify(ctx) {
         clearTimeout(t);
         cancelled = done = true;
       },
-      publish(item) {
-        ctx.publish?.(ref, key, item, mode, render);
+      async publish(item) {
+        await ctx.publish?.(ref, key, item, mode, render);
       },
     });
 
@@ -101,7 +101,9 @@ export function streamify(ctx) {
         else if (process.env.HEADLESS || cancelled) break;
         else {
           if (interval > 0) await sleep(interval);
-          if (ctx.publish?.(ref, key, item, mode, render)) break;
+          if (ctx.ready && ctx.socket?.closed) break;
+          if (!ctx.ready && ctx.socket) ctx.connect(ctx.socket);
+          if (await ctx.publish?.(ref, key, item, mode, render)) break;
         }
       }
       if (process.env.HEADLESS || !done) next(values);

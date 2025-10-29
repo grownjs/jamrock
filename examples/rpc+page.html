@@ -8,6 +8,8 @@
 </script>
 
 <script>
+  import conn from 'jamrock:conn';
+
   export let someValue;
   export let otherValue;
 
@@ -21,13 +23,14 @@
   // FIXME: streams should be auto-prefixed with the component's key,
   // so we can have several streams with the same source... PRETTY SIMILAR AS BINDINGS!!
   async function* aGenerator() {
+    console.log('A_GENERATOR_START');
     let i = 0;
     while (true) {
       if (i++ > 2500) break;
-      // console.log(i, conn.is_ready, '?');
       yield { v: Math.random() * 100 + j | 0, i: j++, o: '' };
       if (i > limit && t) await new Promise(ok => setTimeout(ok, Math.random() * t + 1));
     }
+    console.log('A_GENERATOR_END');
   }
 
   let result;

@@ -285,7 +285,7 @@ export class Template {
     context.stack = context.stack || [];
     context.scope = context.scope || {};
     context.depth = context.depth || 0;
-    context.node = context.node || Template.tag(context);
+    context.tag = context.tag || Template.tag(context);
 
     const tasks = [];
 
@@ -352,7 +352,7 @@ export class Template {
       ? await component.__handler(props, loader)
       : null;
 
-    const view = executeAsync(ctx.node, loader, async (child, _) => {
+    const view = executeAsync(ctx.tag, loader, async (child, _) => {
       const chunk = await Template.render(child, component, _, ctx, cb);
       const body = chunk.body;
 

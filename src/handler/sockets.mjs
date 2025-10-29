@@ -6,8 +6,9 @@ export function setup(ctx, env, editor, handler, timeout) {
       handler.sync.subscribe(ws);
     }
 
+    console.log('E_START_WS');
     ws.stop = () => {
-      console.log('E_STOP_WS', ws.closed, ws.streams, ws.context);
+      ws.context?.dispose();
     };
 
     ws.dispose = () => {
@@ -102,5 +103,8 @@ export function setup(ctx, env, editor, handler, timeout) {
     });
   });
 
-  ctx.on('close', ws => ws.dispose());
+  ctx.on('close', ws => {
+    console.log('E_STOP_WS');
+    ws.dispose();
+  });
 }

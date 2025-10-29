@@ -124,7 +124,7 @@ export function getClientCode(conn, patch, baseURL, _uuid, _prefix) {
 
   const state = JSON.stringify({ uuid, patch, csrf: conn.csrf_token, method: conn.method });
   const client = `<script>(${generateClientCode.toString().replace(/𝐢𝐦𝐩𝐨𝐫𝐭/g, 'import')
-  })(${state}, ${JSON.stringify(_prefix)});</script>
+    })(${state}, ${JSON.stringify(_prefix)});</script>
 `.replaceAll('./', baseURL);
 
   return { uuid, client };
@@ -164,7 +164,7 @@ export function create404(env, conn, client, message) {
 
   return `${style}${message}<table><caption>Available routes</caption>${env.routes.map(route => `
 <tr><td align=right style="width:1%">${route.verb}</td><td>${route.verb === 'GET' ? `<a href="${route.path}">${route.path}</a>` : route.path
-}</tr>`).join('')}
+    }</tr>`).join('')}
 <tfoot><tr><th colspan="2">${conn.req.url} &mdash; ${now}</th></tr></tfoot>
 </table>${config}${environment}${client}`;
 }
@@ -173,15 +173,27 @@ export async function createBody(env, conn, clients, { uuid, client, matches, op
   let status;
   let body;
   try {
+    // conn.is_open = true;
     const ctx = {
       conn,
       clients,
       depth: 0,
       stack: [],
+      ready: null,
       called: true,
       route: matches,
       cache: env.cache,
       routes: env.routes,
+      dispose: () => {
+        // console.log('STOP_ALL');
+        // conn.is_open = false;
+        ctx.stream.forEach(value => value.cancel());
+        ctx.stream.clear();
+      },
+      connect: ws => {
+        ctx.ready = true;
+        ws.context = ctx;
+      },
       publish: async (ref, key, item, mode, render) => {
         const { target, vnode } = await render(key, item);
         const payload = Markup.encode(JSON.stringify(vnode));
