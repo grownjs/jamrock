@@ -162,8 +162,8 @@ export function create404(env, conn, client, message) {
     .map(([k, v]) => `<dt>${k}</dt><dd>${v}</dd>`).join('')}</dl>`;
 
   return `${style}${message}<table><caption>Available routes</caption>${env.routes.map(route => `
-<tr><td align=right style="width:1%">${route.verb}</td><td>${route.verb === 'GET' ? `<a href="${route.path}">${route.path}</a>` : route.path
-    }</tr>`).join('')}
+<tr><td align=right style="width:1%">${route.verb}</td><td>${
+  route.verb === 'GET' ? `<a href="${route.path}">${route.path}</a>` : route.path}</tr>`).join('')}
 <tfoot><tr><th colspan="2">${conn.req.url} &mdash; ${now}</th></tr></tfoot>
 </table>${config}${environment}${client}`;
 }
@@ -172,7 +172,6 @@ export async function createBody(env, conn, clients, { client, matches, options 
   let status;
   let body;
   try {
-    // conn.is_open = true;
     const ctx = {
       conn,
       clients,
@@ -183,16 +182,6 @@ export async function createBody(env, conn, clients, { client, matches, options 
       route: matches,
       cache: env.cache,
       routes: env.routes,
-      dispose: () => {
-        console.log('E_STOP_ALL');
-        // conn.is_open = false;
-        ctx.stream.forEach(value => value.cancel());
-        ctx.stream.clear();
-      },
-      connect: ws => {
-        ctx.ready = true;
-        ws.context = ctx;
-      },
       publish: async (ref, key, item, mode, render) => {
         const { target, vnode } = await render(key, item);
         const payload = Markup.encode(JSON.stringify(vnode));
@@ -204,6 +193,8 @@ export async function createBody(env, conn, clients, { client, matches, options 
         }
       },
     };
+
+    ctx.stream = env.context.wrap(ctx, conn.req.uuid);
 
     conn.req.params = matches.params;
     conn.current_path = matches.path;
@@ -423,12 +414,12 @@ export async function createResponse(env, conn, clients, options) {
       return createModuleResponse(env, conn);
     }
 
-    // console.log(conn.req)
-
     // let cancelled;
     return new Response(new ReadableStream({
       start(controller) {
-        console.log('START SEE', conn.req.uuid);
+        // console.log('E_REQ', conn.req.uuid);
+        console.log('START SSE', conn.req.uuid);
+        // env.context.set(conn.req.uuid, ctx);
 
         function sendSSEMessage(data) {
           controller.enqueue(Buffer.from(`data: ${JSON.stringify(data)}\n\n`));
@@ -451,7 +442,9 @@ export async function createResponse(env, conn, clients, options) {
       },
       cancel(reason) {
         // cancelled = true;
-        console.log('STOP SEE?', reason, conn.req.uuid);
+        console.log('STOP SSE', reason, conn.req.uuid);
+        env.context.get(conn.req.uuid).forEach(s => s.cancel());
+        env.context.delete(conn.req.uuid);
       },
     }), {
       status: 200,

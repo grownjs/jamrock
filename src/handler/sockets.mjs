@@ -6,18 +6,18 @@ export function setup(ctx, env, editor, handler, timeout) {
       handler.sync.subscribe(ws);
     }
 
-    console.log('E_START_WS');
-    ws.stop = () => {
-      ws.context?.dispose();
-    };
-
     ws.dispose = () => {
-      ws.closed = true;
-      ws.emit('disconnect');
-      ws.stop();
-
-      if (handler?.sync) {
-        handler.sync.unsubscribe(ws);
+      try {
+        ws.closed = true;
+        ws.emit('disconnect');
+        ws.stop?.();
+        ws.context = null;
+      } catch (e) {
+        console.log('E_DISPOSE', e);
+      } finally {
+        if (handler?.sync) {
+          handler.sync.unsubscribe(ws);
+        }
       }
     };
 
@@ -25,16 +25,13 @@ export function setup(ctx, env, editor, handler, timeout) {
     ws.on('close', () => {
       clearTimeout(t);
     });
-    //    ws.on('update', (key, _props, children) => {
-    //      ws.send(`rpc:update ${ws.identity} ${key} ${_props.mode || 'append'}\t${cleanJSON(children)}`);
-    //    });
     ws.on('failure', ({ e, msg, args, data }) => {
-      console.error('E_SOCKET', { e, msg, args, data });
-      if (ctx.socket) {
-        ctx.socket.send(`rpc:failure ${ws.identity}\t${JSON.stringify({
-          message: e.message,
-        })}`);
-      }
+      console.error('E_SOCKET', { e, msg, args, data }, !!ctx.socket);
+      // if (ctx.socket) {
+      //   ctx.socket.send(`rpc:failure ${ws.identity}\t${JSON.stringify({
+      //     message: e.message,
+      //   })}`);
+      // }
     });
     ws.on('message', payload => {
       clearTimeout(t);
@@ -104,7 +101,6 @@ export function setup(ctx, env, editor, handler, timeout) {
   });
 
   ctx.on('close', ws => {
-    console.log('E_STOP_WS');
-    ws.dispose();
+    if (!ws.closed) ws.dispose();
   });
 }

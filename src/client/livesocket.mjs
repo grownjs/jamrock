@@ -207,7 +207,7 @@ export class LiveSocket {
     let eventSource;
     this.start = () => {
       eventSource?.close();
-      eventSource = new EventSource(`/${this.browser.prefix}`);
+      eventSource = new EventSource(`/${this.browser.prefix}?_=${this.uuid}`);
       eventSource.onopen = () => {
         this.ready = false;
         ws?.close();

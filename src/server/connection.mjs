@@ -27,7 +27,8 @@ export async function createConnection(store, options, request, location, teardo
 
   response.cookies.set('sid', { value: request.sid = sid });
 
-  request.uuid = request.headers.get('request-uuid')
+  request.uuid = qs.match(/^_=([^&]+)$/)?.[1]
+    || request.headers.get('request-uuid')
     || `0.${Date.now().toString(36).replace(/.{3}/g, '$&-')}`;
 
   request.query = Object.fromEntries(new URLSearchParams(qs));

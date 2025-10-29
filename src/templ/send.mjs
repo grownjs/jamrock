@@ -59,8 +59,8 @@ export function decorate($, ctx, vnode, hooks) {
   }
 }
 
-export function streamify(ctx) {
-  function peek(key, value, render, fragments) {
+export function streamify() {
+  function peek($, key, value, render, fragments) {
     const { attributes } = fragments.find(_ => _.variables.includes(key)) || {};
 
     let interval = +(attributes?.interval || 0);
@@ -68,20 +68,20 @@ export function streamify(ctx) {
     let limit = +(attributes?.limit || 100);
     let mode = attributes?.mode || 'append';
 
-    const ref = ctx.ref;
+    const ref = $.ref;
     const values = [];
 
     let cancelled;
     let done;
     let t = setTimeout(() => { done = true; }, timeout);
 
-    ctx.stream.set(`${ref}/${key}`, {
+    $.stream.set(`${ref}/${key}`, {
       cancel() {
         clearTimeout(t);
         cancelled = done = true;
       },
       async publish(item) {
-        await ctx.publish?.(ref, key, item, mode, render);
+        await $.publish?.(ref, key, item, mode, render);
       },
     });
 
@@ -90,30 +90,33 @@ export function streamify(ctx) {
     };
 
     const pull = async next => {
-      let i = 0;
-      for await (const item of value) {
-        if (!done && i++ >= limit) {
-          next(values);
-          done = true;
-        }
+      try {
+        let i = 0;
+        for await (const item of value) {
+          if (!done && i++ >= limit) {
+            next(values);
+            done = true;
+          }
 
-        if (!done) push(item);
-        else if (process.env.HEADLESS || cancelled) break;
-        else {
-          if (interval > 0) await sleep(interval);
-          if (ctx.ready && ctx.socket?.closed) break;
-          if (!ctx.ready && ctx.socket) ctx.connect(ctx.socket);
-          if (await ctx.publish?.(ref, key, item, mode, render)) break;
+          if (!done) push(item);
+          else if (process.env.HEADLESS || cancelled) break;
+          else {
+            if (interval > 0) await sleep(interval);
+            if (await $.publish?.(ref, key, item, mode, render)) break;
+          }
         }
+      } catch (e) {
+        console.log('E_PULL', e);
+      } finally {
+        value?.return(true);
+        if (process.env.HEADLESS || !done) next(values);
       }
-      value?.return(true);
-      if (process.env.HEADLESS || !done) next(values);
     };
 
     return new Promise(pull);
   }
 
-  async function wrap(state, render, fragments) {
+  async function sync($, state, render, fragments) {
     const keys = Object.keys(state);
     const values = [];
 
@@ -125,7 +128,7 @@ export function streamify(ctx) {
       if (value && (Is.thenable(value) || Is.generator(value))) {
         values.push(Promise.resolve()
           .then(() => (Is.factory(value) ? value() : value))
-          .then(_ => (Is.iterable(_) ? peek(key, _, render, fragments) : _))
+          .then(_ => (Is.iterable(_) ? peek($, key, _, render, fragments) : _))
           .then(result => { value.current = result; }));
       }
     }
@@ -134,5 +137,16 @@ export function streamify(ctx) {
     return state;
   }
 
-  return Object.assign(new Map(), { wrap });
+  const cached = new Map();
+
+  function wrap(ctx, uuid) {
+    if (!cached.has(uuid)) {
+      cached.set(uuid, Object.assign(new Map(), {
+        sync: (state, render, fragments) => sync(ctx, state, render, fragments)
+      }));
+    }
+    return cached.get(uuid);
+  }
+
+  return Object.assign(cached, { wrap });
 }

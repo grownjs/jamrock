@@ -2,10 +2,10 @@ import { serialize, taggify, scopify, rulify, cssify } from '../markup/html.mjs'
 import { pascalCase, snakeCase, trace, Is } from '../utils/server.mjs';
 
 import { executeAsync } from '../render/async.mjs';
-import { decorate, streamify } from './send.mjs';
 import { debug, stringify } from './utils.mjs';
 import { rebase } from '../handler/utils.mjs';
 import { ents } from '../render/hooks.mjs';
+import { decorate } from './send.mjs';
 
 const RE_SAFE_IMPORTS = /^(?:npm|node|file|https?):/;
 const RE_SAFE_NAME = /(?:^|\/)(.+?)(?:\/\+\w+)?\.\w+$/;
@@ -280,7 +280,6 @@ export class Template {
   static async execute(component, context, props, cb) {
     context.base_url = context.base_url || context.conn?.base_url;
     context.is_json = context.is_json || context.conn?.is_json;
-    context.stream = context.stream || streamify(context);
     context.mixins = context.mixins || new Map();
     context.stack = context.stack || [];
     context.scope = context.scope || {};
@@ -388,7 +387,7 @@ export class Template {
           attributes: await view(v.a, state, `${component.__src}#@${k}`),
         })));
 
-        state = await ctx.stream.wrap(state, async (key, item) => {
+        state = await ctx.stream.sync(state, async (key, item) => {
           const input = { ...props, ...data, [key]: [item] };
 
           const { target, template } = frags.find(_ => _.variables.includes(key));
