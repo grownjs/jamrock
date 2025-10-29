@@ -5,6 +5,7 @@ import * as td from 'testdouble';
 
 import * as sockets from '../src/handler/sockets.mjs';
 
+import { streamify } from '../src/templ/send.mjs';
 import { middleware } from '../src/handler/main.mjs';
 import { fixture, server } from './helpers/utils.mjs';
 import { sleep, flatten } from '../src/utils/shared.mjs';
@@ -108,11 +109,19 @@ fixture`./loops.html
   </fragment>
 `;
 
+function useContext(overrides) {
+  const ctx = {
+    publish: td.func('connect'),
+    ...overrides,
+  };
+  return Object.assign(ctx, {
+    stream: streamify().wrap(ctx, 'x-1234'),
+  });
+}
+
 test.group('streaming support', () => {
   test('should pull data from iterators', async ({ expect }) => {
-    const ctx = {
-      publish: td.func('connect'),
-    };
+    const ctx = useContext();
 
     const markup = await fixture.partial('iterators.html', null, ctx);
 
@@ -131,9 +140,7 @@ test.group('streaming support', () => {
   });
 
   test('should push exceeding data from iterators', async ({ expect }) => {
-    const ctx = {
-      publish: td.func('connect'),
-    };
+    const ctx = useContext();
 
     await fixture.partial('fragments.html', null, ctx);
     await sleep(200);
@@ -147,8 +154,7 @@ test.group('streaming support', () => {
   });
 
   test('should be able to intercept websocket calls', async ({ expect }) => {
-    const ctx = {
-      publish: td.func('send'),
+    const ctx = useContext({
       conn: {
         someStuff: () => 42,
         current_path: '/app',
@@ -158,7 +164,7 @@ test.group('streaming support', () => {
         layout: null,
         error: null,
       },
-    };
+    });
 
     const app = server(async conn => {
       ctx.write = out => conn.res.write(out);

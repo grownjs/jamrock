@@ -271,7 +271,7 @@ export class Template {
 
         result = await Template.execute(_component, context, props, cb);
       } catch (e) {
-        trace('E_RESOLVE', e);
+        trace('E_RESOLVE', filepath, e);
       }
     }
     return result;
