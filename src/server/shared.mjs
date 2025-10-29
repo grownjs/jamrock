@@ -162,9 +162,9 @@ export const createWatcher = ({ fs }, watcher, compiler) => {
       // console.log('RECOMPILE', sources);
       await sync(true, found.routes);
     } else if (retries > 0) {
-      await new Promise(_ => setTimeout(_, 10)).then(() => retryCompile(url, retries - 1));
+      await new Promise(_ => setTimeout(_, 20)).then(() => retryCompile(url, retries - 1));
     } else {
-      console.log('NOT FOUND', url);
+      console.log('NOT FOUND');
     }
   }
 
@@ -175,7 +175,10 @@ export const createWatcher = ({ fs }, watcher, compiler) => {
     if (req.method === 'GET') {
       try {
         const url = req.url[0] === '/' ? req.url : new URL(req.url).pathname;
+        const start = new Date();
+        console.log('E_REQ', url);
         await retryCompile(url, 10);
+        console.log('>>>', (new Date() - start) / 1000);
       } catch (e) {
         Util.trace(e, 'E_REBUILD');
         reloading = false;
