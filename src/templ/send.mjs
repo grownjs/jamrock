@@ -2,8 +2,6 @@ import {
   Is, sleep, dashCase,
 } from '../utils/server.mjs';
 
-// import { ents } from '../render/hooks.mjs';
-
 export function decorate($, ctx, vnode, hooks) {
   if (hooks.length) {
     hooks.forEach(fn => {
@@ -20,15 +18,6 @@ export function decorate($, ctx, vnode, hooks) {
       vnode[1][`@use:${dashCase(fn[1])}`] = key;
     });
   }
-
-  //  if (ctx.is_json) {
-  //    if (vnode[1]['@html']) {
-  //      vnode[1]['@html'] = ents(vnode[1]['@html']);
-  //    }
-  //    if (vnode[0] === 'textarea') {
-  //      vnode[2] = vnode[2].map(ents);
-  //    }
-  //  }
 
   if (vnode[1]['@ref']) {
     Object.values($.scripts).some(set => {
@@ -137,16 +126,16 @@ export function streamify() {
     return state;
   }
 
-  const cached = new Map();
+  const shared = new Map();
 
   function wrap(ctx, uuid) {
-    if (!cached.has(uuid)) {
-      cached.set(uuid, Object.assign(new Map(), {
-        sync: (state, render, fragments) => sync(ctx, state, render, fragments)
+    if (!shared.has(uuid)) {
+      shared.set(uuid, Object.assign(new Map(), {
+        sync: sync.bind(null, ctx),
       }));
     }
-    return cached.get(uuid);
+    return shared.get(uuid);
   }
 
-  return Object.assign(cached, { wrap });
+  return Object.assign(shared, { wrap });
 }
