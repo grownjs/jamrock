@@ -26,6 +26,10 @@ export async function createConnection(store, options, request, location, teardo
   const { sid, session, nextToken, verifyToken } = await createSession(store, cookies.sid || '$');
 
   response.cookies.set('sid', { value: request.sid = sid });
+
+  request.uuid = request.headers.get('request-uuid')
+    || `0.${Date.now().toString(36).replace(/.{3}/g, '$&-')}`;
+
   request.query = Object.fromEntries(new URLSearchParams(qs));
   request.type = (headers['content-type'] || '').split(';')[0];
   request.fields = { ...request.query };

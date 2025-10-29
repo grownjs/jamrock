@@ -115,19 +115,18 @@ export function getRawBody(req, limit) {
   });
 }
 
-export function getClientCode(conn, patch, baseURL, _uuid, _prefix) {
-  const uuid = _uuid || conn.headers['request-uuid'] || `0.${Date.now().toString(36).replace(/.{3}/g, '$&-')}`;
-
+export function getClientCode(conn, patch, baseURL, _prefix) {
   if (process.env.HEADLESS) {
-    return { uuid, client: '' };
+    return '';
   }
 
-  const state = JSON.stringify({ uuid, patch, csrf: conn.csrf_token, method: conn.method });
+  const { uuid, method } = conn.req;
+  const state = JSON.stringify({ uuid, patch, method, csrf: conn.csrf_token });
   const client = `<script>(${generateClientCode.toString().replace(/𝐢𝐦𝐩𝐨𝐫𝐭/g, 'import')
-    })(${state}, ${JSON.stringify(_prefix)});</script>
+  })(${state}, ${JSON.stringify(_prefix)});</script>
 `.replaceAll('./', baseURL);
 
-  return { uuid, client };
+  return client;
 }
 
 export async function createRequest(req, limit) {
@@ -169,7 +168,7 @@ export function create404(env, conn, client, message) {
 </table>${config}${environment}${client}`;
 }
 
-export async function createBody(env, conn, clients, { uuid, client, matches, options }) {
+export async function createBody(env, conn, clients, { client, matches, options }) {
   let status;
   let body;
   try {
@@ -185,7 +184,7 @@ export async function createBody(env, conn, clients, { uuid, client, matches, op
       cache: env.cache,
       routes: env.routes,
       dispose: () => {
-        // console.log('STOP_ALL');
+        console.log('E_STOP_ALL');
         // conn.is_open = false;
         ctx.stream.forEach(value => value.cancel());
         ctx.stream.clear();
@@ -201,14 +200,11 @@ export async function createBody(env, conn, clients, { uuid, client, matches, op
         if (ctx.socket) {
           ctx.socket.send(`rpc:update ${ctx.socket.identity} ${target} ${mode}\t${payload}`);
         } else {
-          console.log('__OUTPUT', ref, mode, target, payload);
+          console.log('__OUTPUT', conn.req.uuid, ref, mode, target, payload);
         }
       },
     };
 
-    ctx.uuid = uuid;
-
-    conn.req.uuid = uuid;
     conn.req.params = matches.params;
     conn.current_path = matches.path;
     conn.routes = ctx.routes;
@@ -218,7 +214,7 @@ export async function createBody(env, conn, clients, { uuid, client, matches, op
       Object.defineProperty(ctx, 'socket', {
         get: () => {
           // eslint-disable-next-line no-return-assign
-          return _socket || (_socket = ctx.clients().find(x => x.identity === ctx.uuid));
+          return _socket || (_socket = ctx.clients().find(x => x.identity === conn.req.uuid));
         },
         set: v => {
           _socket = v;
@@ -307,7 +303,7 @@ export async function createBody(env, conn, clients, { uuid, client, matches, op
       const state = [];
 
       // FIXME: is still needed?
-      const data = await ctx.cache?.get(uuid);
+      const data = await ctx.cache?.get(conn.req.uuid);
 
       const calls = Object.entries(body.actions)
         .reduce((memo, [_mod, _actions]) => {
@@ -391,7 +387,7 @@ export async function createModuleResponse(env, conn) {
 }
 
 export async function createPageResponse(env, conn, clients, options) {
-  const { uuid, client } = getClientCode(conn, env.version, conn.base_url, options.uuid, options.prefix);
+  const client = getClientCode(conn, env.version, conn.base_url, options.prefix);
 
   let matches;
   env.routes.some(route => {
@@ -405,7 +401,7 @@ export async function createPageResponse(env, conn, clients, options) {
   let headers = null;
   let body = null;
   if (matches) {
-    const result = await createBody(env, conn, clients, { uuid, client, matches, options });
+    const result = await createBody(env, conn, clients, { client, matches, options });
 
     cookies = result.cookies || cookies;
     headers = result.headers || headers;
@@ -432,7 +428,7 @@ export async function createResponse(env, conn, clients, options) {
     // let cancelled;
     return new Response(new ReadableStream({
       start(controller) {
-        console.log('START SEE');
+        console.log('START SEE', conn.req.uuid);
 
         function sendSSEMessage(data) {
           controller.enqueue(Buffer.from(`data: ${JSON.stringify(data)}\n\n`));
@@ -455,7 +451,7 @@ export async function createResponse(env, conn, clients, options) {
       },
       cancel(reason) {
         // cancelled = true;
-        console.log('STOP SEE', reason);
+        console.log('STOP SEE?', reason, conn.req.uuid);
       },
     }), {
       status: 200,

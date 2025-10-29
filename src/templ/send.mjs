@@ -106,6 +106,7 @@ export function streamify(ctx) {
           if (await ctx.publish?.(ref, key, item, mode, render)) break;
         }
       }
+      value?.return(true);
       if (process.env.HEADLESS || !done) next(values);
     };
 
