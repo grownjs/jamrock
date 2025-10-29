@@ -90,6 +90,7 @@ export function streamify() {
           if (!done) push(item);
           else if (process.env.HEADLESS || cancelled) break;
           else {
+            if ($.socket?.closed) break;
             if (interval > 0) await sleep(interval);
             if (await $.publish?.(ref, key, item, mode, render)) break;
           }
