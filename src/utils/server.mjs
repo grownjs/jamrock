@@ -1,6 +1,6 @@
 import { isNot as not, isArray as arr, isPlain as plain, isString as str, isScalar as scalar, isFunction as func } from 'somedom/ssr';
 import mime from 'mime/lite';
-import { Is } from './shared.mjs';
+import { Is } from './base.mjs';
 
 export { default as $ } from 'picocolors';
 
@@ -53,14 +53,15 @@ function generator(value) {
   return /\[object Generator|GeneratorFunction\]/.test(Object.prototype.toString.call(value));
 }
 
-Object.assign(Is, {
+const _Is = Object.assign(Is, {
   not, str, arr, func, plain, scalar, upper, blank, factory, thenable, generator,
 });
 
 export * from './shared.mjs';
+export { _Is as Is };
 
 export function mimeType(file) {
-  return mime.getType(file);
+  return mime.getType(file) || 'application/octet-stream';
 }
 
 export function concat(a, b) {

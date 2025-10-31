@@ -653,21 +653,31 @@ export class Template {
     return Template.join(path, '..');
   }
 
-  static exists() {
-    return false;
+  /**
+   * @abstract
+   * @param {string} filepath
+   * @returns {boolean}
+   */
+  static exists(filepath) {
+    return !!filepath;
   }
 
-  static read() {
-    return '';
+  /**
+   * @abstract
+   * @param {string} filepath
+   * @returns {string}
+   */
+  static read(filepath) {
+    return filepath;
   }
 
-  // interesting...
-  static file(path) {
-    return { path };
-  }
-
-  static glob() {
-    return [];
+  /**
+   * @abstract
+   * @param {string} filepath
+   * @returns {string[]}
+   */
+  static glob(filepath) {
+    return [filepath];
   }
 
   static join(...args) {

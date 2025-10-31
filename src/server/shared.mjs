@@ -423,6 +423,29 @@ export const createCompiler = ({ fs, path }, options, external) => {
   });
 };
 
+/**
+ * @typedef {any} TemplateInstance
+ * @typedef {(path: string) => TemplateInstance} TemplateLocator
+ */
+
+/**
+ * @typedef {object} Environment
+ * @property {any}                  cache
+ * @property {RouteInfo[]}          routes
+ * @property {Record<string, any>}  files
+ * @property {string[]}             assets
+ * @property {TemplateLocator}      locate
+ * @property {string}               version
+ * @property {any}                  context
+ * @property {any}                  options
+ */
+
+/**
+ * @param {any} deps
+ * @param {any} options
+ * @param {any} external
+ * @returns {Environment}
+ */
 export function createEnvironment({ fs, path }, options, external) {
   Template.cache = new Map();
 

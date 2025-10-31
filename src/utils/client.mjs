@@ -5,12 +5,13 @@ export {
   bind, mount, patch, render, styles, classes, listeners, attributes,
 } from 'somedom/ssr';
 
-import { Is as is } from './shared.mjs';
+import { Is } from './base.mjs';
 
-export const Is = Object.assign(is, {
+const _Is = Object.assign(Is, {
   not, str, arr, func, plain, scalar,
 });
 
+export { _Is as Is };
 export { pick, noop, sleep } from './shared.mjs';
 
 // we transform well-known entities into unicode (?)

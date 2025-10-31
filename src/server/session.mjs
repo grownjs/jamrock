@@ -34,6 +34,19 @@ export async function createStore(hash, options) {
   };
 }
 
+/**
+ * @typedef {object} SessionObject
+ * @property {function}             verifyToken
+ * @property {function}             nextToken
+ * @property {string}               sid
+ * @property {Record<string, any>}  session
+ */
+
+/**
+ * @param {any}     store
+ * @param {string}  sid
+ * @returns {Promise<SessionObject>}
+ */
 export async function createSession(store, sid) {
   return {
     verifyToken: store.verify,

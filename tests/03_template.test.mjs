@@ -713,6 +713,7 @@ test.group('core utilties', t => {
         children: [
           'src/markup/expr.mjs',
           'src/utils/server.mjs',
+          'src/utils/base.mjs',
           'src/utils/shared.mjs',
           'src/render/hooks.mjs',
           'src/utils/client.mjs',
@@ -721,10 +722,20 @@ test.group('core utilties', t => {
         ],
       },
       'src/markup/expr.mjs': {
-        children: ['src/utils/server.mjs', 'src/utils/shared.mjs'],
+        children: [
+          'src/utils/server.mjs',
+          'src/utils/base.mjs',
+          'src/utils/shared.mjs',
+        ],
       },
       'src/utils/server.mjs': {
-        children: ['src/utils/shared.mjs'],
+        children: [
+          'src/utils/base.mjs',
+          'src/utils/shared.mjs',
+        ],
+      },
+      'src/utils/base.mjs': {
+        children: [],
       },
       'src/utils/shared.mjs': {
         children: [],
@@ -732,6 +743,7 @@ test.group('core utilties', t => {
       'src/markup/adapter.mjs': {
         children: [
           'src/utils/server.mjs',
+          'src/utils/base.mjs',
           'src/utils/shared.mjs',
           'src/markup/expr.mjs',
         ],
@@ -740,16 +752,24 @@ test.group('core utilties', t => {
         children: [
           'src/markup/expr.mjs',
           'src/utils/server.mjs',
+          'src/utils/base.mjs',
           'src/utils/shared.mjs',
           'src/render/hooks.mjs',
           'src/utils/client.mjs',
         ],
       },
       'src/render/hooks.mjs': {
-        children: ['src/utils/client.mjs', 'src/utils/shared.mjs'],
+        children: [
+          'src/utils/client.mjs',
+          'src/utils/base.mjs',
+          'src/utils/shared.mjs',
+        ],
       },
       'src/utils/client.mjs': {
-        children: ['src/utils/shared.mjs'],
+        children: [
+          'src/utils/base.mjs',
+          'src/utils/shared.mjs',
+        ],
       },
     });
     reset();

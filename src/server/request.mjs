@@ -1,11 +1,25 @@
+// @ts-check
+
 import { generateClientCode } from 'jamrock/client';
 
 import { Template, Handler, Markup, Util } from '../main.mjs';
 
+/**
+* @import {CookieOptions, CookieItem} from "./connection.mjs"
+*/
+
+/**
+ * @param {string} cookie
+ * @returns {Record<string, string>}
+ */
 export function parseCookies(cookie) {
   if (!cookie) return {};
 
   const pairs = cookie.split(/;\s*/g);
+
+  /**
+   * @type {Record<string, string>}
+   */
   const cookies = {};
 
   for (let i = 0, len = pairs.length; i < len; i++) {
@@ -16,6 +30,12 @@ export function parseCookies(cookie) {
   return cookies;
 }
 
+/**
+ * @param {string}          name
+ * @param {string}          value
+ * @param {CookieOptions=}  options
+ * @returns {string}
+ */
 export function buildCookie(name, value, options = {}) {
   value = encodeURIComponent(value);
 
@@ -30,20 +50,57 @@ export function buildCookie(name, value, options = {}) {
   return cookie;
 }
 
+/**
+ * @param {Record<string, CookieItem>} obj
+ * @returns {string[]}
+ */
 export function getCookies(obj) {
+  /**
+   * @type {string[]}
+   */
+  const result = [];
+
   return Object.keys(obj).reduce((memo, cur) => {
-    return memo.concat(obj[cur] ? buildCookie(cur, obj[cur].value, obj[cur].options) : []);
-  }, []);
+    return memo.concat(obj[cur]
+      ? buildCookie(cur, obj[cur].value, obj[cur].options)
+      : []);
+  }, result);
 }
 
+/**
+ * @typedef {Error & {
+ *  status: number;
+ }} ResponseError
+ */
+
+/**
+ * @param {number}             code
+ * @param {string}             message
+ * @param {ErrorConstructor=}  exception
+ * @throws {ResponseError}
+ */
 export function getError(code, message, exception) {
   const _Error = exception || Error;
   const e = new _Error(message);
 
-  e.status = code;
-  throw e;
+  throw Object.assign(e, {
+    status: code,
+  });
 }
 
+/**
+ * @import {IncomingMessage} from "node:http"
+ */
+
+/**
+ * @typedef {(size: number, controller: ReadableStreamDefaultController) => void} ReadableCallback
+ */
+
+/**
+ * @param {IncomingMessage}   stream
+ * @param {ReadableCallback}  callback
+ * @returns
+ */
 export function getReadable(stream, callback) {
   let size = 0;
   let cancelled = false;
@@ -82,8 +139,13 @@ export function getReadable(stream, callback) {
   });
 }
 
+/**
+ * @param {IncomingMessage} req
+ * @param {number}          limit
+ * @returns
+ */
 export function getRawBody(req, limit) {
-  if (!req.headers['content-type'] || ['GET', 'HEAD'].includes(req.method)) return null;
+  if (!req.headers['content-type'] || (req.method && ['GET', 'HEAD'].includes(req.method))) return null;
 
   const maxlen = Number(req.headers['content-length']);
 
@@ -116,7 +178,18 @@ export function getRawBody(req, limit) {
   });
 }
 
-export function getClientCode(conn, patch, baseURL, _prefix) {
+/**
+* @import {Connection} from "./connection.mjs"
+*/
+
+/**
+ * @param {Connection}  conn
+ * @param {string}      patch
+ * @param {string}      baseURL
+ * @param {string}      prefixURL
+ * @returns
+ */
+export function getClientCode(conn, patch, baseURL, prefixURL) {
   if (process.env.HEADLESS) {
     return '';
   }
@@ -124,26 +197,47 @@ export function getClientCode(conn, patch, baseURL, _prefix) {
   const { uuid, method } = conn.req;
   const state = JSON.stringify({ uuid, patch, method, csrf: conn.csrf_token });
   const client = `<script>(${generateClientCode.toString().replace(/𝐢𝐦𝐩𝐨𝐫𝐭/g, 'import')
-  })(${state}, ${JSON.stringify(_prefix)});</script>
+  })(${state}, ${JSON.stringify(prefixURL)});</script>
 `.replaceAll('./', baseURL);
 
   return client;
 }
 
-export async function createRequest(req, limit) {
+/**
+ * @import {RequestConnection} from "./connection.mjs"
+ */
+
+/**
+ *
+ * @param {RequestConnection} req
+ * @param {number}            limit
+ * @returns {Request}
+ */
+export function createRequest(req, limit) {
   return new Request(`${req.protocol || 'http'}://${req.headers.host}${req.url}`, {
+    // @ts-expect-error
     duplex: 'half',
     method: req.method,
     headers: req.headers,
     body: getRawBody(req, limit),
   });
 }
-
-export function createError(e, env, client) {
+/**
+ * @param {Error}   e
+ * @param {string}  client
+ * @returns {string}
+ */
+export function createError(e, client) {
   return `<pre>${e.stack?.replace(/\((.+?)\)/gm, (_, x) => `<em data-location="${x}">${x}</em>`)}</pre>${client}`;
 }
 
-// FIXME: use a nice view for these... may be the default +error layout or so?
+/**
+ * @param {Environment}   env
+ * @param {Connection}    conn
+ * @param {string}        client
+ * @param {string}        message
+ * @returns {string}
+ */
 export function create404(env, conn, client, message) {
   const now = new Date().toLocaleString('en-US', { timeZone: 'America/Mexico_City' });
 
@@ -169,6 +263,37 @@ export function create404(env, conn, client, message) {
 </table>${config}${environment}${client}`;
 }
 
+/**
+ * @typedef {any} ResponseBody
+ */
+
+/**
+ * @typedef {object} ResponseValue
+ * @property {ResponseBody}             body
+ * @property {number}                   status
+ * @property {Headers}                  [headers]
+ * @property {Record<string, string>}   [cookies]
+ */
+
+/**
+ * @import {RouteInfo} from "./connection.mjs"
+ * @import {Environment} from "./shared.mjs"
+ */
+
+/**
+ * @typedef {object} ResponseContext
+ * @property {string}       client
+ * @property {RouteInfo}    matches
+ * @property {object}       options
+ */
+
+/**
+ * @param {Environment}       env
+ * @param {Connection}        conn
+ * @param {() => any[]}       clients
+ * @param {ResponseContext}   context
+ * @returns {Promise<ResponseValue>}
+ */
 export async function createBody(env, conn, clients, { client, matches, options }) {
   let status;
   let body;
@@ -330,6 +455,7 @@ export async function createBody(env, conn, clients, { client, matches, options 
       }
 
       let buffer = [];
+      // @ts-expect-error
       Template.stringify(body, options.prefix, chunk => buffer.push(chunk));
 
       const payload = [
@@ -345,11 +471,16 @@ export async function createBody(env, conn, clients, { client, matches, options 
   } catch (e) {
     Util.trace('E_STATUS', e);
     status = e.status || 500;
-    body = createError(e, env, client);
+    body = createError(e, client);
   }
   return { body, status };
 }
 
+/**
+ * @param {Environment}   env
+ * @param {Connection}    conn
+ * @returns
+ */
 export async function createModuleResponse(env, conn) {
   const file = conn.path_info.slice(1).join('/');
   const src = Template.join(env.options.dest, file);
@@ -377,11 +508,18 @@ export async function createModuleResponse(env, conn) {
     status,
     headers: new Headers({
       'content-type': file.includes('css') ? 'text/css' : 'application/javascript',
-      'content-length': body.length,
+      'content-length': body.length.toString(),
     }),
   };
 }
 
+/**
+ * @param {Environment}   env
+ * @param {Connection}    conn
+ * @param {() => any[]}   clients
+ * @param {any}           options
+ * @returns
+ */
 export async function createPageResponse(env, conn, clients, options) {
   const client = getClientCode(conn, env.version, conn.base_url, options.prefix);
 
@@ -393,7 +531,12 @@ export async function createPageResponse(env, conn, clients, options) {
 
   // eslint-disable-next-line no-nested-ternary
   let status = matches ? 502 : conn.method === 'GET' ? 404 : 405;
+
+  /**
+   * @type {Record<string, string> | boolean}
+   */
   let cookies = false;
+
   let headers = null;
   let body = null;
   if (matches) {
@@ -417,6 +560,13 @@ export async function createPageResponse(env, conn, clients, options) {
   };
 }
 
+/**
+ * @param {Environment}   env
+ * @param {Connection}    conn
+ * @param {() => any[]}   clients
+ * @param {any}           options
+ * @returns
+ */
 export async function createResponse(env, conn, clients, options) {
   if (conn.path_info[0] === options.prefix) {
     // FIXME: here we could validate paths!!
@@ -468,8 +618,12 @@ export async function createResponse(env, conn, clients, options) {
   return createPageResponse(env, conn, clients, options);
 }
 
+/**
+ * @param {any}           options
+ * @returns
+ */
 export function parseLocation(options) {
-  let location = { port: options.port || +process.env.PORT || 8080 };
+  let location = { port: options.port || +(process.env.PORT || 8080) };
   if (Util.Is.str(options.bind)) {
     const parts = options.split(':');
 
@@ -485,6 +639,10 @@ export function parseLocation(options) {
   return location;
 }
 
+/**
+ * @param {any}   result
+ * @returns
+ */
 export function finalResponse(result) {
   if (result instanceof Response) return result;
 
@@ -493,13 +651,20 @@ export function finalResponse(result) {
   if (headers) {
     headers.set('content-type', headers.get('content-type') || 'text/html');
     if (cookies !== false) {
-      getCookies(Object.fromEntries(cookies || [])).forEach(cookie => headers.append('set-cookie', cookie));
+      getCookies(Object.fromEntries(cookies || []))
+        .forEach(cookie => headers.append('set-cookie', cookie));
     }
   }
 
   return !(body instanceof Response) ? new Response(body, { status, headers }) : body;
 }
 
+/**
+ * @param {Environment}   env
+ * @param {string}        dest
+ * @param {function}      editor
+ * @returns
+ */
 export function serveFrom(env, dest, editor) {
   const files = Template.glob(`${dest}/*.{js,css}`).map(x => x.replace(`${dest}/`, ''));
 

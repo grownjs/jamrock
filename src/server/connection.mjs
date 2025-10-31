@@ -1,14 +1,114 @@
+// @ts-check
+
 import { Template } from '../main.mjs';
 
 import { createSession } from './session.mjs';
 import { getError, parseCookies } from './request.mjs';
 
+/**
+ * @import {IncomingMessage} from "node:http"
+ */
+
+/**
+ * @typedef {IncomingMessage & {
+ *  sid: string;
+ *  url: string;
+ *  uuid: string;
+ *  type: string;
+ *  method: string;
+ *  protocol: string;
+ *  query: Record<string, string>;
+ *  fields: Record<string, string>;
+ *  params: Record<string, string>;
+ *  headers: Headers,
+ *  text: () => Promise<string>;
+ *  json: () => Promise<object>;
+ *  formData: () => Promise<FormData>;
+ *  signal: { aborted: boolean, onabort: function };
+ }} RequestConnection
+ */
+
+/**
+ * @typedef {object} RouteInfo
+ * @property {string}                   src
+ * @property {string}                   path
+ * @property {Record<string, string>}   params
+ * @property {string}                   error
+ * @property {string}                   layout
+ * @property {string}                   middleware
+ * @property {string[]}                 middlewares
+ */
+
+/**
+ * @typedef {object} ServerInfo
+ * @property {string}    port
+ * @property {string}    host
+ * @property {string}    proto
+ * @property {function}  teardown
+ */
+
+/**
+ * @typedef {object} CookieOptions
+ * @property {number}   [maxAge]
+ * @property {string}   [domain]
+ * @property {string}   [path]
+ * @property {Date}     [expires]
+ * @property {boolean}  [httpOnly]
+ * @property {boolean}  [secure]
+ * @property {string}   [sameSite]
+ */
+
+/**
+ * @typedef {object} CookieItem
+ * @property {string}         value
+ * @property {CookieOptions}  [options]
+ */
+
+/**
+ * @typedef {object} Connection
+ * @property {RequestConnection}        req
+ * @property {string}                   method
+ * @property {boolean}                  is_json
+ * @property {RouteInfo[]}              routes
+ * @property {ServerInfo}               server
+ * @property {Record<string, string>}   headers
+ * @property {string}                   base_url
+ * @property {string}                   csrf_token
+ * @property {string|null|Buffer}       resp_body
+ * @property {string[]}                 path_info
+ * @property {number}                   status_code
+ * @property {Map<string, CookieItem>}  resp_cookies
+ * @property {Headers}                  resp_headers
+ * @property {string}                   request_path
+ * @property {string}                   current_path
+ * @property {string}                   current_module
+ * @property {Record<string, string>}   current_options
+ */
+
+/**
+ * @param {any}                 store
+ * @param {any}                 options
+ * @param {RequestConnection}   request
+ * @param {any}                 location
+ * @param {any}                 teardown
+ * @returns {Promise<Partial<Connection>>}
+ */
 export async function createConnection(store, options, request, location, teardown) {
+  /**
+   * @type {{
+   *  open: boolean;
+   *  body: string | null;
+   *  status: number;
+   *  headers: Headers;
+   *  cookies: Map<string, CookieItem>;
+   * }}
+   */
   const response = {
     headers: new Headers(),
     cookies: new Map(),
-    status: null,
+    status: 0,
     body: null,
+    open: true,
   };
 
   const headers = Object.fromEntries(request.headers);
@@ -72,32 +172,57 @@ export async function createConnection(store, options, request, location, teardo
     },
   });
 
+  /**
+   * @type {ServerInfo}
+   */
+  const serverInfo = { teardown, proto, host, port };
+
   const conn = {
     req: request,
     store: store.shared,
     method: request.method,
-    server: { teardown, proto, host, port },
+    server: serverInfo,
     base_url: '/',
     cookies,
     session,
     headers,
     options,
+
+    /**
+     * @param {string}          key
+     * @param {string}          value
+     * @param {CookieOptions}   _options
+     */
     cookie(key, value, _options) {
       if (value === null) {
         _options = { expires: new Date(0) };
       }
       if (typeof _options === 'number') {
-        _options = { expires: Date.now() + (_options * 1000) };
+        _options = { expires: new Date(Date.now() + (_options * 1000)) };
       }
       response.cookies.set(key, { value, options: _options });
     },
+
+    /**
+     * @param {string}  key
+     * @param {string}  value
+     */
     header(key, value) {
       response.headers.set(key, value);
     },
+
+    /**
+     * @param {number}  code
+     */
     status(code) {
       conn.status_code = code;
       response.open = true;
     },
+
+    /**
+     * @param {string}  _url
+     * @param {number=}  code
+     */
     redirect(_url, code) {
       conn.status_code = code || 301;
       response.open = false;
@@ -113,6 +238,11 @@ export async function createConnection(store, options, request, location, teardo
         params: conn.path_params,
       };
     },
+
+    /**
+     * @param {string}  type
+     * @param {string}  value
+     */
     flash(type, value) {
       if (!type) {
         const data = session.flash || [];
@@ -124,9 +254,21 @@ export async function createConnection(store, options, request, location, teardo
       session.flash = session.flash || [];
       session.flash.push({ type, value, timestamp });
     },
+
+    /**
+     * @param {number}            code
+     * @param {string}            message
+     * @param {ErrorConstructor}  exception
+     */
     raise(code, message, exception) {
       throw getError(code, message, exception);
     },
+
+    /**
+     * @param {number}                  code
+     * @param {string}                  body
+     * @param {Record<string, string>}  _headers
+     */
     send(code, body, _headers) {
       ([code, body, _headers] = Template.plain(code, body, _headers));
 
@@ -178,7 +320,7 @@ export async function createConnection(store, options, request, location, teardo
       return response.status || 200;
     },
     set status_code(number) {
-      if (response.status !== null) {
+      if (response.status > 0) {
         throw new Error(`Response status already set: ${response.status}`);
       }
       if (!number) {
@@ -201,7 +343,7 @@ export async function createConnection(store, options, request, location, teardo
     get is_close() {
       return !response.open && (
         response.body !== null
-        || response.status !== null
+        || response.status > 0
         || response.headers.has('location')
       );
     },
