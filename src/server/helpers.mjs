@@ -67,7 +67,7 @@ export async function createRedisConnection(env, options, getRedisModule) {
   env.cache = createCache(options);
 }
 
-export const createTranspiler = ({ getESbuildModule, ...deps }) => {
+export const createTranspiler = ({ fs, Readable, getESbuildModule }) => {
   let esbuild;
   let bundler;
   return async function transpile(tpl, ext, opts) {
@@ -76,7 +76,7 @@ export const createTranspiler = ({ getESbuildModule, ...deps }) => {
     }
 
     esbuild = esbuild || await getESbuildModule();
-    bundler = bundler || createBundler({ ...deps, esbuild });
+    bundler = bundler || createBundler({ Readable, esbuild, fs });
 
     const params = { ...tpl.attributes };
 

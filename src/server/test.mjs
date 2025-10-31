@@ -1,17 +1,45 @@
-import { Runtime, Render, Util } from '../main.mjs';
+// @ts-check
 
-let all = [{ on: [], off: [], test: [] }];
+import { Runtime, Render } from '../main.mjs';
+
+/**
+ * @typedef {object} TestGroup
+ * @property {string} t - Description
+ * @property {function} fn - Callback function
+ */
+
+/**
+ * @typedef {object} TestStack
+ * @property {string} [t] - Description
+ * @property {function[]} on - Before functions
+ * @property {function[]} off - After functions
+ * @property {TestGroup[]} test - Callback functions
+ */
+
+/**
+ * @type {TestStack[]}
+ */
+const all = [{ on: [], off: [], test: [] }];
+
 let depth = 0;
 let errors = 0;
 let options;
+
+/**
+ * Executes a given stack of functions.
+ * @param {function} main - Window wrapper for context
+ * @param {TestStack} stack - Single stack of test functions
+ */
 async function run(main, stack) {
   const debug = process.argv.slice(2).includes('--stack');
 
   try {
     Render.enable(options);
 
+    // @ts-expect-error
     window.Jamrock = { Runtime: { ...Runtime } };
 
+    // @ts-expect-error
     Object.assign(window.Jamrock.Runtime, Render, Render.createRender());
 
     const tabs = Array.from({ length: depth }).join('  ');
@@ -49,26 +77,37 @@ async function run(main, stack) {
   }
 }
 
-export const test = Object.defineProperties(async (t, fn) => {
-  if (Util.Is.func(t)) {
-    fn = t;
-    t = null;
-  }
-
+/**
+ * Main function for adding tests.
+ * @param {string}    t
+ * @param {function}  fn
+ */
+export function test(t, fn) {
   all[depth].test.push({ t, fn });
-}, {
-  install: { value: opts => { options = opts; } },
-  before: { value: fn => { all[depth].on.push(fn); } },
-  after: { value: fn => { all[depth].off.push(fn); } },
-  group: { value: async (t, fn) => {
-    if (Util.Is.func(t)) {
-      fn = t;
-      t = null;
-    }
+}
 
-    all.push({ t, on: [], off: [], test: [] });
-    depth++;
-    await run(fn, all[depth]);
-    depth--;
-  } },
-});
+/**
+ * @param {any}  opts
+ */
+test.install = opts => { options = opts; };
+
+/**
+ * @param {function}  fn
+ */
+test.before = fn => { all[depth].on.push(fn); };
+
+/**
+ * @param {function}  fn
+ */
+test.after = fn => { all[depth].off.push(fn); };
+
+/**
+ * @param {string}    t
+ * @param {function}  fn
+ */
+test.group = async (t, fn) => {
+  all.push({ t, on: [], off: [], test: [] });
+  depth++;
+  await run(fn, all[depth]);
+  depth--;
+};

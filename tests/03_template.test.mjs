@@ -354,7 +354,7 @@ test.group('template transformation', t => {
     td.replace(Template, 'read', x => fs.readFileSync(x).toString());
     td.replace(Template, 'file', x => new Blob([fs.readFileSync(x)], { name: x, type: mime.getType(x) }));
     td.replace(Template, 'exists', x => fs.existsSync(x) && fs.statSync(x).isFile());
-    td.replace(Template, 'transpile', createTranspiler({ fs, path, Readable, Template, getESbuildModule: () => import('esbuild') }));
+    td.replace(Template, 'transpile', createTranspiler({ fs, Readable, getESbuildModule: () => import('esbuild') }));
   });
   t.each.teardown(() => {
     delete Template.cache;

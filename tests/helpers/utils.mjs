@@ -56,7 +56,7 @@ export function setup() {
   Template.read = x => fs.readFileSync(x).toString();
   Template.write = (f, x) => fs.writeFileSync(f, x);
   Template.exists = x => fs.existsSync(x) && fs.statSync(x).isFile();
-  Template.transpile = createTranspiler({ fs, path, Readable, Template, getESbuildModule: () => import('esbuild') });
+  Template.transpile = createTranspiler({ fs, Readable, getESbuildModule: () => import('esbuild') });
 }
 
 export function reset() {

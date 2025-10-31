@@ -5,7 +5,7 @@ import { generateClientCode } from 'jamrock/client';
 import { Template, Handler, Markup, Util } from '../main.mjs';
 
 /**
-* @import {CookieOptions, CookieItem} from "./connection.mjs"
+* @import {CookieOptions, CookieItem, ServerInfo} from "./connection.mjs"
 */
 
 /**
@@ -74,8 +74,8 @@ export function getCookies(obj) {
  */
 
 /**
- * @param {number}             code
- * @param {string}             message
+ * @param {number}  code
+ * @param {string}  message
  * @throws {ResponseError}
  */
 export function getError(code, message) {
@@ -97,7 +97,7 @@ export function getError(code, message) {
 /**
  * @param {IncomingMessage}   stream
  * @param {ReadableCallback}  callback
- * @returns
+ * @returns {ReadableStream}
  */
 export function getReadable(stream, callback) {
   let size = 0;
@@ -140,7 +140,7 @@ export function getReadable(stream, callback) {
 /**
  * @param {IncomingMessage} req
  * @param {number}          limit
- * @returns
+ * @returns {ReadableStream | null}
  */
 export function getRawBody(req, limit) {
   if (!req.headers['content-type'] || (req.method && ['GET', 'HEAD'].includes(req.method))) return null;
@@ -185,7 +185,7 @@ export function getRawBody(req, limit) {
  * @param {string}      patch
  * @param {string}      baseURL
  * @param {string}      prefixURL
- * @returns
+ * @returns {string}
  */
 export function getClientCode(conn, patch, baseURL, prefixURL) {
   if (process.env.HEADLESS) {
@@ -270,7 +270,7 @@ export function create404(env, conn, client, message) {
  * @property {ResponseBody}             body
  * @property {number}                   status
  * @property {Headers}                  [headers]
- * @property {Record<string, string>}   [cookies]
+ * @property {Map<string, CookieItem>}  [cookies]
  */
 
 /**
@@ -503,7 +503,7 @@ export async function createBody(env, conn, clients, { client, matches, options 
 /**
  * @param {Environment}   env
  * @param {Connection}    conn
- * @returns
+ * @returns {Promise<ResponseValue>}
  */
 export async function createModuleResponse(env, conn) {
   const file = conn.path_info.slice(1).join('/');
@@ -542,7 +542,7 @@ export async function createModuleResponse(env, conn) {
  * @param {Connection}    conn
  * @param {() => any[]}   clients
  * @param {any}           options
- * @returns
+ * @returns {Promise<ResponseValue>}
  */
 export async function createPageResponse(env, conn, clients, options) {
   const client = getClientCode(conn, env.version, conn.base_url, options.prefix);
@@ -556,17 +556,13 @@ export async function createPageResponse(env, conn, clients, options) {
   // eslint-disable-next-line no-nested-ternary
   let status = matches ? 502 : conn.method === 'GET' ? 404 : 405;
 
-  /**
-   * @type {Record<string, string> | boolean}
-   */
-  let cookies = false;
-
   let headers = null;
   let body = null;
+  let cookies;
   if (matches) {
     const result = await createBody(env, conn, clients, { client, matches, options });
 
-    cookies = result.cookies || cookies;
+    cookies = result.cookies || cookies || undefined;
     headers = result.headers || headers;
     status = result.status || status;
     body = result.body || body;
@@ -589,7 +585,7 @@ export async function createPageResponse(env, conn, clients, options) {
  * @param {Connection}    conn
  * @param {() => any[]}   clients
  * @param {any}           options
- * @returns
+ * @returns {Promise<ResponseValue>}
  */
 export async function createResponse(env, conn, clients, options) {
   if (conn.path_info[0] === options.prefix) {
@@ -644,7 +640,7 @@ export async function createResponse(env, conn, clients, options) {
 
 /**
  * @param {any}           options
- * @returns
+ * @returns {Partial<ServerInfo>}
  */
 export function parseLocation(options) {
   let location = { port: options.port || +(process.env.PORT || 8080) };
@@ -664,8 +660,8 @@ export function parseLocation(options) {
 }
 
 /**
- * @param {any}   result
- * @returns
+ * @param {Response | ResponseValue}   result
+ * @returns {Response}
  */
 export function finalResponse(result) {
   if (result instanceof Response) return result;
@@ -674,8 +670,8 @@ export function finalResponse(result) {
 
   if (headers) {
     headers.set('content-type', headers.get('content-type') || 'text/html');
-    if (cookies !== false) {
-      getCookies(Object.fromEntries(cookies || []))
+    if (cookies) {
+      getCookies(Object.fromEntries(cookies))
         .forEach(cookie => headers.append('set-cookie', cookie));
     }
   }
@@ -687,7 +683,7 @@ export function finalResponse(result) {
  * @param {Environment}   env
  * @param {string}        dest
  * @param {function}      editor
- * @returns
+ * @returns {(req: RequestConnection) => Response | undefined}
  */
 export function serveFrom(env, dest, editor) {
   const files = Template.glob(`${dest}/*.{js,css}`).map(x => x.replace(`${dest}/`, ''));
@@ -712,7 +708,7 @@ export function serveFrom(env, dest, editor) {
       }
     }
 
-    if (path.charAt() === env.options.prefix) {
+    if (path.charAt(0) === env.options.prefix) {
       const src = path.substr(1);
 
       if (env.assets.includes(src)) {

@@ -102,13 +102,13 @@ function createHelpers({ fs, Readable }) {
 /**
  * The details needed to be processed by esbuild
  * @typedef {object} TemplateInfo
- * @property {string}                   ref   - This belongs to a specific node
- * @property {string}                   root    - Tracks the ref across children nodes
- * @property {string}                   content   - The source code as plain text
- * @property {string}                   filepath    - Filepath for the given soure code
- * @property {string[]}                 children    - Any dependency loaded by the code
- * @property {string}                   identifier    - Generated from node references
- * @property {Record<string, string>}   attributes    - Given attributes from node origin
+ * @property {string}                   ref - This belongs to a specific node
+ * @property {string}                   root - Tracks the ref across children nodes
+ * @property {string}                   content - The source code as plain text
+ * @property {string}                   filepath - Filepath for the given soure code
+ * @property {string[]}                 children - Any dependency loaded by the code
+ * @property {string}                   identifier - Generated from node references
+ * @property {Record<string, string>}   attributes - Given attributes from node origin
  */
 
 /**
@@ -128,9 +128,9 @@ export function createBundler({ esbuild, fs, Readable }) {
 
   /**
    *
-   * @param {TemplateInfo}  tpl   - The details of the imported source
-   * @param {string}        ext   - Just the filename extension
-   * @param {any}           ctx   - Context from the source
+   * @param {TemplateInfo}  tpl - The details of the imported source
+   * @param {string}        ext - Just the filename extension
+   * @param {any}           ctx - Context from the source
    * @returns
    */
   async function bundle(tpl, ext = 'js', ctx = {}) {
