@@ -76,12 +76,10 @@ export function getCookies(obj) {
 /**
  * @param {number}             code
  * @param {string}             message
- * @param {ErrorConstructor=}  exception
  * @throws {ResponseError}
  */
-export function getError(code, message, exception) {
-  const _Error = exception || Error;
-  const e = new _Error(message);
+export function getError(code, message) {
+  const e = new Error(message);
 
   throw Object.assign(e, {
     status: code,
