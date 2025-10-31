@@ -1,4 +1,4 @@
-import { Template, Runtime, Handler, Markup, Render, Util } from 'jamrock/core';
+import { Template, Runtime, Handler, Markup, Render, Util } from '../main.mjs';
 
 import { createBody } from './request.mjs';
 import { createFSWatcher } from './helpers.mjs';

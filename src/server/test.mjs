@@ -1,4 +1,4 @@
-import { Runtime, Render, Util } from 'jamrock/core';
+import { Runtime, Render, Util } from '../main.mjs';
 
 let all = [{ on: [], off: [], test: [] }];
 let depth = 0;

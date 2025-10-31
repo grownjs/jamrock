@@ -14,7 +14,7 @@ if (!code.includes(fix)) writeFileSync(mainFile, `${fix};${code.replace(/export\
 const serverFile = 'dist/server.mjs';
 
 code = readFileSync(serverFile).toString();
-code = code.replace(/"jamrock\/core"/g, '"./main.mjs"');
+code = code.replace(/"\/~\/main\.mjs"/g, '"./main.mjs"');
 code = code.replace(/"jamrock\/client"/g, '"./client.mjs"');
 
 writeFileSync(serverFile, code);

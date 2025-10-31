@@ -1,3 +1,5 @@
+import { Template } from '../main.mjs';
+
 const HTTP_NS = 'http-url';
 const RE_MATCH_ALL = /.*/;
 const RE_HTTPS_URL = /^https?:\/\//;
@@ -5,7 +7,7 @@ const RE_MODULE_NAME = /^@?[\w-]+?$/;
 const ALLOWED_EXTENSIONS = ['js', 'mjs', 'css'];
 const RESOLVED_CDN_PREFIX_URL = 'https://cdn.skypack.dev/%s';
 
-export const createTransform = ({ Template, fetchSource }) => ({
+export const createTransform = ({ fetchSource }) => ({
   name: 'jamrock',
   setup(build) {
     build.onResolve({ filter: RE_HTTPS_URL }, args => ({ path: args.path, namespace: HTTP_NS }));
@@ -37,7 +39,7 @@ export const createTransform = ({ Template, fetchSource }) => ({
   },
 });
 
-function createHelpers({ fs, Readable, Template }) {
+function createHelpers({ fs, Readable }) {
   const TEMP_DIR = process.env.TMPDIR || '/tmp';
 
   async function fetchFile(url, filepath) {
@@ -61,11 +63,11 @@ function createHelpers({ fs, Readable, Template }) {
     return { contents: fs.readFileSync(tmpFile) };
   }
 
-  return { fetchSource, Template };
+  return { fetchSource };
 }
 
-export function createBundler({ Template, esbuild, ...deps }) {
-  const helpers = createHelpers({ ...deps, Template });
+export function createBundler({ esbuild, ...deps }) {
+  const helpers = createHelpers({ ...deps });
   const transform = createTransform(helpers);
 
   async function bundle(tpl, ext = 'js', opts = {}) {

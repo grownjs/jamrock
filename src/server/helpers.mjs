@@ -1,4 +1,4 @@
-import { Util } from 'jamrock/core';
+import { Util } from '../main.mjs';
 
 import { createCache } from './store.mjs';
 import { createBundler } from './bundler.mjs';

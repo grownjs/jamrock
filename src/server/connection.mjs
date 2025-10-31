@@ -1,4 +1,4 @@
-import { Template } from 'jamrock/core';
+import { Template } from '../main.mjs';
 
 import { createSession } from './session.mjs';
 import { getError, parseCookies } from './request.mjs';

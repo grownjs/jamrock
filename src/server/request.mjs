@@ -1,5 +1,6 @@
-import { Template, Handler, Markup, Util } from 'jamrock/core';
 import { generateClientCode } from 'jamrock/client';
+
+import { Template, Handler, Markup, Util } from '../main.mjs';
 
 export function parseCookies(cookie) {
   if (!cookie) return {};
