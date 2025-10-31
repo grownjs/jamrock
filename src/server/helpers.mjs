@@ -1,4 +1,5 @@
-import { Is } from '../utils/client.mjs';
+import { Util } from 'jamrock/core';
+
 import { createCache } from './store.mjs';
 import { createBundler } from './bundler.mjs';
 import { RedisHub, RedisStore } from './redis.mjs';
@@ -8,7 +9,7 @@ export function createChokidarWatcher(opts, chokidar) {
   const watcher = chokidar.watch(opts.src, params);
   const watchers = [];
 
-  if (Is.arr(opts.watch)) watcher.add(opts.watch);
+  if (Util.Is.arr(opts.watch)) watcher.add(opts.watch);
 
   function on(src, cb) {
     const subwatch = chokidar.watch(src, params);
@@ -68,7 +69,7 @@ export const createTranspiler = ({ getESbuildModule, ...deps }) => {
   let esbuild;
   let bundler;
   return async function transpile(tpl, ext, opts) {
-    if (Is.arr(tpl)) {
+    if (Util.Is.arr(tpl)) {
       return Promise.all(tpl.map(x => transpile(x, ext, opts)));
     }
 

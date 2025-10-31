@@ -45,7 +45,7 @@ async function run(main, stack) {
     errors++;
   } finally {
     Render.disable();
-    process.exit(errors > 0 ? 1 : 0);
+    if (!process.env.HEADLESS) process.exit(errors > 0 ? 1 : 0);
   }
 }
 

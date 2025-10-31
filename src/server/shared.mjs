@@ -1,7 +1,6 @@
 import { Template, Runtime, Handler, Markup, Render, Util } from 'jamrock/core';
 
 import { createBody } from './request.mjs';
-import { streamify } from '../templ/send.mjs';
 import { createFSWatcher } from './helpers.mjs';
 import { createConnection } from './connection.mjs';
 
@@ -572,7 +571,7 @@ export function createEnvironment({ fs, path }, options, external) {
     });
   }
 
-  const context = streamify();
+  const context = Template.streamify();
 
   return Object.defineProperties({
     serve, build, locate, request, context, compiler, static: _static,

@@ -18,13 +18,13 @@
         "default": "./dist/main.mjs"
       }
     },
+    "./core": "./dist/main.mjs",
     "./bun": "./lib/bun/main.mjs",
     "./deno": "./lib/deno/main.mjs",
     "./nodejs": "./lib/nodejs/main.mjs",
     "./server": "./dist/server.mjs",
     "./client": "./dist/client.mjs",
     "./shared": "./lib/main.mjs",
-    "./store": "./lib/store.mjs",
     "./types": "./lib/env.d.ts"
   },
   "scripts": {
