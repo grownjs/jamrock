@@ -325,7 +325,7 @@ export async function createBody(env, conn, clients, { client, matches, options 
           // 'content-length': body.length,
         });
 
-        return { body, headers, cookies: false, status: conn.status_code };
+        return { body, headers, status: conn.status_code };
       }
 
       let buffer = [];
@@ -354,9 +354,9 @@ export async function createModuleResponse(env, conn) {
   const src = Template.join(env.options.dest, file);
 
   let status = 404;
-  let mod = `/* ${file} not found */`;
+  let body = `/* ${file} not found */`;
   if (Template.exists(src)) {
-    mod = Template.read(src);
+    body = Template.read(src);
     status = 200;
   } else {
     const _mkd = file.replace('.hooks.mjs', '.md');
@@ -367,14 +367,18 @@ export async function createModuleResponse(env, conn) {
       const _mod = await Template.reload(_file.filepath);
 
       status = 200;
-      mod = `/* ${file} */\n${Object.values(_mod.__functions).map(_ => `export ${_.toString()}\n`).join('')}`;
+      body = `/* ${file} */\n${Object.values(_mod.__functions).map(_ => `export ${_.toString()}\n`).join('')}`;
     }
   }
 
-  return [mod, status, null, new Headers({
-    'content-type': file.includes('css') ? 'text/css' : 'application/javascript',
-    'content-length': mod.length,
-  })];
+  return {
+    body,
+    status,
+    headers: new Headers({
+      'content-type': file.includes('css') ? 'text/css' : 'application/javascript',
+      'content-length': body.length,
+    }),
+  };
 }
 
 export async function createPageResponse(env, conn, clients, options) {
@@ -388,7 +392,7 @@ export async function createPageResponse(env, conn, clients, options) {
 
   // eslint-disable-next-line no-nested-ternary
   let status = matches ? 502 : conn.method === 'GET' ? 404 : 405;
-  let cookies = null;
+  let cookies = false;
   let headers = null;
   let body = null;
   if (matches) {
@@ -404,7 +408,12 @@ export async function createPageResponse(env, conn, clients, options) {
     body = create404(env, conn, client, `<p>Request to <b>${conn.method} ${conn.request_path}</b> not allowed.</p>`);
   }
 
-  return [body, status, cookies === false ? null : conn.resp_cookies, headers || conn.resp_headers];
+  return {
+    body,
+    status,
+    cookies: cookies || conn.resp_cookies,
+    headers: headers || conn.resp_headers,
+  };
 }
 
 export async function createResponse(env, conn, clients, options) {
@@ -478,11 +487,13 @@ export function parseLocation(options) {
 export function finalResponse(result) {
   if (result instanceof Response) return result;
 
-  const [body, status, cookies, headers] = result;
+  const { body, status, cookies, headers } = result;
 
   if (headers) {
     headers.set('content-type', headers.get('content-type') || 'text/html');
-    getCookies(Object.fromEntries(cookies || [])).forEach(cookie => headers.append('set-cookie', cookie));
+    if (cookies !== false) {
+      getCookies(Object.fromEntries(cookies || [])).forEach(cookie => headers.append('set-cookie', cookie));
+    }
   }
 
   return !(body instanceof Response) ? new Response(body, { status, headers }) : body;
