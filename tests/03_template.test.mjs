@@ -5,7 +5,6 @@ import { createGenerator } from '@unocss/core';
 
 import { Readable } from 'stream';
 import * as td from 'testdouble';
-import * as path from 'path';
 import * as fs from 'fs';
 import s from 'tiny-dedent';
 import mime from 'mime/lite';
