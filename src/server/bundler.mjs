@@ -18,12 +18,14 @@ const RESOLVED_CDN_PREFIX_URL = 'https://cdn.skypack.dev/%s';
  */
 
 /**
+ * Built-in support for esbuild
  * @typedef {Object} EsbuildPlugin
- * @property {string}                       name
- * @property {(build: PluginBuild) => void} setup
+ * @property {string}                       name - The name of this plugin
+ * @property {(build: PluginBuild) => void} setup - The esbuild plugin setup
  */
 
 /**
+ * Setup esbuild transformation
  * @type {(deps: {
  *  fetchSource: FetchSource
  * }) => EsbuildPlugin}
@@ -64,6 +66,7 @@ function createHelpers({ fs, Readable }) {
   const TEMP_DIR = process.env.TMPDIR || '/tmp';
 
   /**
+   * Downloads a given url into filepath
    * @param {string}  url
    * @param {string}  filepath
    * @returns {Promise<void>}
@@ -82,6 +85,7 @@ function createHelpers({ fs, Readable }) {
   }
 
   /**
+   * Wraps the fetchFile() for esbuild usage
    * @type {FetchSource}
    */
   async function fetchSource(url) {
@@ -96,17 +100,19 @@ function createHelpers({ fs, Readable }) {
 }
 
 /**
+ * The details needed to be processed by esbuild
  * @typedef {object} TemplateInfo
- * @property {string}                   ref
- * @property {string}                   root
- * @property {string}                   content
- * @property {string}                   filepath
- * @property {string[]}                 children
- * @property {string}                   identifier
- * @property {Record<string, string>}   attributes
+ * @property {string}                   ref   - This belongs to a specific node
+ * @property {string}                   root    - Tracks the ref across children nodes
+ * @property {string}                   content   - The source code as plain text
+ * @property {string}                   filepath    - Filepath for the given soure code
+ * @property {string[]}                 children    - Any dependency loaded by the code
+ * @property {string}                   identifier    - Generated from node references
+ * @property {Record<string, string>}   attributes    - Given attributes from node origin
  */
 
 /**
+ * Prepares everything for preprocessing
  * @import * as fs from "node:fs"
  * @import * as esbuild from "esbuild"
  * @param {{
@@ -122,17 +128,17 @@ export function createBundler({ esbuild, fs, Readable }) {
 
   /**
    *
-   * @param {TemplateInfo}  tpl
-   * @param {string}        ext
-   * @param {any}           opts
+   * @param {TemplateInfo}  tpl   - The details of the imported source
+   * @param {string}        ext   - Just the filename extension
+   * @param {any}           ctx   - Context from the source
    * @returns
    */
-  async function bundle(tpl, ext = 'js', opts = {}) {
+  async function bundle(tpl, ext = 'js', ctx = {}) {
     const filepath = tpl.filepath || `${tpl.identifier}.${tpl.attributes?.lang || ext}`;
 
     if (ext === 'css' && tpl.attributes?.lang) {
-      if (tpl.attributes.lang === 'less' && opts.use?.less) {
-        const less = opts.use.less.default || opts.use.less;
+      if (tpl.attributes.lang === 'less' && ctx.use?.less) {
+        const less = ctx.use.less.default || ctx.use.less;
         const out = await less.render(tpl.content, { filename: filepath });
 
         tpl.root = tpl.ref;
@@ -144,17 +150,17 @@ export function createBundler({ esbuild, fs, Readable }) {
     }
 
     if (ext === 'js' || ext === 'css') {
-      const __filename = opts.params?.cwd
-        ? Template.join(opts.params.cwd, filepath)
+      const __filename = ctx.params?.cwd
+        ? Template.join(ctx.params.cwd, filepath)
         : filepath;
 
-      const __dirname = opts.params?.cwd
-        ? Template.join(opts.params.cwd, Template.dirname(filepath))
+      const __dirname = ctx.params?.cwd
+        ? Template.join(ctx.params.cwd, Template.dirname(filepath))
         : Template.dirname(filepath);
 
       const { outputFiles, metafile } = await esbuild.build({
         platform: tpl.attributes?.type === 'module' ? 'browser' : 'node',
-        minify: opts.params?.env === 'production',
+        minify: ctx.params?.env === 'production',
         bundle: ext === 'css' || !tpl.attributes?.global,
         metafile: ext === 'css' || !tpl.attributes?.global,
         stdin: {

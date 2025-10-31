@@ -10,6 +10,7 @@ import { getError, parseCookies } from './request.mjs';
  */
 
 /**
+ * The attached `req` field on `jamrock:conn`
  * @typedef {IncomingMessage & {
  *  sid: string;
  *  url: string;
@@ -29,69 +30,77 @@ import { getError, parseCookies } from './request.mjs';
  */
 
 /**
+ * Definition of every route found on the sources
  * @typedef {object} RouteInfo
- * @property {string}                   src
- * @property {string}                   path
- * @property {string}                   verb
- * @property {Record<string, string>}   params
- * @property {string}                   error
- * @property {string}                   layout
- * @property {string}                   middleware
- * @property {string[]}                 middlewares
+ * @property {string}                   src   - The route is defined here
+ * @property {string}                   path    - The extracted route path
+ * @property {string}                   verb    - The extracted route method
+ * @property {Record<string, string>}   params    - Any matched path parameter
+ * @property {string}                   error   - Attached error template
+ * @property {string}                   layout    - Attached layout template
+ * @property {string}                   middleware    - Attached middleware from source
+ * @property {string[]}                 middlewares   - All middlewared found from the source
  */
 
 /**
+ * Just the server configuration
  * @typedef {object} ServerInfo
- * @property {string}    port
- * @property {string}    host
- * @property {string}    proto
- * @property {function}  teardown
+ * @property {string}    port   - Number port
+ * @property {string}    host   - Hostname string
+ * @property {string}    proto    - Either http or https, etc.
+ * @property {function}  teardown   - Calling this will stop the server
  */
 
 /**
+ * Individual properties of a cookie
  * @typedef {object} CookieOptions
- * @property {number}   [maxAge]
- * @property {string}   [domain]
- * @property {string}   [path]
- * @property {Date}     [expires]
- * @property {boolean}  [httpOnly]
- * @property {boolean}  [secure]
- * @property {string}   [sameSite]
+ * @property {number}   [maxAge]    - Duration in secs
+ * @property {string}   [domain]    - Optional domain cookie
+ * @property {string}   [path]    - Where the cookie is placed
+ * @property {Date}     [expires]   - Expiration in secs, or a Date
+ * @property {boolean}  [httpOnly]    - Restrict the cookies for HTTP
+ * @property {boolean}  [secure]    - Ensure cookies are secure
+ * @property {string}   [sameSite]    - Configures the same for a cookie
  */
 
 /**
+ * Every cookie saved in `conn.resp_cookies`
  * @typedef {object} CookieItem
- * @property {string}         value
- * @property {CookieOptions}  [options]
+ * @property {string}         value   - Just the value
+ * @property {CookieOptions}  [options]   - Cookie settings
  */
 
 /**
+ * The `jamrock:conn` value
  * @typedef {object} Connection
- * @property {RequestConnection}        req
- * @property {string}                   method
- * @property {boolean}                  is_json
- * @property {RouteInfo[]}              routes
- * @property {ServerInfo}               server
- * @property {Record<string, string>}   headers
- * @property {string}                   base_url
- * @property {string}                   csrf_token
- * @property {string|null|Buffer}       resp_body
- * @property {string[]}                 path_info
- * @property {number}                   status_code
- * @property {Map<string, CookieItem>}  resp_cookies
- * @property {Headers}                  resp_headers
- * @property {string}                   request_path
- * @property {string}                   current_path
- * @property {string}                   current_module
- * @property {Record<string, string>}   current_options
+ * @property {RequestConnection}        req   - Enhanced request object
+ * @property {string}                   method    - The request method
+ * @property {boolean}                  is_close   - `true` if request cannot be extended
+ * @property {boolean}                  is_json   - `true` if client supports or asks for JSON
+ * @property {boolean}                  is_xhr   - `true` if client requested with XHR headers set
+ * @property {RouteInfo[]}              routes    - All registered routes from components and middleware
+ * @property {ServerInfo}               server    - Server details and configuration
+ * @property {Record<string, string>}   headers   - The requested headers
+ * @property {string}                   base_url    - The value used for `<base href="..." />`
+ * @property {string}                   csrf_token    - Used for keeping requests bit more safe
+ * @property {string|null|Buffer}       resp_body   - Read or set the response body
+ * @property {string[]}                 path_info   - An array of the url segments
+ * @property {number}                   status_code   - Read or set the response status
+ * @property {Map<string, CookieItem>}  resp_cookies    - Configure the response cookies
+ * @property {Headers}                  resp_headers    - Configure the response headers
+ * @property {string}                   request_path    - The requested URL without the `base_url`
+ * @property {string}                   current_path    - The resolved component or middleware (if any)
+ * @property {string}                   current_module    - The loaded component or middleware (if any)
+ * @property {Record<string, string>}   current_options   - The options from the loaded component or middleware (if any)
  */
 
 /**
- * @param {any}                 store
- * @param {any}                 options
- * @param {RequestConnection}   request
- * @param {any}                 location
- * @param {any}                 teardown
+ * Creates the connection object for a given request
+ * @param {any}                 store   - Store adapter for sessions
+ * @param {any}                 options   - Shared configuration
+ * @param {RequestConnection}   request   - Request object with extensions
+ * @param {any}                 location    - Location object from server
+ * @param {any}                 teardown    - Callback to shutdown the server
  * @returns {Promise<Partial<Connection>>}
  */
 export async function createConnection(store, options, request, location, teardown) {
