@@ -1,3 +1,5 @@
+// @ts-check
+
 import { serialize, taggify, scopify, rulify, cssify } from '../markup/html.mjs';
 import { pascalCase, snakeCase, trace, Is } from '../utils/server.mjs';
 
@@ -21,7 +23,17 @@ const NO_HOOKS = {
   wrapComponent: () => null,
 };
 
+/**
+ * @typedef {object} TemplateInfo
+ * @property {any}  module
+ */
+
 export class Template {
+  /**
+   * @type {Map<string, TemplateInfo> | null}
+   */
+  static cache = null;
+
   constructor(name, block, options, callback) {
     this.generators = options.generators;
     this.elements = options.elements;
@@ -32,8 +44,29 @@ export class Template {
 
     this.component = name;
     this.partial = block;
+    this.module = {};
 
     Object.defineProperty(this, 'build', { value: callback });
+  }
+
+  /**
+   * @abstract
+   * @param {string}  src
+   * @param {string}  code
+   * @returns {Template}
+   */
+  build(src, code) {
+    console.log(src, code);
+    return this;
+  }
+
+  /**
+   * @abstract
+   * @param {string}  dest
+   * @param {string | Buffer}  code
+   */
+  static write(dest, code) {
+    console.log(dest, code);
   }
 
   async regenerate(imported = []) {
@@ -209,7 +242,12 @@ export class Template {
     const fragments = {};
 
     // FIXME: check if we could prebuilt these files...
-    for (const asset of new Set([].concat(...Object.values(chunk.media)))) {
+    /**
+     * @type {string[]}
+     */
+    const assets = [...new Set([].concat(...Object.values(chunk.media)))];
+
+    for (const asset of assets) {
       if (asset.includes('.svg')) {
         const svg = Template.read(asset)
           .trim()
@@ -359,7 +397,7 @@ export class Template {
         ctx.mixins.set(child.__src, chunk);
       }
 
-      delete chunk.body;
+      // chunk.body = null;
       return body;
     });
 
@@ -389,11 +427,14 @@ export class Template {
 
         state = await ctx.stream.sync(state, async (key, item) => {
           const input = { ...props, ...data, [key]: [item] };
+          const source = frags.find(_ => _.variables.includes(key));
 
-          const { target, template } = frags.find(_ => _.variables.includes(key));
-          const vnode = await view(template, input, `${component.__src}#!${key}`);
+          if (source) {
+            const { target, template } = source;
+            const vnode = await view(template, input, `${component.__src}#!${key}`);
 
-          return { target, vnode };
+            return { target, vnode };
+          }
         }, frags);
       }
 
@@ -448,7 +489,7 @@ export class Template {
     }
 
     if (Template.cache && Template.cache.has(resolved || id)) {
-      return Template.cache.get(resolved || id).module;
+      return Template.cache.get(resolved || id)?.module;
     }
 
     if (resolved && (resolved.includes('.md') || resolved.includes('.html'))) {
@@ -466,9 +507,10 @@ export class Template {
 
   static async reload(id, force) {
     if (!force && Template.cache?.has(id)) {
-      return Template.cache.get(id).module;
+      return Template.cache.get(id)?.module;
     }
     if (force && id[0] === '/') {
+      // @ts-expect-error
       if (typeof Bun !== 'undefined') {
         return require(`${id}?_=${Math.random()}`);
       }
@@ -616,8 +658,9 @@ export class Template {
       await Promise.all(urls.map(found => fetch(found.url).then(async result => {
         const destFile = Template.join(target, found.fixed);
         const blob = await result.blob();
+        const buffer = await blob.arrayBuffer();
 
-        Template.write(destFile, Buffer.from([blob], 'binary'));
+        Template.write(destFile, Buffer.from(buffer));
       })));
 
       return html;

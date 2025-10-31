@@ -1,3 +1,5 @@
+// @ts-check
+
 import { MemoryStore } from './store.mjs';
 
 export async function createStore(hash, options) {

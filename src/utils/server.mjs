@@ -1,3 +1,5 @@
+// @ts-check
+
 import { isNot as not, isArray as arr, isPlain as plain, isString as str, isScalar as scalar, isFunction as func } from 'somedom/ssr';
 import mime from 'mime/lite';
 import { Is } from './base.mjs';
@@ -38,23 +40,29 @@ function blank(value) {
   return value === '' || (value.includes('\n') && !value.trim().length);
 }
 
-function factory(value) {
-  return Is.func(value) && value.constructor.name !== 'Function' && !value.length;
-}
-
-function thenable(value) {
-  return value instanceof Promise
-    || (typeof value === 'object'
-      && Is.func(value.then)
-      && Is.func(value.catch));
-}
-
 function generator(value) {
   return /\[object Generator|GeneratorFunction\]/.test(Object.prototype.toString.call(value));
 }
 
 const _Is = Object.assign(Is, {
-  not, str, arr, func, plain, scalar, upper, blank, factory, thenable, generator,
+  not,
+  str,
+  arr,
+  func,
+  plain,
+  scalar,
+  upper,
+  blank,
+  generator,
+  factory(value) {
+    return _Is.func(value) && value.constructor.name !== 'Function' && !value.length;
+  },
+  thenable(value) {
+    return value instanceof Promise
+      || (typeof value === 'object'
+        && _Is.func(value.then)
+        && _Is.func(value.catch));
+  },
 });
 
 export * from './shared.mjs';

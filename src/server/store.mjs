@@ -1,3 +1,5 @@
+// @ts-check
+
 export class MemoryStore {
   constructor(options) {
     this.timeout = options.ttl ?? 1000 * 60 * 5;
