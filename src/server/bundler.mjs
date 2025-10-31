@@ -1,3 +1,5 @@
+// @ts-check
+
 import { Template } from '../main.mjs';
 
 const HTTP_NS = 'http-url';
@@ -7,6 +9,25 @@ const RE_MODULE_NAME = /^@?[\w-]+?$/;
 const ALLOWED_EXTENSIONS = ['js', 'mjs', 'css'];
 const RESOLVED_CDN_PREFIX_URL = 'https://cdn.skypack.dev/%s';
 
+/**
+ * @typedef {(url: string) => Promise<{ contents: string }>} FetchSource
+ */
+
+/**
+ * @import {PluginBuild} from "esbuild"
+ */
+
+/**
+ * @typedef {Object} EsbuildPlugin
+ * @property {string}                       name
+ * @property {(build: PluginBuild) => void} setup
+ */
+
+/**
+ * @type {(deps: {
+ *  fetchSource: FetchSource
+ * }) => EsbuildPlugin}
+ */
 export const createTransform = ({ fetchSource }) => ({
   name: 'jamrock',
   setup(build) {
@@ -19,7 +40,7 @@ export const createTransform = ({ fetchSource }) => ({
       const name = args.path.split('/')[0];
       const ext = args.path.split('.').pop();
 
-      if (name[0] === '.' && !ALLOWED_EXTENSIONS.includes(ext)) {
+      if (ext && name[0] === '.' && !ALLOWED_EXTENSIONS.includes(ext)) {
         const src = Template.join(args.resolveDir.replace(process.cwd(), '.'), args.path);
 
         return { path: src, external: true };
@@ -42,6 +63,11 @@ export const createTransform = ({ fetchSource }) => ({
 function createHelpers({ fs, Readable }) {
   const TEMP_DIR = process.env.TMPDIR || '/tmp';
 
+  /**
+   * @param {string}  url
+   * @param {string}  filepath
+   * @returns {Promise<void>}
+   */
   async function fetchFile(url, filepath) {
     const resp = await fetch(url);
 
@@ -55,6 +81,9 @@ function createHelpers({ fs, Readable }) {
     });
   }
 
+  /**
+   * @type {FetchSource}
+   */
   async function fetchSource(url) {
     const tmpFile = Template.join(TEMP_DIR, `${url.replace(/\W/g, '_')}@out`);
 
@@ -66,10 +95,38 @@ function createHelpers({ fs, Readable }) {
   return { fetchSource };
 }
 
-export function createBundler({ esbuild, ...deps }) {
-  const helpers = createHelpers({ ...deps });
+/**
+ * @typedef {object} TemplateInfo
+ * @property {string}                   ref
+ * @property {string}                   root
+ * @property {string}                   content
+ * @property {string}                   filepath
+ * @property {string[]}                 children
+ * @property {string}                   identifier
+ * @property {Record<string, string>}   attributes
+ */
+
+/**
+ * @import * as fs from "node:fs"
+ * @import * as esbuild from "esbuild"
+ * @param {{
+ *  fs: fs;
+ *  esbuild: esbuild;
+ *  Readable: ReadableStream;
+ * }} deps
+ * @returns {{ bundle: function }}
+ */
+export function createBundler({ esbuild, fs, Readable }) {
+  const helpers = createHelpers({ fs, Readable });
   const transform = createTransform(helpers);
 
+  /**
+   *
+   * @param {TemplateInfo}  tpl
+   * @param {string}        ext
+   * @param {any}           opts
+   * @returns
+   */
   async function bundle(tpl, ext = 'js', opts = {}) {
     const filepath = tpl.filepath || `${tpl.identifier}.${tpl.attributes?.lang || ext}`;
 

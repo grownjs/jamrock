@@ -32,6 +32,7 @@ import { getError, parseCookies } from './request.mjs';
  * @typedef {object} RouteInfo
  * @property {string}                   src
  * @property {string}                   path
+ * @property {string}                   verb
  * @property {Record<string, string>}   params
  * @property {string}                   error
  * @property {string}                   layout

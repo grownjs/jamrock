@@ -1,3 +1,5 @@
+// @ts-check
+
 export class RedisStore {
   constructor(redis, options) {
     this.client = redis;

@@ -1,3 +1,5 @@
+// @ts-check
+
 import { Util } from '../main.mjs';
 
 import { createCache } from './store.mjs';

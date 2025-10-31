@@ -281,6 +281,26 @@ export function create404(env, conn, client, message) {
  */
 
 /**
+ * @typedef {(ref: string, key: string, item: any, mode: string, render: function) => Promise<void>} PublishCallback
+ */
+
+/**
+ * @typedef {object} ConnectionContext
+ * @property {Connection}                conn
+ * @property {RouteInfo[] | undefined}   routes
+ * @property {() => any[]}               clients
+ * @property {boolean}                   called
+ * @property {number}                    depth
+ * @property {RouteInfo}                 route
+ * @property {boolean | null}            ready
+ * @property {string[]}                  stack
+ * @property {any}                       cache
+ * @property {any}                       socket
+ * @property {any}                       stream
+ * @property {PublishCallback}           publish
+ */
+
+/**
  * @typedef {object} ResponseContext
  * @property {string}       client
  * @property {RouteInfo}    matches
@@ -298,12 +318,17 @@ export async function createBody(env, conn, clients, { client, matches, options 
   let status;
   let body;
   try {
+    /**
+     * @type {ConnectionContext}
+     */
     const ctx = {
       conn,
       clients,
       depth: 0,
       stack: [],
       ready: null,
+      socket: null,
+      stream: null,
       called: true,
       route: matches,
       cache: env.cache,
@@ -324,7 +349,8 @@ export async function createBody(env, conn, clients, { client, matches, options 
 
     conn.req.params = matches.params;
     conn.current_path = matches.path;
-    conn.routes = ctx.routes;
+
+    conn.routes = ctx.routes || [];
 
     if (Util.Is.func(ctx.clients) && !ctx.socket) {
       let _socket;

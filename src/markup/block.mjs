@@ -14,7 +14,19 @@ const RE_EXPORT_DEFAULT = /\nexport default[\s{]/;
 const RE_RESOLVE_IMPORTS = /\/\*@@\*\/__resolve\('(.+?)'\)/g;
 const RE_MATCH_IMPORTS = /\bimport([^;]+?)from\s*(['""])(.+?)\2(?=[\n;])/g;
 
+/**
+ * @typedef {object} BlockAssets
+ * @property {any[]}      js
+ * @property {any[]}      css
+ * @property {string[]}   media
+ */
+
 export class Block {
+  /**
+   * @type {BlockAssets}
+   */
+  assets = { js: [], css: [], media: [] };
+
   constructor(tpl, file, options) {
     const opts = { ...options };
     const base = `${opts.cwd || '.'}/`;
@@ -40,7 +52,7 @@ export class Block {
     Object.defineProperty(this, 'meta', { value: [] });
     Object.defineProperty(this, 'attrs', { value: {} });
     Object.defineProperty(this, 'chunks', { value: chunks });
-    Object.defineProperty(this, 'assets', { value: { js: [], css: [], media: [] } });
+    Object.defineProperty(this, 'assets', { enumerable: false });
 
     const { locations } = blocks(this.code, false);
 

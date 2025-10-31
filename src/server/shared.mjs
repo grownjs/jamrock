@@ -1,3 +1,5 @@
+// @ts-check
+
 import { Template, Runtime, Handler, Markup, Render, Util } from '../main.mjs';
 
 import { createBody } from './request.mjs';
@@ -9,6 +11,11 @@ const FILES_PROPERTY = Symbol('@@files');
 const ASSETS_PROPERTY = Symbol('@@assets');
 const ROUTES_PROPERTY = Symbol('@@routes');
 const VERSION_PROPERTY = Symbol('@@version');
+
+/**
+ * @import {RouteInfo} from "./connection.mjs"
+ * @import {Environment} from "./shared.mjs"
+ */
 
 export function printLog(...msg) {
   console.log(...msg);
@@ -25,6 +32,7 @@ export const createWatcher = ({ fs }, watcher, compiler) => {
   const clients = [];
   const before = [];
 
+  let timeout;
   let reloading;
   let sources = {};
   async function sync(quiet, routes) {
@@ -59,8 +67,8 @@ export const createWatcher = ({ fs }, watcher, compiler) => {
       });
     }
 
-    clearTimeout(sync.t);
-    sync.t = setTimeout(() => {
+    clearTimeout(timeout);
+    timeout = setTimeout(() => {
       reloading = false;
     }, 1260);
   }
@@ -96,7 +104,7 @@ export const createWatcher = ({ fs }, watcher, compiler) => {
 
     Object.entries(compiler[FILES_PROPERTY]).forEach(([k, v]) => {
       if (v.children?.includes(src)) {
-        const mod = Template.cache.get(compiler[FILES_PROPERTY][k].filepath);
+        const mod = Template.cache?.get(compiler[FILES_PROPERTY][k].filepath);
 
         if (mod?.module) {
           if (mod.module.__media.includes(src)) {
@@ -131,7 +139,7 @@ export const createWatcher = ({ fs }, watcher, compiler) => {
         if (pending.includes(file)) {
           push(file, kind);
         } else if (!fs.existsSync(file)) {
-          Template.cache.delete(file);
+          Template.cache?.delete(file);
           cache.delete(file);
         } else {
           const mtime = fs.statSync(file).mtime;
@@ -174,10 +182,10 @@ export const createWatcher = ({ fs }, watcher, compiler) => {
     if (req.method === 'GET') {
       try {
         const url = req.url[0] === '/' ? req.url : new URL(req.url).pathname;
-        const start = new Date();
+        // const start = new Date();
         console.log('E_REQ', url);
         await retryCompile(url, 10);
-        console.log('>>>', (new Date() - start) / 1000);
+        // console.log('>>>', (new Date() - start) / 1000);
       } catch (e) {
         Util.trace(e, 'E_REBUILD');
         reloading = false;
@@ -282,7 +290,7 @@ export const createCompiler = ({ fs, path }, options, external) => {
         };
       }
 
-      Template.cache.set(v.filepath, mod);
+      Template.cache?.set(v.filepath, mod);
     }
   }
 
@@ -435,6 +443,8 @@ export const createCompiler = ({ fs, path }, options, external) => {
  * @property {Record<string, any>}  files
  * @property {string[]}             assets
  * @property {TemplateLocator}      locate
+ * @property {function}             build
+ * @property {function}             request
  * @property {string}               version
  * @property {any}                  context
  * @property {any}                  options
@@ -500,7 +510,7 @@ export function createEnvironment({ fs, path }, options, external) {
 
       await compiler.reload();
 
-      process.env.HEADLESS = true;
+      process.env.HEADLESS = 'true';
 
       fs.mkdirSync(publicDest, { recursive: true });
 
@@ -513,7 +523,7 @@ export function createEnvironment({ fs, path }, options, external) {
         count++;
       });
 
-      const modules = Object.fromEntries(Template.cache.entries());
+      const modules = Object.fromEntries(Template.cache?.entries() || []);
 
       // FIXME: mock this better!
       const req = {};
@@ -527,6 +537,8 @@ export function createEnvironment({ fs, path }, options, external) {
         printLog(Util.$.green(route.verb), route.path, Util.$.gray(destFile));
 
         const env = { files, locate: k => modules[files[k].filepath].module };
+
+        // @ts-expect-error
         const result = await createBody(env, conn, [], { uuid, client, options, matches: route });
 
         write(destFile, result.body);
@@ -577,7 +589,7 @@ export function createEnvironment({ fs, path }, options, external) {
 
     if (!mod) throw new Error(`Could not locate '${key}' file`);
 
-    const dest = Template.cache.get(mod.filepath);
+    const dest = Template.cache?.get(mod.filepath);
 
     if (!dest?.module) {
       throw new Error(`Could not locate '${key}' module (${mod.filepath})`);
@@ -587,6 +599,7 @@ export function createEnvironment({ fs, path }, options, external) {
 
   function request(params = {}) {
     return new Request(`http://${location.host}${params.url || '/'}`, {
+      // @ts-expect-error
       duplex: 'half',
       body: params.body,
       method: params.method || 'GET',
@@ -596,6 +609,7 @@ export function createEnvironment({ fs, path }, options, external) {
 
   const context = Template.streamify();
 
+  // @ts-expect-error
   return Object.defineProperties({
     serve, build, locate, request, context, compiler, static: _static,
   }, {
