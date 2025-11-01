@@ -53,5 +53,13 @@ jobs:
           docker exec ${{ job.services.backend.id }} \
           sh -c 'pocketbase superuser create yo@soypache.co Password.123'
 
+      - name: Set up Chrome
+        uses: browser-actions/setup-chrome@v2
+        with:
+          chrome-version: '141' # Specify the desired Chrome version
+
+      - name: Verify Chrome version
+        run: google-chrome --version
+
       - name: Run all tests
         run: make ci DIST_TASK=dist:min CODECOV_TOKEN=${{ secrets.CODECOV_TOKEN }}
