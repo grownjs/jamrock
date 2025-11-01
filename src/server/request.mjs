@@ -599,24 +599,15 @@ export async function createResponse(env, conn, clients, options) {
 }
 
 /**
- * @param {any}           options
+ * @param {any}   options
  * @returns {Partial<ServerInfo>}
  */
 export function parseLocation(options) {
-  let location = { port: options.port || +(process.env.PORT || 8080) };
-  if (Util.Is.str(options.bind)) {
-    const parts = options.split(':');
-
-    location = {
-      host: parts.length === 2 ? parts[0] : undefined,
-      port: parts.length === 2 ? parts[1] : parts[0],
-    };
-  }
-  if (Util.Is.num(options.bind)) {
-    location = { port: options.bind };
-  }
-  location.host = location.host || '0.0.0.0';
-  return location;
+  return {
+    protocol: options.https ? 'https' : 'http',
+    hostname: options.host || '0.0.0.0',
+    port: options.port || +(process.env.PORT || 8080),
+  };
 }
 
 /**

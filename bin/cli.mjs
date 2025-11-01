@@ -52,6 +52,7 @@ Options:
 
   --port     The port number to bind the web-server
   --host     The host address to bind the web-server
+  --https    Enable HTTPS (requires SSL_KEY_FILE and SSL_KEY_FILE)
 
   --uws      Use uWebSockets.js instead of native HTTP (node)
   --redis    Enable redis for sessions and pub/sub events
@@ -81,10 +82,12 @@ export default async function main(env, argv) {
 
   let watch = Util.list('watch', argv, Util.has('watch', argv));
 
-  const uws = Util.flag('uws', argv, false);
+  const uws = Util.has('uws', argv);
   const port = +Util.flag('port', argv, 8080);
-  const redis = Util.flag('redis', argv, false);
-  const unocss = Util.flag('unocss', argv, false);
+  const host = Util.flag('host', argv, 'localhost');
+  const https = Util.has('https', argv);
+  const redis = Util.has('redis', argv);
+  const unocss = Util.has('unocss', argv);
   const _prefix = Util.flag('prefix', argv, '@');
 
   if (Util.has('help', argv) || !argv[0]) {
@@ -192,7 +195,7 @@ export type Routes = ${['RouteMap'].concat(typedefs).join('\n& ')};\n`;
       Object.assign(defaults, mod.default || mod);
     }
 
-    const _options = { src, dest, port, redis, prefix: _prefix };
+    const _options = { src, dest, host, port, https, redis, prefix: _prefix };
 
     switch (argv[0]) {
       case 'serve':
