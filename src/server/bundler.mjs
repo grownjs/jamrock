@@ -10,25 +10,11 @@ const ALLOWED_EXTENSIONS = ['js', 'mjs', 'css'];
 const RESOLVED_CDN_PREFIX_URL = 'https://cdn.skypack.dev/%s';
 
 /**
- * @typedef {(url: string) => Promise<{ contents: string }>} FetchSource
+ * @import {FetchSource, TemplateInfo, EsbuildTransform} from "../../types/main.d.ts"
  */
 
 /**
- * @import {PluginBuild} from "esbuild"
- */
-
-/**
- * Built-in support for esbuild
- * @typedef {Object} EsbuildPlugin
- * @property {string}                       name - The name of this plugin
- * @property {(build: PluginBuild) => void} setup - The esbuild plugin setup
- */
-
-/**
- * Setup esbuild transformation
- * @type {(deps: {
- *  fetchSource: FetchSource
- * }) => EsbuildPlugin}
+ * @type {EsbuildTransform}
  */
 export const createTransform = ({ fetchSource }) => ({
   name: 'jamrock',
@@ -66,7 +52,7 @@ function createHelpers({ fs, Readable }) {
   const TEMP_DIR = process.env.TMPDIR || '/tmp';
 
   /**
-   * Downloads a given url into filepath
+   * Downloads a given url into filepath.
    * @param {string}  url
    * @param {string}  filepath
    * @returns {Promise<void>}
@@ -85,7 +71,7 @@ function createHelpers({ fs, Readable }) {
   }
 
   /**
-   * Wraps the fetchFile() for esbuild usage
+   * Wraps the fetchFile() for esbuild usage.
    * @type {FetchSource}
    */
   async function fetchSource(url) {
@@ -98,18 +84,6 @@ function createHelpers({ fs, Readable }) {
 
   return { fetchSource };
 }
-
-/**
- * The details needed to be processed by esbuild
- * @typedef {object} TemplateInfo
- * @property {string}                   ref - This belongs to a specific node
- * @property {string}                   root - Tracks the ref across children nodes
- * @property {string}                   content - The source code as plain text
- * @property {string}                   filepath - Filepath for the given soure code
- * @property {string[]}                 children - Any dependency loaded by the code
- * @property {string}                   identifier - Generated from node references
- * @property {Record<string, string>}   attributes - Given attributes from node origin
- */
 
 /**
  * Prepares everything for preprocessing

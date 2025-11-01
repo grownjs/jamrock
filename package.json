@@ -10,11 +10,9 @@
     "import_map.json"
   ],
   "type": "module",
-  "types": "./lib/env.d.ts",
   "exports": {
     ".": {
       "import": {
-        "types": "./lib/env.d.ts",
         "default": "./dist/main.mjs"
       }
     },
@@ -24,8 +22,7 @@
     "./nodejs": "./lib/nodejs/main.mjs",
     "./server": "./dist/server.mjs",
     "./client": "./dist/client.mjs",
-    "./shared": "./lib/main.mjs",
-    "./types": "./lib/env.d.ts"
+    "./shared": "./lib/main.mjs"
   },
   "scripts": {
     "test": "npm-run-all lint test:unit",

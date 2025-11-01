@@ -5,7 +5,9 @@ import { generateClientCode } from 'jamrock/client';
 import { Template, Handler, Markup, Util } from '../main.mjs';
 
 /**
-* @import {CookieOptions, CookieItem, ServerInfo} from "./connection.mjs"
+* @import {ResponseMixed, ResponseValue, ResponseBody, ConnectionContext, RequestConnection} from "../../types/server.d.ts"
+* @import {CookieOptions, CookieItem, ServerInfo, RouteMatch, Connection} from "../../types/server.d.ts"
+* @import {Environment} from "../../types/env.d.ts"
 */
 
 /**
@@ -177,10 +179,6 @@ export function getRawBody(req, limit) {
 }
 
 /**
-* @import {Connection} from "./connection.mjs"
-*/
-
-/**
  * @param {Connection}  conn
  * @param {string}      patch
  * @param {string}      baseURL
@@ -202,11 +200,6 @@ export function getClientCode(conn, patch, baseURL, prefixURL) {
 }
 
 /**
- * @import {RequestConnection} from "./connection.mjs"
- */
-
-/**
- *
  * @param {RequestConnection} req
  * @param {number}            limit
  * @returns {Request}
@@ -262,46 +255,9 @@ export function create404(env, conn, client, message) {
 }
 
 /**
- * @typedef {any} ResponseBody
- */
-
-/**
- * @typedef {object} ResponseValue
- * @property {ResponseBody}             body
- * @property {number}                   status
- * @property {Headers}                  [headers]
- * @property {Map<string, CookieItem>}  [cookies]
- */
-
-/**
- * @import {RouteInfo} from "./connection.mjs"
- * @import {Environment} from "./shared.mjs"
- */
-
-/**
- * @typedef {(ref: string, key: string, item: any, mode: string, render: function) => Promise<void>} PublishCallback
- */
-
-/**
- * @typedef {object} ConnectionContext
- * @property {Connection}                conn
- * @property {RouteInfo[] | undefined}   routes
- * @property {() => any[]}               clients
- * @property {boolean}                   called
- * @property {number}                    depth
- * @property {RouteInfo}                 route
- * @property {boolean | null}            ready
- * @property {string[]}                  stack
- * @property {any}                       cache
- * @property {any}                       socket
- * @property {any}                       stream
- * @property {PublishCallback}           publish
- */
-
-/**
  * @typedef {object} ResponseContext
  * @property {string}       client
- * @property {RouteInfo}    matches
+ * @property {RouteMatch}    matches
  * @property {object}       options
  */
 
@@ -310,7 +266,7 @@ export function create404(env, conn, client, message) {
  * @param {Connection}        conn
  * @param {() => any[]}       clients
  * @param {ResponseContext}   context
- * @returns {Promise<ResponseValue>}
+ * @returns {Promise<Response | ResponseValue>}
  */
 export async function createBody(env, conn, clients, { client, matches, options }) {
   let status;
@@ -437,7 +393,7 @@ export async function createBody(env, conn, clients, { client, matches, options 
     body = await Template.resolve(mod, file, ctx, props, Handler.middleware);
 
     if (body instanceof Response) {
-      return { body, status: body.status };
+      return body;
     }
 
     if (!Util.Is.str(body)) {
@@ -542,7 +498,7 @@ export async function createModuleResponse(env, conn) {
  * @param {Connection}    conn
  * @param {() => any[]}   clients
  * @param {any}           options
- * @returns {Promise<ResponseValue>}
+ * @returns {Promise<ResponseMixed>}
  */
 export async function createPageResponse(env, conn, clients, options) {
   const client = getClientCode(conn, env.version, conn.base_url, options.prefix);
@@ -561,6 +517,10 @@ export async function createPageResponse(env, conn, clients, options) {
   let cookies;
   if (matches) {
     const result = await createBody(env, conn, clients, { client, matches, options });
+
+    if (result instanceof Response) {
+      return result;
+    }
 
     cookies = result.cookies || cookies || undefined;
     headers = result.headers || headers;
@@ -585,7 +545,7 @@ export async function createPageResponse(env, conn, clients, options) {
  * @param {Connection}    conn
  * @param {() => any[]}   clients
  * @param {any}           options
- * @returns {Promise<ResponseValue>}
+ * @returns {Promise<ResponseMixed>}
  */
 export async function createResponse(env, conn, clients, options) {
   if (conn.path_info[0] === options.prefix) {

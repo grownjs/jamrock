@@ -13,8 +13,7 @@ const ROUTES_PROPERTY = Symbol('@@routes');
 const VERSION_PROPERTY = Symbol('@@version');
 
 /**
- * @import {RouteInfo} from "./connection.mjs"
- * @import {Environment} from "./shared.mjs"
+ * @import {RouteInfo, Environment} from "../../types/env.d.ts"
  */
 
 export function printLog(...msg) {

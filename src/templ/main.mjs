@@ -24,13 +24,15 @@ const NO_HOOKS = {
 };
 
 /**
- * @typedef {object} TemplateInfo
- * @property {any}  module
+ * @import {TemplateImpl, TemplateCache} from "../../types/main.d.ts"
  */
 
+/**
+ * @type {TemplateImpl}
+ */
 export class Template {
   /**
-   * @type {Map<string, TemplateInfo> | null}
+   * @type {TemplateCache}
    */
   static cache = null;
 
