@@ -53,8 +53,5 @@ jobs:
           docker exec ${{ job.services.backend.id }} \
           sh -c 'pocketbase superuser create yo@soypache.co Password.123'
 
-      - name: Set up Firefox (Chrome 142 is blocked)
-        uses: browser-actions/setup-firefox@v1
-
       - name: Run all tests
-        run: make ci DIST_TASK=dist:min CODECOV_TOKEN=${{ secrets.CODECOV_TOKEN }} BROWSER=firefox:headless
+        run: make ci DIST_TASK=dist:min CODECOV_TOKEN=${{ secrets.CODECOV_TOKEN }}
