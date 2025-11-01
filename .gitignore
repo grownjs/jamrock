@@ -16,6 +16,7 @@ build
 logs
 dist
 tmp
+*.pem
 *.d.ts
 install
 pb_data
