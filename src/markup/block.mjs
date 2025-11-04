@@ -1,6 +1,3 @@
-import * as emoji from 'node-emoji';
-import twemoji from 'twemoji';
-
 import { blocks, vars } from 'eslint-plugin-jamrock/util.js';
 import { RE_MATCH_ROUTES } from 'eslint-plugin-jamrock/const.js';
 
@@ -57,11 +54,7 @@ export class Block {
     Object.defineProperty(this, 'chunks', { value: chunks });
     Object.defineProperty(this, 'assets', { enumerable: false });
 
-    let input = this.code;
-    input = opts.emojify ? emoji.emojify(input) : input;
-    input = opts.twemoji ? twemoji.parse(input) : input;
-
-    const { locations } = blocks(input, false);
+    const { locations } = blocks(this.code, false);
 
     const locate = (offset, value) => {
       let found;
@@ -87,9 +80,9 @@ export class Block {
       file: this.src,
     };
 
-    const tree = parseMarkup(input, { includePositions: true });
+    const tree = parseMarkup(this.code, { includePositions: true });
 
-    metadata.response.markup.content = traverse(tree, input, null, metadata);
+    metadata.response.markup.content = traverse(tree, this.code, null, metadata);
 
     Object.assign(this, metadata.response);
 
@@ -108,7 +101,7 @@ export class Block {
 
     let imports = [];
     let children = [];
-    if (!input.includes('<script')) {
+    if (!this.code.includes('<script')) {
       this.context = 'static';
     } else {
       const contexts = this.scripts.reduce((memo, cur) => memo.concat(cur.attributes.context || []), []);
@@ -286,7 +279,7 @@ export const __attributes = ${this.$attributes};
       && node.elements[0].inline;
 
     node.name = node.attributes.tag || (inline ? 'p' : 'template');
-    node.elements = await render(node.elements, inline);
+    node.elements = await render(node.elements, inline, null, this.opts);
     delete node.attributes.tag;
 
     await visit(node.elements, async _node => {
@@ -299,7 +292,7 @@ export const __attributes = ${this.$attributes};
 
   async transform(elements, resources) {
     if (this.src.includes('+page')) {
-      this.markup.content = await render(this.markup.content, null, this.chunks);
+      this.markup.content = await render(this.markup.content, null, this.chunks, this.opts);
     }
 
     await this.traverse();

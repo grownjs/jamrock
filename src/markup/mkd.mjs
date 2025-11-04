@@ -1,3 +1,5 @@
+import * as emoji from 'node-emoji';
+import twemoji from 'twemoji';
 import hljs from 'highlight.js';
 import s from 'tiny-dedent';
 import kramed from 'kramed';
@@ -22,7 +24,7 @@ hljs.registerLanguage('javascript', jsLang);
 
 import { Expr } from './expr.mjs';
 
-export async function render(content, inline, chunks) {
+export async function render(content, inline, chunks, opts) {
   const nodes = [];
   const buffer = content.reduce((memo, token) => {
     if (token instanceof Expr) {
@@ -103,7 +105,10 @@ export async function render(content, inline, chunks) {
     return `<code>${unsafe(decodeEnts(text))}</code>`;
   };
 
-  const input = s(buffer.join(''));
+  let input = s(buffer.join(''));
+  input = opts.emojify ? emoji.emojify(input) : input;
+  input = opts.twemoji ? twemoji.parse(input) : input;
+
   const tree = parseMarkup(await kramed(input, { renderer }));
   const result = traverse(tree, '', null, { stack: nodes, file: '+page.md' });
 
