@@ -1,8 +1,9 @@
 <head>
   <title>Jamrock | Components</title>
 </head>
+
 <script>
-import NavLink from './components/navlink.html';
+  import NavLink from './components/navlink.html';
 </script>
 
 # Components
@@ -340,12 +341,14 @@ To render the shortcut as text just encode it as `&amp;#58;beer:`.
 > [!TIP]
 > Emoji support is enabled through the `emojify` option.
 >
-> Enable `twemoji` to inline the emojis as images.
+> Enable `twemoji` to inline the emojis as images,
+> it'll work for both shortcuts and any other emojis found.
 
 If you use emojis or shortcuts outside markdown they'll be kept as is,
 use the `&lt;mkd&gt;&#58;beer:&lt;/mkd&gt;` tag to render or inline emojis.
 
-<mkd>:beer:</mkd>
+For now, this is what you can do within components for authoring markup,
+next we'll be learning about [live updates](./fragments#top) on the DOM! :rocket:
 
 <nav class="flex gap-sm between">
   <span>

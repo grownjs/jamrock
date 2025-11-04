@@ -450,7 +450,9 @@ ROUTER(FIXME)
   });
 
   test('should render markdown on pages', async ({ expect }) => {
-    const tpl = await build('./markdown+page.html', { emojify: true, twemoji: true });
+    const tpl = await build('./markdown+page.html', {
+      markdown: { emojify: true, twemoji: true },
+    });
     const { html } = await tpl.render();
 
     expect(format(html)).toContain(s(`

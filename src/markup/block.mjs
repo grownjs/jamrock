@@ -39,7 +39,7 @@ export class Block {
 
     tpl = tpl.replace(/```(\w+\n)?([^]*?)```/g, (_, $1, $2) => {
       chunks.push({ code: $2 });
-      return ['```', $1 || '', $2.replace(/\S/g, ' '), '\n```'].join('');
+      return ['```', $1 || '', $2.replace(/\S/g, ' '), '```'].join('');
     });
 
     Object.defineProperty(this, 'id', { value: id });
@@ -279,7 +279,7 @@ export const __attributes = ${this.$attributes};
       && node.elements[0].inline;
 
     node.name = node.attributes.tag || (inline ? 'p' : 'template');
-    node.elements = await render(node.elements, inline, null, this.opts);
+    node.elements = await render(node.elements, inline, null, this.opts.markdown);
     delete node.attributes.tag;
 
     await visit(node.elements, async _node => {
@@ -292,7 +292,7 @@ export const __attributes = ${this.$attributes};
 
   async transform(elements, resources) {
     if (this.src.includes('+page')) {
-      this.markup.content = await render(this.markup.content, null, this.chunks, this.opts);
+      this.markup.content = await render(this.markup.content, null, this.chunks, this.opts.markdown);
     }
 
     await this.traverse();
