@@ -102,7 +102,7 @@ start\:%:
 	@bin/$* serve --port 3000 --unocss --src examples $(START_FLAGS)
 
 e2e\:%:
-	@npx testcafe $(BROWSER) tests/e2e/cases --colors -a 'make start:$*' --quarantine-mode -S $(TESTCAFE_FLAGS)
+	npx testcafe '$(BROWSER) --disable-features=LocalNetworkAccessChecks' tests/e2e/cases --colors -a 'make start:$*' -S $(TESTCAFE_FLAGS)
 
 e2e:
 	@make dist
