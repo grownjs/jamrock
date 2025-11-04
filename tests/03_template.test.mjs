@@ -474,8 +474,8 @@ ROUTER(FIXME)
           </code>
         </pre>
         <p>TEXT</p>
-        <blockquote data-location="markdown+page.html:26:1">
-            <code data-location="markdown+page.html:27:3">SOME <em>STUFF</em>
+        <blockquote data-location="markdown+page.html:25:1">
+            <code data-location="markdown+page.html:26:3">SOME <em>STUFF</em>
         </code>
           <h3 id=osom>OSOM</h3>\n`));
 
