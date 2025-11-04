@@ -103,7 +103,8 @@ export async function render(content, inline, chunks) {
     return `<code>${unsafe(decodeEnts(text))}</code>`;
   };
 
-  const tree = parseMarkup(await kramed(s(buffer.join('')), { renderer }));
+  const input = s(buffer.join(''));
+  const tree = parseMarkup(await kramed(input, { renderer }));
   const result = traverse(tree, '', null, { stack: nodes, file: '+page.md' });
 
   return result;

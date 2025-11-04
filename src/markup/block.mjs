@@ -1,3 +1,6 @@
+import * as emoji from 'node-emoji';
+import twemoji from 'twemoji';
+
 import { blocks, vars } from 'eslint-plugin-jamrock/util.js';
 import { RE_MATCH_ROUTES } from 'eslint-plugin-jamrock/const.js';
 
@@ -54,7 +57,11 @@ export class Block {
     Object.defineProperty(this, 'chunks', { value: chunks });
     Object.defineProperty(this, 'assets', { enumerable: false });
 
-    const { locations } = blocks(this.code, false);
+    let input = this.code;
+    input = opts.emojify ? emoji.emojify(input) : input;
+    input = opts.twemoji ? twemoji.parse(input) : input;
+
+    const { locations } = blocks(input, false);
 
     const locate = (offset, value) => {
       let found;
@@ -80,9 +87,9 @@ export class Block {
       file: this.src,
     };
 
-    const tree = parseMarkup(this.code, { includePositions: true });
+    const tree = parseMarkup(input, { includePositions: true });
 
-    metadata.response.markup.content = traverse(tree, this.code, null, metadata);
+    metadata.response.markup.content = traverse(tree, input, null, metadata);
 
     Object.assign(this, metadata.response);
 
@@ -101,7 +108,7 @@ export class Block {
 
     let imports = [];
     let children = [];
-    if (!this.code.includes('<script')) {
+    if (!input.includes('<script')) {
       this.context = 'static';
     } else {
       const contexts = this.scripts.reduce((memo, cur) => memo.concat(cur.attributes.context || []), []);
@@ -227,6 +234,7 @@ export const __attributes = ${this.$attributes};
     const path = src || href;
 
     if (path && !Is.str(path)) return;
+    if (path.includes('://')) return;
     if (path?.charAt() === '/') return;
 
     const file = path && Template.join(this.base, path);

@@ -304,6 +304,10 @@ fixture`./markdown+page.html
       ### OSOM
     </mkd>
   </blockquote>
+
+  Test for emojis:
+  - One is :beers:
+  - Two is :coffee:
 `;
 
 // eslint-disable-next-line no-unused-expressions
@@ -430,7 +434,7 @@ ROUTER(FIXME)
 
     expect(format(html)).toEqual(s(`
       <embed src="@/generated/pause-icon.svg" />
-        <svg data-location="resources+page.html:3:1" xmlns="http://www.w3.org/2000/svg">
+        <svg data-location="resources+page.html:3:1">
             <path d="M6 4l20 12-20 12z" data-location="resources+page.html:4:3" />
           </svg>
           <svg class=osom data-location="resources+page.html:7:1">
@@ -446,7 +450,7 @@ ROUTER(FIXME)
   });
 
   test('should render markdown on pages', async ({ expect }) => {
-    const tpl = await build('./markdown+page.html');
+    const tpl = await build('./markdown+page.html', { emojify: true, twemoji: true });
     const { html } = await tpl.render();
 
     expect(format(html)).toContain(s(`
@@ -472,6 +476,9 @@ ROUTER(FIXME)
             <code data-location="markdown+page.html:27:3">SOME <em>STUFF</em>
         </code>
           <h3 id=osom>OSOM</h3>\n`));
+
+    expect(html).toContain('<img class=emoji draggable=false alt=🍻 ');
+    expect(html).toContain('<img class=emoji draggable=false alt=☕ ');
   });
 
   test('should inline stylesheets', async ({ expect }) => {
