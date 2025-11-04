@@ -307,20 +307,45 @@ this produces highlighted code as the resulting markup.
 Untagged blocks are parsed by the framework instead,
 this way components can be rendered within.
 
+You'll need to escape HTML tags and other entities to render them as text, i.e.
+
+<details>
+<summary>Examples of html-entities encoded</summary>
 <pre class="hljs"><code>&#96;&#96;&#96;
 &amp;lt;h1&amp;gt;It works!&amp;lt;/h1&amp;gt;
-&#96;&#96;&#96;</code></pre>
+&#96;&#96;&#96;
+
+or
+
+`&amp;lbrace; ... }`</code></pre>
+</details>
+
+1. You MUST encode the `&lbrace;` character as `&amp;lbrace;` outside tagged blocks,
+otherwise they'll be parsed.
+2. Any other HTML tag or entity within inline `&#96;...&#96;` backticks MUST
+be encoded as well.
+3. Only `&#96;&#96;&#96;` blocks are handlded this way,
+code blocks made by white-space indentation are ignored.
 
 This way the markup is rendered as is,
 so you can decorate the code by yourself
 with components or regular HTML tags.
 
-> [!IMPORTANT]
-> As you noticed, by using tagged block your code is html-encoded
-> while untagged blocks does not.
+### Emoji support
+
+Inside markdown we can use emojis, or shortcuts like &#58;beer: (:beer:).
+
+To render the shortcut as text just encode it as `&amp;#58;beer:`.
+
+> [!TIP]
+> Emoji support is enabled through the `emojify` option.
 >
-> Only `&#96;&#96;&#96;` blocks are considered for this,
-> code blocks made by white-space indentation are ignored.
+> Enable `twemoji` to inline the emojis as images.
+
+If you use emojis or shortcuts outside markdown they'll be kept as is,
+use the `&lt;mkd&gt;&#58;beer:&lt;/mkd&gt;` tag to render or inline emojis.
+
+<mkd>:beer:</mkd>
 
 <nav class="flex gap-sm between">
   <span>

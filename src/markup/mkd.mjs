@@ -107,7 +107,10 @@ export async function render(content, inline, chunks, opts) {
 
   let input = s(buffer.join(''));
   input = opts.emojify ? emoji.emojify(input) : input;
-  input = opts.twemoji ? twemoji.parse(input) : input;
+  input = opts.twemoji ? twemoji.parse(input, {
+    folder: 'svg',
+    ext: '.svg',
+  }) : input;
 
   const tree = parseMarkup(await kramed(input, { renderer }));
   const result = traverse(tree, '', null, { stack: nodes, file: '+page.md' });
