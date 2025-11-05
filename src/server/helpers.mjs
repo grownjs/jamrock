@@ -40,10 +40,10 @@ export async function createFSWatcher(options, getChokidarModule) {
 }
 
 export async function createRedisConnection(env, options, getRedisModule) {
-  if (options.redis !== false) {
+  if (options.redis) {
     const { createClient } = await getRedisModule();
 
-    const opts = { ...options.redis };
+    const opts = options.redis === true ? {} : { ...options.redis };
     const redis = await createClient(opts);
     const subscriber = redis.duplicate();
 

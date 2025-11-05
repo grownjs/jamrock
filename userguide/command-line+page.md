@@ -50,8 +50,7 @@ Run `jamrock --help`:
   <var>--host</var>     The host address to bind the web-server
 
   <var>--uws</var>      Use uWebSockets.js instead of native HTTP <em>(node)</em>
-  <var>--redis</var>    Enable redis for sessions and pub/sub events
-  <var>--unocss</var>   Enable stylesheet pre-compilation with UnoCSS
+  <var>--https</var>    Enable HTTPS (requires SSL_KEY_FILE and SSL_KEY_FILE)
 
   <var>--dts</var>      Produce the .d.ts definitions from web-server routes
   <var>--name</var>     Filter routes by name <em>(contains)</em>
@@ -114,6 +113,77 @@ By using the <var>--dts</var> flag, this action will write a `routes.d.ts` file.
 
 Being said, you may find a proof of concept of this is on the `./scripts/check.ts` file on [this repository](https://github.com/grownjs/jamrock/blob/master/scripts/check.ts).
 
+---
+
+## dev.config.mjs
+
+Some options can be configured through a module file,
+this is because they would need you to load additional modules.
+
+### redis
+
+Redis is encouraged for production, since the sessions and pub/sub support is
+stored in memory by default, which is intended for development only.
+
+```js
+// enables the built-in support for Redis
+export default {
+  redis: true,
+};
+
+// enables and configure the Redis connection
+export default {
+  redis: {
+    url: '...',
+  },
+};
+```
+
+### unocss
+
+If you want to use UnoCSS make sure you have the appropriate `unocss.config.mjs`
+module on the `./pages` directory, stylesheets will be calculated from the
+used classes by rendered components on every request.
+
+```js
+// enables the built-in support for UnoCSS
+export default {
+  unocss: true,
+};
+```
+
+### markdown
+
+Specific options for markdown are set here,
+for now you can enable `emojify` and `twemoji` only.
+
+```js
+// enable emoji shortcuts and inlining as images
+export default {
+  markdown: {
+    emojify: true,
+    twemoji: true,
+  },
+};
+```
+
+### generators
+
+```js
+// configure support for preprocessors
+export default {
+  less: await import(typeof Deno !== 'undefined'
+    ? 'npm:less'
+    : 'less'),
+};
+```
+
+> [!TIP]
+> The `typeof Deno` is a dirty-check for making the configuration cross-runtime,
+> otherwise it may not work as expected. Bun and NodeJS are pretty OK without the `npm:` prefix.
+
+---
+
 ## Development
 
 Run `jamrock server --watch` to start watching from the `./pages` directory.
@@ -126,19 +196,14 @@ You can have other stuff on this folder but it will be ignored, only `.md` and `
 >
 > Use `jamrock dev` as shortcut for this task.
 
+---
+
 ## Production
 
 Run `jamrock serve` and that's it!
 
-Just make sure you have built your pages first.
-
-> [!TIP]
-> Redis is encouraged for production, since the sessions and pub/sub support is
-> stored in memory by default, which is intended for development only.
->
-> If you want to use UnoCSS make sure you have the appropriate `unocss.config.mjs`
-> module on the `./pages` directory, stylesheets will be calculated from the
-> used classes by rendered components on every request.
+> [!CAUTION]
+> Just make sure you have built your pages first.
 
 <nav class="flex gap-sm between">
   <span>

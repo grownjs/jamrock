@@ -99,7 +99,7 @@ admin:
 	@pocketbase superuser create yo@soypache.co Password.123
 
 start\:%:
-	@bin/$* serve --port 3000 --unocss --src examples $(START_FLAGS)
+	@bin/$* serve --port 3000 --src examples $(START_FLAGS)
 
 e2e\:%:
 	npx testcafe '$(BROWSER) --disable-features=LocalNetworkAccessChecks' tests/e2e/cases --colors -a 'make start:$*' -S $(TESTCAFE_FLAGS)

@@ -251,7 +251,7 @@ export const createCompiler = ({ fs, path }, options, external) => {
   async function hooks(watcher) {
     const unoConfig = Template.path(`${cwd}/unocss.config`);
 
-    if (options.unocss !== false && unoConfig) {
+    if (options.unocss && unoConfig) {
       const unocss = await external.getUnoCSSModule();
       const _reload = async () => {
         printLog(`💅 ${unoConfig.replace(cwd, '.')}`);

@@ -52,11 +52,9 @@ Options:
 
   --port     The port number to bind the web-server
   --host     The host address to bind the web-server
-  --https    Enable HTTPS (requires SSL_KEY_FILE and SSL_KEY_FILE)
 
   --uws      Use uWebSockets.js instead of native HTTP (node)
-  --redis    Enable redis for sessions and pub/sub events
-  --unocss   Enable stylesheet pre-compilation with UnoCSS
+  --https    Enable HTTPS (requires SSL_KEY_FILE and SSL_KEY_FILE)
 
   --dts      Produce the .d.ts definitions from web-server routes
   --name     Filter routes by name (contains)
@@ -86,8 +84,6 @@ export default async function main(env, argv) {
   const port = +Util.flag('port', argv, 8080);
   const host = Util.flag('host', argv, 'localhost');
   const https = Util.has('https', argv);
-  const redis = Util.has('redis', argv);
-  const unocss = Util.has('unocss', argv);
   const _prefix = Util.flag('prefix', argv, '@');
 
   if (Util.has('help', argv) || !argv[0]) {
@@ -195,7 +191,7 @@ export type Routes = ${['RouteMap'].concat(typedefs).join('\n& ')};\n`;
       Object.assign(defaults, mod.default || mod);
     }
 
-    const _options = { src, dest, host, port, https, redis, prefix: _prefix };
+    const _options = { src, dest, host, port, https, prefix: _prefix };
 
     switch (argv[0]) {
       case 'serve':
@@ -205,12 +201,12 @@ export type Routes = ${['RouteMap'].concat(typedefs).join('\n& ')};\n`;
 
       case 'build':
         console.log(`Building ${src} to ${dest}`);
-        await env({ ...defaults, ..._options, unocss }).build();
+        await env({ ...defaults, ..._options }).build();
         break;
 
       case 'write':
         console.log(`Processing from ${dest}`);
-        await env({ ...defaults, ..._options, unocss }).static();
+        await env({ ...defaults, ..._options }).static();
         break;
 
       case 'route':
