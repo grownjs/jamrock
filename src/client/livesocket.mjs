@@ -251,6 +251,21 @@ export class LiveSocket {
       requestAnimationFrame(() => queue.length > 0 && Promise.resolve(queue.shift()(window.Jamrock)).then(run));
     };
 
+    const refresh = e => {
+      try {
+        if (e?.isTrusted) {
+          // window.frames.top.Jamrock.Components.reload(e.data);
+          window.frames.top.Jamrock.Browser.reload(null, true);
+        } else {
+          // window.Jamrock.Components.reload(e.data);
+          window.Jamrock.Browser.reload(null, true);
+        }
+      } catch (error) {
+        console.error('Error reloading:', error);
+        window.Jamrock.Browser.reload(null, true);
+      }
+    };
+
     this.next = _uuid => {
       if (ws && ws.readyState === ws.OPEN) ws.send(`rpc:reconnect ${this.browser.request_uuid = _uuid}`);
     };
@@ -267,25 +282,15 @@ export class LiveSocket {
           if (socket.readyState === socket.OPEN) socket.send('alive');
         }, Math.floor(Math.random() * (7500 - 6000)) + 6000);
 
+        if (e.data === 'refresh') {
+          refresh(e);
+        }
+
         if (e.data.indexOf('reload ') === 0) {
           const [, ...sources] = e.data.split(/\s+/).filter(Boolean);
 
-          // FIXME: here we should get a list of files changed... and then,
-          // we should remove them from the import-memory and such...
           if (!sources.length || sources.includes(this.document)) {
-            console.log('RELOADING PAGE');
-            try {
-              if (e.isTrusted) {
-                // window.frames.top.Jamrock.Components.reload(e.data);
-                window.frames.top.Jamrock.Browser.reload(null, true);
-              } else {
-                // window.Jamrock.Components.reload(e.data);
-                window.Jamrock.Browser.reload(null, true);
-              }
-            } catch (error) {
-              console.error('Error reloading:', error);
-              window.Jamrock.Browser.reload(null, true);
-            }
+            refresh(e);
           } else {
             this.patch(sources);
           }

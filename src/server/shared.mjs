@@ -156,21 +156,25 @@ export const createWatcher = ({ fs }, watcher, compiler) => {
     }
   });
 
+  function appendSource(found) {
+    if (found.route.middleware && !compiler.has(found.route.middleware)) push(found.route.middleware, 'compile');
+    if (found.route.layout && !compiler.has(found.route.layout)) push(found.route.layout, 'compile');
+    if (found.route.error && !compiler.has(found.route.error)) push(found.route.error, 'compile');
+    if (found.route.src) push(found.route.src, 'compile');
+  }
+
   async function retryCompile(url, retries) {
     const found = compiler.matches(url);
 
     if (found.route) {
-      if (found.route.middleware && !compiler.has(found.route.middleware)) push(found.route.middleware, 'compile');
-      if (found.route.layout && !compiler.has(found.route.layout)) push(found.route.layout, 'compile');
-      if (found.route.error && !compiler.has(found.route.error)) push(found.route.error, 'compile');
-      if (found.route.src) push(found.route.src, 'compile');
+      appendSource(found);
       reloading = true;
-      // console.log('RECOMPILE', sources);
       await sync(true, found.routes);
+      // console.log('RECOMPILE', found.route);
     } else if (retries > 0) {
       await new Promise(_ => setTimeout(_, 20)).then(() => retryCompile(url, retries - 1));
     } else {
-      console.log('NOT FOUND');
+      console.log('NOT FOUND', sources);
     }
   }
 
@@ -211,8 +215,6 @@ export const createCompiler = ({ fs, path }, options, external) => {
   const config = Template.exists(index)
     ? JSON.parse(Template.read(index))
     : { files: {}, assets: [], routes: [] };
-
-  const cache = new Map();
 
   function has(file) {
     if (!file) return;
@@ -282,10 +284,10 @@ export const createCompiler = ({ fs, path }, options, external) => {
         delete _options.default.https;
 
         Object.assign(options, _options.default);
+        this.refresh(watcher);
       };
 
       watcher.observe(options.__filename, _reconfigure);
-      watcher.before(_reconfigure);
     }
   }
 
@@ -313,20 +315,29 @@ export const createCompiler = ({ fs, path }, options, external) => {
     }
   }
 
+  const cache = new Map();
+
   function matches(url) {
+    if (cache.has(url)) {
+      return cache.get(url);
+    }
+
     const { routes } = handlers();
 
     for (const route of routes) {
       if (route.verb === 'GET' && route.re.test(url)) {
-        const _ = route.src || route.middleware;
-        const key = `${_}@mtime`;
-        const mtime = fs.statSync(_).mtime;
-        const cached = cache.get(key);
+        cache.set(url, { route, routes });
+        return { route, routes };
 
-        if (!cached || cached < mtime) {
-          cache.set(key, mtime);
-          return { route, routes };
-        }
+        // const _ = route.src || route.middleware;
+        // const key = `${_}@mtime`;
+        // const mtime = fs.statSync(_).mtime;
+        // const cached = cache.get(key);
+
+        // if (!cached || cached < mtime) {
+        //   cache.set(key, mtime);
+        //   return { route, routes };
+        // }
       }
     }
     return { routes };
@@ -422,11 +433,17 @@ export const createCompiler = ({ fs, path }, options, external) => {
     await this.save(routes, deps);
   }
 
+  function refresh(watcher) {
+    this.recompile([...cache.values().map(_ => _.route.src)]);
+    watcher.forEach(ws => ws.send('refresh'));
+  }
+
   return Object.defineProperties({
     has,
     save,
     hooks,
     reload,
+    refresh,
     matches,
     compile,
     recompile,
