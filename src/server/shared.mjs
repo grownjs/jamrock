@@ -197,6 +197,7 @@ export const createWatcher = ({ fs }, watcher, compiler) => {
     close: () => watcher.close(),
     before: cb => before.push(cb),
     observe: (src, cb) => watcher.on(src, cb),
+    forEach: fn => clients.forEach(fn),
     subscribe: ws => clients.push(ws),
     unsubscribe: ws => clients.splice(clients.indexOf(ws), 1),
   };
@@ -266,6 +267,25 @@ export const createCompiler = ({ fs, path }, options, external) => {
       } else {
         await _reload();
       }
+    }
+
+    if (options.__filename && watcher) {
+      const _reconfigure = async () => {
+        printLog(`⚡ ${options.__filename.replace(cwd, '.')}`);
+
+        const _options = await Template.reload(options.__filename, true);
+
+        delete _options.default.src;
+        delete _options.default.dest;
+        delete _options.default.host;
+        delete _options.default.port;
+        delete _options.default.https;
+
+        Object.assign(options, _options.default);
+      };
+
+      watcher.observe(options.__filename, _reconfigure);
+      watcher.before(_reconfigure);
     }
   }
 

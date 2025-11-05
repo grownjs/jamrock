@@ -188,7 +188,9 @@ export type Routes = ${['RouteMap'].concat(typedefs).join('\n& ')};\n`;
     if (config) {
       const mod = await import(config);
 
-      Object.assign(defaults, mod.default || mod);
+      Object.assign(defaults, mod.default, {
+        __filename: config,
+      });
     }
 
     const _options = { src, dest, host, port, https, prefix: _prefix };
