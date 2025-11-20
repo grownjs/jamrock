@@ -81,14 +81,14 @@ test-nodejs:
 
 docs:
 	@bin/node dev --src ./userguide
-dist-docs:
-	@bin/node build --src ./userguide --target jamrock
-	@bin/node write --target jamrock NODE_ENV=production
-
 index:
 	@bin/node build --src ./userguide
 	@bin/node write NODE_ENV=production
 	@npx -y pagefind --site build/public --serve
+dist-docs:
+	@bin/node build --src ./userguide --target /jamrock
+	@bin/node write NODE_ENV=production
+	@npx -y pagefind --site build/public
 
 live:
 	@npm pack

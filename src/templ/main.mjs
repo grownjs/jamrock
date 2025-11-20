@@ -805,6 +805,6 @@ export class Template {
   }
 
   static url(base_url, segment, timestamp) {
-    return `/${[base_url, segment].join('/').replace(/\/+/g, '/')}${timestamp ? `?_${Date.now()}` : ''}`;
+    return `/${[base_url, segment].join('/')}${timestamp ? `?_${Date.now()}` : ''}`.replace(/\/+/g, '/');
   }
 }

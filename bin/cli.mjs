@@ -187,7 +187,7 @@ export type Routes = ${['RouteMap'].concat(typedefs).join('\n& ')};\n`;
     const cwd = process.cwd();
     const config = Template.path(`${cwd}/dev.config`);
 
-    if (config) {
+    if (config && Template.exists(config)) {
       const mod = await import(config);
 
       Object.assign(defaults, mod.default, {

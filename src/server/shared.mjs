@@ -11,6 +11,7 @@ const FILES_PROPERTY = Symbol('@@files');
 const ASSETS_PROPERTY = Symbol('@@assets');
 const ROUTES_PROPERTY = Symbol('@@routes');
 const VERSION_PROPERTY = Symbol('@@version');
+const DEFAULTS_PROPERTY = Symbol('@@defaults');
 
 /**
  * @import {RouteInfo, Environment} from "../../types/env.d.ts"
@@ -237,6 +238,9 @@ export const createCompiler = ({ fs, path }, options, external) => {
         lvl: undefined,
         root: undefined,
       })),
+      defaults: {
+        target: options.target || '/',
+      },
     }, null, process.env.NODE_ENV === 'production' ? 0 : 2));
   }
 
@@ -464,6 +468,9 @@ export const createCompiler = ({ fs, path }, options, external) => {
     [VERSION_PROPERTY]: {
       get: () => config.version || 'HEAD',
     },
+    [DEFAULTS_PROPERTY]: {
+      get: () => config.defaults || {},
+    },
   });
 };
 
@@ -536,6 +543,9 @@ export function createEnvironment({ fs, path }, options, external) {
 
   async function _static() {
     try {
+      // restore some settings from the cache file
+      Object.assign(options, compiler[DEFAULTS_PROPERTY]);
+
       const start = Date.now();
       const base = compiler[PATH_PROPERTY];
       const files = compiler[FILES_PROPERTY];
