@@ -107,7 +107,7 @@ export async function createConnection(store, options, request, location, teardo
     method: request.method,
     server: serverInfo,
     headers: _headers,
-    base_url: '/',
+    base_url: options.target || '/',
     cookies,
     session,
     options,

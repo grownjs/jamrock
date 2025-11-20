@@ -45,6 +45,7 @@ Run `jamrock --help`:
   <var>--dest</var>     Destination for compiled files <em>(default is ./dest)</em>
   <var>--watch</var>    Enable file-watching on the web-server
   <var>--prefix</var>   Prefix for bundled resources
+  <var>--target</var>   Value for &lt;base href="..." /&gt; (default is /)
 
   <var>--port</var>     The port number to bind the web-server
   <var>--host</var>     The host address to bind the web-server

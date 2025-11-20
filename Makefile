@@ -84,7 +84,7 @@ docs:
 dist-docs:
 	@rm -rf build/*
 	@bin/node build --src ./userguide
-	@bin/node write
+	@bin/node write --target jamrock
 
 index:
 	@bin/node build --src ./userguide

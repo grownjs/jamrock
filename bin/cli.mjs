@@ -49,6 +49,7 @@ Options:
   --dest     Destination for compiled files (default is ./dest)
   --watch    Enable file-watching on the web-server
   --prefix   Prefix for bundled resources
+  --target   Value for <base href="..." /> (default is /)
 
   --port     The port number to bind the web-server
   --host     The host address to bind the web-server
@@ -85,6 +86,7 @@ export default async function main(env, argv) {
   const host = Util.flag('host', argv, 'localhost');
   const https = Util.has('https', argv);
   const _prefix = Util.flag('prefix', argv, '@');
+  const base_url = Util.flag('target', argv, '/');
 
   if (Util.has('help', argv) || !argv[0]) {
     console.log(USAGE_INFO
@@ -193,7 +195,7 @@ export type Routes = ${['RouteMap'].concat(typedefs).join('\n& ')};\n`;
       });
     }
 
-    const _options = { src, dest, host, port, https, prefix: _prefix };
+    const _options = { src, dest, host, port, https, prefix: _prefix, target: base_url };
 
     switch (argv[0]) {
       case 'serve':
