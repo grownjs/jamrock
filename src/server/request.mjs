@@ -299,7 +299,8 @@ export async function createBody(env, conn, clients, { client, matches, options 
       },
     };
 
-    ctx.stream = env.context.wrap(ctx, conn.req.uuid);
+    // on headless envs or for ssg this should run?
+    ctx.stream = env.context?.wrap(ctx, conn.req.uuid);
 
     conn.req.params = matches.params;
     conn.current_path = matches.path;

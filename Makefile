@@ -1,5 +1,10 @@
 PWD=$(shell pwd)
 
+FROM_FOLDER=build/public
+FROM_BRANCH=next
+TARGET_BRANCH=gh-pages
+COMMIT_MESSAGE=Release: $(shell date)
+
 NODE_ENV=production
 MAILDEV=1
 EDITOR=zed
@@ -76,6 +81,10 @@ test-nodejs:
 
 docs:
 	@bin/node dev --src ./userguide
+dist-docs:
+	@rm -rf build/*
+	@bin/node build --src ./userguide
+	@bin/node write
 
 index:
 	@bin/node build --src ./userguide
@@ -89,6 +98,22 @@ live:
 
 local: live
 	@./install.sh
+
+pages:
+	@(git fetch origin $(TARGET_BRANCH) 2> /dev/null || (\
+		git checkout --orphan $(TARGET_BRANCH);\
+		git rm -rf . > /dev/null;\
+		git commit --allow-empty -m "initial commit";\
+		git checkout $(FROM_BRANCH)))
+
+deploy: pages
+	@(mv $(FROM_FOLDER) .backup > /dev/null 2>&1) || true
+	@(git worktree remove $(FROM_FOLDER) --force > /dev/null 2>&1) || true
+	@(git worktree add $(FROM_FOLDER) $(TARGET_BRANCH) && (cp -r .backup/* $(FROM_FOLDER) > /dev/null 2>&1)) || true
+	@cd $(FROM_FOLDER) && git add . && git commit -m "$(message)" || true
+	@(mv .backup $(FROM_FOLDER) > /dev/null 2>&1) || true
+	@git push origin $(TARGET_BRANCH) -f || true
+	@rm -rf $(FROM_FOLDER)/.backup
 
 seed\:%: clean-ts
 	@bin/$* build --src examples
