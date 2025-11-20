@@ -94,6 +94,14 @@ export function enhance(vnode, parent) {
     if (value === test) props.selected = true;
   }
 
+  if (name === 'link' || name === 'script') {
+    const key = name === 'link' ? 'href' : 'src';
+
+    if (props[key] && props[key].charAt(0) === '/' && props[key].charAt(1) !== '/') {
+      props[key] = `.${props[key]}`;
+    }
+  }
+
   if (name === 'form') {
     if (props['@multipart']) {
       props.enctype = 'multipart/form-data';

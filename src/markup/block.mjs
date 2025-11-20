@@ -306,7 +306,7 @@ export const __attributes = ${this.$attributes};
           }
           if (node.attributes.rel === 'stylesheet' && node.attributes.inline && process.env.NODE_ENV === 'production') {
             node.name = 'style';
-            node.attributes = { '@html': await Template.refetch(node.attributes.href, this.base) };
+            node.attributes = { '@html': await Template.refetch(node.attributes.href, this.base, this.opts.target) };
           }
           break;
 

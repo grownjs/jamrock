@@ -86,6 +86,7 @@ export class Template {
     const target = this.partial.dest;
     const scope = this.partial.id;
     const { markup } = this.partial;
+    const base_url = defaults.target || '/';
 
     const set = [];
     const tasks = [];
@@ -130,7 +131,7 @@ export class Template {
             x.content = x.content.replace(/url\((.+?)\)/g, (_, $1) => {
               if ($1.charAt() === '/' || $1.indexOf('http') === 0) return _;
               resources.media.push(Template.join(defaults.src, $1));
-              return `url(/${$1}?_${Date.now()})`;
+              return `url(${Template.url(base_url, $1, true)})`;
             });
           }
 
@@ -635,7 +636,7 @@ export class Template {
   }
 
   // FIXME: recursive inline? e.g. urls() and @imports?
-  static async refetch(url, target) {
+  static async refetch(url, target, base_url = '/') {
     const source = url.replace(/^\/\//, 'http://');
 
     if (source[0] === '/') return '/* not found */';
@@ -654,7 +655,7 @@ export class Template {
       html = html.replace(/url\((['"]?)(.+?)\1\)/g, (_, _q, v) => {
         const found = { url: v, fixed: v.replace(/[^\w.]/g, '_') };
         urls.push(found);
-        return `url(/${found.fixed})`;
+        return `url(${Template.url(base_url, found.fixed)})`;
       });
 
       await Promise.all(urls.map(found => fetch(found.url).then(async result => {
@@ -801,5 +802,9 @@ export class Template {
 
       return [name, attrs, children];
     };
+  }
+
+  static url(base_url, segment, timestamp) {
+    return `/${[base_url, segment].join('/').replace(/\/+/g, '/')}${timestamp ? `?_${Date.now()}` : ''}`;
   }
 }
