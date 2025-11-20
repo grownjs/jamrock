@@ -82,7 +82,6 @@ test-nodejs:
 docs:
 	@bin/node dev --src ./userguide
 dist-docs:
-	@rm -rf build/*
 	@bin/node build --src ./userguide
 	@bin/node write --target jamrock
 
@@ -110,7 +109,7 @@ deploy: pages
 	@(mv $(FROM_FOLDER) .backup > /dev/null 2>&1) || true
 	@(git worktree remove $(FROM_FOLDER) --force > /dev/null 2>&1) || true
 	@(git worktree add $(FROM_FOLDER) $(TARGET_BRANCH) && (cp -r .backup/* $(FROM_FOLDER) > /dev/null 2>&1)) || true
-	@cd $(FROM_FOLDER) && git add . && git commit -m "$(message)" || true
+	@cd $(FROM_FOLDER) && git add . && git commit -m "$(COMMIT_MESSAGE)" || true
 	@(mv .backup $(FROM_FOLDER) > /dev/null 2>&1) || true
 	@git push origin $(TARGET_BRANCH) -f || true
 	@rm -rf $(FROM_FOLDER)/.backup

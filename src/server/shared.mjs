@@ -563,9 +563,15 @@ export function createEnvironment({ fs, path }, options, external) {
 
       // FIXME: mock this better!
       const req = {};
-      const conn = { req, headers: {} };
       const uuid = '';
       const client = '';
+
+      // FIXME: try createConnection?
+      const conn = {
+        req,
+        headers: {},
+        base_url: options.target || '/',
+      };
 
       for (const route of routes.filter(_ => _.kind === 'page')) {
         const destFile = path.join(publicDest, route.path, 'index.html');
@@ -601,7 +607,7 @@ export function createEnvironment({ fs, path }, options, external) {
       }
 
       for (const file of fs.readdirSync(import.meta.dirname)) {
-        if (['client.mjs', 'server.mjs', 'main.mjs'].includes(file)) continue;
+        if (['client.mjs', 'server.mjs', 'main.mjs'].includes(file) || file.includes('.d.ts')) continue;
 
         const srcFile = path.join(import.meta.dirname, file);
         const destFile = path.join(publicDest, file);
