@@ -579,14 +579,15 @@ export function createEnvironment({ fs, path }, options, external) {
       const uuid = '';
       const client = '';
 
-      // FIXME: try createConnection?
-      const conn = {
-        req,
-        headers: {},
-        base_url: options.target || '/',
-      };
-
       for (const route of routes.filter(_ => _.kind === 'page')) {
+        // FIXME: try createConnection?
+        const conn = {
+          req,
+          headers: {},
+          base_url: options.target || '/',
+          request_path: route.path,
+        };
+
         const destFile = path.join(publicDest, route.path, 'index.html');
 
         printLog(Util.$.green(route.verb), route.path, Util.$.gray(destFile));
