@@ -1,5 +1,4 @@
 @sidebar: 11em;
-@content: 34em;
 
 @light: #8A8A8A;
 @white: #FEFEFE;
@@ -297,16 +296,12 @@ h1, h2, h3, h4 {
   margin: auto;
 
   &.min {
-    max-width: @content;
+    max-width: 33em;
     margin-bottom: 50px;
   }
 
   > header {
     position: relative;
-  }
-
-  nav {
-    margin-top: 50px;
   }
 }
 
@@ -331,4 +326,32 @@ h1, h2, h3, h4 {
   &.between { justify-content: space-between; }
   &.centered { align-items: center; }
   &.vertical { flex-direction: column; }
+}
+
+.main {
+  aside { margin-top: 50px; }
+  aside > footer { width: 100%; }
+}
+
+@media screen and (min-width: 960px) {
+  .not_home {
+    .body.min {
+      max-width: 52em;
+    }
+    .main {
+      gap: 2rem;
+      display: flex;
+      flex-direction: row-reverse;
+
+      aside { margin: 0; }
+      aside > footer {
+        position: sticky;
+        top: 1rem;
+        width: 260px;
+        margin-top: 1rem;
+      }
+
+      .pagefind-ui__drawer { max-height: calc(100vh - 5rem); overflow: auto; }
+    }
+  }
 }

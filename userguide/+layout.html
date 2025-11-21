@@ -1,5 +1,9 @@
 <script>
+  import { request_path } from 'jamrock:conn';
+
   import Footer from './lib/footer.html';
+
+  const className = request_path !== '/' ? 'not_home' : '';
 </script>
 
 <style global src="./lib/styles.less" />
@@ -31,7 +35,7 @@
   {/if}
 </head>
 
-<body class="reset">
+<body class="reset" class={className}>
   <div id="fx-stars">
     <div></div>
     <div></div>
@@ -49,9 +53,13 @@
       </h1>
       <a id="top">&nbsp;</a>
     </header>
-    {@render $$props.children?.()}
-    <hr />
-    <div id="search" />
-    <Footer />
+    <div class="main">
+      <div>
+        {@render $$props.children?.()}
+      </div>
+      <aside>
+        <Footer />
+      </aside>
+    </div>
   </main>
 </body>
