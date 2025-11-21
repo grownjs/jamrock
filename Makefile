@@ -84,11 +84,11 @@ docs:
 index:
 	@bin/node build --src ./userguide
 	@bin/node write NODE_ENV=production
-	@npx -y pagefind --site build/public --serve
+	@npx -y pagefind --site $(FROM_FOLDER) --serve
 dist-docs:
 	@bin/node build --src ./userguide --target /jamrock
 	@bin/node write NODE_ENV=production
-	@npx -y pagefind --site build/public
+	@npx -y pagefind --site $(FROM_FOLDER)
 
 live:
 	@npm pack
