@@ -21,7 +21,11 @@
     <script src="/pagefind/pagefind-ui.js"></script>
     <script inline>
       window.addEventListener('DOMContentLoaded', (event) => {
-        new PagefindUI({ element: "#search", showSubResults: true });
+        new PagefindUI({
+          element: "#search",
+          showImages: false,
+          showSubResults: true
+        });
       });
     </script>
   {/if}
@@ -35,7 +39,7 @@
   </div>
   <main class="body min">
     <header class="center">
-      <a class="welcome" href="/welcome">
+      <a class="welcome" href="/">
         <svg src="./images/welcome.svg" height="32" />
       </a>
       <h1 class="meteorite floating">

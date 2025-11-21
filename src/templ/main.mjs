@@ -275,7 +275,7 @@ export class Template {
     }
 
     // chunk.prelude = (chunk.prelude || []).concat(mixins.map(x => x.prelude));
-    chunk.head.unshift(['base', { href: self.base_url || '/' }]);
+    chunk.head.unshift(['base', { href: self.base_url && self.base_url !== '/' ? `${self.base_url}/` : '/' }]);
     chunk.head.unshift(['meta', { charset: 'utf-8' }]);
 
     chunk.doc['data-location'] = filepath;
