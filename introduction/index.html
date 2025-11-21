@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html data-location="userguide/components+page.md"><head>
+<html data-location="userguide/introduction+page.md"><head>
 <meta charset="utf-8" /><base href="/" /><meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1" /><meta name=HandheldFriendly content /><meta name=viewport content="width=device-width, initial-scale=1,maximum-scale=1,user-scalable=no" /><meta name=release content=cc0a19b /><link rel=stylesheet href="//unpkg.com/highlight.js@10.7.3/styles/tomorrow-night-eighties.css" inline /><link rel=stylesheet href="//fonts.googleapis.com/css?family=Montserrat" inline /><link rel=stylesheet href="./stars.css" /><link rel="apple-touch-icon" sizes=180x180 href="./apple-touch-icon.png" /><link rel=icon type="image/png" sizes=32x32 href="./favicon-32x32.png" /><link rel=icon type="image/png" sizes=16x16 href="./favicon-16x16.png" /><link rel=manifest href="./site.webmanifest" /><link href="./pagefind/pagefind-ui.css" rel=stylesheet /><script src="./pagefind/pagefind-ui.js"></script><script>
       window.addEventListener('DOMContentLoaded', (event) => {
         new PagefindUI({
@@ -9,173 +9,137 @@
         });
       });
     </script>
-  <title>Jamrock | Components</title>
-<link rel=stylesheet href="@/userguide/+layout(0).css" /><link rel=stylesheet href="@/userguide/+layout.css" /><link rel=stylesheet href="@/userguide/components+page.css" /><link rel=stylesheet href="@/userguide/components/navlink.css" /><link rel=stylesheet href="@/userguide/lib/footer.css" /></head><body class=reset>
-<div id="fx-stars"><div></div><div></div><div></div></div><main class="body min"><header class=center><a class=welcome href="/welcome"><svg height=32><use xlink:href="#welcome" data-location="userguide/images/welcome.svg" /></svg></a><h1 class="meteorite floating"><a href="/" data-version=cc0a19b><svg width=420 height=420><use xlink:href="#jamrock-meteorite" data-location="userguide/images/jamrock-meteorite.svg" /></svg></a></h1><a id=top>&nbsp;</a></header><h1 id=components>Components</h1>
-<p>We have three types of components:</p><ol>
-<li>Dynamic server-side or page components</li>
-<li>Client-side components with some functionality</li>
-<li>Static components with some functionality or markup</li>
+  <title>Jamrock | Introduction</title>
+<link rel=stylesheet href="@/userguide/+layout(0).css" /><link rel=stylesheet href="@/userguide/+layout.css" /><link rel=stylesheet href="@/userguide/introduction+page.css" /><link rel=stylesheet href="@/userguide/components/navlink.css" /><link rel=stylesheet href="@/userguide/lib/footer.css" /></head><body class=reset>
+<div id="fx-stars"><div></div><div></div><div></div></div><main class="body min"><header class=center><a class=welcome href="/welcome"><svg height=32><use xlink:href="#welcome" data-location="userguide/images/welcome.svg" /></svg></a><h1 class="meteorite floating"><a href="/" data-version=cc0a19b><svg width=420 height=420><use xlink:href="#jamrock-meteorite" data-location="userguide/images/jamrock-meteorite.svg" /></svg></a></h1><a id=top>&nbsp;</a></header><h1 id="the-building-blocks">The building blocks</h1>
+<p>Everything starts from somewhere,</p><ol>
+<li>Routes are the entry-point for your application, and they are defined through page components or middleware.</li>
+<li>The <code>Request</code> object is available through the <code>jamrock:conn</code> module,
+it provides most stuff for common chores.</li>
+<li>The <code>Response</code> is calculated by the framework, but you can also provide your own
+(this is what the <code>redirect()</code> helper does).</li>
 </ol>
-<p>Server-side components will have a <code>&lt;script&gt;</code> tag without context,
-or <code>&lt;script context="module"&gt;</code> for module-level functionality.</p><p>Client-side components will have a <code>&lt;script context="client"&gt;</code></p><blockquote class="is-important"><p>
-Static components may not contain script tags,
-but can access their props through the <code>$$props</code> variable.</p><p>We explore <a href="./scripts">other kind of scripts</a> later,
-for now we&#39;ll focus on static or dynamic components with or without context.</p></blockquote><h2 id="file-naming">File-naming</h2>
-<p>Any <code>.&lbrace;md,html&rbrace;</code> file within the <code>./pages</code> directory is a component,
-if the filename ends on <code>+page</code>, <code>+error</code> or <code>+layout</code> then it will
-be used to declare and decorate your application routes.</p><p>You can also place <code>+server.mjs</code> files aside your components,
-they&#39;ll also decorate your routes with additional middleware definitions,
-handlers and actions.</p><blockquote class="is-note"><p>
-This results in a tree of all your declared routes with their nearest layout,
-error and middleware modules found.</p><p>We save this information with your compiled files for later usage
-in a <code>index.json</code> file, i.e. <code>jamrock route</code> use this file.</p></blockquote><hr />
-<h2 id=composition>Composition</h2>
-<p>To use other components to <em>compose</em> the UI you need to import them.</p><pre class=hljs data-lang=html><code><span class="hljs-tag">&lt;<span class="hljs-name">script</span>&gt;</span><span class="language-javascript">
-  <span class="hljs-keyword">import</span> <span class="hljs-title class_">Hello</span> <span class="hljs-keyword">from</span> <span class="hljs-string">&#x27;./components/hello.html&#x27;</span>;
-</span><span class="hljs-tag">&lt;/<span class="hljs-name">script</span>&gt;</span>
+<h2 id=routes>Routes</h2>
+<p>Files ending with <code>+page.html</code> will be used to declare routes.</p><p>They&#39;re transformed using the following rules:</p><div class="has-table"><table><thead><tr>
+<th>Filename</th>
+<th>Route</th>
+</tr>
+</thead><tbody><tr>
+<td><code>index+page.html</code></td>
+<td><code>/</code></td>
+</tr>
+<tr>
+<td><code>login+page.html</code></td>
+<td><code>/login</code></td>
+</tr>
+<tr>
+<td><code>(lang).blog+page.html</code></td>
+<td><code>/:lang?/blog</code></td>
+</tr>
+<tr>
+<td><code>hello.[name]+page.html</code></td>
+<td><code>/hello/:name</code></td>
+</tr>
+<tr>
+<td><code>posts/$post_id+page.html</code></td>
+<td><code>/posts/:post_id</code></td>
+</tr>
+<tr>
+<td><code>_site/sitemap[.xml]+page.html</code></td>
+<td><code>/sitemap.xml</code></td>
+</tr>
+<tr>
+<td><code>_site/articles/[...slug]+page.html</code></td>
+<td><code>/articles/*slug</code></td>
+</tr>
+</tbody></table></div><blockquote class="is-note"><p>
+Path parameters can be declared as <code>$param</code> or <code>[param]</code>,
+optional parameters use parentheses (e.g. <code>(param)</code>),
+and catch-all parameters as <code>[...param]</code>.</p><p>Segments are taken from nested folders or <code>.</code> separators,
+any of them starting with <code>_</code> are just ignored from final paths.</p><p>File extensions are preserved by using the <code>[.ext]</code> syntax.</p></blockquote><h2 id=handlers>Handlers</h2>
+<p>Pages can declare its own route handlers through the <code>export default</code> object.</p><p>They can be set as boolean, to enable some methods, or functions to handle the whole request, e.g.</p><details><summary> Example of module handlers</summary><pre class=hljs data-lang=html><code><span class="hljs-tag">&lt;<span class="hljs-name">script</span>&gt;</span><span class="language-javascript">
+  <span class="hljs-keyword">export</span> <span class="hljs-keyword">default</span> &lbrace;
+    <span class="hljs-comment">// middleware to invoke, see below</span>
+    <span class="hljs-attr">use</span>: [<span class="hljs-string">&#x27;csrf&#x27;</span>],
 
-<span class="hljs-tag">&lt;<span class="hljs-name">Hello</span>&gt;</span>World<span class="hljs-tag">&lt;/<span class="hljs-name">Hello</span>&gt;</span></code></pre><blockquote class="is-warning"><p>
-You can&#39;t import components in your own modules
-as they are resolved at compile time.</p><p>Also, importing page-components from other pages is disallowed.</p></blockquote><h3 id=content>Content</h3>
-<p>Use the <code>children</code> prop to render any given content.</p><pre class=hljs data-lang=html><code><span class="hljs-tag">&lt;<span class="hljs-name">script</span>&gt;</span><span class="language-javascript">
-  <span class="hljs-keyword">export</span> <span class="hljs-keyword">let</span> children;
-</span><span class="hljs-tag">&lt;/<span class="hljs-name">script</span>&gt;</span>
+    <span class="hljs-comment">// allow for POST requests, no action</span>
+    <span class="hljs-attr">POST</span>: <span class="hljs-literal">true</span>,
 
-<span class="hljs-tag">&lt;<span class="hljs-name">div</span>&gt;</span>Hello &lbrace;@render children?.()&rbrace;<span class="hljs-tag">&lt;/<span class="hljs-name">div</span>&gt;</span></code></pre><p>The result from above would be <code>&lt;div&gt;Hello World&lt;/div&gt;</code>.</p><h3 id=props>Props</h3>
-<p>Top-level <code>export</code> declarations are the props, e.g.</p><pre class=hljs data-lang=html><code><span class="hljs-tag">&lt;<span class="hljs-name">script</span>&gt;</span><span class="language-javascript">
-  <span class="hljs-keyword">export</span> <span class="hljs-keyword">let</span> test;
-  <span class="hljs-keyword">export</span> <span class="hljs-keyword">let</span> value;
-</span><span class="hljs-tag">&lt;/<span class="hljs-name">script</span>&gt;</span>
+    <span class="hljs-comment">// action for DELETE requests</span>
+    <span class="hljs-title function_">DELETE</span>(<span class="hljs-params"></span>) &lbrace;
+      <span class="hljs-comment">// do something</span>
+    &rbrace;,
 
-Got: &lbrace;test&rbrace; (&lbrace;typeof value&rbrace; &lbrace;value&rbrace;)</code></pre><blockquote class="is-tip"><p>
-Using <code>let</code> helps to omit initial values,
-while <code>const</code> will enforce you otherwise,
-however the former is preferred.</p></blockquote><p>Now your component can be used this way:</p><pre class=hljs data-lang=html><code><span class="hljs-tag">&lt;<span class="hljs-name">Example</span> <span class="hljs-attr">test</span>=<span class="hljs-string">&quot;OSOM&quot;</span> <span class="hljs-attr">value</span>=<span class="hljs-string">&lbrace;42&rbrace;</span> /&gt;</span></code></pre><p>It would yield: <code>Got: OSOM (number 42)</code></p><blockquote class="is-caution"><p>
-Passing props between server-side components is granted for any type (almost!),
-but when you pass props to client-side components they should be serializable values.</p></blockquote><p>In the case of static components without a <code>&lt;script&gt;</code> tag you should use <code>$$props.thing</code> syntax to access any given prop.</p><hr />
-<h2 id=templating>Templating</h2>
-<p>We&#39;ve been using stuff like <code>&lbrace;...&rbrace;</code>, <code>&lbrace;@render ...&rbrace;</code> and <code>&lbrace;#snippet ...&rbrace;</code>,
-they are template-tags or expressions.</p><p>They just render any given values on specific ways,
-enabling you to compose using logical expressions, loops and so on.</p><p>Let&#39;s explore all the available tags:</p><h3 id="-lbrace">&lbrace;...}</h3>
-<p>They can render simple values or basic JavaScript expressions.</p><blockquote class="is-caution"><p>
-Try to keep things simple, we don&#39;t support fully featured JavaScript expressions to abuse from!</p></blockquote><h3 id="-lbrace-snippet-lbrace-snippet">&lbrace;#snippet ...}...&lbrace;/snippet}</h3>
-<p>Declare reusable chunks of markup in your components.</p><p>They can appear at component root to behave as fallbacks if they&#39;re not given as props, i.e.</p><pre class=hljs data-lang=html><code><span class="hljs-tag">&lt;<span class="hljs-name">script</span>&gt;</span><span class="language-javascript">
-  <span class="hljs-keyword">export</span> <span class="hljs-keyword">let</span> sample;
-</span><span class="hljs-tag">&lt;/<span class="hljs-name">script</span>&gt;</span>
+    <span class="hljs-comment">// route-handlers for this component</span>
+    [<span class="hljs-string">&#x27;GET /:article_id&#x27;</span>](&lbrace; article_id &rbrace;) &lbrace;
+      <span class="hljs-variable language_">console</span>.<span class="hljs-title function_">log</span>(&lbrace; article_id &rbrace;);
+    &rbrace;,
 
-&lbrace;#snippet sample(value)&rbrace;
-  Got: &lbrace;value&rbrace;
-&lbrace;/snippet&rbrace;
+    <span class="hljs-keyword">catch</span>(e) &lbrace;
+      <span class="hljs-comment">// handle errors</span>
+    &rbrace;,
+    <span class="hljs-title function_">finally</span>(<span class="hljs-params"></span>) &lbrace;
+      <span class="hljs-comment">// this always run</span>
+    &rbrace;,
 
-<span class="hljs-tag">&lt;<span class="hljs-name">div</span>&gt;</span>&lbrace;@render sample(42)&rbrace;<span class="hljs-tag">&lt;/<span class="hljs-name">div</span>&gt;</span></code></pre><p>In this example, the component will receive a <code>sample</code> prop
-that will fallback to the inlined version if omitted.</p><pre class=hljs data-lang=html><code><span class="hljs-tag">&lt;<span class="hljs-name">Example</span>&gt;</span>
-  &lbrace;#snippet sample(value)&rbrace;
-    OSOM: &lbrace;value&rbrace;
-  &lbrace;/snippet&rbrace;
-<span class="hljs-tag">&lt;/<span class="hljs-name">Example</span>&gt;</span></code></pre><p>This would yield: <code>&lt;div&gt;OSOM: 42&lt;/div&gt;</code></p><blockquote class="is-note"><p>
-Snippets are values, so they can be passed down as arguments
-that you can pass again or render, etc.</p></blockquote><h3 id="-lbrace-render">&lbrace;@render ...}</h3>
-<p>Will take any expression to produce markup.</p><blockquote class="is-tip"><p>
-It&#39;s encouraged to call these expressions with <code>?.()</code>
-to avoid unexpected exceptions if you don&#39;t provide them.</p></blockquote><h3 id="-lbrace-if-lbrace-if">&lbrace;#if ...}...&lbrace;/if}</h3>
-<p>It&#39;ll render the underlying block if the expressions is truthy, i.e.</p><pre class=hljs><code>&lbrace;#if true&rbrace;
-  42
-&lbrace;/if&rbrace;</code></pre><blockquote class="is-caution"><p>
-As any other expression given, keep it simple for now!</p></blockquote><h3 id="-lbrace-else">&lbrace;:else ...}</h3>
-<p>You can use <code>&lbrace;:else&rbrace;</code> or <code>&lbrace;:else if ...&rbrace;</code> blocks
-to render as fallbacks from their previous condition.</p><blockquote class="is-tip"><p>
-These tags are not limited to if&#39;s,
-they can be used to declare fallbacks
-from <code>&lbrace;#each ...&rbrace;</code> blocks, see below.</p></blockquote><h3 id="-lbrace-each-lbrace-each">&lbrace;#each ...}...&lbrace;/each}</h3>
-<p>Allows to iterate values within the template,
-it can take arrays, generators, promises, etc.</p><p>Almost anything that can produce an iterator, e.g.</p><pre class=hljs data-lang=html><code><span class="hljs-tag">&lt;<span class="hljs-name">script</span>&gt;</span><span class="language-javascript">
-  <span class="hljs-keyword">const</span> empty = <span class="hljs-title class_">Promise</span>.<span class="hljs-title function_">resolve</span>([]);
-  <span class="hljs-keyword">const</span> numbers = [<span class="hljs-number">1</span>, <span class="hljs-number">2</span>, <span class="hljs-number">3</span>];
-  <span class="hljs-keyword">function</span> *<span class="hljs-title function_">values</span>(<span class="hljs-params"></span>) &lbrace;
-    <span class="hljs-keyword">yield</span> <span class="hljs-number">1</span>;
-    <span class="hljs-keyword">yield</span> <span class="hljs-number">2</span>;
-    <span class="hljs-keyword">yield</span> <span class="hljs-number">3</span>;
+    <span class="hljs-title function_">someAction</span>(<span class="hljs-params"></span>) &lbrace;
+      <span class="hljs-comment">// used on form actions</span>
+    &rbrace;,
+  &rbrace;;
+</span><span class="hljs-tag">&lt;/<span class="hljs-name">script</span>&gt;</span></code></pre></details><p>By default all pages will respond to GET requests, depending on their handlers they can respond to other methods.</p><p>If you don&#39;t want to execute a page through the GET method just use <code>GET: false</code> to disable it.</p><blockquote class="is-note"><p>
+Handlers using the syntax <code>['METHOD /path/with/:params']</code> are also registered as routes for the page,
+all declared parameters will be passed as arguments.</p><p>If you declare a <code>catch</code> or <code>finally</code> handler they&#39;ll be called as result of evaluating the requested handlers.</p><p>Additional handlers may be invoked if they match a requested action, e.g. <code>&lt;form action="?/someAction" method="POST"&gt;</code>.</p></blockquote><h2 id=middleware>Middleware</h2>
+<p>In some cases you may want to run some code prior executing your handlers, to enable such behavior you must declare a <code>use</code> property.</p><p>This is how you can define some middleware functions in a <code>+server.mjs</code> script, e.g.</p><details><summary> Example of middleware module</summary><pre class=hljs data-lang=js><code><span class="hljs-keyword">export</span> <span class="hljs-keyword">function</span> <span class="hljs-title function_">http</span>(<span class="hljs-params">conn</span>) &lbrace;
+  <span class="hljs-comment">// `http` handler executes on every request!</span>
+&rbrace;
+
+<span class="hljs-keyword">export</span> <span class="hljs-keyword">function</span> <span class="hljs-title function_">csrf</span>(<span class="hljs-params">conn</span>) &lbrace;
+  conn.<span class="hljs-property">req</span>.<span class="hljs-title function_">csrfProtect</span>();
+&rbrace;
+
+<span class="hljs-keyword">export</span> <span class="hljs-keyword">default</span> &lbrace;
+  <span class="hljs-attr">use</span>: [<span class="hljs-string">&#x27;http&#x27;</span>],
+  
+  [<span class="hljs-string">&#x27;GET /some/:stuff&#x27;</span>](&lbrace; params &rbrace;) &lbrace;
+    <span class="hljs-variable language_">console</span>.<span class="hljs-title function_">log</span>(<span class="hljs-string">&#x27;Got&#x27;</span>, params.<span class="hljs-property">stuff</span>);
+  &rbrace;,
+
+  <span class="hljs-keyword">catch</span>(e, conn) &lbrace;
+    <span class="hljs-comment">// do something</span>
+  &rbrace;,
+  <span class="hljs-title function_">finally</span>(<span class="hljs-params">response</span>) &lbrace;
+    <span class="hljs-keyword">return</span> response;
+  &rbrace;
+&rbrace;</code></pre></details><p>Exported functions are registered as middleware by name,
+these <code>+server.mjs</code> scripts are loaded automatically by the framework:</p><ol>
+<li>Routes declared on the <code>export default</code> object are evaluated if they match,
+here is where you need to place api-routes as they don&#39;t require a page to exist.</li>
+<li>The <code>+server.mjs</code> file can be placed at any level within the pages directory, following the same strategy as <code>+layout.html</code> or <code>+error.html</code> resolution.</li>
+<li>These functions will receive the <code>jamrock:conn</code> object as their first argument, any other values will be passed as the second argument, etc.
+Extra options should be set like this, e.g. <code>use: [['csrf', ...]]</code></li>
+</ol>
+<p>Declared <code>catch</code> and <code>finally</code> handlers on this object will receive
+the error and response, with the <code>jamrock:conn</code> object as the last argument.</p><blockquote class="is-warning"><p>
+Make sure you return the given or modified <code>response</code> argument in your <code>finally</code> handler,
+the framework relies on this value to build the final response.</p><p>Avoid errors within <code>catch</code> handlers, otherwise they might not be handled et all!</p></blockquote><h2 id=request>Request</h2>
+<p>To access the request you&#39;ll need the <code>jamrock:conn</code> module:</p><details><summary> Example of request handling</summary><pre class=hljs data-lang=html><code><span class="hljs-tag">&lt;<span class="hljs-name">script</span>&gt;</span><span class="language-javascript">
+  <span class="hljs-keyword">import</span> &lbrace; method, headers, redirect &rbrace; <span class="hljs-keyword">from</span> <span class="hljs-string">&#x27;jamrock:conn&#x27;</span>;
+
+  <span class="hljs-keyword">if</span> (method === <span class="hljs-string">&#x27;GET&#x27;</span> &amp;&amp; !headers.<span class="hljs-title function_">has</span>(<span class="hljs-string">&#x27;token&#x27;</span>)) &lbrace;
+    <span class="hljs-title function_">redirect</span>(<span class="hljs-string">&#x27;/login&#x27;</span>);
   &rbrace;
 </span><span class="hljs-tag">&lt;/<span class="hljs-name">script</span>&gt;</span>
 
-&lbrace;#each empty as _&rbrace;
-  Not empty
-&lbrace;:else&rbrace;
-  Empty
-&lbrace;/each&rbrace;
-
-&lbrace;#each numbers as num&rbrace;
-  &lbrace;num&rbrace;
-&lbrace;/each&rbrace;
-
-&lbrace;#each values as val&rbrace;
-  &lbrace;val&rbrace;
-&lbrace;/each&rbrace;</code></pre><blockquote class="is-caution"><p>
-Iterators are constrained by time and length, so they&#39;ll be stopped once
-a given limit or maximum execution-time is reached!</p></blockquote><h3 id="-lbrace-raw">&lbrace;@raw ...}</h3>
-<p>These expressions will be inlined as is on the compiled code,
-be wise and careful as you&#39;re inlining code!</p><p>Usually this is required to inline markup on its AST form, e.g.</p><pre class=hljs><code>&lbrace;@raw ['h1', &lbrace;&rbrace;, 'It works!']&rbrace;</code></pre><h3 id="-lbrace-html">&lbrace;@html ...}</h3>
-<p>This will render any given string as HTML.</p><blockquote class="is-caution"><p>
-Its contents is not processed, so it&#39;ll be rendered as is.</p></blockquote><h3 id="-lbrace-debug">&lbrace;@debug ...}</h3>
-<p>It&#39;ll print out the <code>JSON.stringify(&lbrace; ... &rbrace;)</code> result from any given argument,
-variables are just treated as object fields.</p><blockquote class="is-warning"><p>
-This will not support expressions, just variable names.</p></blockquote><hr />
-<h2 id=markdown>Markdown</h2>
-<p><strong>Jamrock</strong> supports some markdown content through <code>kramed</code> on
-<code>*-page.html</code> components and on any <code>*.md</code> component.</p><p>For pages it&#39;s allowed on the top-level of the file only.</p><details><summary> Example of page component</summary><pre class=hljs data-lang=html><code><span class="hljs-tag">&lt;<span class="hljs-name">script</span>&gt;</span><span class="language-javascript">
-  <span class="hljs-keyword">export</span> <span class="hljs-keyword">let</span> children;
-</span><span class="hljs-tag">&lt;/<span class="hljs-name">script</span>&gt;</span>
-
-# Markdown works here
-
-- This is the top-level of the file,
-- you don&#x27;t need to wrap your content
-- in body or head tags on your components
-
-<span class="hljs-tag">&lt;<span class="hljs-name">div</span>&gt;</span>
-  ## Markdown here does not work!
-  
-  &lbrace;@render children?.()&rbrace;
-<span class="hljs-tag">&lt;/<span class="hljs-name">div</span>&gt;</span></code></pre></details><h3 id="-lt-mkd-gt">&lt;mkd&gt;</h3>
-<p>You can use the <code>&lt;mkd&gt;</code> element to render Markdown within other html nodes,
-it may work with some expressions!</p><blockquote class="is-caution"><p>
-You can import and include other components in your Markdown,
-that&#39;s expected and works out of the box.</p></blockquote><h3 id="code-blocks">Code blocks</h3>
-<p>Tagged blocks are ignored by the parser as they are handled by <strong>highlight.js</strong>,
-this produces highlighted code as the resulting markup.</p><pre class=hljs><code>&#96;&#96;&#96;html
-&lt;h1&gt;It works!&lt;/h1&gt;
-&#96;&#96;&#96;</code></pre><blockquote class="is-note"><p>
-<strong>Jamrock</strong> includes support for: <code>shell</code>, <code>less</code>, <code>css</code>, <code>html</code>, <code>xml</code> and <code>js</code> languages for now.</p></blockquote><p>Untagged blocks are parsed by the framework instead,
-this way components can be rendered within.</p><p>You&#39;ll need to escape HTML tags and other entities to render them as text, i.e.</p><details>
-<summary>Examples of html-entities encoded</summary>
-<pre class=hljs><code>&#96;&#96;&#96;
-&amp;lt;h1&amp;gt;It works!&amp;lt;/h1&amp;gt;
-&#96;&#96;&#96;
-
-or
-
-`&amp;lbrace; ... }`</code></pre>
-</details><ol>
-<li>You MUST encode the <code>&lbrace;</code> character as <code>&amp;lbrace;</code> outside tagged blocks,
-otherwise they&#39;ll be parsed.</li>
-<li>Any other HTML tag or entity within inline <code>&#96;...&#96;</code> backticks MUST
-be encoded as well.</li>
-<li>Only <code>&#96;&#96;&#96;</code> blocks are handlded this way,
-code blocks made by white-space indentation are ignored.</li>
-</ol>
-<p>This way the markup is rendered as is,
-so you can decorate the code by yourself
-with components or regular HTML tags.</p><h3 id="emoji-support">Emoji support</h3>
-<p>Inside markdown we can use emojis, or shortcuts like &#58;beer: (<img class=emoji draggable=false alt=🍺 src="https://twemoji.maxcdn.com/v/14.0.2/svg/1f37a.svg" />).</p><p>To render the shortcut as text just encode it as <code>&amp;#58;beer:</code>.</p><blockquote class="is-tip"><p>
-Emoji support is enabled through the <code>emojify</code> option.</p><p>Enable <code>twemoji</code> to inline the emojis as images,
-it&#39;ll work for both shortcuts and any other emojis found.</p></blockquote><p>If you use emojis or shortcuts outside markdown they&#39;ll be kept as is,
-use the <code>&lt;mkd&gt;&#58;beer:&lt;/mkd&gt;</code> tag to render or inline emojis.</p><p>For now, this is what you can do within components for authoring markup,
-next we&#39;ll be learning about <a href="./fragments#top">live updates</a> on the DOM! <img class=emoji draggable=false alt=🚀 src="https://twemoji.maxcdn.com/v/14.0.2/svg/1f680.svg" /></p><nav class="flex gap-sm between">
+<span class="hljs-tag">&lt;<span class="hljs-name">h1</span>&gt;</span>It works.<span class="hljs-tag">&lt;/<span class="hljs-name">h1</span>&gt;</span></code></pre></details><p>Requests to page components will always render something,
+however <code>redirect</code> calls can stop any further rendering.</p><blockquote class="is-note"><p>
+This is because setting a response on the <code>conn</code> object
+tell the framework to stop its execution pipeline.</p><p>See the <a href="./conn#top">docs</a> for more context.</p></blockquote><h2 id=response>Response</h2>
+<p>Page components will produce an AST that can be rendered as HTML or sent as JSON.</p><p>The framework will handle the response for you in such cases.</p><blockquote class="is-note"><p>
+Any value returned from actions, handlers or middleware will be used to produce a response.</p><p>See the <a href="./conn#top">docs</a> for more context.</p></blockquote><nav class="flex gap-sm between">
   <span>
-    ➯ Next: <a href="/fragments#top">Fragments</a>
+    ➯ Next: <a href="/command-line#top">Command Line</a>
   </span>
-  <a href="/components#top">
+  <a href="/#top">
     &uarr; Back to the top
   </a>
 </nav><hr /><div id=search></div><footer><nav class="px-2" id=nav><ul class="between reset links flex wrap gap-lg"><li><h3>Overview</h3><ul class="reset links"><li><a href="/#top">Welcome</a></li><li><a href="/introduction#top">Introduction</a></li><li><a href="/command-line#top">Command Line</a></li></ul></li><li><h3>Basic usage</h3><ul class="reset links"><li><a href="/components#top">Components</a></li><li><a href="/fragments#top">Fragments</a></li><li><a href="/directives#top">Directives</a></li><li><a href="/scripting#top">Scripting</a></li><li><a href="/styling#top">Styling</a></li></ul></li><li><h3>APIs</h3><ul class="reset links"><li><a href="/conn#top">Conn</a></li><li><a href="/hooks#top">Hooks</a></li><li><a href="/events#top">Events</a></li><li><a href="/actions#top">Actions</a></li><li><a href="/bindings#top">Bindings</a></li></ul></li></ul></nav></footer></main><svg width=0 height=0 style="position:absolute" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink"><symbol id="list" fill="gray" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" width="16" height="16"><path d="M5.75 2.5h8.5a.75.75 0 0 1 0 1.5h-8.5a.75.75 0 0 1 0-1.5Zm0 5h8.5a.75.75 0 0 1 0 1.5h-8.5a.75.75 0 0 1 0-1.5Zm0 5h8.5a.75.75 0 0 1 0 1.5h-8.5a.75.75 0 0 1 0-1.5ZM2 14a1 1 0 1 1 0-2 1 1 0 0 1 0 2Zm1-6a1 1 0 1 1-2 0 1 1 0 0 1 2 0ZM2 4a1 1 0 1 1 0-2 1 1 0 0 1 0 2Z"/></symbol>
