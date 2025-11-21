@@ -15,17 +15,17 @@ main + nav{margin-top:30px;}
 details{margin-bottom:20px;}
 details summary{background-color:rgba(1, 16, 31, 0.87);position:sticky;top:10px;text-shadow:1px 1px 1px #000;border:1px dashed rgba(255, 255, 255, 0.5);font-size:1rem;border-radius:3px;cursor:pointer;padding:10px;color:#FEFEFE;}
 details summary::after{top:0;bottom:0;margin:auto;width:16px;height:16px;content:"";right:10px;position:absolute;}
-details:has(ul, ol, dl) summary::after{background-image:url(/jamrock/images/list.svg?_1763699718603);}
-details:has(.hljs) summary::after{background-image:url(/jamrock/images/code.svg?_1763699718603);}
+details:has(ul, ol, dl) summary::after{background-image:url(/jamrock/images/list.svg?_1763700040640);}
+details:has(.hljs) summary::after{background-image:url(/jamrock/images/code.svg?_1763700040640);}
 blockquote{margin:0;position:relative;padding:5px 0 5px 0.5rem;border-radius:3px;border-left:0.5rem solid #13272D;background-color:rgba(0, 0, 0, 0.3);}
 blockquote.is-note,blockquote.is-tip,blockquote.is-important,blockquote.is-warning,blockquote.is-caution{padding-top:1.8rem;}
 blockquote.is-note::before,blockquote.is-tip::before,blockquote.is-important::before,blockquote.is-warning::before,blockquote.is-caution::before{background-repeat:no-repeat;padding-left:22px;position:absolute;font-size:0.8rem;top:0.3rem;}
 blockquote.is-note code,blockquote.is-tip code,blockquote.is-important code,blockquote.is-warning code,blockquote.is-caution code{white-space:nowrap;}
-blockquote.is-note::before{content:"NOTE";color:#5F9EFF;background-image:url(/jamrock/images/note.svg?_1763699718603);}
-blockquote.is-tip::before{content:"TIP";color:#79C551;background-image:url(/jamrock/images/tip.svg?_1763699718603);}
-blockquote.is-important::before{content:"IMPORTANT";color:#986EE2;background-image:url(/jamrock/images/important.svg?_1763699718603);}
-blockquote.is-warning::before{content:"WARNING";color:#C69026;background-image:url(/jamrock/images/warning.svg?_1763699718603);}
-blockquote.is-caution::before{content:"CAUTION";color:#DC3546;background-image:url(/jamrock/images/caution.svg?_1763699718603);}
+blockquote.is-note::before{content:"NOTE";color:#5F9EFF;background-image:url(/jamrock/images/note.svg?_1763700040640);}
+blockquote.is-tip::before{content:"TIP";color:#79C551;background-image:url(/jamrock/images/tip.svg?_1763700040640);}
+blockquote.is-important::before{content:"IMPORTANT";color:#986EE2;background-image:url(/jamrock/images/important.svg?_1763700040640);}
+blockquote.is-warning::before{content:"WARNING";color:#C69026;background-image:url(/jamrock/images/warning.svg?_1763700040640);}
+blockquote.is-caution::before{content:"CAUTION";color:#DC3546;background-image:url(/jamrock/images/caution.svg?_1763700040640);}
 blockquote.is-note{border-color:#5F9EFF;}
 blockquote.is-tip{border-color:#79C551;}
 blockquote.is-important{border-color:#986EE2;}
