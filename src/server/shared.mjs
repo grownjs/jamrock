@@ -551,8 +551,9 @@ export function createEnvironment({ fs, path }, options, external) {
       const files = compiler[FILES_PROPERTY];
       const routes = compiler[ROUTES_PROPERTY];
       const assets = compiler[ASSETS_PROPERTY];
+
       const publicDir = options.public || 'public';
-      const publicDest = path.join(options.dest, 'public');
+      const publicDest = path.join(options.dest, 'static');
 
       await compiler.reload();
 
@@ -560,7 +561,9 @@ export function createEnvironment({ fs, path }, options, external) {
 
       fs.mkdirSync(publicDest, { recursive: true });
 
-      if (fs.existsSync(publicDir)) fs.cpSync(publicDir, publicDest, { recursive: true });
+      if (fs.existsSync(publicDir)) {
+        fs.cpSync(publicDir, publicDest, { recursive: true });
+      }
 
       let count = 0;
 
@@ -598,9 +601,8 @@ export function createEnvironment({ fs, path }, options, external) {
         count++;
       }
 
-      for (const bundle of Template.glob(path.join(options.dest, '/**/*.{css,bundled.mjs}'))) {
+      for (const bundle of Template.glob(path.join(options.dest, compiler[PATH_PROPERTY], '/**/*.{css,bundled.mjs}'))) {
         const destFile = path.join(publicDest, options.prefix, path.relative(options.dest, bundle));
-
         copy(bundle, destFile);
         count++;
       }

@@ -1,6 +1,6 @@
 PWD=$(shell pwd)
 
-FROM_FOLDER=build/public
+FROM_FOLDER=build/static
 FROM_BRANCH=next
 TARGET_BRANCH=gh-pages
 COMMIT_MESSAGE=Release: $(shell date)
