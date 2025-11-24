@@ -291,24 +291,6 @@ h1, h2, h3, h4 {
   }
 }
 
-.body {
-  padding: 1rem;
-  margin: auto;
-
-  &.min {
-    max-width: 33em;
-    margin-bottom: 50px;
-  }
-
-  > header {
-    position: relative;
-  }
-
-  h1, h2, h3 {
-    &[id] { padding-top: 1rem; }
-  }
-}
-
 .emoji {
   width: auto;
   height: 1rem;
@@ -332,28 +314,59 @@ h1, h2, h3, h4 {
   &.vertical { flex-direction: column; }
 }
 
+.body {
+  max-width: calc(42em - 180px);
+  padding: 1rem;
+  margin: auto;
+
+  > header {
+    position: relative;
+  }
+
+  h1, h2, h3 {
+    &:target { padding-top: 1rem; }
+  }
+}
+
 .main {
-  aside { margin-top: 50px; }
-  aside > footer { width: 100%; }
+  margin: auto;
+
+  aside {
+    margin-top: 50px;
+    li +  li { margin: 0; }
+  }
+
+  aside > footer {
+    width: 100%;
+    margin-top: 1rem;
+  }
+}
+
+.content > nav {
+  margin-top: 2rem;
 }
 
 @media screen and (min-width: 960px) {
   .not_home {
-    .body.min {
-      max-width: 52em;
+    .body {
+      max-width: 42em;
     }
     .main {
-      gap: 2rem;
       display: flex;
-      flex-direction: row-reverse;
+      gap: 20px;
 
-      aside { margin: 0; }
-      aside > footer {
-        position: sticky;
-        top: 1rem;
-        width: 260px;
-        margin-top: 1rem;
+      aside {
+        margin: 0;
+        width: 180px;
       }
+      aside > footer {
+        top: 0;
+        margin: 0;
+        position: sticky;
+      }
+
+      .content { max-width: 29em; }
+      .content > nav { margin-top: 20px; }
 
       .pagefind-ui__drawer { max-height: calc(100vh - 5rem); overflow: auto; }
     }

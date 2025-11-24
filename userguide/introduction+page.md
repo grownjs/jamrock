@@ -2,7 +2,7 @@
   <title>Jamrock | Introduction</title>
 </head>
 
-# The building blocks
+# Introduction
 
 Everything starts from somewhere,
 

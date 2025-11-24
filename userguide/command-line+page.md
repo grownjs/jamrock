@@ -2,7 +2,7 @@
   <title>Jamrock | Command Line</title>
 </head>
 
-# Command line
+# Command Line
 
 Ensure you've installed **jamrock**:
 

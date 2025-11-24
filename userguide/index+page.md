@@ -40,6 +40,6 @@ Open that URL in your browser and explore.
 <blockquote>
   <p class="gap-sm flex centered">
     <svg src="./images/beaker.svg" size="16" />
-    <span>See the <a href="/#top">available documentation here!</a></span>
+    <span>See the <a href="/introduction#top">available documentation here!</a></span>
   </p>
 </blockquote>
