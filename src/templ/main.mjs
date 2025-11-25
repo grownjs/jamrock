@@ -636,14 +636,14 @@ export class Template {
 
   // FIXME: recursive inline? e.g. urls() and @imports?
   static async refetch(url, base, options) {
-    const dest_dir = options.dest || '/build';
     const source = url.replace(/^\/\//, 'http://');
-    const _base = [options.target || '/', options.prefix || '@'].filter(p => p && p !== '/').join('/');
+    const target = Template.join(options.dest || '/build', base);
+    const _base = [options.target || '/', options.prefix || '@', base].filter(p => p && p !== '/').join('/');
 
     if (source[0] === '/') return '/* not found */';
 
     try {
-      const cached = Template.join(dest_dir, base, source.replace(/[^\w.]/g, '_'));
+      const cached = Template.join(target, source.replace(/[^\w.]/g, '_'));
 
       if (!Template.exists(cached)) {
         const text = await fetch(source).then(_ => _.text());
@@ -660,7 +660,7 @@ export class Template {
       });
 
       await Promise.all(urls.map(found => fetch(found.url).then(async result => {
-        const destFile = Template.join(dest_dir, base, found.fixed);
+        const destFile = Template.join(target, found.fixed);
         const blob = await result.blob();
         const buffer = await blob.arrayBuffer();
 

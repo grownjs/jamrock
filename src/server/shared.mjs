@@ -593,7 +593,7 @@ export function createEnvironment({ fs, path }, options, external) {
         count++;
       }
 
-      const assetDir = path.join(options.dest, compiler[PATH_PROPERTY]);
+      const assetDir = path.join(options.dest, base);
 
       for (const vendor of Template.glob(path.join(assetDir, '/**/{http,https}___*'))) {
         const destFile = path.join(publicDest, options.prefix, path.relative(options.dest, vendor));
@@ -601,7 +601,7 @@ export function createEnvironment({ fs, path }, options, external) {
         count++;
       }
 
-      for (const bundle of Template.glob(path.join(options.dest, compiler[PATH_PROPERTY], '/**/*.{css,bundled.mjs}'))) {
+      for (const bundle of Template.glob(path.join(assetDir, '/**/*.{css,bundled.mjs}'))) {
         const destFile = path.join(publicDest, options.prefix, path.relative(options.dest, bundle));
         copy(bundle, destFile);
         count++;
