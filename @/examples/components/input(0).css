@@ -1,6 +1,0 @@
-.field:where(.jam-x1ifkxpe){gap:0.5em;display:flex;align-items:center;}
-.label:where(.jam-x1ifkxpe){min-width:8em;}
-input:where(.jam-x1ifkxpe),textarea:where(.jam-x1ifkxpe){padding:5px;}
-samp:where(.jam-x1ifkxpe){background-color:rgba(0, 0, 0, 0.1);}
-p:where(.jam-x1ifkxpe){padding-left:8.5em;color:red;}
-li:where(.jam-x1ifkxpe) + li:where(.jam-x1ifkxpe){margin-top:20px;padding-top:1em;border-top:1px dashed silver;}
