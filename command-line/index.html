@@ -1,6 +1,86 @@
 <!DOCTYPE html>
 <html data-location="userguide/command-line+page.md"><head>
-<meta charset="utf-8" /><base href="/" /><meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1" /><meta name=HandheldFriendly content /><meta name=viewport content="width=device-width, initial-scale=1,maximum-scale=1,user-scalable=no" /><meta name=release content=18f8bc8 /><link rel=stylesheet href="//unpkg.com/highlight.js@10.7.3/styles/tomorrow-night-eighties.css" inline /><link rel=stylesheet href="//fonts.googleapis.com/css?family=Montserrat" inline /><link rel=stylesheet href=stars.css /><link rel="apple-touch-icon" sizes=180x180 href="apple-touch-icon.png" /><link rel=icon type="image/png" sizes=32x32 href="favicon-32x32.png" /><link rel=icon type="image/png" sizes=16x16 href="favicon-16x16.png" /><link rel=manifest href=site.webmanifest /><link href="pagefind/pagefind-ui.css" rel=stylesheet /><script src="pagefind/pagefind-ui.js"></script><script>
+<meta charset="utf-8" /><base href="/" /><meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1" /><meta name=HandheldFriendly content /><meta name=viewport content="width=device-width, initial-scale=1,maximum-scale=1,user-scalable=no" /><meta name=release content=b0d80c0 /><style>/* Tomorrow Night Eighties Theme */
+/* Original theme - https://github.com/chriskempson/tomorrow-theme */
+/* http://jmblog.github.com/color-themes-for-google-code-highlightjs */
+
+/* Tomorrow Comment */
+.hljs-comment,
+.hljs-quote {
+  color: #999999;
+}
+
+/* Tomorrow Red */
+.hljs-variable,
+.hljs-template-variable,
+.hljs-tag,
+.hljs-name,
+.hljs-selector-id,
+.hljs-selector-class,
+.hljs-regexp,
+.hljs-deletion {
+  color: #f2777a;
+}
+
+/* Tomorrow Orange */
+.hljs-number,
+.hljs-built_in,
+.hljs-builtin-name,
+.hljs-literal,
+.hljs-type,
+.hljs-params,
+.hljs-meta,
+.hljs-link {
+  color: #f99157;
+}
+
+/* Tomorrow Yellow */
+.hljs-attribute {
+  color: #ffcc66;
+}
+
+/* Tomorrow Green */
+.hljs-string,
+.hljs-symbol,
+.hljs-bullet,
+.hljs-addition {
+  color: #99cc99;
+}
+
+/* Tomorrow Blue */
+.hljs-title,
+.hljs-section {
+  color: #6699cc;
+}
+
+/* Tomorrow Purple */
+.hljs-keyword,
+.hljs-selector-tag {
+  color: #cc99cc;
+}
+
+.hljs {
+  display: block;
+  overflow-x: auto;
+  background: #2d2d2d;
+  color: #cccccc;
+  padding: 0.5em;
+}
+
+.hljs-emphasis {
+  font-style: italic;
+}
+
+.hljs-strong {
+  font-weight: bold;
+}
+</style><style>@font-face {
+  font-family: 'Montserrat';
+  font-style: normal;
+  font-weight: 400;
+  src: url(/http___fonts.gstatic.com_s_montserrat_v31_JTUHjIg1_i6t8kCHKm4532VJOt5_QNFgpCtr6Hw5aX8.ttf) format('truetype');
+}
+</style><link rel=stylesheet href=stars.css /><link rel="apple-touch-icon" sizes=180x180 href="apple-touch-icon.png" /><link rel=icon type="image/png" sizes=32x32 href="favicon-32x32.png" /><link rel=icon type="image/png" sizes=16x16 href="favicon-16x16.png" /><link rel=manifest href=site.webmanifest /><link href="pagefind/pagefind-ui.css" rel=stylesheet /><script src="pagefind/pagefind-ui.js"></script><script>
       window.addEventListener('DOMContentLoaded', (event) => {
         new PagefindUI({
           element: "#search",
@@ -11,29 +91,31 @@
     </script>
   <title>Jamrock | Command Line</title>
 <link rel=stylesheet href="@/userguide/+layout(0).css" /><link rel=stylesheet href="@/userguide/+layout.css" /><link rel=stylesheet href="@/userguide/command-line+page.css" /><link rel=stylesheet href="@/userguide/components/navlink.css" /><link rel=stylesheet href="@/userguide/lib/footer.css" /></head><body class="not_home">
-<div id="fx-stars"><div></div><div></div><div></div></div><main class=body><header class=center><a class=welcome href=""><svg height=32><use xlink:href="#welcome" data-location="userguide/images/welcome.svg" /></svg></a><h1 class="meteorite floating"><a href="" data-version=18f8bc8><svg width=420 height=420><use xlink:href="#jamrock-meteorite" data-location="userguide/images/jamrock-meteorite.svg" /></svg></a></h1><a id=top>&nbsp;</a></header><div class=main><div class=content><h1 id="command-line">Command Line</h1>
-<p>Ensure you&#39;ve installed <strong>jamrock</strong>:</p><pre class=hljs><code><b>curl</b> -L get.jamrock.dev | <b>bash</b>
+<div id="fx-stars"><div></div><div></div><div></div></div><main class=body><header class=center><a class=welcome href=""><svg height=32><use xlink:href="#welcome" data-location="userguide/images/welcome.svg" /></svg></a><h1 class="meteorite floating"><a href="" data-version=b0d80c0><svg width=420 height=420><use xlink:href="#jamrock-meteorite" data-location="userguide/images/jamrock-meteorite.svg" /></svg></a></h1><a id=top>&nbsp;</a></header><div class=main><div class=content><h1 id="cli-usage">CLI Usage</h1>
+<p>Have you installed <strong>jamrock</strong> already?</p><p><strong>Jamrock</strong> will install itself at your <code>$HOME/.local/bin</code> path,
+ensure that destination is within you <code>$PATH</code> to enable the binary.</p><h2 id=installation>Installation</h2>
+<pre class=hljs><code><b>curl</b> -L get.jamrock.dev | <b>bash</b>
 ...
 <b>jamrock</b> --version
-■ Jamrock v0.0.0 (node v23.6.0, HEAD)</code></pre><blockquote class="is-warning"><p>
-<strong>Jamrock</strong> installs at your <code>$HOME/.local/bin</code> for global usage.</p></blockquote><p>Additional arguments like <code>FOO=bar</code> will expand the <code>process.env</code> object,
+■ Jamrock v0.0.0 (node v23.6.0, HEAD)</code></pre><h2 id=parameters>Parameters</h2>
+<p>Additional arguments like <code>FOO=bar</code> will expand the <code>process.env</code> object,
 e.g. <code>jamrock build NODE_ENV=production PORT=80</code></p><blockquote class="is-tip"><p>
-You can also use <code>./bin/&lbrace;node,deno,bun&rbrace;</code> if you have the required runtime installed.</p><p>The installation script will ask you for a runtime for global usage only!</p></blockquote><h2 id="usage-details">Usage details</h2>
-<p>Run <code>jamrock --help</code>:</p><pre class=hljs><code><b>■ Jamrock v0.0.0</b> (node v22.4.0, HEAD)
+You can also use <code>./bin/&lbrace;node,deno,bun&rbrace;</code> if you have the required runtime installed.</p></blockquote><h2 id=tasks>Tasks</h2>
+<p>Run <code>jamrock --help</code> for a quick glance:</p><pre class=hljs><code><b>■ Jamrock v0.0.0</b> (node v22.4.0, HEAD)
 
 <span>Usage:</span> ./bin/&lbrace;node,deno,bun&rbrace; <b>&lt;COMMAND&gt;</b> <var>[OPTIONS]</var>
 
   <b>init</b>   Generates a new application into the given directory
   <b>serve</b>  Starts the web-server on the given <var>--port</var> and <var>--host</var>
   <b>build</b>  Compiles *.&lbrace;md,html&rbrace; sources into server-components
-  <b>write</b>  SSG from pre-built sources <em>(use after build)</em>
   <b>route</b>  Prints the available routes found
 
 <span>Options:</span>
 
-  <var>--src</var>      Directory of *.&lbrace;md,html&rbrace; files to compile <em>(default is ./src)</em>
-  <var>--dest</var>     Destination for compiled files <em>(default is ./dest)</em>
+  <var>--src</var>      Directory of *.&lbrace;md,html&rbrace; files to compile <em>(default is ./pages)</em>
+  <var>--dest</var>     Destination for compiled files <em>(default is ./build)</em>
   <var>--watch</var>    Enable file-watching on the web-server
+  <var>--write</var>    SSG from compiled sources into destination
   <var>--prefix</var>   Prefix for bundled resources
   <var>--target</var>   Value for &lt;base href="..." /&gt; (default is /)
 
@@ -47,8 +129,8 @@ You can also use <code>./bin/&lbrace;node,deno,bun&rbrace;</code> if you have th
   <var>--name</var>     Filter routes by name <em>(contains)</em>
   <var>--path</var>     Filter routes by path <em>(contains)</em>
   <var>--method</var>   Filter routes by method <em>(exact match)</em></code></pre><h3 id=%00><b>init</b></h3>
-<p>This action create a new project into the target directory, e.g.</p><pre class=hljs><code><b>jamrock</b> init my-app</code></pre><blockquote class="is-warning"><p>
-If the directory already exists you&#39;ll be warned, but you can <var>--force</var>
+<p>This action create a new project into the target directory, e.g.</p><pre class=hljs><code><b>jamrock</b> init <em>my-app</em></code></pre><blockquote class="is-warning"><p>
+If the directory already exists you&#39;ll be warned, but you can <code>--force</code>
 to overwrite everything in the target directory.</p></blockquote><h3 id=%00><b>serve</b></h3>
 <p>Spins up a web-server with optional live-reload support, intended for production and development.</p><blockquote class="is-tip"><p>
 Use <code>--watch</code> to enable the development mode, <code>--src</code> and <code>--dest</code>
@@ -56,12 +138,13 @@ to configure the source and destination folders respectively.</p></blockquote><h
 <p>Compiles everything down as modules, intended for production.</p><blockquote class="is-important"><p>
 Use the <code>--prefix</code> to setup a different path for loading ESM from sources,
 e.g. <code>/@/path/to/component.html</code> (the default is <code>@</code>)</p></blockquote><h3 id=%00><b>write</b></h3>
-<p>Execute all compiled sources to produce static pages.</p><blockquote class="is-caution"><p>
-This removes dynamic client-side JavaScript usage, only compiled
-components that can be downloaded without server dependencies may work.</p></blockquote><h3 id=%00><b>route</b></h3>
+<p>Execute all compiled sources to produce static pages,
+it will derive its configuration from <code>&lt;DEST_DIR&gt;/index.json</code>.</p><blockquote class="is-caution"><p>
+This removes dynamic server-side JavaScript usage, only compiled
+components that can be downloaded without server dependencies will work.</p></blockquote><h3 id=%00><b>route</b></h3>
 <p>This action will show the declared routes from pages and middleware found in the sources.</p><blockquote class="is-tip"><p>
 You can filter out the matching routes with the
-<var>--name</var>, <var>--path</var> and <var>--method</var> flags respectively.</p></blockquote><p>By using the <var>--dts</var> flag, this action will write a <code>routes.d.ts</code> file.</p><blockquote class="is-note"><p>
+<code>--name</code>, <code>--path</code> and <code>--method</code> flags respectively.</p></blockquote><p>By using the <code>--dts</code> flag, this action will write a <code>routes.d.ts</code> file.</p><blockquote class="is-note"><p>
 We don&#39;t support TypeScript yet, but you should be able to write your own <code>.ts</code> modules
 and consume the generated modules from your code on a separate process.</p><p>As long as you compile your <code>.ts</code> modules and they become reachable by <code>import</code> calls
 on runtime, the framework would work fine.</p></blockquote><p>Being said, you may find a proof of concept of this is on the <code>./scripts/check.ts</code> file on <a href="https://github.com/grownjs/jamrock/blob/master/scripts/check.ts">this repository</a>.</p><hr />
@@ -107,7 +190,7 @@ otherwise it may not work as expected. Bun and NodeJS are pretty OK without the 
 The command above will not fail even if the directory does not exists,
 the watcher will work as you start adding files.</p><p>Use <code>jamrock dev</code> as shortcut for this task.</p></blockquote><hr />
 <h2 id=production>Production</h2>
-<p>Run <code>jamrock serve</code> and that&#39;s it!</p><blockquote class="is-caution"><p>
+<p>Run <code>jamrock serve</code> and that&#39;s it!</p><blockquote class="is-note"><p>
 Just make sure you have built your pages first.</p></blockquote><nav class="flex gap-sm between">
   <span>
     ➯ Next: <a href=components#top>Components</a>
