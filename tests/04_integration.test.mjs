@@ -383,7 +383,7 @@ test.group('integration only!', t => {
       '<html data-location=app+page.html><head>\n',
       '<meta charset="utf-8" /><base href="/" />\n  <title>OSOM</title>\n</head><body>\n',
       '<h1 data-location="app+page.html:7:1" class=active>Hello World</h1>',
-      '<a href="/app/123" data-location="app+page.html:25:3">LINK</a></body></html>',
+      '<a href="app/123" data-location="app+page.html:25:3">LINK</a></body></html>',
     ].join(''));
   });
 
