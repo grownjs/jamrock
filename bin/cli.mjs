@@ -45,8 +45,8 @@ Usage: ${!existsSync('package.json') ? 'jamrock' : './bin/{node,deno,bun}'} <COM
 
 Options:
 
-  --src      Directory of *.{md,html} files to compile (default is ./src)
-  --dest     Destination for compiled files (default is ./dest)
+  --src      Directory of *.{md,html} files to compile (default is ./pages)
+  --dest     Destination for compiled files (default is ./build)
   --watch    Enable file-watching on the web-server
   --prefix   Prefix for bundled resources
   --target   Value for <base href="..." /> (default is /)

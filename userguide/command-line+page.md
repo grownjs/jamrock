@@ -2,9 +2,14 @@
   <title>Jamrock | Command Line</title>
 </head>
 
-# Command Line
+# CLI Usage
 
-Ensure you've installed **jamrock**:
+Have you installed **jamrock** already?
+
+**Jamrock** will install itself at your `$HOME/.local/bin` path,
+ensure that destination is within you `$PATH` to enable the binary.
+
+## Installation
 
 ```
 <b>curl</b> -L get.jamrock.dev | <b>bash</b>
@@ -13,20 +18,17 @@ Ensure you've installed **jamrock**:
 ■ Jamrock v0.0.0 (node v23.6.0, HEAD)
 ```
 
-> [!WARNING]
-> **Jamrock** installs at your `$HOME/.local/bin` for global usage.
+## Parameters
 
 Additional arguments like `FOO=bar` will expand the `process.env` object,
 e.g. `jamrock build NODE_ENV=production PORT=80`
 
 > [!TIP]
 > You can also use `./bin/&lbrace;node,deno,bun}` if you have the required runtime installed.
->
-> The installation script will ask you for a runtime for global usage only!
 
-## Usage details
+## Tasks
 
-Run `jamrock --help`:
+Run `jamrock --help` for a quick glance:
 
 ```
 <b>■ Jamrock v0.0.0</b> (node v22.4.0, HEAD)
@@ -41,8 +43,8 @@ Run `jamrock --help`:
 
 <span>Options:</span>
 
-  <var>--src</var>      Directory of *.{md,html} files to compile <em>(default is ./src)</em>
-  <var>--dest</var>     Destination for compiled files <em>(default is ./dest)</em>
+  <var>--src</var>      Directory of *.{md,html} files to compile <em>(default is ./pages)</em>
+  <var>--dest</var>     Destination for compiled files <em>(default is ./build)</em>
   <var>--watch</var>    Enable file-watching on the web-server
   <var>--prefix</var>   Prefix for bundled resources
   <var>--target</var>   Value for &lt;base href="..." /&gt; (default is /)
@@ -64,11 +66,11 @@ Run `jamrock --help`:
 This action create a new project into the target directory, e.g.
 
 ```
-<b>jamrock</b> init my-app
+<b>jamrock</b> init <em>my-app</em>
 ```
 
 > [!WARNING]
-> If the directory already exists you'll be warned, but you can <var>--force</var>
+> If the directory already exists you'll be warned, but you can `--force`
 > to overwrite everything in the target directory.
 
 ### <b>serve</b>
@@ -89,11 +91,12 @@ Compiles everything down as modules, intended for production.
 
 ### <b>write</b>
 
-Execute all compiled sources to produce static pages.
+Execute all compiled sources to produce static pages,
+it will derive its configuration from `&lt;DEST_DIR&gt;/index.json`.
 
 > [!CAUTION]
-> This removes dynamic client-side JavaScript usage, only compiled
-> components that can be downloaded without server dependencies may work.
+> This removes dynamic server-side JavaScript usage, only compiled
+> components that can be downloaded without server dependencies will work.
 
 ### <b>route</b>
 
@@ -101,9 +104,9 @@ This action will show the declared routes from pages and middleware found in the
 
 > [!TIP]
 > You can filter out the matching routes with the
-> <var>--name</var>, <var>--path</var> and <var>--method</var> flags respectively.
+> `--name`, `--path` and `--method` flags respectively.
 
-By using the <var>--dts</var> flag, this action will write a `routes.d.ts` file.
+By using the `--dts` flag, this action will write a `routes.d.ts` file.
 
 > [!NOTE]
 > We don't support TypeScript yet, but you should be able to write your own `.ts` modules
@@ -203,7 +206,7 @@ You can have other stuff on this folder but it will be ignored, only `.md` and `
 
 Run `jamrock serve` and that's it!
 
-> [!CAUTION]
+> [!NOTE]
 > Just make sure you have built your pages first.
 
 <nav class="flex gap-sm between">

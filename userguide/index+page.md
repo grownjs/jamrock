@@ -21,8 +21,8 @@ The installer will ask you for a runtime: `node`, `deno` or `bun`.
 Let's try `node` and create a sample application:
 
 ```
-<b>jamrock</b> init my-app
-<b>cd</b> my-app
+<b>jamrock</b> init <em>my-app</em>
+<b>cd</b> <em>my-app</em>
 <b>npm</b> install
 <b>npm</b> run dev
 ```

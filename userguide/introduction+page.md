@@ -160,8 +160,6 @@ however `redirect` calls can stop any further rendering.
 > [!NOTE]
 > This is because setting a response on the `conn` object
 > tell the framework to stop its execution pipeline.
->
-> See the [docs](./conn#top) for more context.
 
 ## Response
 
@@ -171,8 +169,6 @@ The framework will handle the response for you in such cases.
 
 > [!NOTE]
 > Any value returned from actions, handlers or middleware will be used to produce a response.
->
-> See the [docs](./conn#top) for more context.
 
 <nav class="flex gap-sm between">
   <span>
