@@ -86,8 +86,8 @@ index:
 	@bin/node write NODE_ENV=production
 	@npx -y pagefind --site $(FROM_FOLDER) --serve
 dist-docs:
-	@bin/node build --src ./userguide # --target /jamrock
-	@bin/node write NODE_ENV=production
+	@rm -rf userguide/pagefind/*
+	@bin/node build --src ./userguide --write NODE_ENV=production
 	@npx -y pagefind --site $(FROM_FOLDER)
 
 live:

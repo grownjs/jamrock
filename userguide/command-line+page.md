@@ -38,7 +38,6 @@ Run `jamrock --help` for a quick glance:
   <b>init</b>   Generates a new application into the given directory
   <b>serve</b>  Starts the web-server on the given <var>--port</var> and <var>--host</var>
   <b>build</b>  Compiles *.{md,html} sources into server-components
-  <b>write</b>  SSG from pre-built sources <em>(use after build)</em>
   <b>route</b>  Prints the available routes found
 
 <span>Options:</span>
@@ -46,6 +45,7 @@ Run `jamrock --help` for a quick glance:
   <var>--src</var>      Directory of *.{md,html} files to compile <em>(default is ./pages)</em>
   <var>--dest</var>     Destination for compiled files <em>(default is ./build)</em>
   <var>--watch</var>    Enable file-watching on the web-server
+  <var>--write</var>    SSG from compiled sources into destination
   <var>--prefix</var>   Prefix for bundled resources
   <var>--target</var>   Value for &lt;base href="..." /&gt; (default is /)
 

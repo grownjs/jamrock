@@ -15,6 +15,8 @@ const RE_SAFE_NAME = /(?:^|\/)(.+?)(?:\/\+\w+)?\.\w+$/;
 const RE_EXTERNALS = /\b(?:import[^;=]*\(?(?:"([^;]+)"|'([^;]+)')|(?:export|import)[^;=]+from\s*(?:"([^;]+)"|'([^;]+)'))/g;
 const RE_COMMENTS = /\/\*[\S\s]*?\*\/|\/\/.*/g;
 
+const TEMP_DIR = process.env.TMPDIR || '/tmp';
+
 const NO_HOOKS = {
   useState: v => [v],
   useRef: () => null,
@@ -636,13 +638,14 @@ export class Template {
   }
 
   // FIXME: recursive inline? e.g. urls() and @imports?
-  static async refetch(url, target, base_url = '/') {
+  static async refetch(url, options) {
+    const base_url = options.target || '/';
     const source = url.replace(/^\/\//, 'http://');
 
     if (source[0] === '/') return '/* not found */';
 
     try {
-      const cached = Template.join(target, source.replace(/[^\w.]/g, '_'));
+      const cached = Template.join(TEMP_DIR, source.replace(/[^\w.]/g, '_'));
 
       if (!Template.exists(cached)) {
         const text = await fetch(source).then(_ => _.text());
@@ -659,7 +662,7 @@ export class Template {
       });
 
       await Promise.all(urls.map(found => fetch(found.url).then(async result => {
-        const destFile = Template.join(target, found.fixed);
+        const destFile = Template.join(TEMP_DIR, found.fixed);
         const blob = await result.blob();
         const buffer = await blob.arrayBuffer();
 

@@ -2,6 +2,8 @@
 
 import { Template } from '../main.mjs';
 
+const TEMP_DIR = process.env.TMPDIR || '/tmp';
+
 const HTTP_NS = 'http-url';
 const RE_MATCH_ALL = /.*/;
 const RE_HTTPS_URL = /^https?:\/\//;
@@ -49,8 +51,6 @@ export const createTransform = ({ fetchSource }) => ({
 });
 
 function createHelpers({ fs, Readable }) {
-  const TEMP_DIR = process.env.TMPDIR || '/tmp';
-
   /**
    * Downloads a given url into filepath.
    * @param {string}  url
@@ -75,7 +75,7 @@ function createHelpers({ fs, Readable }) {
    * @type {FetchSource}
    */
   async function fetchSource(url) {
-    const tmpFile = Template.join(TEMP_DIR, `${url.replace(/\W/g, '_')}@out`);
+    const tmpFile = Template.join(TEMP_DIR, `${url.replace(/[^\w.]/g, '_')}@out`);
 
     if (!fs.existsSync(tmpFile)) await fetchFile(url, tmpFile);
 

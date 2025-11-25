@@ -85,6 +85,7 @@ export default async function main(env, argv) {
   const port = +Util.flag('port', argv, 8080);
   const host = Util.flag('host', argv, 'localhost');
   const https = Util.has('https', argv);
+  const _write = Util.has('write', argv);
   const _prefix = Util.flag('prefix', argv, '@');
   const base_url = Util.flag('target', argv, '/');
 
@@ -205,12 +206,8 @@ export type Routes = ${['RouteMap'].concat(typedefs).join('\n& ')};\n`;
 
       case 'build':
         console.log(`Building ${src} to ${dest}`);
-        await env({ ...defaults, ..._options }).build();
-        break;
-
-      case 'write':
-        console.log(`Processing from ${dest}`);
-        await env({ ...defaults, ..._options }).static();
+        const self = await env({ ...defaults, ..._options }).build(); // eslint-disable-line no-case-declarations
+        if (_write) await self.static();
         break;
 
       case 'route':
