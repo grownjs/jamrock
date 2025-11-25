@@ -80,7 +80,7 @@ test-nodejs:
 	@make -s e2e:node
 
 docs:
-	@bin/node dev --src ./userguide
+	@bin/node dev --src ./userguide --host 127.0.0.1
 index:
 	@bin/node build --src ./userguide
 	@bin/node write NODE_ENV=production
