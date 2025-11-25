@@ -1,0 +1,2 @@
+pre [data-location]{text-decoration:underline;cursor:pointer;opacity:0.5;}
+pre [data-location]:hover{opacity:1;}

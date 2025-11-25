@@ -1,0 +1,6 @@
+.loading{pointer-events:none;position:relative;}
+.loading::after{background-color:rgba(255, 255, 255, 0.5);position:absolute;color:inherit;content:"";bottom:0;right:0;left:0;top:0;}
+*,*::after,*::before{margin:0;padding:0;}
+.profile{display:inline-flex;}
+.profile img{margin-right:5px;}
+.pages{list-style-type:none;flex-wrap:wrap;display:flex;gap:5px;}
