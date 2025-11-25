@@ -94,16 +94,6 @@ export function enhance(vnode, parent) {
     if (value === test) props.selected = true;
   }
 
-  const key = ['a', 'link', 'area'].includes(name) ? 'href' : 'src';
-
-  if (key in props
-    && Is.str(props[key])
-    && props[key].charAt(0) === '/'
-    && props[key].charAt(1) !== '/'
-  ) {
-    props[key] = props[key].slice(1);
-  }
-
   if (name === 'form') {
     if (props['@multipart']) {
       props.enctype = 'multipart/form-data';
