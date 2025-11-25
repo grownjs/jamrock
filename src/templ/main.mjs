@@ -15,8 +15,6 @@ const RE_SAFE_NAME = /(?:^|\/)(.+?)(?:\/\+\w+)?\.\w+$/;
 const RE_EXTERNALS = /\b(?:import[^;=]*\(?(?:"([^;]+)"|'([^;]+)')|(?:export|import)[^;=]+from\s*(?:"([^;]+)"|'([^;]+)'))/g;
 const RE_COMMENTS = /\/\*[\S\s]*?\*\/|\/\/.*/g;
 
-const TEMP_DIR = process.env.TMPDIR || '/tmp';
-
 const NO_HOOKS = {
   useState: v => [v],
   useRef: () => null,
@@ -88,7 +86,6 @@ export class Template {
     const target = this.partial.dest;
     const scope = this.partial.id;
     const { markup } = this.partial;
-    const base_url = defaults.target || '/';
 
     const set = [];
     const tasks = [];
@@ -133,7 +130,7 @@ export class Template {
             x.content = x.content.replace(/url\((.+?)\)/g, (_, $1) => {
               if ($1.charAt() === '/' || $1.indexOf('http') === 0) return _;
               resources.media.push(Template.join(defaults.src, $1));
-              return `url(${Template.url(base_url, $1, true)})`;
+              return `url(${Template.url(defaults.target || '/', $1, true)})`;
             });
           }
 
@@ -638,14 +635,15 @@ export class Template {
   }
 
   // FIXME: recursive inline? e.g. urls() and @imports?
-  static async refetch(url, options) {
-    const base_url = options.target || '/';
+  static async refetch(url, base, options) {
+    const dest_dir = options.dest || '/build';
     const source = url.replace(/^\/\//, 'http://');
+    const _base = [options.target || '/', options.prefix || '@'].filter(p => p && p !== '/').join('/');
 
     if (source[0] === '/') return '/* not found */';
 
     try {
-      const cached = Template.join(TEMP_DIR, source.replace(/[^\w.]/g, '_'));
+      const cached = Template.join(dest_dir, base, source.replace(/[^\w.]/g, '_'));
 
       if (!Template.exists(cached)) {
         const text = await fetch(source).then(_ => _.text());
@@ -658,11 +656,11 @@ export class Template {
       html = html.replace(/url\((['"]?)(.+?)\1\)/g, (_, _q, v) => {
         const found = { url: v, fixed: v.replace(/[^\w.]/g, '_') };
         urls.push(found);
-        return `url(${Template.url(base_url, found.fixed)})`;
+        return `url(${Template.url(_base, found.fixed)})`;
       });
 
       await Promise.all(urls.map(found => fetch(found.url).then(async result => {
-        const destFile = Template.join(TEMP_DIR, found.fixed);
+        const destFile = Template.join(dest_dir, base, found.fixed);
         const blob = await result.blob();
         const buffer = await blob.arrayBuffer();
 
