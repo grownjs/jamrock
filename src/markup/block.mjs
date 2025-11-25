@@ -414,8 +414,8 @@ export default {${defaults}};
 ${Object.keys(this.snippets).map(_ => `const ${_} = $$props.${_} ?? __snippets.${_};`)}
 ${matched.code}
 ${this.context === 'client'
-        ? `\t\treturn {__default,__scope:{${lets.join(',')}}};`
-        : `\t\tconst __callback = () => ({${lets.join(',')}});
+    ? `\t\treturn {__default,__scope:{${lets.join(',')}}};`
+    : `\t\tconst __callback = () => ({${lets.join(',')}});
 \t\treturn {__default,__callback};`}
 \t}`;
 
@@ -428,10 +428,10 @@ ${this.context === 'client'
 export const __handler = async ($$props, __loader${this.context === 'client' ? ', self' : ''}) => {
 ${[prelude, main].join('\n')}
 ${this.context === 'client'
-        ? `\tconst __runtime = await __loader('jamrock');
+    ? `\tconst __runtime = await __loader('jamrock');
 \tconst __self = __runtime.wrapComponent('${this.src}', __context, __template);
 \treturn {__self,__context};`
-        : '\treturn {__context};'}
+    : '\treturn {__context};'}
 };
 
 export const __routes = ${JSON.stringify(matched.routes)};
