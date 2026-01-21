@@ -5,7 +5,7 @@ import mime from 'mime/lite';
 import { Is } from './base.mjs';
 
 export { COLORS as $ } from '../chalk.mjs';
-
+export { default as glob2re } from 'glob-to-regexp';
 export { format, enable, disable, findAll, encodeText, decodeEnts, parseMarkup, markupAdapter } from 'somedom/ssr';
 
 const STACK_TRACE = [];

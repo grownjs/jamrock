@@ -73,6 +73,7 @@
     "emphasize": "^7.0.0",
     "eslint-plugin-pug": "^1.2.4",
     "expect": "^29.3.1",
+    "glob-to-regexp": "^0.4.1",
     "happy-dom": "^19.0.1",
     "highlight.js": "^11.11.1",
     "jsdom": "^27.0.0",
