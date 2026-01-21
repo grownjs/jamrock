@@ -14,8 +14,10 @@ export function dump(...args) {
   if (typeof logError !== 'undefined') {
     for (const e of args) {
       if (e instanceof Error) {
+        // eslint-disable-next-line no-undef
         logError(e);
       } else {
+        // eslint-disable-next-line no-undef
         log(e);
       }
     }
