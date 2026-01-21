@@ -382,6 +382,7 @@ export class Template {
 
     const loader = id => {
       if (id === 'jamrock') return NO_HOOKS;
+      if (id === 'jamrock:gjs') return {};
       if (id === 'jamrock:conn') return ctx.conn;
       if (id === 'jamrock:hooks') return hooks;
       return Template.load(id);

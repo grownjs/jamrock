@@ -4,7 +4,7 @@ import { createRequire } from 'node:module';
 import { writeFileSync, existsSync, readdirSync, chmodSync, cpSync } from 'node:fs';
 
 import { createLocalEnvironment } from '../lib/main.mjs';
-import { Template, Util, process } from '../dist/main.mjs';
+import { Template, Util, process } from '../dist/compat.mjs';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const _require = createRequire(import.meta.url);
@@ -40,16 +40,16 @@ Usage: ${!existsSync('package.json') ? 'jamrock' : './bin/{node,deno,bun}'} <COM
   init   Generates a new application into the given directory
   serve  Starts the web-server on the given --port and --host
   build  Compiles *.{md,html} sources into server-components
-  write  SSG from pre-built sources (use after build)
   route  Prints the available routes found
 
 Options:
 
   --src      Directory of *.{md,html} files to compile (default is ./pages)
   --dest     Destination for compiled files (default is ./build)
+
   --watch    Enable file-watching on the web-server
-  --prefix   Prefix for bundled resources
   --target   Value for <base href="..." /> (default is /)
+  --prefix   Prefix for bundled resources (default is @)
 
   --port     The port number to bind the web-server
   --host     The host address to bind the web-server

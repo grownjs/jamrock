@@ -8,8 +8,8 @@ const mainFile = 'dist/main.mjs';
 let code = readFileSync(mainFile).toString();
 
 // this makes the `process` object available cross-platform
-const fix = "import*as process from'node:process'";
-if (!code.includes(fix)) writeFileSync(mainFile, `${fix};${code.replace(/export\s?{/, '$&process,')}`);
+const prefix = 'export const process={};';
+if (!code.includes(prefix)) writeFileSync(mainFile, prefix + code);
 
 const serverFile = 'dist/server.mjs';
 
