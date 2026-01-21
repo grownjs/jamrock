@@ -717,11 +717,15 @@ test.group('core utilties', t => {
     expect(Template.imports(`
       import from './src/markup/html.mjs';
     `, process.cwd())).toEqual({
+      'src/chalk.mjs': {
+        children: [],
+      },
       'src/markup/html.mjs': {
         children: [
           'src/markup/expr.mjs',
           'src/utils/server.mjs',
           'src/utils/base.mjs',
+          'src/chalk.mjs',
           'src/utils/shared.mjs',
           'src/render/hooks.mjs',
           'src/utils/client.mjs',
@@ -733,12 +737,14 @@ test.group('core utilties', t => {
         children: [
           'src/utils/server.mjs',
           'src/utils/base.mjs',
+          'src/chalk.mjs',
           'src/utils/shared.mjs',
         ],
       },
       'src/utils/server.mjs': {
         children: [
           'src/utils/base.mjs',
+          'src/chalk.mjs',
           'src/utils/shared.mjs',
         ],
       },
@@ -752,6 +758,7 @@ test.group('core utilties', t => {
         children: [
           'src/utils/server.mjs',
           'src/utils/base.mjs',
+          'src/chalk.mjs',
           'src/utils/shared.mjs',
           'src/markup/expr.mjs',
         ],
@@ -761,6 +768,7 @@ test.group('core utilties', t => {
           'src/markup/expr.mjs',
           'src/utils/server.mjs',
           'src/utils/base.mjs',
+          'src/chalk.mjs',
           'src/utils/shared.mjs',
           'src/render/hooks.mjs',
           'src/utils/client.mjs',
