@@ -1,16 +1,10 @@
-import { Template, Util, process } from '../dist/main.mjs';
+import { PKG_VERSION, Template, Util, process } from '../dist/main.mjs';
 import { createLocalEnvironment } from '../lib/main.mjs';
 
 const {
-  dirname,
-  fileURLToPath,
-  createRequire,
   printLog, printError,
   writeFileSync, existsSync, readdirSync, chmodSync, cpSync,
 } = process.shared || {};
-
-const __dirname = dirname(fileURLToPath(import.meta.url));
-const _require = createRequire(import.meta.url);
 
 Util.onTrace((e, kind, label) => {
   printError('__ON__TRACE__');
@@ -20,10 +14,6 @@ Util.onTrace((e, kind, label) => {
   printError('__ON__TRACE__');
 });
 
-const pkg = _require('../package.json');
-
-const version = process.env.GIT_REVISION || pkg.revision || 'HEAD';
-
 /* global Bun, Deno */
 
 // eslint-disable-next-line no-nested-ternary
@@ -31,12 +21,12 @@ const runtime = typeof Deno !== 'undefined'
   ? `deno ${Deno.version.deno}`
   : typeof Bun !== 'undefined'
     ? `bun ${Bun.version}`
-    : `node ${process.version}`;
+    : `${typeof globalThis.imports !== 'undefined' ? 'gtk' : 'node'} ${process.version}`;
 
-printLog(Util.$.bold(`■ Jamrock v${pkg.version}`), Util.$.gray(`(${runtime}, ${version})`));
+printLog(Util.$.bold(`■ Jamrock v${PKG_VERSION}`), Util.$.gray(`(${runtime}, ${process.env.GIT_REVISION || 'HEAD'})`));
 
 const USAGE_INFO = `
-Usage: ${!existsSync('package.json') ? 'jamrock' : './bin/{node,deno,bun}'} <COMMAND> [OPTIONS]
+Usage: ./bin/{node,deno,bun,gjs} <COMMAND> [OPTIONS]
 
   init   Generates a new application into the given directory
   serve  Starts the web-server on the given --port and --host
