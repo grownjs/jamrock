@@ -4,7 +4,7 @@ import { isNot as not, isArray as arr, isPlain as plain, isString as str, isScal
 import mime from 'mime/lite';
 import { Is } from './base.mjs';
 
-export { default as $ } from 'picocolors';
+export { COLORS as $ } from '../chalk.mjs';
 
 export { format, enable, disable, findAll, encodeText, decodeEnts, parseMarkup, markupAdapter } from 'somedom/ssr';
 
