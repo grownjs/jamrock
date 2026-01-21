@@ -6,8 +6,6 @@ import { createBody } from './request.mjs';
 import { createFSWatcher } from './helpers.mjs';
 import { createConnection } from './connection.mjs';
 
-const { printLog } = process.shared || {};
-
 const PATH_PROPERTY = Symbol('@@path');
 const FILES_PROPERTY = Symbol('@@files');
 const ASSETS_PROPERTY = Symbol('@@assets');
@@ -26,6 +24,8 @@ const VERSION_PROPERTY = Symbol('@@version');
 // actually we can add tests for this mechanism... right?
 
 export const createWatcher = ({ fs }, watcher, compiler) => {
+  const { printLog } = process.shared || { printLog: console.log };
+
   const clients = [];
   const before = [];
 
@@ -206,6 +206,8 @@ export const createWatcher = ({ fs }, watcher, compiler) => {
 };
 
 export const createCompiler = ({ fs, path }, options, external) => {
+  const { printLog } = process.shared || { printLog: console.log };
+
   const cwd = options.cwd || process.cwd();
   const base = path.join(cwd, options.dest || 'generated');
   const index = path.join(base, 'index.json');
@@ -492,6 +494,8 @@ export const createCompiler = ({ fs, path }, options, external) => {
  */
 export function createEnvironment({ fs, path }, options, external) {
   Template.cache = new Map();
+
+  const { printLog } = process.shared || { printLog: console.log };
 
   const compiler = createCompiler({ fs, path }, options, external);
 
