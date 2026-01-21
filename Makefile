@@ -174,11 +174,17 @@ bun\:build:
 bun:
 	@bun run scripts/bun-server.js
 
+gjs-test:
+	@make -s gjs-check GJS_ARGS="init x-gtk-sandbox --force"
+	@make -s gjs-check GJS_ARGS="build --src x-gtk-sandbox"
+	@make -s gjs-check GJS_ARGS="route --src x-gtk-sandbox"
+	@make -s gjs-check GJS_ARGS="build --write"
+
 gjs-check:
 ifeq ($(UNAME_S),Darwin)
 	env DYLD_LIBRARY_PATH=$(LIB_PATH) gjs -m bin/gjs $(GJS_ARGS)
 else
-	gjs -m bin/gjs $(GJS_ARGS)
+	xvfb-run gjs -m bin/gjs $(GJS_ARGS)
 endif
 
 #dev: deps

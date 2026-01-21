@@ -517,6 +517,9 @@ export class Template {
       if (typeof Bun !== 'undefined') {
         return require(`${id}?_=${Math.random()}`);
       }
+      if (typeof imports !== 'undefined') {
+        return import(`file://${id}?_=${Math.random()}`);
+      }
       return import(`${id}?_=${Math.random()}`);
     }
     return import(id);
@@ -676,6 +679,11 @@ export class Template {
   }
 
   static relative(base, leaf) {
+    if (!leaf) {
+      const root = process.cwd();
+      return !base.includes(root) ? Template.join(root, base) : base;
+    }
+
     const c = [];
     const a = base.split('/');
     const b = leaf.split('/');
