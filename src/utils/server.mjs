@@ -32,6 +32,7 @@ export async function trace(e, kind, label) {
   if (STACK_TRACE.length > 0) {
     try {
       for (let c = STACK_TRACE.length; c > 0; c--) {
+        dump('E_TRACE', error, kind, label);
         error = await STACK_TRACE[c]?.(error, kind, label);
       }
     } catch (_e) {

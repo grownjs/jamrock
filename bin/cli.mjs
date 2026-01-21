@@ -2,7 +2,7 @@ import { PKG_VERSION, Template, Util, process } from '../dist/main.mjs';
 import { createLocalEnvironment } from '../lib/main.mjs';
 
 const {
-  printLog, printError,
+  printLog, printError, fileURLToPath,
   writeFileSync, existsSync, readdirSync, chmodSync, cpSync,
 } = process.shared || {};
 
@@ -15,6 +15,8 @@ Util.onTrace((e, kind, label) => {
 });
 
 /* global Bun, Deno */
+
+const __dirname = Template.dirname(fileURLToPath(import.meta.url));
 
 // eslint-disable-next-line no-nested-ternary
 const runtime = typeof Deno !== 'undefined'
@@ -55,7 +57,7 @@ Options:
 `;
 
 export default async function main(env, argv) {
-  if (Util.has('version', argv)) process.exit(1);
+  if (Util.has('version', argv)) return process.exit(1);
 
   argv = argv.filter(value => {
     if (value.includes('=')) {
@@ -86,7 +88,7 @@ export default async function main(env, argv) {
       .replace(/^\w+:/mg, $0 => Util.$.yellow($0))
       .replace(/--\w+|\[\w+\]/g, $0 => Util.$.blue($0))
       .replace(/\(.+?\)/g, $0 => Util.$.gray($0)));
-    process.exit(1);
+    return process.exit(1);
   }
 
   async function routeInfo() {
