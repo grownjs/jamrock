@@ -183,6 +183,7 @@ export async function build(src, opts) {
     if (mods[i].js) transpile(mods[i].content, mods[i].dest, true, '');
     else if (!mods[i].src) fs.writeFileSync(mods[i].dest, mods[i].content);
   }
+  if (opts?.raw) return mod;
   return mod.compile(mods[0], mod.partial, transpile);
 }
 

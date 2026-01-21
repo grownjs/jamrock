@@ -44,10 +44,11 @@ Run `jamrock --help` for a quick glance:
 
   <var>--src</var>      Directory of *.{md,html} files to compile <em>(default is ./pages)</em>
   <var>--dest</var>     Destination for compiled files <em>(default is ./build)</em>
+
   <var>--watch</var>    Enable file-watching on the web-server
   <var>--write</var>    SSG from compiled sources into destination
-  <var>--prefix</var>   Prefix for bundled resources
-  <var>--target</var>   Value for &lt;base href="..." /&gt; (default is /)
+  <var>--target</var>   Value for &lt;base href="..." /&gt; <em>(default is /)</em>
+  <var>--prefix</var>   Prefix for bundled resources <em>(default is @)</em>
 
   <var>--port</var>     The port number to bind the web-server
   <var>--host</var>     The host address to bind the web-server

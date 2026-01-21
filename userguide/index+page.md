@@ -6,9 +6,9 @@
 
 Runs everything on the server and keep JavaScript usage on the browser low.
 
-_&mdash; it ain't much but it's honest work!_ 💣
+_&mdash; it ain't much but it's honest work!_
 
-## Give it a try!!
+## Give it a try!! 🤪
 
 Install **jamrock** in your `$HOME`:
 
@@ -40,6 +40,6 @@ Open that URL in your browser and explore.
 <blockquote>
   <p class="gap-sm flex centered">
     <svg src="./images/beaker.svg" size="16" />
-    <span>See the <a href="/introduction#top">available documentation here!</a></span>
+    <span>See the <a href="/introduction#top">available documentation here.</a></span>
   </p>
 </blockquote>
