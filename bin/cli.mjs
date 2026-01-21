@@ -1,22 +1,23 @@
-import { dirname } from 'node:path';
-import { fileURLToPath } from 'node:url';
-import { createRequire } from 'node:module';
-import { writeFileSync, existsSync, readdirSync, chmodSync, cpSync } from 'node:fs';
-
+import { Template, Util, process } from '../dist/main.mjs';
 import { createLocalEnvironment } from '../lib/main.mjs';
-import { Template, Util, process } from '../dist/compat.mjs';
+
+const {
+  dirname,
+  fileURLToPath,
+  createRequire,
+  printLog, printError,
+  writeFileSync, existsSync, readdirSync, chmodSync, cpSync,
+} = process.shared || {};
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const _require = createRequire(import.meta.url);
 
-_require('util')._extend = Object.assign;
-
 Util.onTrace((e, kind, label) => {
-  console.error('__ON__TRACE__');
-  console.error(label);
-  console.error(kind);
-  console.error(e);
-  console.error('__ON__TRACE__');
+  printError('__ON__TRACE__');
+  printError(label);
+  printError(kind);
+  printError(e);
+  printError('__ON__TRACE__');
 });
 
 const pkg = _require('../package.json');
@@ -32,7 +33,7 @@ const runtime = typeof Deno !== 'undefined'
     ? `bun ${Bun.version}`
     : `node ${process.version}`;
 
-console.log(Util.$.bold(`■ Jamrock v${pkg.version}`), Util.$.gray(`(${runtime}, ${version})`));
+printLog(Util.$.bold(`■ Jamrock v${pkg.version}`), Util.$.gray(`(${runtime}, ${version})`));
 
 const USAGE_INFO = `
 Usage: ${!existsSync('package.json') ? 'jamrock' : './bin/{node,deno,bun}'} <COMMAND> [OPTIONS]
@@ -90,7 +91,7 @@ export default async function main(env, argv) {
   const base_url = Util.flag('target', argv, '/');
 
   if (Util.has('help', argv) || !argv[0]) {
-    console.log(USAGE_INFO
+    printLog(USAGE_INFO
       .replace(/(?<=\s\s)\w+(?=\s\s)|<\w+>/g, $0 => Util.$.bold($0))
       .replace(/^\w+:/mg, $0 => Util.$.yellow($0))
       .replace(/--\w+|\[\w+\]/g, $0 => Util.$.blue($0))
@@ -106,7 +107,7 @@ export default async function main(env, argv) {
 
     const typedefs = [];
 
-    console.log(`Reading routes from ${dest}`);
+    printLog(`Reading routes from ${dest}`);
 
     const types = Util.flag('dts', argv, Util.has('dts', argv));
     const names = _.routes.map(x => x.name.length).sort((a, b) => b - a)[0] + 2;
@@ -132,7 +133,7 @@ export default async function main(env, argv) {
         const key = route.src || route.middleware;
 
         if (current !== key) {
-          console.log(`${current ? '\n' : ''}${Util.$.bold(key)}`);
+          printLog(`${current ? '\n' : ''}${Util.$.bold(key)}`);
           current = key;
         }
 
@@ -146,7 +147,7 @@ export default async function main(env, argv) {
         // eslint-disable-next-line no-nested-ternary
         const prefix = route.verb === 'DELETE' ? 'red' : route.verb === 'GET' ? 'green' : 'yellow';
 
-        console.log(Util.$[prefix](Util.pad(route.verb, verbs)), path + Util.$.gray(named));
+        printLog(Util.$[prefix](Util.pad(route.verb, verbs)), path + Util.$.gray(named));
       } else {
         const suffix = `\n  /**\n  ${route.verb} ${route.path}\n  */`;
 
@@ -166,13 +167,13 @@ export default async function main(env, argv) {
       const script = `import type { RouteMap, RouteInfo, RouteParams, NestedRoute, PathParam } from '${Util.flag('from', argv, 'jamrock')}';\n
 export type Routes = ${['RouteMap'].concat(typedefs).join('\n& ')};\n`;
 
-      console.log(`  ${Util.$.green('write')} ${Util.$.gray(target)}`);
+      printLog(`  ${Util.$.green('write')} ${Util.$.gray(target)}`);
 
       writeFileSync(target, script);
 
-      console.log(`${found > 0 ? found : 'No'} route${found === 1 ? '' : 's'} written (${Util.ms(start)})`);
+      printLog(`${found > 0 ? found : 'No'} route${found === 1 ? '' : 's'} written (${Util.ms(start)})`);
     } else {
-      console.log(`${found > 0 ? found : 'No'} route${found === 1 ? '' : 's'} found (${Util.ms(start)})`);
+      printLog(`${found > 0 ? found : 'No'} route${found === 1 ? '' : 's'} found (${Util.ms(start)})`);
     }
 
     if (!found) process.exit(1);
@@ -200,12 +201,12 @@ export type Routes = ${['RouteMap'].concat(typedefs).join('\n& ')};\n`;
 
     switch (argv[0]) {
       case 'serve':
-        console.log(`Processing ${src} to ${dest}`);
+        printLog(`Processing ${src} to ${dest}`);
         await env({ ...defaults, ..._options, uws, watch }).serve();
         break;
 
       case 'build':
-        console.log(`Building ${src} to ${dest}`);
+        printLog(`Building ${src} to ${dest}`);
         const self = await env({ ...defaults, ..._options }).build(); // eslint-disable-line no-case-declarations
         if (_write) await self.static();
         break;
@@ -241,7 +242,7 @@ export type Routes = ${['RouteMap'].concat(typedefs).join('\n& ')};\n`;
           .filter(_ => !['bin', 'pages', 'pages/components'].includes(_));
 
         ['package.json'].concat(sources)
-          .forEach(file => console.log(`  ${Util.$.green('write')} ${Util.$.gray(file)}`));
+          .forEach(file => printLog(`  ${Util.$.green('write')} ${Util.$.gray(file)}`));
         break;
 
       default:

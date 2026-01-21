@@ -1,4 +1,5 @@
 PWD=$(shell pwd)
+UNAME_S := $(shell uname -s)
 
 FROM_FOLDER=build/static
 FROM_BRANCH=next
@@ -12,6 +13,14 @@ BROWSER=chrome:headless
 DIST_TASK=dist
 FORCE_COLOR=1
 GIT_REVISION=$(shell git rev-parse --short=7 HEAD)
+
+LIB_ADWAITA = /opt/homebrew/Cellar/libadwaita/1.8.3/lib
+LIB_CAIRO = /opt/homebrew/Cellar/cairo/1.18.4/lib
+LIB_PANGO = /opt/homebrew/Cellar/pango/1.57.0_1/lib
+LIB_SOUP = /opt/homebrew/Cellar/libsoup/3.6.5/lib
+LIB_GDK = /opt/homebrew/Cellar/gdk-pixbuf/2.44.4/lib
+LIB_GTK4 = /opt/homebrew/Cellar/gjs/1.86.0/lib:/opt/homebrew/Cellar/gtk4/4.20.3/lib
+LIB_PATH = "$(LIB_GTK4):$(LIB_PANGO):$(LIB_GDK):$(LIB_SOUP):$(LIB_ADWAITA):$(LIB_CAIRO)"
 
 ifneq ($(wildcard .env),)
 	include .env
@@ -163,6 +172,13 @@ bun\:build:
 	@bun run scripts/bun-build.js
 bun:
 	@bun run scripts/bun-server.js
+
+gjs-check:
+ifeq ($(UNAME_S),Darwin)
+	@env DYLD_LIBRARY_PATH=$(LIB_PATH) gjs -m bin/gjs
+else
+	@gjs -m bin/gjs
+endif
 
 #dev: deps
 #	@npm run watch
