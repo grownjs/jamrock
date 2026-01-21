@@ -294,7 +294,7 @@ export async function createBody(env, conn, clients, { client, matches, options 
         if (ctx.socket) {
           ctx.socket.send(`rpc:update ${ctx.socket.identity} ${target} ${mode}\t${payload}`);
         } else {
-          console.log('__OUTPUT', conn.req.uuid, ref, mode, target, payload);
+          Util.dump('__OUTPUT', conn.req.uuid, ref, mode, target, payload);
         }
       },
     };
@@ -559,7 +559,7 @@ export async function createResponse(env, conn, clients, options) {
     return new Response(new ReadableStream({
       start(controller) {
         // console.log('E_REQ', conn.req.uuid);
-        console.log('START SSE', conn.req.uuid);
+        Util.dump('START SSE', conn.req.uuid);
         // env.context.set(conn.req.uuid, ctx);
 
         function sendSSEMessage(data) {
@@ -583,7 +583,7 @@ export async function createResponse(env, conn, clients, options) {
       },
       cancel(reason) {
         // cancelled = true;
-        console.log('STOP SSE', reason, conn.req.uuid);
+        Util.dump('STOP SSE', reason, conn.req.uuid);
         env.context.get(conn.req.uuid).forEach(s => s.cancel());
         env.context.delete(conn.req.uuid);
       },

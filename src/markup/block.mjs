@@ -8,7 +8,7 @@ import { lexer } from '../templ/utils.mjs';
 import { reduce, visit } from './utils.mjs';
 import { Template } from '../templ/main.mjs';
 import { extract, rebase } from '../handler/utils.mjs';
-import { Is, parseMarkup, identifier, ignore } from '../utils/server.mjs';
+import { Is, parseMarkup, identifier, ignore, dump } from '../utils/server.mjs';
 
 const RE_EXPORT_DEFAULT = /\nexport default[\s{]/;
 const RE_RESOLVE_IMPORTS = /\/\*@@\*\/__resolve\('(.+?)'\)/g;
@@ -533,7 +533,7 @@ for (const [, fn] of Object.entries(__functions)) fn.$ = __src;
     const base = source ? Template.dirname(source) : null;
     const leaf = target ? Template.dirname(target) : null;
 
-    if (!code.replace) console.log({ code, source });
+    if (!code.replace) dump({ code, source });
 
     return code
       .replace(RE_EXPORT_DEFAULT, _ => [info, _].join('\n'))

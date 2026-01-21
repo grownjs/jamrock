@@ -16,10 +16,6 @@ const VERSION_PROPERTY = Symbol('@@version');
  * @import {RouteInfo, Environment} from "../../types/env.d.ts"
  */
 
-export function printLog(...msg) {
-  console.log(...msg);
-}
-
 // FIXME: we need to implement a file watcher that yield two kind of events,
 // recompile and/or reload specific sources, recompile only touched sources,
 // but reload consumers only (unless they recompile as well), so we can
@@ -90,7 +86,7 @@ export const createWatcher = ({ fs }, watcher, compiler) => {
 
     if (type === 'unlink') {
       delete compiler[FILES_PROPERTY][src];
-      printLog(`  ${Util.$.red('delete')} ${Util.$.gray(src)}`);
+      Util.dump(`  ${Util.$.red('delete')} ${Util.$.gray(src)}`);
     }
 
     // FIXME: trigger tree changes... say, we got a dependency,
@@ -174,7 +170,7 @@ export const createWatcher = ({ fs }, watcher, compiler) => {
     } else if (retries > 0) {
       await new Promise(_ => setTimeout(_, 20)).then(() => retryCompile(url, retries - 1));
     } else {
-      console.log('NOT FOUND', sources);
+      Util.dump('NOT FOUND', sources);
     }
   }
 
@@ -186,7 +182,7 @@ export const createWatcher = ({ fs }, watcher, compiler) => {
       try {
         const url = req.url[0] === '/' ? req.url : new URL(req.url).pathname;
         // const start = new Date();
-        console.log('E_REQ', url);
+        Util.dump('E_REQ', url);
         await retryCompile(url, 10);
         // console.log('>>>', (new Date() - start) / 1000);
       } catch (e) {
@@ -257,7 +253,7 @@ export const createCompiler = ({ fs, path }, options, external) => {
     if (options.unocss && unoConfig) {
       const unocss = await external.getUnoCSSModule();
       const _reload = async () => {
-        printLog(`💅 ${unoConfig.replace(cwd, '.')}`);
+        Util.dump(`💅 ${unoConfig.replace(cwd, '.')}`);
 
         const _config = await Template.reload(unoConfig, true);
         generators = { ...generators, css: await unocss.createGenerator(_config.default || _config) };
@@ -273,7 +269,7 @@ export const createCompiler = ({ fs, path }, options, external) => {
 
     if (options.__filename && watcher) {
       const _reconfigure = async () => {
-        printLog(`⚡ ${options.__filename.replace(cwd, '.')}`);
+        Util.dump(`⚡ ${options.__filename.replace(cwd, '.')}`);
 
         const _options = await Template.reload(options.__filename, true);
 
@@ -366,7 +362,7 @@ export const createCompiler = ({ fs, path }, options, external) => {
       }
 
       if (!imported.includes(key)) {
-        printLog(Util.$.bold(key));
+        Util.dump(Util.$.bold(key));
 
         const shared = { ...options, generators };
         const mod = compile(Template.read(src), src, shared);
@@ -387,7 +383,7 @@ export const createCompiler = ({ fs, path }, options, external) => {
           } else {
             const destFile = Template.join(options.dest, chunk.dest).replace(/\.(?:md|html)/, '.generated.mjs');
 
-            printLog(`  ${Util.$.green('write')} ${Util.$.gray(destFile)}`);
+            Util.dump(`  ${Util.$.green('write')} ${Util.$.gray(destFile)}`);
 
             results.push([chunk, Handler.rebase(destFile)]);
             bundle.push(destFile);
@@ -395,7 +391,7 @@ export const createCompiler = ({ fs, path }, options, external) => {
             if (chunk.client) {
               const clientFile = destFile.replace('.generated.', '.bundled.');
 
-              printLog(`  ${Util.$.green('write')} ${Util.$.gray(clientFile)}`);
+              Util.dump(`  ${Util.$.green('write')} ${Util.$.gray(clientFile)}`);
 
               tasks.push(() => Template.transpile({
                 filepath: destFile.replace('.mjs', '.js'),
@@ -421,7 +417,7 @@ export const createCompiler = ({ fs, path }, options, external) => {
 
     await Promise.all(tasks.map(fn => fn()));
 
-    printLog(`${results.length > 0 ? results.length : 'No'} file${results.length === 1 ? '' : 's'} processed (${Util.ms(start)})`);
+    Util.dump(`${results.length > 0 ? results.length : 'No'} file${results.length === 1 ? '' : 's'} processed (${Util.ms(start)})`);
 
     return Template.imports(`${bundle.map(_ => `import '${_}';`).join('\n')}`);
   }
@@ -581,7 +577,7 @@ export function createEnvironment({ fs, path }, options, external) {
 
         const destFile = path.join(publicDest, route.path, 'index.html');
 
-        printLog(Util.$.green(route.verb), route.path, Util.$.gray(destFile));
+        Util.dump(Util.$.green(route.verb), route.path, Util.$.gray(destFile));
 
         // env.context.wrap
         const env = { files, locate: k => modules[files[k].filepath].module };
@@ -628,10 +624,9 @@ export function createEnvironment({ fs, path }, options, external) {
         count++;
       }
 
-      printLog(`${count} file${count === 1 ? '' : 's'} written (${Util.ms(start)})`);
+      Util.dump(`${count} file${count === 1 ? '' : 's'} written (${Util.ms(start)})`);
     } catch (e) {
       Util.trace(e, 'E_WRITE');
-      printLog(e);
       process.exit(1);
     } finally {
       process.exit();

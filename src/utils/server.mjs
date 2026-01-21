@@ -10,6 +10,20 @@ export { format, enable, disable, findAll, encodeText, decodeEnts, parseMarkup, 
 
 const STACK_TRACE = [];
 
+export function dump(...args) {
+  if (typeof logError !== 'undefined') {
+    for (const e of args) {
+      if (e instanceof Error) {
+        logError(e);
+      } else {
+        log(e);
+      }
+    }
+  } else {
+    console.debug(...args);
+  }
+}
+
 export async function trace(e, kind, label) {
   kind = kind || 'E_UNKNOWN';
   label = label || e.message || 'Unknown error';
@@ -21,10 +35,10 @@ export async function trace(e, kind, label) {
         error = await STACK_TRACE[c]?.(error, kind, label);
       }
     } catch (_e) {
-      console.error('E_FATAL', _e, e, error, kind, label);
+      dump('E_FATAL', _e, e, error, kind, label);
     }
   } else {
-    console.error('E_TRACE', error, kind, label);
+    dump('E_TRACE', error, kind, label);
   }
 }
 

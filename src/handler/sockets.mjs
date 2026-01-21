@@ -1,4 +1,4 @@
-import { Is, trace } from '../utils/server.mjs';
+import { Is, dump, trace } from '../utils/server.mjs';
 
 export function setup(ctx, env, editor, handler, timeout) {
   ctx.on('open', ws => {
@@ -13,7 +13,7 @@ export function setup(ctx, env, editor, handler, timeout) {
         ws.stop?.();
         ws.context = null;
       } catch (e) {
-        console.log('E_DISPOSE', e);
+        dump('E_DISPOSE', e);
       } finally {
         if (handler?.sync) {
           handler.sync.unsubscribe(ws);
@@ -26,7 +26,7 @@ export function setup(ctx, env, editor, handler, timeout) {
       clearTimeout(t);
     });
     ws.on('failure', ({ e, msg, args, data }) => {
-      console.error('E_SOCKET', { e, msg, args, data }, !!ctx.socket);
+      dump('E_SOCKET', { e, msg, args, data }, !!ctx.socket);
       // if (ctx.socket) {
       //   ctx.socket.send(`rpc:failure ${ws.identity}\t${JSON.stringify({
       //     message: e.message,
@@ -58,7 +58,7 @@ export function setup(ctx, env, editor, handler, timeout) {
         ws.identity = args[0];
         ws.source = args[1];
         ws.send(`welcome ${args[0]}`);
-        console.log('CONNECTED', args);
+        dump('CONNECTED', args);
       } else if (msg === 'request') {
         const input = data
           ? Object.fromEntries(new URLSearchParams(data))

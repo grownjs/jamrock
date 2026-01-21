@@ -4,6 +4,4 @@
 import('../lib/deno/runtime.js').then(() => Promise.all([
   import('../lib/deno/main.mjs'),
   import('./cli.mjs'),
-]).then(([env, cli]) => {
-  cli.default(env.default, Deno.args);
-}));
+]).then(([env, cli]) => cli.default(env.default, Deno.args))).catch(console.error);

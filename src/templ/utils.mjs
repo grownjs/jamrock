@@ -8,7 +8,7 @@ import jsLang from 'highlight.js/lib/languages/javascript';
 
 import { jamLang } from './lang.mjs';
 import { attrs, taggify } from '../markup/html.mjs';
-import { stack, ignore } from '../utils/server.mjs';
+import { dump, stack, ignore } from '../utils/server.mjs';
 
 const RE_MATCH_LINES = /(?:<anonymous>|[.+](?:page|error|layout|generated)\.mjs(?:[^:]+?)):(\d+)(?::(\d+))?/;
 const RE_MATCH_OFFSETS = /\/\*!#(\d+):(\d+)\*\//;
@@ -163,9 +163,9 @@ export function lexer(code, token) {
     new AsyncFunction('', chunk);
   } catch (e) {
     if (process.debug) {
-      console.log('---');
-      console.log(chunk);
-      console.log(e);
+      dump('---');
+      dump(chunk);
+      dump(e);
     }
     if (e.message.includes('Invalid or unexpected token')) {
       throw new ParseError(e.message, token, chunk.trim().length);

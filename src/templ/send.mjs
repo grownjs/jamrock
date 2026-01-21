@@ -1,5 +1,5 @@
 import {
-  Is, sleep, dashCase,
+  Is, dump, sleep, dashCase,
 } from '../utils/server.mjs';
 
 export function decorate($, ctx, vnode, hooks) {
@@ -96,7 +96,7 @@ export function streamify() {
           }
         }
       } catch (e) {
-        console.log('E_PULL', e);
+        dump('E_PULL', e);
       } finally {
         value?.return(true);
         if (process.env.HEADLESS || !done) next(values);

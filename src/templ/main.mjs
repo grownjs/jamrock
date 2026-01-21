@@ -1,7 +1,7 @@
 // @ts-check
 
 import { serialize, taggify, scopify, rulify, cssify } from '../markup/html.mjs';
-import { pascalCase, snakeCase, trace, Is } from '../utils/server.mjs';
+import { pascalCase, snakeCase, trace, dump, Is } from '../utils/server.mjs';
 
 import { executeAsync } from '../render/async.mjs';
 import { debug, stringify } from './utils.mjs';
@@ -105,7 +105,7 @@ export class Template {
           .transform(cb, isClient, options, imported)
           .then(result => set.push(...result)));
       } else {
-        console.debug(`=> '${c.src}' not found in`, target);
+        dump(`=> '${c.src}' not found in`, target);
       }
     }
 

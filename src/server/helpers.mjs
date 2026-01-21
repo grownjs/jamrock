@@ -49,7 +49,7 @@ export async function createRedisConnection(env, options, getRedisModule) {
 
     const onError = e => {
       if (!e.message.includes('Connection timeout')) {
-        console.error('E_REDIS', e);
+        Util.dump('E_REDIS', e);
       }
     };
 

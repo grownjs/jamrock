@@ -1,4 +1,5 @@
 PWD=$(shell pwd)
+GJS_ARGS="--help"
 UNAME_S := $(shell uname -s)
 
 FROM_FOLDER=build/static
@@ -175,9 +176,9 @@ bun:
 
 gjs-check:
 ifeq ($(UNAME_S),Darwin)
-	@env DYLD_LIBRARY_PATH=$(LIB_PATH) gjs -m bin/gjs
+	env DYLD_LIBRARY_PATH=$(LIB_PATH) gjs -m bin/gjs $(GJS_ARGS)
 else
-	@gjs -m bin/gjs
+	gjs -m bin/gjs $(GJS_ARGS)
 endif
 
 #dev: deps
