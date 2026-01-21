@@ -47,12 +47,14 @@ ci\:full:
 	@make ci CI=1 DIST_TASK=dist:min
 
 test: dist
+	@make -s gjs-test
 	@npm run test:ci
 	@make -s test-nodejs || true
 	@make -s test-bun || true
 	@make -s test-deno || true
 
 test-ci:
+	@make -s gjs-test
 	@make -s test-nodejs
 	@make -s test-bun
 	@make -s test-deno
