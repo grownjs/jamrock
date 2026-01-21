@@ -1,5 +1,6 @@
-import { PKG_VERSION, Template, Util, process } from '../dist/main.mjs';
+import { Template, Util, process } from '../dist/main.mjs';
 import { createLocalEnvironment } from '../lib/main.mjs';
+import { PKG_VERSION } from '../dist/version.mjs';
 
 const {
   printLog, printError, fileURLToPath,

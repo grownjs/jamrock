@@ -43,7 +43,7 @@
     "dist:min": "npm-run-all -s dist:dom dist:ssr dist:lib postdist",
     "dist:dom": "npm run build -- -ysrc/client.js -Xsrc/main.js -asomedom/ssr:somedom",
     "dist:ssr": "npm run build -- -ysrc/main.js -Xsrc/client.js",
-    "dist:lib": "npm run build -- -ysrc/server.js -Njamrock -N../main.mjs",
+    "dist:lib": "npm run build -- -ysrc/server.js -ysrc/version.js -Njamrock -N../main.mjs",
     "build": "mortero -f -X{client,server,handler,markup,render,templ,util} -Ddist -Bsrc/*.js -rsrc/*:{name}.mjs -Nsource-map -achalk:./src/chalk.mjs --esm",
     "postdist": "node scripts/postbuild.mjs"
   },
