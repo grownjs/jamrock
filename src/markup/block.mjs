@@ -228,9 +228,9 @@ export const __attributes = ${this.$attributes};
     const { src, href } = node.attributes;
     const path = src || href;
 
-    if (path && !Is.str(path)) return;
+    if (!path || !Is.str(path)) return;
     if (path.includes('://')) return;
-    if (path?.charAt() === '/') return;
+    if (path.charAt() === '/') return;
 
     const file = path && Template.join(this.base, path);
 

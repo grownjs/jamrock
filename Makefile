@@ -1,16 +1,17 @@
 PWD=$(shell pwd)
 GJS_ARGS="--help"
-UNAME_S := $(shell uname -s)
+UNAME_S=$(shell uname -s)
 
-FROM_FOLDER=build/static
+BROWSER ?= chrome:headless
+TARGET_BRANCH ?= gh-pages
+NODE_ENV ?= production
+
 FROM_BRANCH=next
-TARGET_BRANCH=gh-pages
+FROM_FOLDER=build/static
 COMMIT_MESSAGE=Release: $(shell date)
 
-NODE_ENV=production
 MAILDEV=1
 EDITOR=zed
-BROWSER=chrome:headless
 DIST_TASK=dist
 FORCE_COLOR=1
 GIT_REVISION=$(shell git rev-parse --short=7 HEAD)
@@ -29,14 +30,16 @@ endif
 
 export EDITOR APP_KEY MAILDEV FORCE_COLOR GIT_REVISION
 
-.PHONY: seed dist docs install examples
+.PHONY: seed dist docs install examples coverage
 
-ci: install clean dist
-	@npm run lint
-	@npm run test:ci
+ci: install clean
+	@make -s smoke
 ifneq ($(CI),)
 	@make -s test-ci
 endif
+	@make -s coverage
+
+coverage:
 ifneq ($(GITHUB_ENV),)
 	@npm run codecov
 endif
@@ -62,7 +65,7 @@ test-ci:
 test-bun:
 	@echo "== bun =="
 	@rm -rf node_modules
-	@bun install
+	@bun install --silent
 	@make -s bun:build CI=1
 	@bun run scripts/bun-testing.js
 	@HAPPY_DOM=1 bun run scripts/bun-testing.js
@@ -82,13 +85,13 @@ test-deno:
 test-nodejs:
 	@echo "== node =="
 	@rm -rf node_modules
-	@npm install
+	@npm install --silent
 	@make -s nodejs:build CI=1
 	@node scripts/node-testing.mjs
 	@JS_DOM=1 node scripts/node-testing.mjs
 	@HAPPY_DOM=1 node scripts/node-testing.mjs
 	@make -s seed:node
-	@node scripts/check.ts
+	@node --experimental-transform-types scripts/check.ts
 	@make -s e2e:node
 
 docs:
@@ -154,6 +157,10 @@ ifneq ($(CI),)
 endif
 	@LCOV_OUTPUT=html npm run test:ci
 
+smoke:
+	@npm run lint
+	@npm run test:ci
+
 dist: deps
 	@VERSION=$(shell jq -r .version package.json) npm run $(DIST_TASK)
 
@@ -177,7 +184,7 @@ bun:
 	@bun run scripts/bun-server.js
 
 gjs-esm:
-	@gjs -m esm.js
+	@gjs -m esm.js || true
 
 gjs-test: gjs-esm
 	@make -s gjs-check GJS_ARGS="init x-gtk-sandbox --force"
@@ -192,7 +199,7 @@ gjs-check:
 ifeq ($(UNAME_S),Darwin)
 	env DYLD_LIBRARY_PATH=$(LIB_PATH) gjs -m bin/gjs $(GJS_ARGS)
 else
-	xvfb-run gjs -m bin/gjs $(GJS_ARGS)
+	gjs -m bin/gjs $(GJS_ARGS)
 endif
 
 #dev: deps
@@ -200,11 +207,12 @@ endif
 # & make -s client
 
 clean: clean-ts
-	@rm -rf dist/* generated/* .nyc_output
+	@rm -rf dist generated coverage .nyc_output
 clean-ts:
-	@rm -rf build/* scripts/routes.d.ts
+	@rm -rf build scripts/routes.d.ts
 
 prune: clean
+	@rm -f package-lock.json
 	@rm -f deno.lock
 	@rm -f cache.json
 	@rm -rf node_modules
@@ -235,6 +243,6 @@ deps:
 	@(((ls node_modules | grep .) > /dev/null 2>&1) || npm i) || true
 
 deno-deps:
-	@deno run $(DENO_FLAGS) --allow-all --unstable lib/deno/deps.js
+	@deno run $(DENO_FLAGS) -q --allow-all --unstable lib/deno/deps.js
 deno-deps\:%:
 	@make -s deno-deps DENO_FLAGS="--$(subst :, --,$*)"

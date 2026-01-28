@@ -10,53 +10,42 @@ on:
 
 jobs:
   build-test:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
+
+    permissions: write-all
 
     services:
-      postgres:
-        image: postgres:latest
-        env:
-          POSTGRES_DB: postgres
-          POSTGRES_USER: postgres
-          POSTGRES_PASSWORD: postgres
-        ports:
-          - 5432:5432
-        # Set health checks to wait until postgres has started
-        options: >-
-          --health-cmd "pg_isready -U postgres -d postgres"
-          --health-interval 10s
-          --health-timeout 5s
-          --health-retries 5
-
       backend:
         image: ghcr.io/muchobien/pocketbase:latest
         ports:
           - "8090:8090"
 
     steps:
-      - uses: actions/setup-node@v6
-        with:
-          node-version: 24.10.0
-      - name: GTK4+
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y gjs libgtk-4-dev libsoup-3.0-dev xvfb
-          gjs --version
       - name: Checkout
         uses: actions/checkout@v5
-      - name: Deno setup
-        uses: denoland/setup-deno@v2
-        with:
-          deno-version: 2.5.4
-      - name: Bun setup
-        uses: antongolub/action-setup-bun@v1
-        with:
-          bun-version: 1.3.6
 
       - name: Configure pocketbase
         run: |
           docker exec ${{ job.services.backend.id }} \
           sh -c 'pocketbase superuser create yo@soypache.co Password.123'
 
-      - name: Run all tests
-        run: make ci DIST_TASK=dist:min CODECOV_TOKEN=${{ secrets.CODECOV_TOKEN }}
+      - uses: tacoss/nodejs@master
+        with:
+          args: make dist smoke gjs-test test-nodejs coverage prune
+        env:
+          PB_ADMIN_URL: http://backend:8090
+          CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
+
+      - name: Deno setup
+        uses: denoland/setup-deno@v2
+        with:
+          deno-version: 2.5.4
+
+      - run: make dist smoke test-deno prune
+
+      - name: Bun setup
+        uses: antongolub/action-setup-bun@v1
+        with:
+          bun-version: 1.3.6
+
+      - run: make dist smoke test-bun
