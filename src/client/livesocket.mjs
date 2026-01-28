@@ -165,7 +165,7 @@ export class LiveSocket {
     this.patchCSS = src => {
       const node = document.querySelector(`link[href^="${this.browser.prefix}/${src}"]`);
       const href = node.getAttribute('href').split('?')[0];
-      node.href = `${href}?_${Date.now()}`;
+      node.href = `${href}?_=${Date.now()}`;
     };
 
     this.patch = sources => {

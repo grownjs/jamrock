@@ -508,9 +508,9 @@ for (const [, fn] of Object.entries(__functions)) fn.$ = __src;
       if ($3.includes('.md') || $3.includes('.html')) {
         const suffix = String(Date.now());
 
-        fixed += 11 + suffix.length;
+        fixed += 12 + suffix.length;
 
-        return `${symbols} = await import('${$3.replace(/\.(?:md|html)/, `.generated.mjs?_${suffix}`)}')`;
+        return `${symbols} = await import('${$3.replace(/\.(?:md|html)/, `.generated.mjs?_=${suffix}`)}')`;
       }
 
       return `${symbols} = await import('${$3}')`;
