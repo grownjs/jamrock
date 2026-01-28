@@ -446,7 +446,7 @@ export class Template {
       const calls = main?.__default?.actions || {};
       const actions = { [ctx.ref]: calls };
 
-      await Template.settle(data);
+      // await Template.settle(data);
 
       let state = { ...props, ...data };
       if (ctx.stream) {

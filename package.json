@@ -55,13 +55,13 @@
   },
   "license": "MIT",
   "optionalDependencies": {
-    "uWebSockets.js": "github:uNetworking/uWebSockets.js#v20.10.0"
-  },
-  "devDependencies": {
     "@girs/gjs": "*",
     "@girs/gio-2.0": "*",
     "@girs/gtk-4.0": "*",
     "@girs/soup-3.0": "*",
+    "uWebSockets.js": "github:uNetworking/uWebSockets.js#v20.10.0"
+  },
+  "devDependencies": {
     "@grown/conn": "^0.0.44",
     "@grown/test": "^0.0.19",
     "@japa/expect": "^3.0.7",
