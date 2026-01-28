@@ -374,6 +374,22 @@ export class Template {
     }
   }
 
+  static async settle(props) {
+    if (props) {
+      const keys = Object.keys(props);
+      const promises = Object.values(props);
+      const outcomes = await Promise.allSettled(promises);
+
+      for (let i = 0; i < keys.length; i++) {
+        if (outcomes[i].status === 'fulfilled') {
+          props[keys[i]] = outcomes[i].value;
+        } else {
+          console.error('E_RESOLVE', keys[i], outcomes[i]);
+        }
+      }
+    }
+  }
+
   static async render(component, parent, props, ctx, cb = null) {
     if (!component) {
       throw new Error(`Missing component, given '${component}'`);
@@ -398,19 +414,7 @@ export class Template {
       return Template.load(id);
     };
 
-    if (props) {
-      const keys = Object.keys(props);
-      const promises = Object.values(props);
-      const outcomes = await Promise.allSettled(promises);
-
-      for (let i = 0; i < keys.length; i++) {
-        if (outcomes[i].status === 'fulfilled') {
-          props[keys[i]] = outcomes[i].value;
-        } else {
-          console.error('E_RESOLVE', keys[i], outcomes[i]);
-        }
-      }
-    }
+    await Template.settle(props);
 
     const self = component.__handler
       ? await component.__handler(props, loader)
@@ -441,6 +445,8 @@ export class Template {
       const data = main?.__scope ?? main?.__callback?.();
       const calls = main?.__default?.actions || {};
       const actions = { [ctx.ref]: calls };
+
+      await Template.settle(data);
 
       let state = { ...props, ...data };
       if (ctx.stream) {

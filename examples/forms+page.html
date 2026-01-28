@@ -3,7 +3,7 @@
   import Input from './components/input.html';
 
   function save(values) {
-    console.log(values);
+    console.log({ values });
   }
 
   const options = [
@@ -29,7 +29,7 @@
 
 <hr />
 
-<Form name="test" on:valid={save} @post @async="select">
+<Form name="test" on:valid={save} method="post" @async="select">
   <Input name="input" label="InputX" required validates="eq:42" value="13" />
   <Input name="a" label="A" validates="same:b" value="3" />
   <Input name="b" label="B" validates="in:4:5" />

@@ -59,11 +59,11 @@
     if (!hasValidMethod || !currentForm) return;
     try {
       let invalid = 0;
-      ctx.fields.forEach(input => {
+      for (const input of ctx.fields) {
         if (input.value instanceof File) files.push(input.value.path);
         if (input.value !== null) payload[input.name] = input.value;
-        if (input.validated === false) invalid += 1;
-      });
+        if (await input.validate() === false) invalid += 1;
+      }
 
       if (!invalid) {
         await onvalid(payload);

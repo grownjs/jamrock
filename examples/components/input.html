@@ -34,7 +34,7 @@
   const choices = [];
   const present = name in body_params;
   const grouped = options && (type === 'radio' || type === 'checkbox');
-  const inputValue = toValue(hasValidMethod ? body_params[name] : value, grouped);
+  const inputValue = toValue(hasValidMethod && currentForm ? body_params[name] : value, grouped);
 
   const fns = {
     eq: (a, b) => a === b,
@@ -54,7 +54,7 @@
     return present && input && input.path ? new File(input) : null;
   }
 
-  async function check() {
+  async function validate() {
     if (!validates) {
       if (required && !inputValue.length) {
         failures.push({
@@ -117,11 +117,6 @@
       }
     }
 
-    let validated;
-    if (hasValidMethod && currentForm) {
-      validated = check() !== false;
-    }
-
     let fixedValue = inputValue;
     if (!Array.isArray(inputValue)) {
       if (type === 'checkbox') {
@@ -147,7 +142,7 @@
     if (type !== 'file') value = fixedValue;
 
     form.fields.push({
-      name, type, grouped, present, required, failures, validated, value: fixedValue,
+      name, type, grouped, present, required, failures, validate, value: fixedValue,
     });
   } catch (e) {
     error = e;
