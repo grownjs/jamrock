@@ -176,7 +176,10 @@ bun\:build:
 bun:
 	@bun run scripts/bun-server.js
 
-gjs-test:
+gjs-esm:
+	@gjs -m esm.js
+
+gjs-test: gjs-esm
 	@make -s gjs-check GJS_ARGS="init x-gtk-sandbox --force"
 	@make -s gjs-check GJS_ARGS="build --src x-gtk-sandbox"
 	@make -s gjs-check GJS_ARGS="route --src x-gtk-sandbox"
