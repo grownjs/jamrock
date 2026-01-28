@@ -120,7 +120,7 @@ function useContext(overrides) {
 }
 
 test.group('streaming support', () => {
-  test.skip('should pull data from iterators', async ({ expect }) => {
+  test('should pull data from iterators', async ({ expect }) => {
     const ctx = useContext();
 
     const markup = await fixture.partial('iterators.html', null, ctx);

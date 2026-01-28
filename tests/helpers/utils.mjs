@@ -41,8 +41,8 @@ export async function transpile(code, src, save, prefix = 'generated/') {
       const mod = await import(`${file}?_=${inc++}`);
       return mod;
     } catch (e) {
-      console.log(file);
-      console.log(e);
+      console.log({e, src, file});
+      // console.log(fs.readFileSync(file).toString());
     }
   }
 }
@@ -149,7 +149,7 @@ export async function generated(block) {
     ctx = { ...mod, code: js, source, filepath, render: _render };
     return ctx;
   } catch (e) {
-    console.log(e);
+    // console.log({e});
     const failure = debug({
       file: block.src,
       html: source,
@@ -176,7 +176,9 @@ export async function build(src, opts) {
   const options = { ...opts, cwd: 'generated', scope: 'jam-420' };
 
   let mod = await fixture.use(src, options, true);
-  mod = Template.from((code, file) => fixture.load(code, file, { raw: true, ...options }), mod, options);
+  mod = Template.from((code, file) => {
+    return fixture.load(code, file, { raw: true, ...options });
+  }, mod, options);
   const mods = await mod.regenerate();
   for (let i = 1; i < mods.length; i++) {
     if (mods[i].js) transpile(mods[i].content, mods[i].dest, true, '');
@@ -201,7 +203,6 @@ fixture.partial = async (src, props, shared, callback) => {
 fixture.load = (source, filepath, options = {}) => {
   try {
     const b = new Block(source, filepath, options);
-
     if (options.transform) {
       return b.traverse().then(() => generated(b));
     }

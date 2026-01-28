@@ -509,7 +509,7 @@ ROUTER(FIXME)
     expect(html).toContain('<input type=hidden name="_method" value=DELETE /></form>');
   });
 
-  test.skip('should manage server/client components', async ({ expect }) => {
+  test('should manage server/client components', async ({ expect }) => {
     const tpl = await build('./server.html');
     const { html } = await tpl.render();
 

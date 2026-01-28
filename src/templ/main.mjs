@@ -179,6 +179,8 @@ export class Template {
 
   async compile(mod, block, callback) {
     const value = await callback(mod.content, block.src);
+    // console.log('?????',{value,mod,block})
+    // console.log('?????',callback.toString())
     Object.defineProperty(this, 'module', { value });
     return this;
   }
@@ -374,6 +376,10 @@ export class Template {
   }
 
   static async render(component, parent, props, ctx, cb = null) {
+    if (!component) {
+      throw new Error(`Missing component, given '${component}'`);
+    }
+
     ctx.ref = ctx.stack && component.__context !== 'static'
       ? `${component.__src}/${++ctx.depth}`
       : component.__src;
@@ -790,7 +796,10 @@ export class Template {
     Object.assign(block.opts, opts);
 
     const id = pascalCase(snakeCase(name));
-    const cb = (src, code, _opts) => Template.from(compile, compile(code, src), { ...opts, ..._opts });
+    const cb = (src, code, _opts) => {
+      // console.log({src,code}, compile.toString());
+      return Template.from(compile, compile(code, src), { ...opts, ..._opts });
+    };
 
     return new Template(id, block, opts, cb);
   }

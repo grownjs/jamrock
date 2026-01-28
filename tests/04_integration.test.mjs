@@ -236,13 +236,10 @@ fixture`./parent.html
     import { setContext, getContext } from 'jamrock:hooks';
     setContext('OSOM', { value: 42 });
 
-    let content = await $$props.children?.();
-    content = await content?.();
-
     const check = getContext('OSOM');
   </script>
   <form>
-    {@render content} (CHECK: {typeof check})
+    {@render $$props.children?.()} (CHECK: {typeof check})
   </form>
 `;
 
@@ -602,7 +599,7 @@ test.group('integration only!', t => {
     });
   });
 
-  test.skip('should be able to render client-side components', async ({ expect }) => {
+  test('should be able to render client-side components', async ({ expect }) => {
     ctx.prefix = '__';
 
     const tpl = await fixture.partial('_hidden/stuff+page.html', null, ctx);
@@ -662,7 +659,7 @@ test.group('integration only!', t => {
     ].join(''));
   });
 
-  test.skip('should keep a shared context', async ({ expect }) => {
+  test('should keep a shared context', async ({ expect }) => {
     const tpl = await fixture.partial('context.html', null, ctx);
 
     expect(tpl).toContain('Got: 42\nGot: 42');

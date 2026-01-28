@@ -130,7 +130,7 @@ test.group('parsing', t => {
   });
   t.each.teardown(td.reset);
 
-  const script = s => Block.script(s, '/path/to');
+  const script = s => Block.script(s, false, '/path/to');
 
   test('should rewrite exports', ({ expect }) => {
     const code = Block.exports(`
@@ -152,17 +152,15 @@ test.group('parsing', t => {
         a as foo, bar
       } from 'jamrock:stuff';
 `)).toEqual({
-      hasImports: true,
-      prelude: "\n      import  {\n        a as foo, bar\n      }  from '/path/to/lib/stuff.mjs';\n",
-      interlude: '',
+      prelude: "\n      import  {\n        a as foo, bar\n      }  from '/path/to/lib/stuff.mjs';",
+      interlude: '\n',
     });
 
     expect(script(`
       import { existsSync, unlinkSync } from 'node:fs';
 `)).toEqual({
-      hasImports: true,
-      prelude: "\n      import { existsSync, unlinkSync } from 'node:fs';\n",
-      interlude: '',
+      prelude: "\n      import { existsSync, unlinkSync } from 'node:fs';",
+      interlude: '\n',
     });
   });
 
@@ -170,33 +168,27 @@ test.group('parsing', t => {
     expect(script(`
       import * as nohooks from 'nohooks';
 `)).toEqual({
-      hasImports: true,
-      prelude: "\n      import * as nohooks from 'nohooks';\n",
-      interlude: '',
+      prelude: "\n      import * as nohooks from 'nohooks';",
+      interlude: '\n',
     });
 
-    expect(script(`
-      import { useState } from 'jamrock';
-`)).toEqual({
-      hasImports: true,
-      prelude: "\n      ",
+    expect(script(`import { useState } from 'jamrock';`)).toEqual({
+      prelude: '',
       interlude: "const  { useState }  = __loader('jamrock');\n",
     });
 
     expect(script(`
       import { truth } from '../mod.mjs';
 `)).toEqual({
-      hasImports: true,
-      prelude: "\n      import  { truth }  from /*@@*/__resolve('../mod.mjs');\n",
-      interlude: '',
+      prelude: "\n      import  { truth }  from /*@@*/__resolve('../mod.mjs');",
+      interlude: '\n',
     });
 
     expect(script(`
       import Test from '../test.html';
 `)).toEqual({
-      hasImports: true,
-      prelude: "\n      import Test from '../test.generated.mjs?_=0';\n",
-      interlude: '',
+      prelude: "\n      import Test from '../test.generated.mjs?_=0';",
+      interlude: '\n',
     });
 
     expect(script([
@@ -208,7 +200,6 @@ test.group('parsing', t => {
       "import Test3 from '../../noop.generated.mjs';\n",
       "import Test4 from '../../../router.generated.mjs';\n",
     ].join(''))).toEqual({
-      hasImports: true,
       prelude: [
         "import  { Inspect }  from '/path/to/lib/components.mjs';\n",
         "import  Test  from /*@@*/__resolve('./hello.generated.mjs');\n",
@@ -216,9 +207,17 @@ test.group('parsing', t => {
         "import  Test1  from /*@@*/__resolve('./test.generated.mjs');\n",
         "import  Test2  from /*@@*/__resolve('../inner.generated.mjs');\n",
         "import  Test3  from /*@@*/__resolve('../../noop.generated.mjs');\n",
-        "import  Test4  from /*@@*/__resolve('../../../router.generated.mjs');\n",
+        "import  Test4  from /*@@*/__resolve('../../../router.generated.mjs');",
       ].join(''),
-      interlude: '',
+      interlude: '\n',
+    });
+
+    expect(script([
+      "import { redirect } from 'jamrock:conn';\n",
+      "import Hello from './hello.generated.mjs';\n",
+    ].join(''))).toEqual({
+      prelude: "\nimport  Hello  from /*@@*/__resolve('./hello.generated.mjs');",
+      interlude: "const  { redirect }  = __loader('jamrock:conn');\n",
     });
   });
 

@@ -12,7 +12,7 @@ import { Is, parseMarkup, identifier, ignore, dump } from '../utils/server.mjs';
 
 const RE_EXPORT_DEFAULT = /\nexport default[\s{]/;
 const RE_RESOLVE_IMPORTS = /\/\*@@\*\/__resolve\('(.+?)'\)/g;
-const RE_MATCH_IMPORTS = /\bimport([^;]+?)from(\s*)(['""])(.+?)\3(?=[\n;])/g;
+const RE_MATCH_IMPORTS = /\bimport([^;]+?)from(\s*)(['""])(.+?)\3[\n;]?/g;
 
 /**
  * @typedef {object} BlockAssets
@@ -141,6 +141,8 @@ export class Block {
       });
 
       // FIXME: use jslint here?
+      // console.log({a:this.module.code})
+      // console.log({b:this.script.code})
       lexer(Block.module(this.module.code), { position: { line: 1, col: this.module.code.indexOf('\n') } });
       lexer(Block.module(this.script.code, true), { position: { line: 1, col: this.script.code.indexOf('\n') } });
 
@@ -452,7 +454,7 @@ for (const [, fn] of Object.entries(__functions)) fn.$ = __src;
     const code = lets.length > 0
       ? js.replace(/\(\$\$\)/g, `($$$$,{${lets.join(',')},...$$$$props})`)
       : js;
-
+    //console.log(code);
     return code;
   }
 
@@ -469,7 +471,7 @@ for (const [, fn] of Object.entries(__functions)) fn.$ = __src;
   }
 
   static module(code, routes) {
-    const { interlude } = Block.script(code);
+    const { interlude } = Block.script(code, true);
 
     let out = interlude;
 
@@ -483,50 +485,59 @@ for (const [, fn] of Object.entries(__functions)) fn.$ = __src;
       .replace(/\bexport\b/g, ignore);
   }
 
-  static script(code, basedir = Template.shared) {
-    let found;
+  static script(code, inline, basedir = Template.shared) {
+    const internals = [];
+
     let lastChunk = '';
-    let hasImports = false;
     code = code.replace(RE_MATCH_IMPORTS, (_, $1, sp, _2, $3, _offset) => {
-      hasImports = true;
+      const name = $1.replace(/[*]\s*as/, ignore).replace(/\sas\s/g, '  : ');
+      const symbols = `const ${name}`;
 
       if (['jamrock', 'jamrock:conn', 'jamrock:hooks'].includes($3)) {
-        const name = $1.replace(/[*]\s*as/, ignore).replace(/\sas\s/g, '  : ');
-        const symbols = `const ${name}`;
-        const prefix = found ? '' : '\0';
-        found = true;
-        return lastChunk = `${prefix}${symbols} = __loader('${$3}')`;
+        internals.push(`${symbols} = __loader('${$3}');`);
+        return '';
       }
 
       if ($3.includes('jamrock:')) {
-        return lastChunk = `import ${$1} from '${basedir}/${$3.replace('jamrock:', 'lib/')}.mjs'`;
+        return lastChunk = inline
+          ? `${symbols} = import('${$3}');`
+          : `import ${$1} from '${basedir}/${$3.replace('jamrock:', 'lib/')}.mjs';`;
       }
 
       if ($3[0] === '.' && !($3.includes('.md') || $3.includes('.html'))) {
-        return lastChunk = `import ${$1} from /*@@*/__resolve('${$3}')`;
+        return lastChunk = inline
+          ? `${symbols} = import('${$3}');`
+          : `import ${$1} from /*@@*/__resolve('${$3}');`;
       }
 
       if ($3.includes('.md') || $3.includes('.html')) {
         const suffix = String(Date.now());
 
-        return lastChunk = _.replace(/\.(?:md|html)/, `.generated.mjs?_=${suffix}`);
+        return lastChunk = inline
+          ? `${symbols} = import('${$3}');`
+          : _.replace(/\.(?:md|html)/, `.generated.mjs?_=${suffix}`);
       }
 
       return lastChunk = _;
     });
 
-    let prelude;
-    let interlude;
-    if (code.indexOf('\0') === -1) {
-      const offset = code.indexOf(lastChunk) + lastChunk.length;
+    let prelude = '';
+    let interlude = '';
 
-      prelude = code.substr(0, offset + 2);
-      interlude = code.substr(offset + 2);
+    if (lastChunk) {
+      const offset = code.indexOf(lastChunk) + lastChunk.length;
+      const before = code.substr(0, offset);
+      const after = code.substr(offset);
+
+      prelude = before;
+      interlude = after;
     } else {
-      ([prelude, interlude = ''] = code.split('\0'));
+      interlude = code;
     }
 
-    return { prelude, interlude, hasImports };
+    interlude = internals.concat(interlude).join('\n').replace(/\n+/g, '\n');
+
+    return { prelude, interlude };
   }
 
   static unwrap(code, source, target) {
