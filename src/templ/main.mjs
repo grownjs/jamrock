@@ -398,6 +398,20 @@ export class Template {
       return Template.load(id);
     };
 
+    if (props) {
+      const keys = Object.keys(props);
+      const promises = Object.values(props);
+      const outcomes = await Promise.allSettled(promises);
+
+      for (let i = 0; i < keys.length; i++) {
+        if (outcomes[i].status === 'fulfilled') {
+          props[keys[i]] = outcomes[i].value;
+        } else {
+          console.error('E_RESOLVE', keys[i], outcomes[i]);
+        }
+      }
+    }
+
     const self = component.__handler
       ? await component.__handler(props, loader)
       : null;
@@ -449,18 +463,6 @@ export class Template {
             return { target, vnode };
           }
         }, frags);
-      }
-
-      const keys = Object.keys(state);
-      const promises = Object.values(state);
-      const outcomes = await Promise.allSettled(promises);
-
-      for (let i = 0; i < keys.length; i++) {
-        if (outcomes[i].status === 'fulfilled') {
-          state[keys[i]] = outcomes[i].value;
-        } else {
-          console.error('E_RESOLVE', keys[i], outcomes[i]);
-        }
       }
 
       let [doc, body, head, attrs] = await Promise.all([

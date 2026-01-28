@@ -43,10 +43,11 @@
     error = e;
   }
 
-  const content = renderHook($$props.children);
   const ctx = getContext('current_form');
   const files = [];
   const payload = {};
+
+  const content = renderHook($$props.children);
 
   onComplete(() => {
     files.forEach(file => {
