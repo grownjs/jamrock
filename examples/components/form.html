@@ -16,8 +16,8 @@
   export let label;
   export let method;
 
-  export const onerror = null;
-  export const onvalid = null;
+  export const onfailure = null;
+  export const onvalidate = null;
 
   const hasValidMethod = method === _method.toLowerCase();
   const currentForm = body_params._form === name;
@@ -29,8 +29,8 @@
     if (!name) {
       throw new TypeError(`Form requires a name, given '${name}'`);
     }
-    if (typeof onvalid !== 'function') {
-      throw new TypeError(`Form requires a resolve callback, given '${onvalid}'`);
+    if (typeof onvalidate !== 'function') {
+      throw new TypeError(`Form requires a resolve callback, given '${onvalidate}'`);
     }
 
     if (forms.includes(name)) {
@@ -66,12 +66,12 @@
       }
 
       if (!invalid) {
-        await onvalid(payload);
+        await onvalidate(payload);
         return;
       }
 
-      if (typeof onerror === 'function') {
-        await onerror();
+      if (typeof onfailure === 'function') {
+        await onfailure();
       }
 
       throw new Error(`The submitted form '${name}' is not valid (${invalid} remaining)`);
