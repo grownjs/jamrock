@@ -109,6 +109,23 @@ fixture`./loops.html
   </fragment>
 `;
 
+// eslint-disable-next-line no-unused-expressions
+fixture`./promises.html
+  <script>
+    export let promise;
+  </script>
+  Got: {typeof promise}
+`;
+
+// eslint-disable-next-line no-unused-expressions
+fixture`./resolve.html
+  <script>
+    import Promises from './promises.html';
+    const value = Promise.resolve(42);
+  </script>
+  <Promises promise={value} />
+`;
+
 function useContext(overrides) {
   const ctx = {
     publish: td.func('connect'),
@@ -120,6 +137,12 @@ function useContext(overrides) {
 }
 
 test.group('streaming support', () => {
+  test('should resolve promises from props', async ({ expect }) => {
+    const markup = await fixture.partial('resolve.html', null, {});
+
+    expect(markup).toContain('Got: number');
+  });
+
   test('should pull data from iterators', async ({ expect }) => {
     const ctx = useContext();
 

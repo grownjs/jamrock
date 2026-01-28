@@ -429,6 +429,19 @@ export class Template {
       const actions = { [ctx.ref]: calls };
 
       let state = { ...props, ...data };
+
+      const keys = Object.keys(state);
+      const promises = Object.values(state);
+      const outcomes = await Promise.allSettled(promises);
+
+      for (let i = 0; i < keys.length; i++) {
+        if (outcomes[i].status === 'fulfilled') {
+          state[keys[i]] = outcomes[i].value;
+        } else {
+          console.error('E_RESOLVE', keys[i], outcomes[i]);
+        }
+      }
+
       if (ctx.stream) {
         // FIXME: this can be cached somehow?
         const frags = await Promise.all(Object.entries(component.__fragments).map(async ([k, v]) => ({
