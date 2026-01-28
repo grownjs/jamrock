@@ -126,7 +126,7 @@ export class Block {
         if (_.attributes.scoped) {
           const { prelude, interlude } = Block.script(_.content);
 
-          _.content = `${prelude}\nexport function __execute(self) {${interlude}};\nexport default {__execute};`;
+          _.content = `${Block.unwrap(prelude, file, dest)}\nexport function __execute(self) {${interlude}};\nexport default {__execute};`;
         }
       });
 
@@ -390,7 +390,7 @@ export default {${defaults}};
     const exported = keys.filter(x => ['let', 'const', 'export'].includes(locals[x])).map(x => aliases[x] || x);
     const calls = [...this.calls].filter(_ => functions.includes(_));
 
-    let { prelude, interlude,hasImports } = Block.imports(this.script.code);
+    let { prelude, interlude, hasImports } = Block.script(this.script.code);
     if (!interlude && !hasImports) {
       interlude = prelude;
       prelude = '';
@@ -456,10 +456,6 @@ for (const [, fn] of Object.entries(__functions)) fn.$ = __src;
     return code;
   }
 
-  static imports(code, clean) {
-    return Block.script(code, true, clean);
-  }
-
   static exports(code) {
     return code
       .replace(/\bexport\s+(let|const)\s+(\w+)\s*(?=[\n;])/g, '$1 $2 = $$$$props.$2')
@@ -473,7 +469,7 @@ for (const [, fn] of Object.entries(__functions)) fn.$ = __src;
   }
 
   static module(code, routes) {
-    const { interlude } = Block.imports(code, true);
+    const { interlude } = Block.script(code);
 
     let out = interlude;
 
@@ -487,13 +483,12 @@ for (const [, fn] of Object.entries(__functions)) fn.$ = __src;
       .replace(/\bexport\b/g, ignore);
   }
 
-  static script(code, modify, cleanup) {
+  static script(code, cleanup) {
     let found;
     let lastChunk = '';
     let hasImports = false;
     code = code.replace(RE_MATCH_IMPORTS, (_, $1, sp, _2, $3, _offset) => {
       if (cleanup) return ignore(_);
-      if (!modify) return _;
 
       hasImports = true;
 

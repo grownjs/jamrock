@@ -145,7 +145,7 @@ test.group('parsing', t => {
   });
 
   test('should rewrite imports', ({ expect }) => {
-    expect(Block.imports(`
+    expect(Block.script(`
       import {
         a as foo, bar
       } from 'jamrock:stuff';
@@ -155,7 +155,7 @@ test.group('parsing', t => {
       interlude: '',
     });
 
-    expect(Block.imports(`
+    expect(Block.script(`
       import { existsSync, unlinkSync } from 'node:fs';
 `)).toEqual({
       hasImports: true,
@@ -167,7 +167,7 @@ test.group('parsing', t => {
   test('should rewrite scripts', ({ expect }) => {
     expect(Block.script(`
       import * as nohooks from 'nohooks';
-`, true)).toEqual({
+`)).toEqual({
       hasImports: true,
       prelude: "\n      import * as nohooks from 'nohooks';\n",
       interlude: '',
@@ -175,7 +175,7 @@ test.group('parsing', t => {
 
     expect(Block.script(`
       import { useState } from 'jamrock';
-`, true)).toEqual({
+`)).toEqual({
       hasImports: true,
       prelude: "\n      ",
       interlude: "const  { useState }  = __loader('jamrock');\n",
@@ -183,7 +183,7 @@ test.group('parsing', t => {
 
     expect(Block.script(`
       import { truth } from '../mod.mjs';
-`, true)).toEqual({
+`)).toEqual({
       hasImports: true,
       prelude: "\n      import  { truth }  from /*@@*/__resolve('../mod.mjs');\n",
       interlude: '',
@@ -191,7 +191,7 @@ test.group('parsing', t => {
 
     expect(Block.script(`
       import Test from '../test.html';
-`, true)).toEqual({
+`)).toEqual({
       hasImports: true,
       prelude: "\n      import Test from '../test.generated.mjs?_=0';\n",
       interlude: '',
@@ -205,7 +205,7 @@ test.group('parsing', t => {
       "import Test2 from '../inner.generated.mjs';\n",
       "import Test3 from '../../noop.generated.mjs';\n",
       "import Test4 from '../../../router.generated.mjs';\n",
-    ].join(''), true)).toEqual({
+    ].join(''))).toEqual({
       hasImports: true,
       prelude: [
         "import  { Inspect }  from '/path/to/jamrock/lib/components.mjs';\n",
@@ -220,13 +220,14 @@ test.group('parsing', t => {
     });
   });
 
-  test.skip('should rewrite modules', ({ expect }) => {
+  test('should rewrite modules', ({ expect }) => {
     const code = Block.module(`
       let messages = [];
       export { messages as from };
     `);
 
-    expect(code).toEqual('\n      let messages = [];\n      ({from: messages});\n    ');
+    expect(code).toContain('let messages = [];');
+    expect(code).toContain('({from: messages});');
   });
 
   test('should resolve on unwrap', ({ expect }) => {

@@ -683,7 +683,7 @@ test.group('core utilties', t => {
     expect(Template.dirname('a/b/c')).toEqual('a/b');
   });
 
-  test.skip('Template.compile', async ({ expect }) => {
+  test('Template.compile', async ({ expect }) => {
     setup();
     const imported = ['generated/nested/noop.html'];
     const shared = {

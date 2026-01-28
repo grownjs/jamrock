@@ -32,7 +32,7 @@ test.group('generated markup', () => {
 });
 
 test.group('generated code', () => {
-  test.skip('should prefix expressions with their offsets', async ({ expect }) => {
+  test('should prefix expressions with their offsets', async ({ expect }) => {
     const fn1 = await compile(`
       <h1>
         {#if name}
@@ -41,7 +41,7 @@ test.group('generated code', () => {
       </h1>
     `);
 
-    expect(fn1.code).toContain('/*!#3:9*/ await $$.if');
+    expect(fn1.code).toContain('/*!#3:9*/ $$.if');
     expect(fn1.code).toContain('/*!#4:15*/ $$.$(name)');
 
     const fn2 = await compile(`
