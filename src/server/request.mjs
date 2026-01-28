@@ -529,7 +529,7 @@ export function defaultResponse(env, conn, client, { body, status, headers, cook
  * @returns {Promise<ResponseMixed>}
  */
 export async function createPageResponse(env, conn, clients, options) {
-  let { status, client, matches } = getResponsePrelude();
+  let { status, client, matches } = getResponsePrelude(env, conn, options);
 
   let headers = null;
   let body = null;

@@ -47,8 +47,8 @@
   const files = [];
   const payload = {};
 
-  let content = await $$props.children?.();
-  content = await content?.();
+  let content = $$props.children?.();
+  // content = await content?.();
 
   onComplete(() => {
     files.forEach(file => {
@@ -103,6 +103,6 @@
       <ul>{@render content}</ul>
       {@render $$props.after?.()}
     </form>
-    <Failure test:id="form.{name}" from="{await getErrors()}" />
+    <Failure test:id="form.{name}" from="{getErrors()}" />
   {/if}
 </div>
