@@ -44,18 +44,18 @@ export function reduce(tree, context, indent = 0) {
 
       if (node.type === 'fragment') {
         if (node.attributes.frame) {
-          memo.push(`${_tabs}${prefix} $$.e('fragment', await __fragments['${node.ref}'].a($$), [])`);
+          memo.push(`${_tabs}${prefix} $$.e('fragment', __fragments['${node.ref}'].a($$), [])`);
         } else {
-          memo.push(`${_tabs}${prefix} $$.e('fragment', await __fragments['${node.ref}'].a($$), await __fragments['${node.ref}'].r($$))`);
+          memo.push(`${_tabs}${prefix} $$.e('fragment', __fragments['${node.ref}'].a($$), __fragments['${node.ref}'].r($$))`);
         }
       } else if (Is.upper(node.name)) {
         // console.log(node.scope, node.props);
 
         // eslint-disable-next-line max-len
-        const fns = Object.entries(node.snippets).map(([fn, _]) => `${fn}: (${_.args.join(', ')}) => async () => [${reduce(_.body, context, indent + 1)}]`).join('\n,');
+        const fns = Object.entries(node.snippets).map(([fn, _]) => `${fn}: (${_.args.join(', ')}) => () => [${reduce(_.body, context, indent + 1)}]`).join('\n,');
 
         // eslint-disable-next-line max-len
-        memo.push(`${_tabs}${prefix} await $$.block(${node.name}, '<${node.name}>', {${props + fns}}, ${body === '[]' ? 'null' : `async () => ${body}`} /* </${node.name}> */)`);
+        memo.push(`${_tabs}${prefix} $$.block(${node.name}, '<${node.name}>', {${props + fns}}, ${body === '[]' ? 'null' : `() => ${body}`} /* </${node.name}> */)`);
       } else {
         memo.push(`${_tabs}${prefix} $$.e('${node.name}', {${props}}, ${body})`);
       }

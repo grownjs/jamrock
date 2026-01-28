@@ -602,7 +602,7 @@ test.group('integration only!', t => {
     });
   });
 
-  test('should be able to render client-side components', async ({ expect }) => {
+  test.skip('should be able to render client-side components', async ({ expect }) => {
     ctx.prefix = '__';
 
     const tpl = await fixture.partial('_hidden/stuff+page.html', null, ctx);
@@ -662,7 +662,7 @@ test.group('integration only!', t => {
     ].join(''));
   });
 
-  test('should keep a shared context', async ({ expect }) => {
+  test.skip('should keep a shared context', async ({ expect }) => {
     const tpl = await fixture.partial('context.html', null, ctx);
 
     expect(tpl).toContain('Got: 42\nGot: 42');

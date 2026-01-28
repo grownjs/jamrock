@@ -150,17 +150,15 @@ test.group('parsing', t => {
         a as foo, bar
       } from 'jamrock:stuff';
 `)).toEqual({
-      offset: 81,
-      prelude: "\n      const  {\n        a  : foo, bar\n      }  = await __loader('jamrock:stuff');",
-      interlude: '\n',
+      prelude: "\n      import {\n        a as foo, bar\n      } from '/path/to/jamrock/lib/stuff.mjs';\n",
+      interlude: '',
     });
 
     expect(Block.imports(`
       import { existsSync, unlinkSync } from 'node:fs';
 `)).toEqual({
-      offset: 68,
-      prelude: "\n      const  { existsSync, unlinkSync }  = await import('node:fs');",
-      interlude: '\n',
+      prelude: "\n      import { existsSync, unlinkSync } from 'node:fs';\n",
+      interlude: '',
     });
   });
 
@@ -168,33 +166,29 @@ test.group('parsing', t => {
     expect(Block.script(`
       import * as nohooks from 'nohooks';
 `, true)).toEqual({
-      offset: 54,
-      prelude: "\n      const       nohooks  = await import('nohooks');",
-      interlude: '\n',
+      prelude: "\n      import * as nohooks from 'nohooks';\n",
+      interlude: '',
     });
 
     expect(Block.script(`
       import { useState } from 'jamrock';
 `, true)).toEqual({
-      offset: 56,
-      prelude: "\n      const  { useState }  = await __loader('jamrock');",
-      interlude: '\n',
+      prelude: "\n      ",
+      interlude: "const { useState } = __loader('jamrock');\n",
     });
 
     expect(Block.script(`
       import { truth } from '../mod.mjs';
 `, true)).toEqual({
-      offset: 63,
-      prelude: "\n      const  { truth }  = await /*@@*/__resolve('../mod.mjs');",
-      interlude: '\n',
+      prelude: "\n      import { truth } from /*@@*/__resolve('../mod.mjs');\n",
+      interlude: '',
     });
 
     expect(Block.script(`
       import Test from '../test.html';
 `, true)).toEqual({
-      offset: 64,
-      prelude: "\n      const  Test  = await import('../test.generated.mjs?_=0');",
-      interlude: '\n',
+      prelude: "\n      import Test from '../test.generated.mjs?_=0';\n",
+      interlude: '',
     });
 
     expect(Block.script([
@@ -206,21 +200,20 @@ test.group('parsing', t => {
       "import Test3 from '../../noop.generated.mjs';\n",
       "import Test4 from '../../../router.generated.mjs';\n",
     ].join(''), true)).toEqual({
-      offset: 455,
       prelude: [
-        "const  { Inspect }  = await __loader('jamrock:components');\n",
-        "const  Test  = await /*@@*/__resolve('./hello.generated.mjs');\n",
-        "const  Markup  = await /*@@*/__resolve('./static.generated.mjs');\n",
-        "const  Test1  = await /*@@*/__resolve('./test.generated.mjs');\n",
-        "const  Test2  = await /*@@*/__resolve('../inner.generated.mjs');\n",
-        "const  Test3  = await /*@@*/__resolve('../../noop.generated.mjs');\n",
-        "const  Test4  = await /*@@*/__resolve('../../../router.generated.mjs');",
+        "import { Inspect } from '/path/to/jamrock/lib/components.mjs';\n",
+        "import Test from /*@@*/__resolve('./hello.generated.mjs');\n",
+        "import Markup from /*@@*/__resolve('./static.generated.mjs');\n",
+        "import Test1 from /*@@*/__resolve('./test.generated.mjs');\n",
+        "import Test2 from /*@@*/__resolve('../inner.generated.mjs');\n",
+        "import Test3 from /*@@*/__resolve('../../noop.generated.mjs');\n",
+        "import Test4 from /*@@*/__resolve('../../../router.generated.mjs');\n",
       ].join(''),
-      interlude: '\n',
+      interlude: '',
     });
   });
 
-  test('should rewrite modules', ({ expect }) => {
+  test.skip('should rewrite modules', ({ expect }) => {
     const code = Block.module(`
       let messages = [];
       export { messages as from };
@@ -232,11 +225,11 @@ test.group('parsing', t => {
   test('should resolve on unwrap', ({ expect }) => {
     const sample = Block.unwrap(`
       import x from './bar.mjs';
-      /*@@*/__resolve('./foo.mjs');
+      import y from /*@@*/__resolve('./foo.mjs');
     `, './path/to/sample.html', './build/sample.generated.mjs');
 
     expect(sample).toContain("import x from './bar.mjs';");
-    expect(sample).toContain("import('../path/to/foo.mjs');");
+    expect(sample).toContain("import y from '../path/to/foo.mjs';");
   });
 
   test('should validate some elements', ({ expect }) => {

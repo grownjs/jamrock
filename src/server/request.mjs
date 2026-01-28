@@ -608,6 +608,94 @@ export async function createResponse(env, conn, clients, options) {
   return createPageResponse(env, conn, clients, options);
 }
 
+export function createBodySync(env, conn, { client, matches, options }) {
+  let status;
+  let body;
+  try {
+    /**
+     * @type {ConnectionContext}
+     */
+    const ctx = {
+      conn,
+      depth: 0,
+      stack: [],
+      ready: null,
+      called: true,
+      route: matches,
+      cache: env.cache,
+      routes: env.routes,
+    };
+
+    conn.req.params = matches.params;
+    conn.current_path = matches.path;
+
+    conn.routes = ctx.routes || [];
+
+    let mod;
+    if (matches.src) {
+      conn.current_module = matches.src;
+      mod = env.locate(conn.current_module);
+    }
+
+    if (!matches.src) {
+      return {
+        status: 404,
+        body: create404(env, conn, client, 'Page not found'),
+      };
+    }
+
+    if (!env.files[conn.current_module]) {
+      return {
+        status: 404,
+        body: create404(env, conn, client, `Module not loaded, given '${conn.current_module}'`),
+      };
+    }
+
+    ctx.route.layout = Util.Is.str(ctx.route.layout)
+      ? env.locate(ctx.route.layout)
+      : ctx.route.layout;
+
+    ctx.route.error = Util.Is.str(ctx.route.error)
+      ? env.locate(ctx.route.error)
+      : ctx.route.error;
+
+    const file = env.files[conn.current_module].filepath;
+
+    if (!mod) {
+      throw new Error(`Missing '${conn.current_module}' module`);
+    }
+
+    let props = {};
+    if (mod.__exported?.length > 0) {
+      props = Util.pick({ ...conn.req.fields, ...conn.req.params }, mod.__exported);
+
+      Object.keys(conn.req.fields).forEach(key => {
+        if (key.includes('.') && mod.__exported.includes(key.split('.')[0])) {
+          Util.set(props, key, conn.req.fields[key]);
+          delete conn.req.fields[key];
+        }
+      });
+    }
+
+    if (conn.method === 'POST' && conn.req.fields._method) {
+      conn.method = conn.req.fields._method;
+      delete conn.req.fields._method;
+    }
+
+    if (conn.headers['request-type'] === 'rpc') {
+      if (conn.headers['request-call']) conn.req.fields._action = conn.headers['request-call'];
+      if (conn.headers['request-from']) conn.req.fields._self = conn.headers['request-from'];
+    }
+
+    body = Template.resolveSync(mod, file, ctx, props, Handler.middleware);
+  } catch (e) {
+    Util.trace('E_STATUS', e);
+    status = e.status || 500;
+    body = createError(e, client);
+  }
+  return { body, status };
+}
+
 /**
  * @param {Environment}   env
  * @param {Connection}    conn
@@ -623,8 +711,9 @@ export function createResponseSync(env, conn, clients, options) {
   let cookies;
   if (matches) {
     const result = {};
-    console.log({ matches });
-    //await createBody(env, conn, clients, { client, matches, options });
+    console.log({ matches }, createBodySync(env, conn, { client, matches, options }));
+
+
 
     if (result instanceof Response) {
       return result;

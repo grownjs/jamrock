@@ -116,9 +116,9 @@ export class Expr {
       if (_expr.indexOf('#each') === 0) {
         const [subj, locals] = _expr.replace(RE_CLEAN_BLOCKS, '').split(RE_AS_LOCAL);
 
-        _expr = `await $$.map(${subj}, async (${locals || ''}) => { ${ctx}return [`;
+        _expr = `$$.map(${subj}, (${locals || ''}) => { ${ctx}return [`;
       } else if (_expr.indexOf('#if') === 0) {
-        _expr = `await $$.if(${_expr.replace(RE_CLEAN_BLOCKS, '')}, async () => { ${ctx}return [`;
+        _expr = `$$.if(${_expr.replace(RE_CLEAN_BLOCKS, '')}, () => { ${ctx}return [`;
       } else if (_expr.indexOf('/each') === 0) {
         _expr = ']; /*each*/ }),';
         _ref = null;
@@ -126,11 +126,11 @@ export class Expr {
         _expr = ']; /*if*/ }),';
         _ref = null;
       } else if (_expr.replace(/\s+/g, ' ').indexOf(':else if') === 0) {
-        _expr = `]; /*elseif*/ }, () => { ${ctx}if (${_expr.replace(RE_CLEAN_BLOCKS, '')}) return async () => [`;
+        _expr = `]; /*elseif*/ }, () => { ${ctx}if (${_expr.replace(RE_CLEAN_BLOCKS, '')}) return () => [`;
       } else if (_expr.indexOf(':else') === 0) {
-        _expr = `]; /*else*/ }, async () => { ${ctx}return [`;
+        _expr = `]; /*else*/ }, () => { ${ctx}return [`;
       } else if (_expr.indexOf('@render ') === 0) {
-        _expr = `await $$.r(${_expr.substr(7)})?.($$)`;
+        _expr = `$$.r(${_expr.substr(7)})?.($$)`;
       } else if (_expr.indexOf('@debug ') === 0) {
         _expr = `$$.d({ ${_expr.substr(7)} })`;
       } else if (_expr.indexOf('@html ') === 0) {

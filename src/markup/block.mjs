@@ -161,15 +161,15 @@ export class Block {
   }
 
   get $attributes() {
-    return `async ($$) => ({${Block.wrap(Expr.props(this.attrs, '\t'))}})`;
+    return `($$) => ({${Block.wrap(Expr.props(this.attrs, '\t'))}})`;
   }
 
   get $metadata() {
-    return `async ($$) => [${Block.wrap(reduce(this.meta, this.context, 1))}]`;
+    return `($$) => [${Block.wrap(reduce(this.meta, this.context, 1))}]`;
   }
 
   get $doctype() {
-    return `async ($$) => ({${Block.wrap(Expr.props(this.doc, '\t'))}})`;
+    return `($$) => ({${Block.wrap(Expr.props(this.doc, '\t'))}})`;
   }
 
   get $fragments() {
@@ -178,14 +178,14 @@ export class Block {
     return Object.entries(this.fragments)
       .map(([fn, _]) => `\n\t'${fn}': {
     s: ${JSON.stringify(_.locals?.filter(k => scope[k]) || [])},
-    a: async ($$) => ({${Block.wrap(Expr.props(_.attributes, '\t'))}}),
-    r: async ($$) => [${Block.wrap(reduce(_.elements, this.context, 1))}] },`)
+    a: ($$) => ({${Block.wrap(Expr.props(_.attributes, '\t'))}}),
+    r: ($$) => [${Block.wrap(reduce(_.elements, this.context, 1))}] },`)
       .join('');
   }
 
   get $snippets() {
     return Object.entries(this.snippets)
-      .map(([fn, _]) => `\n\t${fn}: (${_.args.join(', ')}) => async ($$) => [${Block.wrap(reduce(_.body, this.context, 1))}]`)
+      .map(([fn, _]) => `\n\t${fn}: (${_.args.join(', ')}) => ($$) => [${Block.wrap(reduce(_.body, this.context, 1))}]`)
       .join('');
   }
 
@@ -375,7 +375,7 @@ export const __attributes = ${this.$attributes};
 
       return `/* eslint-disable */
 ${this.$prefix}
-export const __template = async ($$,{${scope}}) => {
+export const __template = ($$,{${scope}}) => {
   return [${Block.wrap(template)}];
 };
 export default {${defaults}};
@@ -389,7 +389,13 @@ export default {${defaults}};
     const functions = this.module.deps.filter(_ => this.module.locals[_] === 'function');
     const exported = keys.filter(x => ['let', 'const', 'export'].includes(locals[x])).map(x => aliases[x] || x);
     const calls = [...this.calls].filter(_ => functions.includes(_));
-    const { prelude, interlude } = Block.imports(this.script.code);
+
+    let { prelude, interlude } = Block.imports(this.script.code);
+    if (!interlude) {
+      interlude = prelude;
+      prelude = '';
+    }
+
     const matched = extract(interlude, true);
 
     matched.code = Block.exports(matched.code);
@@ -410,7 +416,7 @@ export default {${defaults}};
       .concat(Object.keys(this.snippets))
       .concat(this.opts.props || []);
 
-    const main = `\tasync function __context(__default = {}) {
+    const main = `\tfunction __context(__default = {}) {
 ${Object.keys(this.snippets).map(_ => `const ${_} = $$props.${_} ?? __snippets.${_};`)}
 ${matched.code}
 ${this.context === 'client'
@@ -424,11 +430,11 @@ ${this.context === 'client'
       mod = mod.replace(_, _.replace(/\.(?:md|html)/, '.generated.mjs'));
     });
 
-    const js = `/* eslint-disable */${mod}
-export const __handler = async ($$props, __loader${this.context === 'client' ? ', self' : ''}) => {
-${[prelude, main].join('\n')}
+    const js = `/* eslint-disable */${mod}${prelude}
+export const __handler = ($$props, __loader${this.context === 'client' ? ', self' : ''}) => {
+${main}
 ${this.context === 'client'
-    ? `\tconst __runtime = await __loader('jamrock');
+    ? `\tconst __runtime = __loader('jamrock');
 \tconst __self = __runtime.wrapComponent('${this.src}', __context, __template);
 \treturn {__self,__context};`
     : '\treturn {__context};'}
@@ -436,7 +442,7 @@ ${this.context === 'client'
 
 export const __routes = ${JSON.stringify(matched.routes)};
 ${this.$prefix}
-export const __template = async ($$) => [${Block.wrap(template)}];
+export const __template = ($$) => [${Block.wrap(template)}];
 export const __exported = ${JSON.stringify(exported)};
 export const __functions = {${calls.join(',')}};
 export default {${defaults},__functions,__exported,__handler,__routes};
@@ -482,46 +488,39 @@ for (const [, fn] of Object.entries(__functions)) fn.$ = __src;
   }
 
   static script(code, modify, cleanup) {
-    let offset = 0;
-    let fixed = 0;
+    let found;
     code = code.replace(RE_MATCH_IMPORTS, (_, $1, _2, $3, _offset) => {
-      offset = _offset + _.length + 1;
-
       if (cleanup) return ignore(_);
       if (!modify) return _;
 
-      const name = $1.replace(/[*]\s*as/, ignore).replace(/\sas\s/g, '  : ');
-      const symbols = `const ${name}`;
+      if (['jamrock', 'jamrock:conn', 'jamrock:hooks'].includes($3)) {
+        const name = $1.replace(/[*]\s*as/, ignore).replace(/\sas\s/g, '  : ');
+        const symbols = `const ${name.trim()}`;
+        const prefix = found ? '' : '\0';
+        found = true;
+        return `${prefix}${symbols} = __loader('${$3}')`;
+      }
 
-      if ($3 === 'jamrock' || $3.includes('jamrock:')) {
-        fixed += 14;
-        return `${symbols} = await __loader('${$3}')`;
+      if ($3.includes('jamrock:')) {
+        return `import ${$1.trim()} from '/path/to/${$3.replace(':', '/lib/')}.mjs'`;
       }
 
       if ($3[0] === '.' && !($3.includes('.md') || $3.includes('.html'))) {
-        fixed += 21;
-        return `${symbols} = await /*@@*/__resolve('${$3}')`;
+        return `import ${$1.trim()} from /*@@*/__resolve('${$3}')`;
       }
-
-      fixed += 12;
 
       if ($3.includes('.md') || $3.includes('.html')) {
         const suffix = String(Date.now());
 
-        fixed += 12 + suffix.length;
-
-        return `${symbols} = await import('${$3.replace(/\.(?:md|html)/, `.generated.mjs?_=${suffix}`)}')`;
+        return _.replace(/\.(?:md|html)/, `.generated.mjs?_=${suffix}`);
       }
 
-      return `${symbols} = await import('${$3}')`;
+      return _;
     });
 
-    offset += fixed;
+    const [prelude, interlude = ''] = code.split('\0');
 
-    const prelude = offset > 0 ? code.substr(0, offset) : '';
-    const interlude = offset > 0 ? code.substr(offset) : code;
-
-    return { offset, prelude, interlude };
+    return { prelude, interlude };
   }
 
   static unwrap(code, source, target) {
@@ -542,7 +541,7 @@ for (const [, fn] of Object.entries(__functions)) fn.$ = __src;
         const b = Template.join(leaf, src || file);
         const c = Template.relative(b, a);
 
-        return `import('${c}')`;
+        return `'${c}'`;
       });
   }
 

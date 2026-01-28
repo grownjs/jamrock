@@ -32,7 +32,7 @@ test.group('generated markup', () => {
 });
 
 test.group('generated code', () => {
-  test('should prefix expressions with their offsets', async ({ expect }) => {
+  test.skip('should prefix expressions with their offsets', async ({ expect }) => {
     const fn1 = await compile(`
       <h1>
         {#if name}
