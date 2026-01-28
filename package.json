@@ -59,7 +59,8 @@
     "@girs/gio-2.0": "*",
     "@girs/gtk-4.0": "*",
     "@girs/soup-3.0": "*",
-    "uWebSockets.js": "github:uNetworking/uWebSockets.js#v20.10.0"
+    "uWebSockets.js": "github:uNetworking/uWebSockets.js#v20.10.0",
+    "eslint-plugin-jamrock": "github:grownjs/eslint-plugin-jamrock"
   },
   "devDependencies": {
     "@grown/conn": "^0.0.44",
@@ -75,7 +76,6 @@
     "eslint": "^8.57.1",
     "eslint-config-airbnb-base": "^15.0.0",
     "eslint-plugin-import": "^2.32.0",
-    "eslint-plugin-jamrock": "github:grownjs/eslint-plugin-jamrock",
     "eslint-plugin-pug": "^1.2.5",
     "expect": "^29.7.0",
     "glob-to-regexp": "^0.4.1",

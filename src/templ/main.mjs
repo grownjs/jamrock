@@ -544,9 +544,9 @@ export class Template {
     }
     if (force && id[0] === '/') {
       // @ts-expect-error
-      if (typeof Bun !== 'undefined') {
-        return require(`${id}?_=${Math.random()}`);
-      }
+      // if (typeof Bun !== 'undefined') {
+      //   return require(`${id}?_=${Math.random()}`);
+      // }
       if (typeof imports !== 'undefined') {
         return import(`file://${id}?_=${Math.random()}`);
       }
