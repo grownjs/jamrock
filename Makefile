@@ -182,6 +182,9 @@ gjs-test:
 	@make -s gjs-check GJS_ARGS="route --src x-gtk-sandbox"
 	@make -s gjs-check GJS_ARGS="build --write --src x-gtk-sandbox"
 
+gjs-serve:
+	@make -s gjs-check GJS_ARGS="dev --src x-gtk-sandbox"
+
 gjs-check:
 ifeq ($(UNAME_S),Darwin)
 	env DYLD_LIBRARY_PATH=$(LIB_PATH) gjs -m bin/gjs $(GJS_ARGS)

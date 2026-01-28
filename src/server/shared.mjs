@@ -513,9 +513,9 @@ export function createEnvironment({ fs, path }, options, external) {
       this.watcher = createWatcher({ fs }, watcher, compiler);
     }
 
-    await external.createServer(this, this.options);
-    await compiler.hooks(this.watcher);
     await compiler.reload();
+    await compiler.hooks(this.watcher);
+    await external.createServer(this, this.options);
   }
 
   async function build(reload) {
