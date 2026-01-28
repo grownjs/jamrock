@@ -548,7 +548,10 @@ export class Template {
       //   return require(`${id}?_=${Math.random()}`);
       // }
       if (typeof imports !== 'undefined') {
-        return import(`file://${id}?_=${Math.random()}`);
+        // eslint-disable-next-line
+        imports.searchPath = imports.searchPath.filter(_ => !_.includes(id));
+        // return import(`file://${id}?_=${Math.random()}`);
+        return import(`file://${id}`);
       }
       return import(`${id}?_=${Math.random()}`);
     }
