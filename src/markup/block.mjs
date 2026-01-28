@@ -511,9 +511,13 @@ for (const [, fn] of Object.entries(__functions)) fn.$ = __src;
       }
 
       if ($3.includes('.md') || $3.includes('.html')) {
+        const suffix = typeof imports === 'undefined'
+          ? `?_=${String(Date.now())}`
+          : '';
+
         return lastChunk = inline
           ? `${symbols} = import('${$3}');`
-          : _.replace(/\.(?:md|html)/, '.generated.mjs');
+          : _.replace(/\.(?:md|html)/, `.generated.mjs${suffix}`);
       }
 
       return lastChunk = _;

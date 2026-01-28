@@ -187,7 +187,7 @@ test.group('parsing', t => {
     expect(script(`
       import Test from '../test.html';
 `)).toEqual({
-      prelude: "\n      import Test from '../test.generated.mjs';",
+      prelude: "\n      import Test from '../test.generated.mjs?_=0';",
       interlude: '\n',
     });
 
