@@ -1,1 +1,1 @@
-export const base = import.meta;
+export const pkg = import.meta;

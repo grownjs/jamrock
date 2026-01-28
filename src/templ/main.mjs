@@ -8,7 +8,7 @@ import { debug, stringify } from './utils.mjs';
 import { rebase } from '../handler/utils.mjs';
 import { ents } from '../render/hooks.mjs';
 import { decorate } from './send.mjs';
-import { base } from '../cwd.mjs';
+import { pkg } from '../cwd.mjs';
 
 const RE_SAFE_IMPORTS = /^(?:npm|node|file|https?):/;
 const RE_SAFE_NAME = /(?:^|\/)(.+?)(?:\/\+\w+)?\.\w+$/;
@@ -24,7 +24,7 @@ const NO_HOOKS = {
   wrapComponent: () => null,
 };
 
-const LIBDIR = base.url.replace(/^file:\/\/|\/[^/]+\.mjs$/g, '');
+const LIBDIR = pkg.url.replace(/^file:\/\/|\/[^/]+\.mjs$/g, '');
 
 /**
  * @import {TemplateImpl, TemplateCache} from "../../types/main.d.ts"

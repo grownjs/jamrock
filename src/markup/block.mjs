@@ -12,7 +12,7 @@ import { Is, parseMarkup, identifier, ignore, dump } from '../utils/server.mjs';
 
 const RE_EXPORT_DEFAULT = /\nexport default[\s{]/;
 const RE_RESOLVE_IMPORTS = /\/\*@@\*\/__resolve\('(.+?)'\)/g;
-const RE_MATCH_IMPORTS = /\bimport([^;]+?)from(\s*)(['""])(.+?)\3[\n;]?/g;
+const RE_MATCH_IMPORTS = /\bimport([^;]+?)from\s*(['""])(.+?)\2[\n;]?/g;
 
 /**
  * @typedef {object} BlockAssets
@@ -454,7 +454,7 @@ for (const [, fn] of Object.entries(__functions)) fn.$ = __src;
     const code = lets.length > 0
       ? js.replace(/\(\$\$\)/g, `($$$$,{${lets.join(',')},...$$$$props})`)
       : js;
-    //console.log(code);
+
     return code;
   }
 
@@ -489,7 +489,7 @@ for (const [, fn] of Object.entries(__functions)) fn.$ = __src;
     const internals = [];
 
     let lastChunk = '';
-    code = code.replace(RE_MATCH_IMPORTS, (_, $1, sp, _2, $3, _offset) => {
+    code = code.replace(RE_MATCH_IMPORTS, (_, $1, _2, $3) => {
       const name = $1.replace(/[*]\s*as/, ignore).replace(/\sas\s/g, '  : ');
       const symbols = `const ${name}`;
 

@@ -18,6 +18,7 @@
   },
   "rules" : {
     "no-continue": 0,
+    "no-return-assign": 0,
     "no-promise-executor-return": 0,
     "no-setter-return": 0,
     "max-len": ["error", {

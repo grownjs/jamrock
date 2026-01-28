@@ -1,6 +1,7 @@
 tests/fixtures/broken
 seed/node_modules
 src/chalk.mjs
+lib/gtk4
 generated
 build
 dist

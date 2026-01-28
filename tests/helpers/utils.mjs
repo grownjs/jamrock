@@ -41,7 +41,7 @@ export async function transpile(code, src, save, prefix = 'generated/') {
       const mod = await import(`${file}?_=${inc++}`);
       return mod;
     } catch (e) {
-      console.log({e, src, file});
+      console.log({ e, src, file });
       // console.log(fs.readFileSync(file).toString());
     }
   }

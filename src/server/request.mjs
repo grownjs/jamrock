@@ -608,7 +608,7 @@ export async function createResponse(env, conn, clients, options) {
   return createPageResponse(env, conn, clients, options);
 }
 
-export function createBodySync(env, conn, { client, matches, options }) {
+export function createBodySync(env, conn, { client, matches }) {
   let status;
   let body;
   try {
@@ -712,8 +712,6 @@ export function createResponseSync(env, conn, clients, options) {
   if (matches) {
     const result = {};
     console.log({ matches }, createBodySync(env, conn, { client, matches, options }));
-
-
 
     if (result instanceof Response) {
       return result;
