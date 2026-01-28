@@ -494,14 +494,7 @@ export async function createModuleResponse(env, conn) {
   };
 }
 
-/**
- * @param {Environment}   env
- * @param {Connection}    conn
- * @param {() => any[]}   clients
- * @param {any}           options
- * @returns {Promise<ResponseMixed>}
- */
-export async function createPageResponse(env, conn, clients, options) {
+export function getResponsePrelude(env, conn, options) {
   const client = getClientCode(conn, env.version, conn.base_url, options.prefix);
 
   let matches;
@@ -511,7 +504,32 @@ export async function createPageResponse(env, conn, clients, options) {
   });
 
   // eslint-disable-next-line no-nested-ternary
-  let status = matches ? 502 : conn.method === 'GET' ? 404 : 405;
+  const status = matches ? 502 : conn.method === 'GET' ? 404 : 405;
+  return { status, client, matches };
+}
+
+export function defaultResponse(env, conn, client, { body, status, headers, cookies }) {
+  if (body === null) {
+    body = create404(env, conn, client, `<p>Request to <b>${conn.method} ${conn.request_path}</b> not allowed.</p>`);
+  }
+
+  return {
+    body,
+    status,
+    cookies: cookies || conn.resp_cookies,
+    headers: headers || conn.resp_headers,
+  };
+}
+
+/**
+ * @param {Environment}   env
+ * @param {Connection}    conn
+ * @param {() => any[]}   clients
+ * @param {any}           options
+ * @returns {Promise<ResponseMixed>}
+ */
+export async function createPageResponse(env, conn, clients, options) {
+  let { status, client, matches } = getResponsePrelude();
 
   let headers = null;
   let body = null;
@@ -529,16 +547,7 @@ export async function createPageResponse(env, conn, clients, options) {
     body = result.body || body;
   }
 
-  if (body === null) {
-    body = create404(env, conn, client, `<p>Request to <b>${conn.method} ${conn.request_path}</b> not allowed.</p>`);
-  }
-
-  return {
-    body,
-    status,
-    cookies: cookies || conn.resp_cookies,
-    headers: headers || conn.resp_headers,
-  };
+  return defaultResponse(env, conn, client, { body, status, headers, cookies });
 }
 
 /**
@@ -597,6 +606,37 @@ export async function createResponse(env, conn, clients, options) {
     });
   }
   return createPageResponse(env, conn, clients, options);
+}
+
+/**
+ * @param {Environment}   env
+ * @param {Connection}    conn
+ * @param {() => any[]}   clients
+ * @param {any}           options
+ * @returns {ResponseMixed}
+ */
+export function createResponseSync(env, conn, clients, options) {
+  let { status, client, matches } = getResponsePrelude(env, conn, options);
+
+  let headers = null;
+  let body = null;
+  let cookies;
+  if (matches) {
+    const result = {};
+    console.log({ matches });
+    //await createBody(env, conn, clients, { client, matches, options });
+
+    if (result instanceof Response) {
+      return result;
+    }
+
+    cookies = result.cookies || cookies || undefined;
+    headers = result.headers || headers;
+    status = result.status || status;
+    body = result.body || body;
+  }
+
+  return defaultResponse(env, conn, client, { body, status, headers, cookies });
 }
 
 /**
