@@ -152,7 +152,7 @@ test.group('parsing', t => {
         a as foo, bar
       } from 'jamrock:stuff';
 `)).toEqual({
-      prelude: "\n      import  {\n        a as foo, bar\n      }  from '/path/to/lib/stuff.mjs';",
+      prelude: "\n      import  {\n        a as foo, bar\n      }  from '/path/to/lib/stuff';",
       interlude: '\n',
     });
 
@@ -201,7 +201,7 @@ test.group('parsing', t => {
       "import Test4 from '../../../router.generated.mjs';\n",
     ].join(''))).toEqual({
       prelude: [
-        "import  { Inspect }  from '/path/to/lib/components.mjs';\n",
+        "import  { Inspect }  from '/path/to/lib/components';\n",
         "import  Test  from /*@@*/__resolve('./hello.generated.mjs');\n",
         "import  Markup  from /*@@*/__resolve('./static.generated.mjs');\n",
         "import  Test1  from /*@@*/__resolve('./test.generated.mjs');\n",

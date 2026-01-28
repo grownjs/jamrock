@@ -501,7 +501,7 @@ for (const [, fn] of Object.entries(__functions)) fn.$ = __src;
       if ($3.includes('jamrock:')) {
         return lastChunk = inline
           ? `${symbols} = import('${$3}');`
-          : `import ${$1} from '${basedir}/${$3.replace('jamrock:', 'lib/')}.mjs';`;
+          : `import ${$1} from '${basedir}/${$3.replace('jamrock:', 'lib/')}';`;
       }
 
       if ($3[0] === '.' && !($3.includes('.md') || $3.includes('.html'))) {

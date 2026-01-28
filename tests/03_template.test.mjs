@@ -350,7 +350,7 @@ test.group('template transformation', t => {
 
     fs.mkdirSync('/tmp/lib', { recursive: true });
     fs.writeFileSync('/tmp/lib/inspect.mjs', Inspect);
-    fs.writeFileSync('/tmp/lib/components.mjs', 'export * as Inspect from "./inspect.mjs"');
+    fs.writeFileSync('/tmp/lib/components', 'export * as Inspect from "./inspect.mjs"');
 
     Template.cache = new Map();
     td.replace(Template, 'read', x => fs.readFileSync(x).toString());

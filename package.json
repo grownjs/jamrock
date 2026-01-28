@@ -16,6 +16,7 @@
         "default": "./dist/main.mjs"
       }
     },
+    "./lib/components": "./lib/components.mjs",
     "./core": "./dist/main.mjs",
     "./bun": "./lib/bun/main.mjs",
     "./deno": "./lib/deno/main.mjs",
