@@ -687,7 +687,8 @@ export function createBodySync(env, conn, { client, matches }) {
       if (conn.headers['request-from']) conn.req.fields._self = conn.headers['request-from'];
     }
 
-    body = Template.resolveSync(mod, file, ctx, props, Handler.middleware);
+    console.log({ mod, file, props });
+    // body = Template.resolveSync(mod, file, ctx, props, Handler.middleware);
   } catch (e) {
     Util.trace('E_STATUS', e);
     status = e.status || 500;
