@@ -641,7 +641,7 @@ export function serveFrom(env, dest, editor) {
   const files = Template.glob(`${dest}/*.{js,css}`).map(x => x.replace(`${dest}/`, ''));
 
   return req => {
-    const path = req.url.split('?')[0].split('/').slice(3).join('/');
+    const path = req.url.split('?')[0].split('/').slice(3).join('/') || '/';
 
     if (path.indexOf('__open?@=') === 0) {
       if (Util.Is.func(editor)) editor([decodeURIComponent(path.substr(9))]);
@@ -671,6 +671,7 @@ export function serveFrom(env, dest, editor) {
         return new Response(Template.read(src), { headers });
       }
     }
+
     if (files.includes(path)) {
       const headers = {
         'content-type': Util.mimeType(path),
