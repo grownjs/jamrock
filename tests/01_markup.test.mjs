@@ -130,6 +130,8 @@ test.group('parsing', t => {
   });
   t.each.teardown(td.reset);
 
+  const script = s => Block.script(s, '/path/to');
+
   test('should rewrite exports', ({ expect }) => {
     const code = Block.exports(`
       let messages = [];
@@ -145,17 +147,17 @@ test.group('parsing', t => {
   });
 
   test('should rewrite imports', ({ expect }) => {
-    expect(Block.script(`
+    expect(script(`
       import {
         a as foo, bar
       } from 'jamrock:stuff';
 `)).toEqual({
       hasImports: true,
-      prelude: "\n      import  {\n        a as foo, bar\n      }  from '/path/to/jamrock/lib/stuff.mjs';\n",
+      prelude: "\n      import  {\n        a as foo, bar\n      }  from '/path/to/lib/stuff.mjs';\n",
       interlude: '',
     });
 
-    expect(Block.script(`
+    expect(script(`
       import { existsSync, unlinkSync } from 'node:fs';
 `)).toEqual({
       hasImports: true,
@@ -165,7 +167,7 @@ test.group('parsing', t => {
   });
 
   test('should rewrite scripts', ({ expect }) => {
-    expect(Block.script(`
+    expect(script(`
       import * as nohooks from 'nohooks';
 `)).toEqual({
       hasImports: true,
@@ -173,7 +175,7 @@ test.group('parsing', t => {
       interlude: '',
     });
 
-    expect(Block.script(`
+    expect(script(`
       import { useState } from 'jamrock';
 `)).toEqual({
       hasImports: true,
@@ -181,7 +183,7 @@ test.group('parsing', t => {
       interlude: "const  { useState }  = __loader('jamrock');\n",
     });
 
-    expect(Block.script(`
+    expect(script(`
       import { truth } from '../mod.mjs';
 `)).toEqual({
       hasImports: true,
@@ -189,7 +191,7 @@ test.group('parsing', t => {
       interlude: '',
     });
 
-    expect(Block.script(`
+    expect(script(`
       import Test from '../test.html';
 `)).toEqual({
       hasImports: true,
@@ -197,7 +199,7 @@ test.group('parsing', t => {
       interlude: '',
     });
 
-    expect(Block.script([
+    expect(script([
       "import { Inspect } from 'jamrock:components';\n",
       "import Test from './hello.generated.mjs';\n",
       "import Markup from './static.generated.mjs';\n",
@@ -208,7 +210,7 @@ test.group('parsing', t => {
     ].join(''))).toEqual({
       hasImports: true,
       prelude: [
-        "import  { Inspect }  from '/path/to/jamrock/lib/components.mjs';\n",
+        "import  { Inspect }  from '/path/to/lib/components.mjs';\n",
         "import  Test  from /*@@*/__resolve('./hello.generated.mjs');\n",
         "import  Markup  from /*@@*/__resolve('./static.generated.mjs');\n",
         "import  Test1  from /*@@*/__resolve('./test.generated.mjs');\n",

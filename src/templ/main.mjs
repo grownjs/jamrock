@@ -8,6 +8,7 @@ import { debug, stringify } from './utils.mjs';
 import { rebase } from '../handler/utils.mjs';
 import { ents } from '../render/hooks.mjs';
 import { decorate } from './send.mjs';
+import { base } from '../cwd.mjs';
 
 const RE_SAFE_IMPORTS = /^(?:npm|node|file|https?):/;
 const RE_SAFE_NAME = /(?:^|\/)(.+?)(?:\/\+\w+)?\.\w+$/;
@@ -23,6 +24,8 @@ const NO_HOOKS = {
   wrapComponent: () => null,
 };
 
+const LIBDIR = base.url.replace(/^file:\/\/|\/[^/]+\.mjs$/g, '');
+
 /**
  * @import {TemplateImpl, TemplateCache} from "../../types/main.d.ts"
  */
@@ -36,6 +39,8 @@ export class Template {
    */
   static cache = null;
 
+  static shared = LIBDIR;
+
   constructor(name, block, options, callback) {
     this.generators = options.generators;
     this.elements = options.elements;
@@ -44,6 +49,7 @@ export class Template {
     delete this.attributes.generators;
     delete this.attributes.elements;
 
+    // this.basedir = '/tmp';
     this.component = name;
     this.partial = block;
     this.module = {};

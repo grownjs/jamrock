@@ -337,23 +337,22 @@ fixture`./directives+page.html
 
 test.group('template transformation', t => {
   t.each.setup(async () => {
-    const Inspect = {
-      __src: '',
-      __dest: '',
-      __styles: [],
-      __scripts: [],
-      __doctype: () => ({}),
-      __template: () => ['FIXME'],
-      __metadata: () => [],
-      __attributes: () => ({}),
-    };
+    const Inspect = `
+      export const __src = '';
+      export const __dest = '';
+      export const __styles = [];
+      export const __scripts = [];
+      export const __doctype = () => ({});
+      export const __template = () => ['FIXME'];
+      export const __metadata = () => [];
+      export const __attributes = () => ({});
+    `;
 
-    function loader() {
-      return { Inspect };
-    }
+    fs.mkdirSync('/tmp/lib', { recursive: true });
+    fs.writeFileSync('/tmp/lib/inspect.mjs', Inspect);
+    fs.writeFileSync('/tmp/lib/components.mjs', 'export * as Inspect from "./inspect.mjs"');
 
     Template.cache = new Map();
-    td.replace(Template, 'load', loader);
     td.replace(Template, 'read', x => fs.readFileSync(x).toString());
     td.replace(Template, 'file', x => new Blob([fs.readFileSync(x)], { name: x, type: mime.getType(x) }));
     td.replace(Template, 'exists', x => fs.existsSync(x) && fs.statSync(x).isFile());
@@ -365,9 +364,11 @@ test.group('template transformation', t => {
     td.reset();
   });
 
-  test.skip('should compile recursively to ESM', async ({ expect }) => {
+  test('should compile recursively to ESM', async ({ expect }) => {
     td.replace(Math, 'random', () => 1);
     td.replace(Date, 'now', () => 0);
+
+    Template.shared = '/tmp';
 
     const tpl = await build('./nested/path/to/transformed.html', {
       generators: {

@@ -483,13 +483,11 @@ for (const [, fn] of Object.entries(__functions)) fn.$ = __src;
       .replace(/\bexport\b/g, ignore);
   }
 
-  static script(code, cleanup) {
+  static script(code, basedir = Template.shared) {
     let found;
     let lastChunk = '';
     let hasImports = false;
     code = code.replace(RE_MATCH_IMPORTS, (_, $1, sp, _2, $3, _offset) => {
-      if (cleanup) return ignore(_);
-
       hasImports = true;
 
       if (['jamrock', 'jamrock:conn', 'jamrock:hooks'].includes($3)) {
@@ -501,7 +499,7 @@ for (const [, fn] of Object.entries(__functions)) fn.$ = __src;
       }
 
       if ($3.includes('jamrock:')) {
-        return lastChunk = `import ${$1} from '/path/to/${$3.replace(':', '/lib/')}.mjs'`;
+        return lastChunk = `import ${$1} from '${basedir}/${$3.replace('jamrock:', 'lib/')}.mjs'`;
       }
 
       if ($3[0] === '.' && !($3.includes('.md') || $3.includes('.html'))) {
