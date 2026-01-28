@@ -568,7 +568,9 @@ export function createEnvironment({ fs, path }, options, external) {
       const modules = Object.fromEntries(Template.cache?.entries() || []);
 
       // FIXME: mock this better!
-      const req = {};
+      const req = {
+        fields: {},
+      };
       const uuid = '';
       const client = '';
 
@@ -576,6 +578,8 @@ export function createEnvironment({ fs, path }, options, external) {
         // FIXME: try createConnection?
         const conn = {
           req,
+          flash: () => null,
+          session: {},
           headers: {},
           base_url: options.target || '/',
           request_path: route.path,

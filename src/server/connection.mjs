@@ -33,12 +33,12 @@ export async function createConnection(store, options, request, location, teardo
   const _headers = Object.fromEntries(request.headers);
   const cookies = parseCookies(_headers.cookie || '');
 
-  const host = request.headers.get('host') || location.host;
+  const hostname = request.headers.get('host') || location.host;
   const port = request.headers.get('port') || location.port;
-  const proto = +port === 443 ? 'https' : 'http';
+  const protocol = +port === 443 ? 'https' : 'http';
   const offset = request.url.indexOf(':');
 
-  const base = request.url.substr(offset + host.length + 3);
+  const base = request.url.substr(offset + hostname.length + 3);
   const _url = base.split('?')[0];
   const qs = base.split('?')[1] || '';
 
@@ -54,7 +54,7 @@ export async function createConnection(store, options, request, location, teardo
   request.type = (_headers['content-type'] || '').split(';')[0];
   request.fields = { ...request.query };
 
-  let parsed;
+  let parsed = false;
   Object.defineProperty(request, 'parseBody', {
     async value() {
       if (!parsed) {
@@ -95,7 +95,7 @@ export async function createConnection(store, options, request, location, teardo
    * The connection details for the server
    * @type {ServerInfo}
    */
-  const serverInfo = { teardown, proto, host, port };
+  const serverInfo = { teardown, protocol, hostname, port };
 
   /**
    * The connection context
