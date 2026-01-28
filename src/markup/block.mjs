@@ -553,9 +553,11 @@ for (const [, fn] of Object.entries(__functions)) fn.$ = __src;
 
     return code
       .replace(RE_EXPORT_DEFAULT, _ => [info, _].join('\n'))
-      .replace(RE_RESOLVE_IMPORTS, (_, src, v, qt, file) => {
-        const a = Template.join(base, src || file);
-        const b = Template.join(leaf, src || file);
+      .replace(RE_RESOLVE_IMPORTS, (_, src) => {
+        if (base === leaf) return `'${src}'`;
+
+        const a = Template.join(base, src);
+        const b = Template.join(leaf, src);
         const c = Template.relative(b, a);
 
         return `'${c}'`;
