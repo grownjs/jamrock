@@ -150,13 +150,15 @@ test.group('parsing', t => {
         a as foo, bar
       } from 'jamrock:stuff';
 `)).toEqual({
-      prelude: "\n      import {\n        a as foo, bar\n      } from '/path/to/jamrock/lib/stuff.mjs';\n",
+      hasImports: true,
+      prelude: "\n      import  {\n        a as foo, bar\n      }  from '/path/to/jamrock/lib/stuff.mjs';\n",
       interlude: '',
     });
 
     expect(Block.imports(`
       import { existsSync, unlinkSync } from 'node:fs';
 `)).toEqual({
+      hasImports: true,
       prelude: "\n      import { existsSync, unlinkSync } from 'node:fs';\n",
       interlude: '',
     });
@@ -166,6 +168,7 @@ test.group('parsing', t => {
     expect(Block.script(`
       import * as nohooks from 'nohooks';
 `, true)).toEqual({
+      hasImports: true,
       prelude: "\n      import * as nohooks from 'nohooks';\n",
       interlude: '',
     });
@@ -173,20 +176,23 @@ test.group('parsing', t => {
     expect(Block.script(`
       import { useState } from 'jamrock';
 `, true)).toEqual({
+      hasImports: true,
       prelude: "\n      ",
-      interlude: "const { useState } = __loader('jamrock');\n",
+      interlude: "const  { useState }  = __loader('jamrock');\n",
     });
 
     expect(Block.script(`
       import { truth } from '../mod.mjs';
 `, true)).toEqual({
-      prelude: "\n      import { truth } from /*@@*/__resolve('../mod.mjs');\n",
+      hasImports: true,
+      prelude: "\n      import  { truth }  from /*@@*/__resolve('../mod.mjs');\n",
       interlude: '',
     });
 
     expect(Block.script(`
       import Test from '../test.html';
 `, true)).toEqual({
+      hasImports: true,
       prelude: "\n      import Test from '../test.generated.mjs?_=0';\n",
       interlude: '',
     });
@@ -200,14 +206,15 @@ test.group('parsing', t => {
       "import Test3 from '../../noop.generated.mjs';\n",
       "import Test4 from '../../../router.generated.mjs';\n",
     ].join(''), true)).toEqual({
+      hasImports: true,
       prelude: [
-        "import { Inspect } from '/path/to/jamrock/lib/components.mjs';\n",
-        "import Test from /*@@*/__resolve('./hello.generated.mjs');\n",
-        "import Markup from /*@@*/__resolve('./static.generated.mjs');\n",
-        "import Test1 from /*@@*/__resolve('./test.generated.mjs');\n",
-        "import Test2 from /*@@*/__resolve('../inner.generated.mjs');\n",
-        "import Test3 from /*@@*/__resolve('../../noop.generated.mjs');\n",
-        "import Test4 from /*@@*/__resolve('../../../router.generated.mjs');\n",
+        "import  { Inspect }  from '/path/to/jamrock/lib/components.mjs';\n",
+        "import  Test  from /*@@*/__resolve('./hello.generated.mjs');\n",
+        "import  Markup  from /*@@*/__resolve('./static.generated.mjs');\n",
+        "import  Test1  from /*@@*/__resolve('./test.generated.mjs');\n",
+        "import  Test2  from /*@@*/__resolve('../inner.generated.mjs');\n",
+        "import  Test3  from /*@@*/__resolve('../../noop.generated.mjs');\n",
+        "import  Test4  from /*@@*/__resolve('../../../router.generated.mjs');\n",
       ].join(''),
       interlude: '',
     });

@@ -166,7 +166,7 @@ test.group('new compiler', () => {
     expect(html).toContain('Got: 42<h1 data-location="static.html:2:1">It works.</h1>!!!(42???)');
   });
 
-  test.skip('should handle self-imports for recursion', async ({ expect }) => {
+  test('should handle self-imports for recursion', async ({ expect }) => {
     const data = [{
       label: 'a',
       children: [{

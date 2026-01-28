@@ -128,13 +128,12 @@ export async function generated(block) {
     const _render = async (props = {}) => {
       try {
         const self = mod.__handler
-          ? await mod.__handler(props)
+          ? mod.__handler(props)
           : null;
 
-        const main = self?.__context ? await self.__context() : null;
+        const main = self?.__context ? self.__context() : null;
         const data = main?.__scope ?? main?.__callback?.();
         const result = await view(mod.__template, { ...props, ...data });
-
         const html = taggify(result);
 
         return { html };

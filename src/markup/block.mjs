@@ -12,7 +12,7 @@ import { Is, parseMarkup, identifier, ignore, dump } from '../utils/server.mjs';
 
 const RE_EXPORT_DEFAULT = /\nexport default[\s{]/;
 const RE_RESOLVE_IMPORTS = /\/\*@@\*\/__resolve\('(.+?)'\)/g;
-const RE_MATCH_IMPORTS = /\bimport([^;]+?)from\s*(['""])(.+?)\2(?=[\n;])/g;
+const RE_MATCH_IMPORTS = /\bimport([^;]+?)from(\s*)(['""])(.+?)\3(?=[\n;])/g;
 
 /**
  * @typedef {object} BlockAssets
@@ -390,8 +390,8 @@ export default {${defaults}};
     const exported = keys.filter(x => ['let', 'const', 'export'].includes(locals[x])).map(x => aliases[x] || x);
     const calls = [...this.calls].filter(_ => functions.includes(_));
 
-    let { prelude, interlude } = Block.imports(this.script.code);
-    if (!interlude) {
+    let { prelude, interlude,hasImports } = Block.imports(this.script.code);
+    if (!interlude && !hasImports) {
       interlude = prelude;
       prelude = '';
     }
@@ -489,38 +489,51 @@ for (const [, fn] of Object.entries(__functions)) fn.$ = __src;
 
   static script(code, modify, cleanup) {
     let found;
-    code = code.replace(RE_MATCH_IMPORTS, (_, $1, _2, $3, _offset) => {
+    let lastChunk = '';
+    let hasImports = false;
+    code = code.replace(RE_MATCH_IMPORTS, (_, $1, sp, _2, $3, _offset) => {
       if (cleanup) return ignore(_);
       if (!modify) return _;
 
+      hasImports = true;
+
       if (['jamrock', 'jamrock:conn', 'jamrock:hooks'].includes($3)) {
         const name = $1.replace(/[*]\s*as/, ignore).replace(/\sas\s/g, '  : ');
-        const symbols = `const ${name.trim()}`;
+        const symbols = `const ${name}`;
         const prefix = found ? '' : '\0';
         found = true;
-        return `${prefix}${symbols} = __loader('${$3}')`;
+        return lastChunk = `${prefix}${symbols} = __loader('${$3}')`;
       }
 
       if ($3.includes('jamrock:')) {
-        return `import ${$1.trim()} from '/path/to/${$3.replace(':', '/lib/')}.mjs'`;
+        return lastChunk = `import ${$1} from '/path/to/${$3.replace(':', '/lib/')}.mjs'`;
       }
 
       if ($3[0] === '.' && !($3.includes('.md') || $3.includes('.html'))) {
-        return `import ${$1.trim()} from /*@@*/__resolve('${$3}')`;
+        return lastChunk = `import ${$1} from /*@@*/__resolve('${$3}')`;
       }
 
       if ($3.includes('.md') || $3.includes('.html')) {
         const suffix = String(Date.now());
 
-        return _.replace(/\.(?:md|html)/, `.generated.mjs?_=${suffix}`);
+        return lastChunk = _.replace(/\.(?:md|html)/, `.generated.mjs?_=${suffix}`);
       }
 
-      return _;
+      return lastChunk = _;
     });
 
-    const [prelude, interlude = ''] = code.split('\0');
+    let prelude;
+    let interlude;
+    if (code.indexOf('\0') === -1) {
+      const offset = code.indexOf(lastChunk) + lastChunk.length;
 
-    return { prelude, interlude };
+      prelude = code.substr(0, offset + 2);
+      interlude = code.substr(offset + 2);
+    } else {
+      ([prelude, interlude = ''] = code.split('\0'));
+    }
+
+    return { prelude, interlude, hasImports };
   }
 
   static unwrap(code, source, target) {
