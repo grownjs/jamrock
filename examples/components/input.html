@@ -119,9 +119,7 @@
 
     let validated;
     if (hasValidMethod && currentForm) {
-      // since top-level await is not longer supported,
-      // we need to find a way to attach effects like this
-      validated = /* await */ check() !== false;
+      validated = check() !== false;
     }
 
     let fixedValue = inputValue;

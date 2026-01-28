@@ -429,19 +429,6 @@ export class Template {
       const actions = { [ctx.ref]: calls };
 
       let state = { ...props, ...data };
-
-      const keys = Object.keys(state);
-      const promises = Object.values(state);
-      const outcomes = await Promise.allSettled(promises);
-
-      for (let i = 0; i < keys.length; i++) {
-        if (outcomes[i].status === 'fulfilled') {
-          state[keys[i]] = outcomes[i].value;
-        } else {
-          console.error('E_RESOLVE', keys[i], outcomes[i]);
-        }
-      }
-
       if (ctx.stream) {
         // FIXME: this can be cached somehow?
         const frags = await Promise.all(Object.entries(component.__fragments).map(async ([k, v]) => ({
@@ -462,6 +449,18 @@ export class Template {
             return { target, vnode };
           }
         }, frags);
+      }
+
+      const keys = Object.keys(state);
+      const promises = Object.values(state);
+      const outcomes = await Promise.allSettled(promises);
+
+      for (let i = 0; i < keys.length; i++) {
+        if (outcomes[i].status === 'fulfilled') {
+          state[keys[i]] = outcomes[i].value;
+        } else {
+          console.error('E_RESOLVE', keys[i], outcomes[i]);
+        }
       }
 
       let [doc, body, head, attrs] = await Promise.all([
@@ -607,6 +606,15 @@ export class Template {
     const _parent = ctx.stack?.at(-1) ?? parent?.__src;
 
     return {
+      renderHook: fn => {
+        try {
+          let ret = fn;
+          while (typeof ret === 'function') ret = ret();
+          return ret;
+        } catch (e) {
+          console.error('E_HOOK', e);
+        }
+      },
       onComplete: fn => {
         const stack = ctx.scope[ctx.ref] ?? ctx.scope[_parent];
         if (stack) stack.handlers.push(fn);
