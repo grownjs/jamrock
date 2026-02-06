@@ -186,7 +186,7 @@ export class Template {
 
   async render(props = {}, ctx = {}, cb = null) {
     const result = await Template.render(this.module, null, props, ctx, cb);
-    const output = await Template.finalize(null, ctx, result, [], this.module.__src);
+    const output = Template.finalize(null, ctx, result, [], this.module.__src);
 
     const html = taggify(output.body);
     const css = output.styles[this.module.__src];
@@ -229,7 +229,7 @@ export class Template {
     }
   }
 
-  static async finalize(e, self, chunk, mixins, filepath) {
+  static finalize(e, self, chunk, mixins, filepath) {
     mixins.forEach(mixin => {
       // FIXME: how to check dupes?
       chunk.head = (chunk.head || []).concat(mixin.head);
@@ -302,6 +302,12 @@ export class Template {
     return response;
   }
 
+  static resolveSync(component, filepath, context, props, cb) {
+    const response = Template.reduceSync(component, filepath, context, props, cb);
+    if (context.write) stringify(response, context.prefix, context.write);
+    return response;
+  }
+
   static async reduce(component, filepath, context, props, cb) {
     let result;
     if (!context.components) {
@@ -322,6 +328,78 @@ export class Template {
       }
     }
     return result;
+  }
+
+  static reduceSync(component, filepath, context, props, cb) {
+    let result;
+    if (!context.components) {
+      result = Template.executeSync(component, context, props, cb);
+      return result;
+    }
+
+    for (const _component of context.components) {
+      try {
+        if (result) {
+          // eslint-disable-next-line no-loop-func
+          props.children = () => result.body;
+        }
+
+        result = Template.executeSync(_component, context, props, cb);
+      } catch (e) {
+        trace('E_RESOLVE', filepath, e);
+      }
+    }
+    return result;
+  }
+
+  static executeSync(component, context, props, cb) {
+    context.base_url = context.base_url || context.conn?.base_url;
+    context.is_json = context.is_json || context.conn?.is_json;
+    context.mixins = context.mixins || new Map();
+    context.stack = context.stack || [];
+    context.scope = context.scope || {};
+    context.depth = context.depth || 0;
+    context.tag = context.tag || Template.tag(context);
+
+    const tasks = [];
+
+    try {
+      let result = Template.renderSync(component, null, props, context, cb);
+
+      Object.values(context.scope).forEach(_ => tasks.push(..._.handlers));
+
+      tasks.forEach(fn => fn(result));
+
+      if (!(result instanceof Response)) {
+        if (context.route?.layout) {
+          const markup = result.body;
+
+          delete result.body;
+          props.children = () => markup;
+          context.mixins.set(component.__src, result);
+
+          const layout = Template.renderSync(context.route.layout, null, props, context);
+          const response = Template.finalize(null, context, layout, context.mixins, component.__src);
+          return response;
+        }
+        result = Template.finalize(null, context, result, context.mixins, component.__src);
+      }
+      return result;
+    } catch (e) {
+      trace('E_ROUTE', e);
+      if (context.route?.error) {
+        props = props || {};
+        props.failure = e;
+        props.failure.reason = e.message;
+        props.failure.source = props.failure.stack.split('\n')[0].split(' at ')[1];
+        props.failure.stack = props.failure.stack.split('\n').slice(1).join('\n');
+
+        const error = Template.renderSync(context.route.error, null, props, context);
+        const result = Template.finalize(e, context, error, context.mixins, component.__src);
+        return result;
+      }
+      throw e;
+    }
   }
 
   static async execute(component, context, props, cb) {
@@ -512,7 +590,7 @@ export class Template {
     }
   }
 
-  static async renderSync(component, parent, props, ctx, cb = null) {
+  static renderSync(component, parent, props, ctx, cb = null) {
     const { scripts, styles, media, loader } = Template.prepare(component, parent, ctx);
 
     const self = component.__handler
@@ -526,7 +604,6 @@ export class Template {
       if (ctx.mixins && !ctx.mixins.has(child.__src)) {
         ctx.mixins.set(child.__src, chunk);
       }
-
       return body;
     });
 
@@ -540,12 +617,12 @@ export class Template {
       const actions = { [ctx.ref]: calls };
 
       let state = { ...props, ...data };
-      let [doc, body, head, attrs] = ([
+      let [doc, body, head, attrs] = [
         view(component.__doctype, state, `${component.__src}#doctype`),
         view(component.__template, state, `${component.__src}#template`),
         view(component.__metadata, state, `${component.__src}#metadata`),
         view(component.__attributes, state, `${component.__src}#attributes`),
-      ]);
+      ];
 
       while (body?.length === 1 && !Is.vnode(body[0])) body = body[0];
       while (head?.length === 1 && !Is.vnode(head[0])) head = head[0];

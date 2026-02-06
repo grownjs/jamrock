@@ -15,13 +15,13 @@ export async function execAsync(chunk, ctx, _) {
   return result;
 }
 
-export async function execSync(chunk, ctx, _) {
+export function execSync(chunk, ctx, _) {
   if (Is.func(chunk) && !chunk.name) {
     chunk = chunk.apply(undefined, ctx);
   }
 
   if (Is.arr(chunk)) {
-    chunk = chunk.map(item => execAsync(item, ctx, _));
+    chunk = chunk.map(item => execSync(item, ctx, _));
   }
 
   return chunk;

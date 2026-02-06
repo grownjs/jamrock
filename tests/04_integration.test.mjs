@@ -369,7 +369,7 @@ test.group('integration only!', t => {
 
     expect(td.explain(console.info).callCount).toEqual(0);
 
-    const markup = await fixture.partial('app+page.html', null, ctx);
+    const markup = await fixture.partialSync('app+page.html', null, ctx);
 
     expect(td.explain(console.info).callCount).toEqual(2);
 
@@ -396,7 +396,7 @@ test.group('integration only!', t => {
     expect(tpl.__functions.test.toString()).toContain('function test');
     expect(tpl.__functions.doStuff.toString()).toContain('function doStuff');
 
-    const markup = await fixture.partial('hooks+page.html', null, ctx);
+    const markup = await fixture.partialSync('hooks+page.html', null, ctx);
 
     expect(td.explain(ctx.cache.set).callCount).toEqual(1);
     expect(markup).toContain('data-enhance data-use:do-stuff="hooks+page.html/1"');
@@ -423,7 +423,7 @@ test.group('integration only!', t => {
         conn.res.write(out);
         markup += out;
       };
-      await fixture.partial('app+page.html', null, ctx, func);
+      await fixture.partialSync('app+page.html', null, ctx, func);
       conn.res.end();
     });
 
@@ -508,7 +508,7 @@ test.group('integration only!', t => {
               }
 
               const props = { ...ctx.conn.req.params };
-              await fixture.partial(found.src.replace(`${cwd}/generated`, '.'), props, ctx, middleware);
+              await fixture.partialSync(found.src.replace(`${cwd}/generated`, '.'), props, ctx, middleware);
             } catch (e) {
               console.log('E_REQUEST', e, found);
             } finally {
@@ -602,7 +602,7 @@ test.group('integration only!', t => {
   test('should be able to render client-side components', async ({ expect }) => {
     ctx.prefix = '__';
 
-    const tpl = await fixture.partial('_hidden/stuff+page.html', null, ctx);
+    const tpl = await fixture.partialSync('_hidden/stuff+page.html', null, ctx);
 
     expect(tpl).toEqual([
       '<!DOCTYPE html>\n',
@@ -660,7 +660,7 @@ test.group('integration only!', t => {
   });
 
   test('should keep a shared context', async ({ expect }) => {
-    const tpl = await fixture.partial('context.html', null, ctx);
+    const tpl = await fixture.partialSync('context.html', null, ctx);
 
     expect(tpl).toContain('Got: 42\nGot: 42');
     expect(tpl).toContain('(CHECK: object)');

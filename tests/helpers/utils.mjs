@@ -188,6 +188,18 @@ export async function build(src, opts) {
   return mod.compile(mods[0], mod.partial, transpile);
 }
 
+fixture.partialSync = async (src, props, shared, callback) => {
+  try {
+    setup();
+    const tpl = await build(`./${rebase(src)}`);
+    const out = Template.resolveSync(tpl.module, 'generated/tpl.mjs', shared, props, callback);
+    if (out.status) shared.conn.res.status(out.status);
+    return stringify(out, shared.prefix);
+  } finally {
+    reset();
+  }
+};
+
 fixture.partial = async (src, props, shared, callback) => {
   try {
     setup();
