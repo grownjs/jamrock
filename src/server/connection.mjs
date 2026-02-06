@@ -2,8 +2,7 @@
 
 import { Template } from '../main.mjs';
 
-import { createSession } from './session.mjs';
-import { getError, parseCookies } from './request.mjs';
+import { getError } from './request.mjs';
 
 /**
  * @import {Connection, ServerInfo, CookieOptions, ResponseResult, RequestConnection} from "../../types/server.d.ts"
@@ -11,14 +10,16 @@ import { getError, parseCookies } from './request.mjs';
 
 /**
  * Creates the connection object for a given request
- * @param {any}                 store - Store adapter for sessions
+ * @param {any}                 store - Shared store
+ * @param {any}                 session - Request session
+ * @param {any}                 cookies - Request cookies
  * @param {any}                 options - Shared configuration
  * @param {RequestConnection}   request - Request object with extensions
  * @param {any}                 location - Location object from server
  * @param {any}                 teardown - Callback to shutdown the server
- * @returns {Promise<Partial<Connection>>}
+ * @returns {Partial<Connection>}
  */
-export async function createConnection(store, options, request, location, teardown) {
+export function createConnection(store, session, cookies, options, request, location, teardown) {
   /**
    * @type {ResponseResult}
    */
@@ -31,9 +32,8 @@ export async function createConnection(store, options, request, location, teardo
   };
 
   const _headers = Object.fromEntries(request.headers);
-  const cookies = parseCookies(_headers.cookie || '');
 
-  const hostname = request.headers.get('host') || location.host;
+  const hostname = request.headers.get('host') || location.hostname;
   const port = request.headers.get('port') || location.port;
   const protocol = +port === 443 ? 'https' : 'http';
   const offset = request.url.indexOf(':');
@@ -42,9 +42,7 @@ export async function createConnection(store, options, request, location, teardo
   const _url = base.split('?')[0];
   const qs = base.split('?')[1] || '';
 
-  const { sid, session, nextToken, verifyToken } = await createSession(store, cookies.sid || '$');
-
-  response.cookies.set('sid', { value: request.sid = sid });
+  response.cookies.set('sid', { value: request.sid = session.sid });
 
   request.uuid = qs.match(/^_=([^&]+)$/)?.[1]
     || request.headers.get('request-uuid')
@@ -83,10 +81,10 @@ export async function createConnection(store, options, request, location, teardo
           || _headers['x-csrf-token']
           || _headers['x-xsrf-token'];
 
-        if (!verifyToken(token, session.csrf)) {
+        if (!session.verifyToken(token, session.state.csrf)) {
           throw getError(403, 'the given csrf-token is not valid');
         }
-        delete session.csrf;
+        delete session.state.csrf;
       }
     },
   });
@@ -108,8 +106,8 @@ export async function createConnection(store, options, request, location, teardo
     server: serverInfo,
     headers: _headers,
     base_url: options.target || '/',
+    session: session.state,
     cookies,
-    session,
     options,
     routes: [],
     current_path: '',
@@ -148,14 +146,14 @@ export async function createConnection(store, options, request, location, teardo
     },
     flash(type, value) {
       if (!type) {
-        const data = session.flash || [];
-        session.flash = [];
+        const data = session.state.flash || [];
+        session.state.flash = [];
         return data;
       }
 
       const timestamp = new Date();
-      session.flash = session.flash || [];
-      session.flash.push({ type, value, timestamp });
+      session.state.flash = session.state.flash || [];
+      session.state.flash.push({ type, value, timestamp });
     },
     raise(code, message) {
       throw getError(code, message);
@@ -199,7 +197,7 @@ export async function createConnection(store, options, request, location, teardo
     },
     get csrf_token() {
       // eslint-disable-next-line no-return-assign
-      return session.csrf || (session.csrf = nextToken());
+      return session.state.csrf || (session.state.csrf = session.nextToken());
     },
     get resp_cookies() {
       return response.cookies;

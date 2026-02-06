@@ -247,7 +247,7 @@ export function create404(env, conn, client, message) {
   const environment = `<p>Loaded env</p><dl>${Object.entries(process.env)
     .map(([k, v]) => `<dt>${k}</dt><dd>${v}</dd>`).join('')}</dl>`;
 
-  return `${style}${message}<table><caption>Available routes</caption>${env.routes.map(route => `
+  return `${style}${message}<table><caption>${env.routes.length > 0 ? 'A' : 'No a'}vailable routes</caption>${env.routes.map(route => `
 <tr><td align=right style="width:1%">${route.verb}</td><td>${
   route.verb === 'GET' ? `<a href="${route.path}">${route.path}</a>` : route.path}</tr>`).join('')}
 <tfoot><tr><th colspan="2">${conn.req.url} &mdash; ${now}</th></tr></tfoot>
