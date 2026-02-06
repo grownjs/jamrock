@@ -608,7 +608,7 @@ export async function createResponse(env, conn, clients, options) {
   return createPageResponse(env, conn, clients, options);
 }
 
-export function createBodySync(env, conn, { client, matches }) {
+export function createBodySync(env, conn, { client, matches, options }) {
   let status;
   let body;
   try {
@@ -687,8 +687,43 @@ export function createBodySync(env, conn, { client, matches }) {
       if (conn.headers['request-from']) conn.req.fields._self = conn.headers['request-from'];
     }
 
-    console.log({ mod, file, props });
-    // body = Template.resolveSync(mod, file, ctx, props, Handler.middleware);
+    body = Template.resolveSync(mod, file, ctx, props, Handler.middleware);
+
+    if (body instanceof Response) {
+      return body;
+    }
+
+    if (!Util.Is.str(body)) {
+      if (conn.is_json) {
+        body = Markup.encode(`{${[
+          `"fragments":${JSON.stringify(body.fragments)}`,
+          `"scripts":${JSON.stringify(body.scripts)}`,
+          `"styles":${JSON.stringify(body.styles)}`,
+          `"attrs":${JSON.stringify(body.attrs)}`,
+          `"head":${JSON.stringify(body.head)}`,
+          `"body":${JSON.stringify(body.body)}`,
+          `"doc":${JSON.stringify(body.doc)}`,
+        ].join(',\n')}}`);
+
+        const headers = new Headers({
+          'content-type': 'application/json',
+        });
+
+        return { body, headers, status: conn.status_code };
+      }
+
+      let buffer = [];
+      // @ts-expect-error
+      Template.stringify(body, options.prefix, chunk => buffer.push(chunk));
+
+      const payload = [
+        `\n\t__scripts: ${JSON.stringify(body.scripts)},\n`,
+      ].join('');
+
+      buffer.push(client.replace('this', `{${payload}}`));
+      status = conn.status_code;
+      body = buffer.join('');
+    }
   } catch (e) {
     Util.trace('E_STATUS', e);
     status = e.status || 500;
@@ -711,8 +746,7 @@ export function createResponseSync(env, conn, clients, options) {
   let body = null;
   let cookies;
   if (matches) {
-    const result = {};
-    console.log({ matches }, createBodySync(env, conn, { client, matches, options }));
+    const result = createBodySync(env, conn, { client, matches, options });
 
     if (result instanceof Response) {
       return result;

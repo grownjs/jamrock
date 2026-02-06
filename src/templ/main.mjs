@@ -489,6 +489,7 @@ export class Template {
       if (id === 'jamrock') return NO_HOOKS;
       if (id === 'jamrock:conn') return ctx.conn;
       if (id === 'jamrock:hooks') return hooks;
+      if (id === 'jamrock:shared') return { /* shared utils from given runtime? */ };
       throw new Error(`Unable to import "${id}"`);
     };
 

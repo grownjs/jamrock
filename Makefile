@@ -194,6 +194,8 @@ gjs-test: gjs-esm
 
 gjs-serve:
 	@make -s gjs-check GJS_ARGS="dev --src x-gtk-sandbox"
+gjs-route:
+	@make -s gjs-check GJS_ARGS="route --src x-gtk-sandbox"
 
 gjs-check:
 ifeq ($(UNAME_S),Darwin)
