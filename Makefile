@@ -3,8 +3,8 @@ GJS_ARGS="--help"
 UNAME_S=$(shell uname -s)
 
 BROWSER ?= chrome:headless
-TARGET_BRANCH ?= gh-pages
-NODE_ENV ?= production
+TARGET_BRANCH=gh-pages
+NODE_ENV=production
 
 FROM_BRANCH=next
 FROM_FOLDER=build/static
@@ -16,13 +16,13 @@ DIST_TASK=dist
 FORCE_COLOR=1
 GIT_REVISION=$(shell git rev-parse --short=7 HEAD)
 
-LIB_ADWAITA = /opt/homebrew/Cellar/libadwaita/1.8.3/lib
-LIB_CAIRO = /opt/homebrew/Cellar/cairo/1.18.4/lib
-LIB_PANGO = /opt/homebrew/Cellar/pango/1.57.0_1/lib
-LIB_SOUP = /opt/homebrew/Cellar/libsoup/3.6.5/lib
-LIB_GDK = /opt/homebrew/Cellar/gdk-pixbuf/2.44.4/lib
-LIB_GTK4 = /opt/homebrew/Cellar/gjs/1.86.0/lib:/opt/homebrew/Cellar/gtk4/4.20.3/lib
-LIB_PATH = "$(LIB_GTK4):$(LIB_PANGO):$(LIB_GDK):$(LIB_SOUP):$(LIB_ADWAITA):$(LIB_CAIRO)"
+LIB_ADWAITA=/opt/homebrew/Cellar/libadwaita/1.8.3/lib
+LIB_CAIRO=/opt/homebrew/Cellar/cairo/1.18.4/lib
+LIB_PANGO=/opt/homebrew/Cellar/pango/1.57.0_1/lib
+LIB_SOUP=/opt/homebrew/Cellar/libsoup/3.6.5/lib
+LIB_GDK=/opt/homebrew/Cellar/gdk-pixbuf/2.44.4/lib
+LIB_GTK4=/opt/homebrew/Cellar/gjs/1.86.0/lib:/opt/homebrew/Cellar/gtk4/4.20.3/lib
+LIB_PATH="$(LIB_GTK4):$(LIB_PANGO):$(LIB_GDK):$(LIB_SOUP):$(LIB_ADWAITA):$(LIB_CAIRO)"
 
 ifneq ($(wildcard .env),)
 	include .env
