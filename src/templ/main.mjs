@@ -3,7 +3,7 @@
 import { serialize, taggify, scopify, rulify, cssify } from '../markup/html.mjs';
 import { pascalCase, snakeCase, trace, dump, Is } from '../utils/server.mjs';
 
-import { executeAsync } from '../render/async.mjs';
+import { executeAsync, executeSync } from '../render/async.mjs';
 import { debug, stringify } from './utils.mjs';
 import { rebase } from '../handler/utils.mjs';
 import { ents } from '../render/hooks.mjs';
@@ -434,13 +434,12 @@ export class Template {
         ctx.mixins.set(child.__src, chunk);
       }
 
-      // chunk.body = null;
       return body;
     });
 
     if (ctx.stack) ctx.stack.push(ctx.ref);
 
-    const main = self?.__context ? await self.__context() : null;
+    const main = self?.__context ? self.__context() : null;
 
     if (main && component.__context === 'module') {
       const response = await Template.preflight(main, ctx, cb);
@@ -478,6 +477,70 @@ export class Template {
       }
 
       let [doc, body, head, attrs] = await Promise.all([
+        view(component.__doctype, state, `${component.__src}#doctype`),
+        view(component.__template, state, `${component.__src}#template`),
+        view(component.__metadata, state, `${component.__src}#metadata`),
+        view(component.__attributes, state, `${component.__src}#attributes`),
+      ]);
+
+      while (body?.length === 1 && !Is.vnode(body[0])) body = body[0];
+      while (head?.length === 1 && !Is.vnode(head[0])) head = head[0];
+
+      if (component.__context === 'client') {
+        body = Template.client(ctx, body, props, parent, component);
+      }
+
+      return {
+        actions, scripts, styles, media, attrs, head, body, doc,
+      };
+    } catch (e) {
+      trace(e, 'E_RENDER');
+      this.failure = debug({
+        file: component.__src,
+        html: Template.read(component.__src),
+        code: Template.read(component.__dest),
+      }, e);
+
+      if (ctx.route?.error) throw this.failure;
+
+      return { scripts, styles, media, body: [['pre', {}, ents(this.failure.stack)]] };
+    } finally {
+      if (ctx.stack) {
+        ctx.stack.pop();
+        ctx.ref = ctx.stack.at(-1);
+      }
+    }
+  }
+
+  static async renderSync(component, parent, props, ctx, cb = null) {
+    const { scripts, styles, media, loader } = Template.prepare(component, parent, ctx);
+
+    const self = component.__handler
+      ? component.__handler(props, loader)
+      : null;
+
+    const view = executeSync(ctx.tag, loader, (child, _) => {
+      const chunk = Template.renderSync(child, component, _, ctx, cb);
+      const body = chunk.body;
+
+      if (ctx.mixins && !ctx.mixins.has(child.__src)) {
+        ctx.mixins.set(child.__src, chunk);
+      }
+
+      return body;
+    });
+
+    if (ctx.stack) ctx.stack.push(ctx.ref);
+
+    const main = self?.__context ? self.__context() : null;
+
+    try {
+      const data = main?.__scope ?? main?.__callback?.();
+      const calls = main?.__default?.actions || {};
+      const actions = { [ctx.ref]: calls };
+
+      let state = { ...props, ...data };
+      let [doc, body, head, attrs] = ([
         view(component.__doctype, state, `${component.__src}#doctype`),
         view(component.__template, state, `${component.__src}#template`),
         view(component.__metadata, state, `${component.__src}#metadata`),
