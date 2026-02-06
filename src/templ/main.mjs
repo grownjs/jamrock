@@ -390,7 +390,7 @@ export class Template {
     }
   }
 
-  static async render(component, parent, props, ctx, cb = null) {
+  static prepare(component, parent, ctx) {
     if (!component) {
       throw new Error(`Missing component, given '${component}'`);
     }
@@ -411,13 +411,19 @@ export class Template {
       if (id === 'jamrock') return NO_HOOKS;
       if (id === 'jamrock:conn') return ctx.conn;
       if (id === 'jamrock:hooks') return hooks;
-      return Template.load(id);
+      throw new Error(`Unable to import "${id}"`);
     };
+
+    return { loader, scripts, styles, media };
+  }
+
+  static async render(component, parent, props, ctx, cb = null) {
+    const { scripts, styles, media, loader } = Template.prepare(component, parent, ctx);
 
     await Template.settle(props);
 
     const self = component.__handler
-      ? await component.__handler(props, loader)
+      ? component.__handler(props, loader)
       : null;
 
     const view = executeAsync(ctx.tag, loader, async (child, _) => {
