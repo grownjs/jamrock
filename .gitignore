@@ -22,6 +22,7 @@ install
 pb_data
 pocketbase
 screenshots
+x-gtk-sandbox
 package-lock.json
 !scripts/main.d.ts
 !tests/fixtures/node_modules
