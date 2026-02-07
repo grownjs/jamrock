@@ -32,12 +32,10 @@ export EDITOR APP_KEY MAILDEV FORCE_COLOR GIT_REVISION
 
 .PHONY: seed dist docs install examples coverage
 
-ci: install clean
-	@make -s smoke
-ifneq ($(CI),)
-	@make -s test-ci
-endif
-	@make -s coverage
+ci: prune dist smoke
+	@make gjs-test test-nodejs coverage
+	@make test-deno
+	@make test-bun
 
 coverage:
 ifneq ($(GITHUB_ENV),)
