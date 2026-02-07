@@ -502,7 +502,7 @@ export class Template {
     await Template.settle(props);
 
     const self = component.__handler
-      ? component.__handler(props, loader)
+      ? await component.__handler(props, loader)
       : null;
 
     const view = executeAsync(ctx.tag, loader, async (child, _) => {
