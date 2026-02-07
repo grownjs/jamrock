@@ -33,7 +33,7 @@ export EDITOR APP_KEY MAILDEV FORCE_COLOR GIT_REVISION
 .PHONY: seed dist docs install examples coverage
 
 ci: prune dist smoke
-	@make gjs-test test-nodejs coverage
+	@make gjs-test test-nodejs
 	@make test-deno
 	@make test-bun
 

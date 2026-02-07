@@ -79,7 +79,7 @@
     "eslint-plugin-pug": "^1.2.5",
     "expect": "^29.7.0",
     "glob-to-regexp": "^0.4.1",
-    "happy-dom": "^19.0.2",
+    "happy-dom": ">=20.0.0",
     "highlight.js": "^11.11.1",
     "jsdom": "^27.4.0",
     "kramed": "^0.5.6",
