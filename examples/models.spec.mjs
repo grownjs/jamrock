@@ -2,7 +2,7 @@
 
 import { test } from '@japa/runner';
 
-import { pb, connect, User } from './models.ts';
+import { pb, connect, User } from './models.mjs';
 
 test.group('pocketbase', t => {
   let email;

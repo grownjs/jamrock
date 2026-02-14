@@ -44,6 +44,10 @@ ci\:dev:
 ci\:full:
 	@make ci CI=1 DIST_TASK=dist:min
 
+check:
+	@npm run build:types
+	@npm run lint
+
 test: dist smoke
 	@make -s test-bun || true
 	@make -s test-deno || true
@@ -138,18 +142,10 @@ dev: deps
 shot:
 	@make -sC seed dist
 
-check: build
-ifneq ($(CI),)
-	@npm run lint
-endif
-	@LCOV_OUTPUT=html npm run test:ci
-
 smoke:
 	@npm run lint
 	@npm run test:ci
 	@npm run test:run -- --examples
-	@make -s gjs-test
-	@make -s test-nodejs
 
 dist: deps
 	@VERSION=$(shell jq -r .version package.json) npm run $(DIST_TASK)

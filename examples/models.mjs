@@ -2,8 +2,7 @@ import PocketBase from 'pocketbase';
 
 export const pb = new PocketBase(process.env.PB_ADMIN_URL || 'http://127.0.0.1:8090');
 
-export const connect = (email, password) => pb.admins.authWithPassword(email, password);
-
+export const connect = (email, password) => pb.collection('_superusers').authWithPassword(email, password);
 try {
   if (process.env.NODE_ENV === 'production') {
     await connect(process.env.PB_ADMIN_EMAIL, process.env.PB_ADMIN_PASSWORD);
@@ -62,7 +61,7 @@ export class User extends Model {
   static async addUser({ email, resend, verified, password = 'Password.123' }) {
     const user = await this.create({ email, verified, password, passwordConfirm: password, emailVisibility: true });
 
-    let pending;
+    let pending = false;
     if (resend !== false && !user.verified) {
       pending = await this.self.requestVerification(email);
     }
