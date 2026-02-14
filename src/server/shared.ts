@@ -227,7 +227,7 @@ export const createCompiler = ({ fs, path }: any, options: any, external: any) =
   }
 
   function handlers() {
-    const api = Template.glob(`${options.src}/**/+server.mjs`);
+    const api = Template.glob(`${options.src}/**/+server.{ts,js,mjs}`);
     const pages = Template.glob(`${options.src}/**/*.{md,html}`);
 
     const sources = pages.concat(api).map(x => x.replace(cwd, '.'));

@@ -158,7 +158,7 @@ fixture`./pages/[slug]/+page.html
 `;
 
 // eslint-disable-next-line no-unused-expressions
-fixture`./pages/+server.mjs
+fixture`./pages/+server.js
   export function stuff(_, opts) {
     console.log({ opts });
   }
@@ -180,7 +180,7 @@ fixture`./api/+server.mjs
 `;
 
 // eslint-disable-next-line no-unused-expressions
-fixture`./+server.mjs
+fixture`./+server.ts
   export function http() {}
   export default {
     ['GET /api/v1']: true,
@@ -303,7 +303,7 @@ test.group('integration only!', t => {
     setup();
 
     const cwd = process.cwd();
-    const api = Template.glob(`${cwd}/generated/**/+server.mjs`);
+    const api = Template.glob(`${cwd}/generated/**/+server.{ts,js,mjs}`);
     const files = Template.glob(`${cwd}/generated/**/*.html`);
     const routes = controllers(`${cwd}/generated`, files.concat(api));
 
@@ -341,14 +341,14 @@ test.group('integration only!', t => {
     expect(routes.namedRoute.url({ id: 123 })).toEqual('/app/123');
     expect(routes.namedRoute.src).toEqual(`${cwd}/generated/app+page.html`);
 
-    expect(routes.OSOM.middleware).toEqual(`${cwd}/generated/pages/+server.mjs`);
-    expect(routes.getPagesSlugPage.middleware).toEqual(`${cwd}/generated/pages/+server.mjs`);
+    expect(routes.OSOM.middleware).toEqual(`${cwd}/generated/pages/+server.js`);
+    expect(routes.getPagesSlugPage.middleware).toEqual(`${cwd}/generated/pages/+server.js`);
     expect(routes.getApiSomeStuff.middleware).toEqual(`${cwd}/generated/api/+server.mjs`);
-    expect(routes.getPagesSitemapXml.middleware).toEqual(`${cwd}/generated/pages/+server.mjs`);
+    expect(routes.getPagesSitemapXml.middleware).toEqual(`${cwd}/generated/pages/+server.js`);
 
     expect(routes.getVeryNestedPathTo.middlewares).toEqual([
       `${cwd}/generated/very/nested/+server.mjs`,
-      `${cwd}/generated/+server.mjs`,
+      `${cwd}/generated/+server.ts`,
     ]);
 
     expect(routes.getCampaignsCampaignIdParticipationsParticipationIdPage.all).toEqual([

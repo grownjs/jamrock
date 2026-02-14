@@ -36,7 +36,9 @@ if (!globalThis.ReadableStream) {
 
 processCLIArgs(process.argv.slice(2));
 configure({
-  files: ['tests/**/*.test.mjs'],
+  files: [process.argv.includes('--examples')
+    ? 'examples/**/*.spec.mjs'
+    : 'tests/**/*.test.mjs'],
   plugins: [expect()],
   bail: true,
 });

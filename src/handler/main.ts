@@ -122,16 +122,21 @@ export function controllers(cwd: string, from: string[]): any {
       push(rematch(subroute));
 
       const parts = src.split('/');
+      const exts = ['mjs', 'js', 'ts'];
 
       parts.pop();
       parts.pop();
       while (parts.length > 0) {
-        const key = `${parts.join('/')}/+server.mjs`;
+        const prefix = `${parts.join('/')}/+server.`;
 
         parts.pop();
 
-        if (_middlewares.includes(key)) {
-          subroute.middlewares.push(rebase(key));
+        for (const ext of exts) {
+          const key = prefix + ext;
+
+          if (_middlewares.includes(key)) {
+            subroute.middlewares.push(rebase(key));
+          }
         }
       }
     });

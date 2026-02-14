@@ -13,6 +13,8 @@ try {
 }
 
 export class Model {
+  static table = undefined;
+
   static buildParams(obj) {
     const out = [];
     Object.keys(obj).forEach(k => {
@@ -23,12 +25,6 @@ export class Model {
 
   static get self() {
     return pb.collection(this.table);
-  }
-
-  static async findAll({ where = {} } = {}) {
-    const fields = Model.buildParams(where);
-    const records = await this.self.getList(fields);
-    return records;
   }
 
   static async findOne({ where = {} } = {}) {
