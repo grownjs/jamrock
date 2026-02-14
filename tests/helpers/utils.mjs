@@ -9,13 +9,13 @@ import Grown from 'grown';
 import GrownTest from '@grown/test';
 import GrownConn from '@grown/conn';
 
-import { createTranspiler } from '../../src/server/helpers.mjs';
-import { stringify, debug } from '../../src/templ/utils.mjs';
-import { executeAsync } from '../../src/render/async.mjs';
-import { rebase } from '../../src/handler/utils.mjs';
-import { taggify } from '../../src/markup/html.mjs';
-import { Template } from '../../src/templ/main.mjs';
-import { Block } from '../../src/markup/block.mjs';
+import { createTranspiler } from '../../src/server/helpers.ts';
+import { stringify, debug } from '../../src/templ/utils.ts';
+import { executeAsync } from '../../src/render/async.ts';
+import { rebase } from '../../src/handler/utils.ts';
+import { taggify } from '../../src/markup/html.ts';
+import { Template } from '../../src/templ/main.ts';
+import { Block } from '../../src/markup/block.ts';
 
 util._extend = Object.assign;
 

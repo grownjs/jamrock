@@ -1,0 +1,32 @@
+{
+  "compilerOptions": {
+    "target": "ES2022",
+    "module": "NodeNext",
+    "moduleResolution": "NodeNext",
+    "allowJs": false,
+    "strict": false,
+    "noImplicitAny": false,
+    "outDir": "dist",
+    "rootDir": ".",
+    "declaration": true,
+    "declarationDir": "types/generated",
+    "esModuleInterop": true,
+    "resolveJsonModule": true,
+    "skipLibCheck": true,
+    "sourceMap": false,
+    "allowImportingTsExtensions": true,
+    "noEmit": true
+  },
+  "include": [
+    "env.d.ts",
+    "*.js",
+    "*.mjs",
+    "src/**/*",
+    "bin/**/*",
+    "lib/**/*",
+    "tests/**/*",
+    "scripts/**/*",
+    "examples/**/*"
+  ],
+  "exclude": ["dist", "node_modules"]
+}

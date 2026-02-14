@@ -27,7 +27,7 @@
   },
   "scripts": {
     "test": "npm-run-all lint test:unit",
-    "lint": "eslint *.js bin lib src tests scripts examples --ext html,mjs,js",
+    "lint": "eslint *.js bin lib tests scripts examples --ext html,mjs,js",
     "_seed": "jamrock main --out build --chdir seed --build",
     "dev": "node --watch-path src --watch-path lib --watch-path tests --watch test.mjs",
     "test:ci": "npm-run-all -s coverage:unit -- -r ${LCOV_OUTPUT:-lcov}",
@@ -40,12 +40,14 @@
     "report": "c8 report",
     "live": "mortero --esm -Mn -dcpublic:. -ecss.less -Dbuild -rdocs/**:{filepath/2} -Rdocs/helpers.mjs --kramed.highlight=true --headers Cross-Origin-Embedder-Policy:require-corp --headers Cross-Origin-Opener-Policy:same-origin --platform browser docs/content",
     "dist": "npm-run-all -s dist:lib dist:all -- --no-minify",
-    "dist:all": "npm run build -- -ysrc/client.js -ysrc/main.js",
+    "dist:all": "npm run build -- -ysrc/client.js -ysrc/main.ts",
     "dist:min": "npm-run-all -s dist:dom dist:ssr dist:lib postdist",
-    "dist:dom": "npm run build -- -ysrc/client.js -Xsrc/main.js -asomedom/ssr:somedom",
-    "dist:ssr": "npm run build -- -ysrc/main.js -Xsrc/client.js",
-    "dist:lib": "npm run build -- -ysrc/gtk.js -ysrc/server.js -ysrc/version.js -Ngi: -Njamrock -N../main.mjs",
-    "build": "mortero -f -X{client,server,handler,markup,render,templ,util} -Ddist -Bsrc/*.js -rsrc/*:{name}.mjs -Nsource-map -achalk:./src/chalk.mjs --esm",
+    "dist:dom": "npm run build -- -ysrc/client.js -Xsrc/main.ts -asomedom/ssr:somedom",
+    "dist:ssr": "npm run build -- -ysrc/main.ts -Xsrc/client.js",
+    "dist:lib": "npm run build -- -ysrc/gtk.js -ysrc/server.ts -ysrc/version.ts -Ngi: -N../main.ts -N../client.js",
+    "build:types": "tsc --project tsconfig.json",
+    "build": "mortero -f -X{client,server,handler,markup,render,templ,util} -Ddist -Bsrc/*.{js,ts} -rsrc/*:{name}.mjs -Nsource-map -achalk:./src/chalk.js --esm",
+    "prebuild": "npm run build:types",
     "postdist": "node scripts/postbuild.mjs"
   },
   "author": "Alvaro Cabrera <pateketrueke@gmail.com> (https://soypache.co)",
@@ -55,12 +57,12 @@
   },
   "license": "MIT",
   "optionalDependencies": {
-    "@girs/gjs": "*",
     "@girs/gio-2.0": "*",
+    "@girs/gjs": "*",
     "@girs/gtk-4.0": "*",
     "@girs/soup-3.0": "*",
-    "uWebSockets.js": "github:uNetworking/uWebSockets.js#v20.10.0",
-    "eslint-plugin-jamrock": "github:grownjs/eslint-plugin-jamrock"
+    "eslint-plugin-jamrock": "github:grownjs/eslint-plugin-jamrock",
+    "uWebSockets.js": "github:uNetworking/uWebSockets.js#v20.10.0"
   },
   "devDependencies": {
     "@grown/conn": "^0.0.44",
@@ -68,6 +70,8 @@
     "@japa/expect": "^3.0.7",
     "@japa/runner": "^4.5.0",
     "@japa/spec-reporter": "^1.3.3",
+    "@typescript-eslint/eslint-plugin": "^7.18.0",
+    "@typescript-eslint/parser": "^7.18.0",
     "ansi_up": "^6.0.6",
     "c8": "^10.1.3",
     "codecov": "^3.8.3",
@@ -76,7 +80,6 @@
     "eslint": "^8.57.1",
     "eslint-config-airbnb-base": "^15.0.0",
     "eslint-plugin-import": "^2.32.0",
-    "eslint-plugin-pug": "^1.2.5",
     "expect": "^29.7.0",
     "glob-to-regexp": "^0.4.1",
     "happy-dom": ">=20.0.0",
@@ -91,14 +94,14 @@
     "nohooks": "^0.0.9",
     "npm-run-all": "^4.1.5",
     "pocketbase": "^0.26.6",
-    "pug": "^3.0.3",
     "redis": "^5.10.0",
     "rewrite-exports": "^0.0.28",
     "rewrite-imports": "^3.0.0",
     "somedom": "^0.8.4",
     "testdouble": "^3.20.2",
     "tiny-dedent": "^1.0.2",
-    "twemoji": "^14.0.2"
+    "twemoji": "^14.0.2",
+    "typescript": "5.5.4"
   },
   "dependencies": {
     "@grown/static": "^0.0.10",

@@ -8,11 +8,11 @@ import {
   createView, generated, fixture, server, setup, reset, build,
 } from './helpers/utils.mjs';
 
-import { Template } from '../src/templ/main.mjs';
-import { match } from '../src/handler/match.mjs';
-import { taggify } from '../src/markup/html.mjs';
+import { Template } from '../src/templ/main.ts';
+import { match } from '../src/handler/match.ts';
+import { taggify } from '../src/markup/html.ts';
 
-import { preflight, middleware, controllers, middlewares } from '../src/handler/main.mjs';
+import { preflight, middleware, controllers, middlewares } from '../src/handler/main.ts';
 
 // eslint-disable-next-line no-unused-expressions
 fixture`./+layout.html

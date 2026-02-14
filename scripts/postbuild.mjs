@@ -14,7 +14,6 @@ if (!code.includes(prefix)) writeFileSync(mainFile, prefix + code);
 const serverFile = 'dist/server.mjs';
 
 code = readFileSync(serverFile).toString();
-code = code.replace(/"\/~\/main\.mjs"/g, '"./main.mjs"');
-code = code.replace(/"jamrock\/client"/g, '"./client.mjs"');
+code = code.replace(/"\/~\/(\w+)\.[jt]s"/g, '"./$1.mjs"');
 
 writeFileSync(serverFile, code);

@@ -36,9 +36,7 @@ if (!globalThis.ReadableStream) {
 
 processCLIArgs(process.argv.slice(2));
 configure({
-  files: process.argv.includes('--legacy')
-    ? ['tests/**/*.spec.mjs'].concat(process.env.CI ? [] : 'examples/**/*.spec.mjs')
-    : ['tests/**/*.test.mjs'],
+  files: ['tests/**/*.test.mjs'],
   plugins: [expect()],
   bail: true,
 });

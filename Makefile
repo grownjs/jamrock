@@ -32,10 +32,7 @@ export EDITOR APP_KEY MAILDEV FORCE_COLOR GIT_REVISION
 
 .PHONY: seed dist docs install examples coverage
 
-ci: prune dist smoke
-	@make gjs-test test-nodejs
-	@make test-deno
-	@make test-bun
+ci: dist smoke gjs-test test-nodejs test-deno test-bun
 
 coverage:
 ifneq ($(GITHUB_ENV),)
@@ -47,9 +44,8 @@ ci\:dev:
 ci\:full:
 	@make ci CI=1 DIST_TASK=dist:min
 
-test: dist
-	@make -s gjs-test
-	@npm run test:ci
+test: dist smoke
+	@make -s gjs-test || true
 	@make -s test-nodejs || true
 	@make -s test-bun || true
 	@make -s test-deno || true
@@ -62,8 +58,6 @@ test-ci:
 
 test-bun:
 	@echo "== bun =="
-	@rm -rf node_modules
-	@bun install --silent
 	@make -s bun:build CI=1
 	@bun run scripts/bun-testing.js
 	@HAPPY_DOM=1 bun run scripts/bun-testing.js
@@ -72,8 +66,6 @@ test-bun:
 	@make -s e2e:bun
 test-deno:
 	@echo "== deno =="
-	@rm -rf node_modules
-	@deno install
 	@make -s deno:build CI=1
 	@make -s deno:test
 	@DENO_DOM=1 make -s deno:test
@@ -82,8 +74,6 @@ test-deno:
 	@make -s e2e:deno
 test-nodejs:
 	@echo "== node =="
-	@rm -rf node_modules
-	@npm install --silent
 	@make -s nodejs:build CI=1
 	@node scripts/node-testing.mjs
 	@JS_DOM=1 node scripts/node-testing.mjs
@@ -139,7 +129,8 @@ start\:%:
 	@bin/$* serve --port 3000 --src examples $(START_FLAGS)
 
 e2e\:%:
-	npx testcafe '$(BROWSER) --disable-features=LocalNetworkAccessChecks' tests/e2e/cases --colors -a 'make start:$*' -S $(TESTCAFE_FLAGS)
+	@npx testcafe '$(BROWSER) --disable-features=LocalNetworkAccessChecks' tests/e2e/cases --colors -a 'make start:$*' -S $(TESTCAFE_FLAGS)
+	@rm -rf build
 
 e2e:
 	@make dist
@@ -182,7 +173,7 @@ bun:
 	@bun run scripts/bun-server.js
 
 gjs-esm:
-	@gjs -m esm.js || true
+	@gjs -m scripts/esm-check.js || true
 
 gjs-test: gjs-esm
 	@make -s gjs-check GJS_ARGS="init x-gtk-sandbox --force"

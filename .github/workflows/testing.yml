@@ -31,7 +31,7 @@ jobs:
 
       - uses: tacoss/nodejs@master
         with:
-          args: make dist smoke gjs-test test-nodejs coverage prune
+          args: make dist smoke gjs-test test-nodejs coverage
         env:
           PB_ADMIN_URL: http://backend:8090
           CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
@@ -41,11 +41,11 @@ jobs:
         with:
           deno-version: 2.5.4
 
-      - run: make dist smoke test-deno prune
+      - run: make test-deno
 
       - name: Bun setup
         uses: antongolub/action-setup-bun@v1
         with:
           bun-version: 1.3.6
 
-      - run: make dist smoke test-bun
+      - run: make test-bun

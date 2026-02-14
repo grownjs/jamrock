@@ -3,12 +3,12 @@
 import { test } from '@japa/runner';
 import * as td from 'testdouble';
 
-import * as sockets from '../src/handler/sockets.mjs';
+import * as sockets from '../src/handler/sockets.ts';
 
-import { streamify } from '../src/templ/send.mjs';
-import { middleware } from '../src/handler/main.mjs';
+import { streamify } from '../src/templ/send.ts';
+import { middleware } from '../src/handler/main.ts';
 import { fixture, server } from './helpers/utils.mjs';
-import { sleep, flatten } from '../src/utils/shared.mjs';
+import { sleep, flatten } from '../src/utils/shared.ts';
 
 // eslint-disable-next-line no-unused-expressions
 fixture`./hello.html

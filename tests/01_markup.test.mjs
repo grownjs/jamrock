@@ -3,9 +3,9 @@
 import { test } from '@japa/runner';
 import * as td from 'testdouble';
 
-import { Block } from '../src/markup/index.mjs';
-import { Expr } from '../src/markup/expr.mjs';
-import { Is } from '../src/utils/server.mjs';
+import { Block } from '../src/markup/index.ts';
+import { Expr } from '../src/markup/expr.ts';
+import { Is } from '../src/utils/server.ts';
 
 function load(code, file) {
   return new Block(code, file || 'test.html');

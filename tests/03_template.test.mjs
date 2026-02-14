@@ -9,10 +9,10 @@ import * as fs from 'fs';
 import s from 'tiny-dedent';
 import mime from 'mime/lite';
 
-import { Block } from '../src/markup/block.mjs';
-import { format } from '../src/utils/server.mjs';
-import { Template } from '../src/templ/main.mjs';
-import { createTranspiler } from '../src/server/helpers.mjs';
+import { Block } from '../src/markup/block.ts';
+import { format } from '../src/utils/server.ts';
+import { Template } from '../src/templ/main.ts';
+import { createTranspiler } from '../src/server/helpers.ts';
 import { fixture, render, compile, build, setup, reset } from './helpers/utils.mjs';
 
 // eslint-disable-next-line no-unused-expressions
@@ -716,76 +716,76 @@ test.group('core utilties', t => {
   test('Template.imports', ({ expect }) => {
     setup();
     expect(Template.imports(`
-      import from './src/markup/html.mjs';
+      import from './src/markup/html.ts';
     `, process.cwd())).toEqual({
-      'src/chalk.mjs': {
+      'src/chalk.js': {
         children: [],
       },
-      'src/markup/html.mjs': {
+      'src/markup/html.ts': {
         children: [
-          'src/markup/expr.mjs',
-          'src/utils/server.mjs',
-          'src/utils/base.mjs',
-          'src/chalk.mjs',
-          'src/utils/shared.mjs',
-          'src/render/hooks.mjs',
-          'src/utils/client.mjs',
-          'src/markup/adapter.mjs',
-          'src/markup/utils.mjs',
+          'src/markup/expr.ts',
+          'src/utils/server.ts',
+          'src/utils/base.ts',
+          'src/chalk.js',
+          'src/utils/shared.ts',
+          'src/render/hooks.ts',
+          'src/utils/client.ts',
+          'src/markup/adapter.ts',
+          'src/markup/utils.ts',
         ],
       },
-      'src/markup/expr.mjs': {
+      'src/markup/expr.ts': {
         children: [
-          'src/utils/server.mjs',
-          'src/utils/base.mjs',
-          'src/chalk.mjs',
-          'src/utils/shared.mjs',
+          'src/utils/server.ts',
+          'src/utils/base.ts',
+          'src/chalk.js',
+          'src/utils/shared.ts',
         ],
       },
-      'src/utils/server.mjs': {
+      'src/utils/server.ts': {
         children: [
-          'src/utils/base.mjs',
-          'src/chalk.mjs',
-          'src/utils/shared.mjs',
+          'src/utils/base.ts',
+          'src/chalk.js',
+          'src/utils/shared.ts',
         ],
       },
-      'src/utils/base.mjs': {
+      'src/utils/base.ts': {
         children: [],
       },
-      'src/utils/shared.mjs': {
+      'src/utils/shared.ts': {
         children: [],
       },
-      'src/markup/adapter.mjs': {
+      'src/markup/adapter.ts': {
         children: [
-          'src/utils/server.mjs',
-          'src/utils/base.mjs',
-          'src/chalk.mjs',
-          'src/utils/shared.mjs',
-          'src/markup/expr.mjs',
+          'src/utils/server.ts',
+          'src/utils/base.ts',
+          'src/chalk.js',
+          'src/utils/shared.ts',
+          'src/markup/expr.ts',
         ],
       },
-      'src/markup/utils.mjs': {
+      'src/markup/utils.ts': {
         children: [
-          'src/markup/expr.mjs',
-          'src/utils/server.mjs',
-          'src/utils/base.mjs',
-          'src/chalk.mjs',
-          'src/utils/shared.mjs',
-          'src/render/hooks.mjs',
-          'src/utils/client.mjs',
+          'src/markup/expr.ts',
+          'src/utils/server.ts',
+          'src/utils/base.ts',
+          'src/chalk.js',
+          'src/utils/shared.ts',
+          'src/render/hooks.ts',
+          'src/utils/client.ts',
         ],
       },
-      'src/render/hooks.mjs': {
+      'src/render/hooks.ts': {
         children: [
-          'src/utils/client.mjs',
-          'src/utils/base.mjs',
-          'src/utils/shared.mjs',
+          'src/utils/client.ts',
+          'src/utils/base.ts',
+          'src/utils/shared.ts',
         ],
       },
-      'src/utils/client.mjs': {
+      'src/utils/client.ts': {
         children: [
-          'src/utils/base.mjs',
-          'src/utils/shared.mjs',
+          'src/utils/base.ts',
+          'src/utils/shared.ts',
         ],
       },
     });

@@ -7,8 +7,8 @@ export const generateClientCode = (state, prefix) => {
       location.href = url;
     } else if (typeof window.Jamrock === 'undefined') {
       Promise.all([
-        import('./client/browser.mjs'),
-        import('./client/components.mjs'),
+        import('./client/browser.ts'),
+        import('./client/components.ts'),
       ]).then(([{ Browser }, { Components }]) => Browser.init(Components, process.env.VERSION, prefix, state, this));
     } else {
       window.Jamrock.Browser.csrf_token = state.csrf;
