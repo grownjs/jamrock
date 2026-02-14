@@ -1,8 +1,5 @@
 #!/usr/bin/env node
-
-Promise.all([
+import(process.env.HOME + '/.jamrock/package/lib/nodejs/runtime.mjs').then(() => Promise.all([
   import(process.env.HOME + '/.jamrock/package/lib/nodejs/main.mjs'),
   import(process.env.HOME + '/.jamrock/package/bin/cli.mjs'),
-]).then(([env, cli]) => {
-  cli.default(env.default, process.argv.slice(2));
-});
+]).then(([env, cli]) => cli.default(env.default, process.argv.slice(2)))).catch(console.error);;

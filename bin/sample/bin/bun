@@ -1,8 +1,6 @@
 #!/usr/bin/env bun
-
-Promise.all([
+// @ts-nocheck
+import(Bun.env.HOME + '/.jamrock/package/lib/bun/runtime.js').then(() => Promise.all([
   import(Bun.env.HOME + '/.jamrock/package/lib/bun/main.mjs'),
   import(Bun.env.HOME + '/.jamrock/package/bin/cli.mjs'),
-]).then(([env, cli]) => {
-  cli.default(env.default, Bun.argv.slice(2));
-});
+]).then(([env, cli]) => cli.default(env.default, Bun.argv.slice(2)))).catch(console.error);
