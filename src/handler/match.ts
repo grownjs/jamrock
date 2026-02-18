@@ -1,5 +1,5 @@
 import { Is } from '../utils/server.ts';
-import { rankify } from './utils.ts';
+import { rankify, buildParams } from './utils.ts';
 
 const CACHED_ROUTES = new Map();
 
@@ -8,8 +8,7 @@ export function match(ctx: any, route: any, allowed: string[] = []): any {
     if (route.path === ctx.request_path) {
       return {
         ...route,
-        params: route.params
-          .reduce((memo: any, key: string, i: number) => Object.assign(memo, { [key]: route.keys[i] }), {}),
+        params: buildParams(route.params, route.keys),
       };
     }
 
@@ -18,10 +17,7 @@ export function match(ctx: any, route: any, allowed: string[] = []): any {
     if (matches) {
       return {
         ...route,
-        params: route.params.reduce((memo: any, key: string, i: number) => {
-          memo[key] = matches[i + 1];
-          return memo;
-        }, {}),
+        params: buildParams(route.params, matches.slice(1)),
       };
     }
   }

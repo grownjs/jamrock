@@ -207,16 +207,15 @@ export class Template {
     }
   }
 
+  private static MERGE_KEYS = ['doc', 'attrs', 'media', 'styles', 'scripts', 'actions'] as const;
+
   static finalize(e: any, self: any, chunk: any, mixins: any, filepath: string): any {
     mixins.forEach((mixin: any) => {
       chunk.head = (chunk.head || []).concat(mixin.head);
 
-      Object.assign(chunk.doc, mixin.doc);
-      Object.assign(chunk.attrs, mixin.attrs);
-      Object.assign(chunk.media, mixin.media);
-      Object.assign(chunk.styles, mixin.styles);
-      Object.assign(chunk.scripts, mixin.scripts);
-      Object.assign(chunk.actions, mixin.actions);
+      for (const key of Template.MERGE_KEYS) {
+        Object.assign(chunk[key], mixin[key]);
+      }
     });
 
     serialize(chunk.body, null, (vnode: any, hooks: any[]) => decorate(chunk, self, vnode, hooks));

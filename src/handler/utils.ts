@@ -178,9 +178,16 @@ export function extract(code: string, modify?: boolean): any {
   });
 }
 
+export function buildParams(keys: string[], values: any[]): Record<string, any> {
+  return keys.reduce((memo: Record<string, any>, key: string, i: number) => {
+    memo[key] = values[i];
+    return memo;
+  }, {});
+}
+
 export function rematch(route: any): any {
   const fn = (params: any, query?: any) => {
-    const data = Is.arr(params) ? params.reduce((memo: any, cur: any, i: number) => Object.assign(memo, { [route.params[i]]: cur }), {}) : params;
+    const data = Is.arr(params) ? buildParams(route.params, params) : params;
     const url = route.path.replace(/[:*](\w+)\??/g, (_: string, k: string) => data[k] || '').replace(/\/$/, '') || '/';
     const qs = new URLSearchParams(query || '').toString();
 

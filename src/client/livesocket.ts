@@ -56,6 +56,7 @@ export class LiveSocket {
     }
 
     let ws: any;
+    let connecting: boolean = false;
     this.send = (...args: any[]) => ws.try(...args);
     this.close = () => {
       this.ready = false;
@@ -294,83 +295,88 @@ export class LiveSocket {
 
     // FIXME: we could add a layer after some time of inactivity, once we detect
     // we not longer have ws connectivity... then, once clicked we reconnect and so!
-    this.sync = () => !this.headless && (!ws || ws.readyState !== ws.OPEN) && connect(this.document, this.uuid, open).then(socket => {
-      this.ready = true;
+    this.sync = () => {
+      if (this.headless || connecting || (ws && ws.readyState === ws.OPEN)) return;
+      connecting = true;
+      return connect(this.document, this.uuid, open).then(socket => {
+        connecting = false;
+        this.ready = true;
 
-      let t: ReturnType<typeof setTimeout>;
-      socket.addEventListener('message', (e: MessageEvent) => {
-        clearTimeout(t);
-        t = setTimeout(() => {
-          if (socket.readyState === socket.OPEN) socket.send('alive');
-        }, Math.floor(Math.random() * (7500 - 6000)) + 6000);
+        let t: ReturnType<typeof setTimeout>;
+        socket.addEventListener('message', (e: MessageEvent) => {
+          clearTimeout(t);
+          t = setTimeout(() => {
+            if (socket.readyState === socket.OPEN) socket.send('alive');
+          }, Math.floor(Math.random() * (7500 - 6000)) + 6000);
 
-        if (e.data === 'refresh') {
-          refresh(e);
-        }
-
-        if (e.data.indexOf('reload ') === 0) {
-          const [, ...sources] = e.data.split(/\s+/).filter(Boolean);
-
-          if (!sources.length || sources.includes(this.document)) {
+          if (e.data === 'refresh') {
             refresh(e);
-          } else {
-            this.patch(sources);
-          }
-        } else if (e.data.indexOf('welcome ') === 0) {
-          console.debug(e.data, this.location);
-        } else if (e.data.indexOf('@debug ') === 0) {
-          const offset = e.data.indexOf('{');
-          const [, kind, args] = e.data.substr(0, offset).split(' ');
-
-          (console as any)[kind](...args);
-        } else if (e.data.indexOf('rpc:') === 0) {
-          const payload = e.data.substr(4);
-          const body = payload.includes('\t')
-            ? payload.substr(0, payload.indexOf('\t'))
-            : payload;
-
-          const chunk = payload.substr(body.length + 1);
-
-          let data: any = {};
-          if (!(chunk === 'null' || chunk === 'undefined')) {
-            data = JSON.parse(decode(chunk));
           }
 
-          const [task, ...args] = body.split(/\s+/);
+          if (e.data.indexOf('reload ') === 0) {
+            const [, ...sources] = e.data.split(/\s+/).filter(Boolean);
 
-          if (args[0] !== this.uuid) return;
-
-          if (task === 'response') {
-            console.log('[RESPONSE]', data);
-            this.browser.sync(data, spaNavigate);
-            return;
-          }
-
-          if (task === 'failure') {
-            this.browser.warn(data, 'WebSocket Failure');
-            return;
-          }
-
-          if (task !== 'update') {
-            console.debug('RPC', task, args);
-            return;
-          }
-
-          queue.push(({ Fragment }: any) => {
-            try {
-              let direction = 0;
-              if (args[2] === 'append') direction = 1;
-              if (args[2] === 'prepend') direction = -1;
-              if (args[0] !== this.uuid) return;
-
-              return Fragment.patch(args[1], data, direction);
-            } catch (_e) {
-              return this.browser.warn(_e, `Failed to ${task} fragment '${args[1]}'`);
+            if (!sources.length || sources.includes(this.document)) {
+              refresh(e);
+            } else {
+              this.patch(sources);
             }
-          });
-          throttle(run, 60);
-        }
+          } else if (e.data.indexOf('welcome ') === 0) {
+            console.debug(e.data, this.location);
+          } else if (e.data.indexOf('@debug ') === 0) {
+            const offset = e.data.indexOf('{');
+            const [, kind, args] = e.data.substr(0, offset).split(' ');
+
+            (console as any)[kind](...args);
+          } else if (e.data.indexOf('rpc:') === 0) {
+            const payload = e.data.substr(4);
+            const body = payload.includes('\t')
+              ? payload.substr(0, payload.indexOf('\t'))
+              : payload;
+
+            const chunk = payload.substr(body.length + 1);
+
+            let data: any = {};
+            if (!(chunk === 'null' || chunk === 'undefined')) {
+              data = JSON.parse(decode(chunk));
+            }
+
+            const [task, ...args] = body.split(/\s+/);
+
+            if (args[0] !== this.uuid) return;
+
+            if (task === 'response') {
+              console.log('[RESPONSE]', data);
+              this.browser.sync(data, spaNavigate);
+              return;
+            }
+
+            if (task === 'failure') {
+              this.browser.warn(data, 'WebSocket Failure');
+              return;
+            }
+
+            if (task !== 'update') {
+              console.debug('RPC', task, args);
+              return;
+            }
+
+            queue.push(({ Fragment }: any) => {
+              try {
+                let direction = 0;
+                if (args[2] === 'append') direction = 1;
+                if (args[2] === 'prepend') direction = -1;
+                if (args[0] !== this.uuid) return;
+
+                return Fragment.patch(args[1], data, direction);
+              } catch (_e) {
+                return this.browser.warn(_e, `Failed to ${task} fragment '${args[1]}'`);
+              }
+            });
+            throttle(run, 60);
+          }
+        });
       });
-    });
+    };
   }
 }

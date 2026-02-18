@@ -34,6 +34,7 @@ export class MemoryStore implements Store {
     this.cache.set(key, JSON.stringify(value));
     this.ttls[key] = setTimeout(() => {
       this.cache.delete(key);
+      delete this.ttls[key];
     }, this.timeout);
   }
 }
