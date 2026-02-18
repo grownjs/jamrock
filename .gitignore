@@ -2,6 +2,9 @@
 .env
 *.rdb
 *.todo
+.claude
+CLAUDE.md
+TASKS.md
 .DS_Store
 codecov.sh
 db.sqlite
