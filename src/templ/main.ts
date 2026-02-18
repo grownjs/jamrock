@@ -277,11 +277,47 @@ export class Template {
     return response;
   }
 
+  private static initContext(context: any): void {
+    context.base_url = context.base_url || context.conn?.base_url;
+    context.is_json = context.is_json || context.conn?.is_json;
+    context.mixins = context.mixins || new Map();
+    context.stack = context.stack || [];
+    context.scope = context.scope || {};
+    context.depth = context.depth || 0;
+    context.tag = context.tag || Template.tag(context);
+  }
+
+  private static async reduceComponent(
+    component: any,
+    context: any,
+    props: any,
+    cb: any,
+    isAsync: true,
+  ): Promise<any>;
+  private static reduceComponent(
+    component: any,
+    context: any,
+    props: any,
+    cb: any,
+    isAsync: false,
+  ): any;
+  private static reduceComponent(
+    component: any,
+    context: any,
+    props: any,
+    cb: any,
+    isAsync: boolean,
+  ): any {
+    if (isAsync) {
+      return Template.execute(component, context, props, cb);
+    }
+    return Template.executeSync(component, context, props, cb);
+  }
+
   static async reduce(component: any, filepath: string, context: any, props: any, cb: any): Promise<any> {
     let result;
     if (!context.components) {
-      result = await Template.execute(component, context, props, cb);
-      return result;
+      return Template.execute(component, context, props, cb);
     }
 
     for (const _component of context.components) {
@@ -302,8 +338,7 @@ export class Template {
   static reduceSync(component: any, filepath: string, context: any, props: any, cb: any): any {
     let result;
     if (!context.components) {
-      result = Template.executeSync(component, context, props, cb);
-      return result;
+      return Template.executeSync(component, context, props, cb);
     }
 
     for (const _component of context.components) {
@@ -321,14 +356,15 @@ export class Template {
     return result;
   }
 
+  private static processError(e: any, props: any): void {
+    props.failure = e;
+    props.failure.reason = e.message;
+    props.failure.source = props.failure.stack.split('\n')[0].split(' at ')[1];
+    props.failure.stack = props.failure.stack.split('\n').slice(1).join('\n');
+  }
+
   static executeSync(component: any, context: any, props: any, cb: any): any {
-    context.base_url = context.base_url || context.conn?.base_url;
-    context.is_json = context.is_json || context.conn?.is_json;
-    context.mixins = context.mixins || new Map();
-    context.stack = context.stack || [];
-    context.scope = context.scope || {};
-    context.depth = context.depth || 0;
-    context.tag = context.tag || Template.tag(context);
+    Template.initContext(context);
 
     const tasks: any[] = [];
 
@@ -348,8 +384,7 @@ export class Template {
           context.mixins.set(component.__src, result);
 
           const layout = Template.renderSync(context.route.layout, null, props, context);
-          const response = Template.finalize(null, context, layout, context.mixins, component.__src);
-          return response;
+          return Template.finalize(null, context, layout, context.mixins, component.__src);
         }
         result = Template.finalize(null, context, result, context.mixins, component.__src);
       }
@@ -358,27 +393,17 @@ export class Template {
       trace('E_ROUTE', e);
       if (context.route?.error) {
         props = props || {};
-        props.failure = e;
-        props.failure.reason = e.message;
-        props.failure.source = props.failure.stack.split('\n')[0].split(' at ')[1];
-        props.failure.stack = props.failure.stack.split('\n').slice(1).join('\n');
+        Template.processError(e, props);
 
         const error = Template.renderSync(context.route.error, null, props, context);
-        const result = Template.finalize(e, context, error, context.mixins, component.__src);
-        return result;
+        return Template.finalize(e, context, error, context.mixins, component.__src);
       }
       throw e;
     }
   }
 
   static async execute(component: any, context: any, props: any, cb: any): Promise<any> {
-    context.base_url = context.base_url || context.conn?.base_url;
-    context.is_json = context.is_json || context.conn?.is_json;
-    context.mixins = context.mixins || new Map();
-    context.stack = context.stack || [];
-    context.scope = context.scope || {};
-    context.depth = context.depth || 0;
-    context.tag = context.tag || Template.tag(context);
+    Template.initContext(context);
 
     const tasks: any[] = [];
 
@@ -398,8 +423,7 @@ export class Template {
           context.mixins.set(component.__src, result);
 
           const layout = await Template.render(context.route.layout, null, props, context);
-          const response = await Template.finalize(null, context, layout, context.mixins, component.__src);
-          return response;
+          return await Template.finalize(null, context, layout, context.mixins, component.__src);
         }
         result = await Template.finalize(null, context, result, context.mixins, component.__src);
       }
@@ -408,14 +432,10 @@ export class Template {
       trace('E_ROUTE', e);
       if (context.route?.error) {
         props = props || {};
-        props.failure = e;
-        props.failure.reason = e.message;
-        props.failure.source = props.failure.stack.split('\n')[0].split(' at ')[1];
-        props.failure.stack = props.failure.stack.split('\n').slice(1).join('\n');
+        Template.processError(e, props);
 
         const error = await Template.render(context.route.error, null, props, context);
-        const result = await Template.finalize(e, context, error, context.mixins, component.__src);
-        return result;
+        return await Template.finalize(e, context, error, context.mixins, component.__src);
       }
       throw e;
     }
@@ -463,6 +483,31 @@ export class Template {
     };
 
     return { loader, scripts, styles, media };
+  }
+
+  private static normalizeViews(doc: any, body: any, head: any): void {
+    while (body?.length === 1 && !Is.vnode(body[0])) body = body[0];
+    while (head?.length === 1 && !Is.vnode(head[0])) head = head[0];
+  }
+
+  private static createRenderError(e: any, component: any): any {
+    trace(e, 'E_RENDER');
+    return debug({
+      file: component.__src,
+      html: Template.read(component.__src),
+      code: Template.read(component.__dest),
+    }, e);
+  }
+
+  private static createErrorResponse(failure: any, scripts: any, styles: any, media: any): any {
+    return { scripts, styles, media, body: [['pre', {}, ents(failure.stack)]] };
+  }
+
+  private static popStack(ctx: any): void {
+    if (ctx.stack) {
+      ctx.stack.pop();
+      ctx.ref = ctx.stack.at(-1);
+    }
   }
 
   static async render(component: any, parent: any, props: any, ctx: any, cb: any = null): Promise<any> {
@@ -528,8 +573,7 @@ export class Template {
         view(component.__attributes, state, `${component.__src}#attributes`),
       ]);
 
-      while (body?.length === 1 && !Is.vnode(body[0])) body = body[0];
-      while (head?.length === 1 && !Is.vnode(head[0])) head = head[0];
+      Template.normalizeViews(doc, body, head);
 
       if (component.__context === 'client') {
         body = Template.client(ctx, body, props, parent, component);
@@ -539,21 +583,13 @@ export class Template {
         actions, scripts, styles, media, attrs, head, body, doc,
       };
     } catch (e: any) {
-      trace(e, 'E_RENDER');
-      (this as any).failure = debug({
-        file: component.__src,
-        html: Template.read(component.__src),
-        code: Template.read(component.__dest),
-      }, e);
+      (this as any).failure = Template.createRenderError(e, component);
 
       if (ctx.route?.error) throw (this as any).failure;
 
-      return { scripts, styles, media, body: [['pre', {}, ents((this as any).failure.stack)]] };
+      return Template.createErrorResponse((this as any).failure, scripts, styles, media);
     } finally {
-      if (ctx.stack) {
-        ctx.stack.pop();
-        ctx.ref = ctx.stack.at(-1);
-      }
+      Template.popStack(ctx);
     }
   }
 
@@ -591,8 +627,7 @@ export class Template {
         view(component.__attributes, state, `${component.__src}#attributes`),
       ];
 
-      while (body?.length === 1 && !Is.vnode(body[0])) body = body[0];
-      while (head?.length === 1 && !Is.vnode(head[0])) head = head[0];
+      Template.normalizeViews(doc, body, head);
 
       if (component.__context === 'client') {
         body = Template.client(ctx, body, props, parent, component);
@@ -602,21 +637,13 @@ export class Template {
         actions, scripts, styles, media, attrs, head, body, doc,
       };
     } catch (e: any) {
-      trace(e, 'E_RENDER');
-      (this as any).failure = debug({
-        file: component.__src,
-        html: Template.read(component.__src),
-        code: Template.read(component.__dest),
-      }, e);
+      (this as any).failure = Template.createRenderError(e, component);
 
       if (ctx.route?.error) throw (this as any).failure;
 
-      return { scripts, styles, media, body: [['pre', {}, ents((this as any).failure.stack)]] };
+      return Template.createErrorResponse((this as any).failure, scripts, styles, media);
     } finally {
-      if (ctx.stack) {
-        ctx.stack.pop();
-        ctx.ref = ctx.stack.at(-1);
-      }
+      Template.popStack(ctx);
     }
   }
 
