@@ -173,6 +173,26 @@ bun:
 gjs-esm:
 	@gjs -m scripts/esm-check.js || true
 
+gjs-async-test:
+ifeq ($(UNAME_S),Darwin)
+	@for i in 1 2 3 4 5 6 7; do \
+		printf "  handler$$i: "; \
+		env DYLD_LIBRARY_PATH=$(LIB_PATH) gjs -m scripts/soup-async-test.mjs $$i 2>&1 | tail -1; \
+	done
+else
+	@for i in 1 2 3 4 5 6 7; do \
+		printf "  handler$$i: "; \
+		gjs -m scripts/soup-async-test.mjs $$i 2>&1 | tail -1; \
+	done
+endif
+
+gjs-async-server:
+ifeq ($(UNAME_S),Darwin)
+	@env DYLD_LIBRARY_PATH=$(LIB_PATH) gjs -m scripts/gjs-server-test.mjs 2>&1
+else
+	@gjs -m scripts/gjs-server-test.mjs 2>&1
+endif
+
 gjs-test: gjs-esm
 	@make -s gjs-check GJS_ARGS="init x-gtk-sandbox --force"
 	@make -s gjs-check GJS_ARGS="build --src x-gtk-sandbox"

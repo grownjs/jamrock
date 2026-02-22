@@ -73,7 +73,77 @@ function handler5(_server, msg, _path, _query) {
   msg.unpause();
 }
 
-const handlers = { 1: handler1, 2: handler2, 3: handler3, 4: handler4, 5: handler5 };
+// Test 6: multi-level async function chain (3 awaits deep, simulates handler.call depth)
+async function _chain3() {
+  await new Promise(resolve => GLib.idle_add(GLib.PRIORITY_DEFAULT, () => { resolve(); return GLib.SOURCE_REMOVE; }));
+  return 'c3';
+}
+async function _chain2() {
+  const r = await _chain3();
+  await new Promise(resolve => GLib.idle_add(GLib.PRIORITY_DEFAULT, () => { resolve(); return GLib.SOURCE_REMOVE; }));
+  return r + '+c2';
+}
+async function _chain1() {
+  const r = await _chain2();
+  return r + '+c1';
+}
+function handler6(_server, msg, _path, _query) {
+  msg.pause();
+  _chain1()
+    .then(() => {
+      msg.set_status(200, null);
+      msg.get_response_body().append('PASS-6');
+      msg.unpause();
+    })
+    .catch(err => {
+      msg.set_status(500, null);
+      msg.get_response_body().append(`FAIL-6: ${err}`);
+      msg.unpause();
+    });
+}
+
+// Test 7: mirrors the exact createSoupServer callback pattern from lib/gtk4/server.js
+// callback(req).then(resp => serverResponse(...)).catch(...)
+// where callback chains: createSession (2 awaits) → createResponse (1 await)
+function handler7(_server, msg, _path, _query) {
+  msg.pause();
+
+  async function fakeCreateSession() {
+    // mirrors: await store.read(sid), await store.key(sid)
+    const state = await Promise.resolve({});
+    const sid = await Promise.resolve('test-sid');
+    return { sid, state };
+  }
+
+  async function fakeCreateResponse(session) {
+    // mirrors: await createBody(...)
+    await new Promise(resolve => GLib.idle_add(GLib.PRIORITY_DEFAULT, () => { resolve(); return GLib.SOURCE_REMOVE; }));
+    return { body: `PASS-7 sid=${session.sid}`, status: 200, headers: {} };
+  }
+
+  // mirrors handler.call in createHandler
+  async function fakeHandlerCall() {
+    const session = await fakeCreateSession();
+    const conn = { session };
+    const resp = await fakeCreateResponse(conn.session);
+    return resp;
+  }
+
+  // mirrors the createSoupServer handler callback chain
+  fakeHandlerCall()
+    .then(resp => {
+      msg.set_status(resp.status, null);
+      msg.get_response_body().append(resp.body.split(' ')[0]); // just 'PASS-7'
+      msg.unpause();
+    })
+    .catch(err => {
+      msg.set_status(500, null);
+      msg.get_response_body().append(`FAIL-7: ${err}`);
+      msg.unpause();
+    });
+}
+
+const handlers = { 1: handler1, 2: handler2, 3: handler3, 4: handler4, 5: handler5, 6: handler6, 7: handler7 };
 
 print(`Test ${TEST_NUM}`);
 
