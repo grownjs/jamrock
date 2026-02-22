@@ -211,6 +211,16 @@ else
 	gjs -m bin/gjs $(GJS_ARGS)
 endif
 
+gtk4-vendor:
+	@bun run scripts/bundle-gtk4-vendor.mjs
+
+gjs-css-test: gtk4-vendor
+ifeq ($(UNAME_S),Darwin)
+	env DYLD_LIBRARY_PATH=$(LIB_PATH) gjs -m scripts/gjs-css-test.mjs 2>&1
+else
+	gjs -m scripts/gjs-css-test.mjs 2>&1
+endif
+
 #dev: deps
 #	@npm run watch
 # & make -s client
