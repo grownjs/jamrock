@@ -3,8 +3,8 @@
 *.rdb
 *.todo
 .claude
-CLAUDE.md
-TASKS.md
+AGENTS.md
+*TASKS.md
 .DS_Store
 codecov.sh
 db.sqlite
@@ -22,6 +22,7 @@ tmp
 *.pem
 *.d.ts
 install
+.journal
 pb_data
 pocketbase
 screenshots

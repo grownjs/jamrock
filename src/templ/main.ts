@@ -286,33 +286,6 @@ export class Template {
     context.tag = context.tag || Template.tag(context);
   }
 
-  private static async reduceComponent(
-    component: any,
-    context: any,
-    props: any,
-    cb: any,
-    isAsync: true,
-  ): Promise<any>;
-  private static reduceComponent(
-    component: any,
-    context: any,
-    props: any,
-    cb: any,
-    isAsync: false,
-  ): any;
-  private static reduceComponent(
-    component: any,
-    context: any,
-    props: any,
-    cb: any,
-    isAsync: boolean,
-  ): any {
-    if (isAsync) {
-      return Template.execute(component, context, props, cb);
-    }
-    return Template.executeSync(component, context, props, cb);
-  }
-
   static async reduce(component: any, filepath: string, context: any, props: any, cb: any): Promise<any> {
     let result;
     if (!context.components) {
@@ -434,7 +407,7 @@ export class Template {
         Template.processError(e, props);
 
         const error = await Template.render(context.route.error, null, props, context);
-        return await Template.finalize(e, context, error, context.mixins, component.__src);
+        return Template.finalize(e, context, error, context.mixins, component.__src);
       }
       throw e;
     }
