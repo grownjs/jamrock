@@ -1,9 +1,0 @@
-#!/usr/bin/env js
-import('../lib/spidermonkey/main.mjs').then(() => Promise.all([
-  import('../lib/spidermonkey/main.mjs'),
-  import('./cli.mjs'),
-]).then(([env, cli]) => {
-  // SpiderMonkey shell exposes argv as scriptArgs.
-  const argv = globalThis.scriptArgs ? globalThis.scriptArgs.slice(1) : [];
-  return cli.default(env.default, argv);
-})).catch(console.error);

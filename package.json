@@ -112,6 +112,7 @@
     "grown": "^1.4.23",
     "open-editor": "^5.1.0",
     "serve-static-bun": "^0.5.3",
+    "tslib": "^2.8.1",
     "undici": "^7.18.2"
   },
   "bundleDependencies": [

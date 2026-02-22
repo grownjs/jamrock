@@ -15,8 +15,24 @@ interface FragmentAPI {
   subscribe: () => void;
 }
 
+interface BroadcastPatch {
+  type: 'patch';
+  key: string;
+  data: unknown;
+  direction: number;
+  tabId: string;
+}
+
+const BROADCAST_CHANNEL_NAME = 'jamrock:sync';
+const TAB_ID = sessionStorage.getItem('jamrock:tabId') || (() => {
+  const id = crypto.randomUUID();
+  sessionStorage.setItem('jamrock:tabId', id);
+  return id;
+})();
+
 export function createFragment({ browser, patchNode, createElement }: FragmentDeps): FragmentAPI {
   const CACHED_FRAGMENTS: Map<string, FragmentNode> = new Map();
+  let broadcastChannel: BroadcastChannel | null = null;
 
   function get(ref: string): FragmentNode {
     let node = CACHED_FRAGMENTS.get(ref);
@@ -38,7 +54,6 @@ export function createFragment({ browser, patchNode, createElement }: FragmentDe
     const el = get(ref);
 
     if (!direction) {
-      // eslint-disable-next-line no-return-assign
       return patchNode(el, el.__vnode, el.__vnode = data);
     }
 
@@ -49,12 +64,36 @@ export function createFragment({ browser, patchNode, createElement }: FragmentDe
     await frag.mount(el, direction < 0 ? el.firstChild : null);
   }
 
+  async function patchWithBroadcast(ref: string, data: unknown, direction?: number, fromBroadcast = false): Promise<void> {
+    await patch(ref, data, direction);
+    if (!fromBroadcast && broadcastChannel) {
+      broadcastChannel.postMessage({
+        type: 'patch',
+        key: ref,
+        data,
+        direction: direction || 0,
+        tabId: TAB_ID,
+      } as BroadcastPatch);
+    }
+  }
+
+  function handleBroadcastMessage(event: MessageEvent<BroadcastPatch>): void {
+    const msg = event.data;
+    if (msg.type === 'patch' && msg.tabId !== TAB_ID) {
+      patch(msg.key, msg.data, msg.direction).catch(console.error);
+    }
+  }
+
   function teardown(): void {
     CACHED_FRAGMENTS.forEach(frag => {
       frag.__anchors.forEach(node => {
         if (node.isConnected) frag.removeChild(node);
       });
     });
+    if (broadcastChannel) {
+      broadcastChannel.close();
+      broadcastChannel = null;
+    }
   }
 
   function subscribe(): void {
@@ -64,14 +103,20 @@ export function createFragment({ browser, patchNode, createElement }: FragmentDe
       (node as FragmentNode).__vnode = browser.children(node);
       (node as FragmentNode).__anchors = [];
     });
+    console.log(42);
+
+    if (typeof BroadcastChannel !== 'undefined') {
+      broadcastChannel = new BroadcastChannel(BROADCAST_CHANNEL_NAME);
+      broadcastChannel.addEventListener('message', handleBroadcastMessage);
+    }
 
     const queue = (window as any).__fq || [];
-    queue.forEach((args: [string, unknown, number]) => patch(args[0], args[1], args[2]));
+    queue.forEach((args: [string, unknown, number]) => patchWithBroadcast(args[0], args[1], args[2]));
     (window as any).__fq = [];
-    (window as any).__f = patch;
+    (window as any).__f = patchWithBroadcast;
   }
 
-  return { patch, teardown, subscribe };
+  return { patch: patchWithBroadcast, teardown, subscribe };
 }
 
 if (typeof HTMLElement !== 'undefined') {

@@ -14,7 +14,8 @@
   },
   "globals": {
     "os": "readonly",
-    "loadRelativeToScript": "readonly"
+    "tjs": "readonly",
+    "crypto": "readonly"
   },
   "plugins": [
     "@typescript-eslint"

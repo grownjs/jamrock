@@ -51,7 +51,7 @@ check:
 test: dist smoke
 	@make -s test-bun || true
 	@make -s test-deno || true
-	@make -s spidermonkey-test || true
+	@make -s winterjs-test || true
 
 test-ci:
 	@make -s gjs-test
@@ -236,6 +236,6 @@ deno-deps:
 deno-deps\:%:
 	@make -s deno-deps DENO_FLAGS="--$(subst :, --,$*)"
 
-spidermonkey-test:
-	@echo "== spidermonkey =="
-	@js lib/spidermonkey/test.js
+winterjs-test:
+	@echo "== winterjs =="
+	@winterjs lib/winterjs/test.js
