@@ -1,3 +1,4 @@
+scripts/soup-async-test.mjs
 tests/fixtures/broken
 tests/old_fixtures
 seed/node_modules

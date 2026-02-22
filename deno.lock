@@ -209,6 +209,7 @@
         "npm:somedom@~0.8.4",
         "npm:testdouble@^3.20.2",
         "npm:tiny-dedent@^1.0.2",
+        "npm:tslib@^2.8.1",
         "npm:twemoji@^14.0.2",
         "npm:typescript@5.5.4",
         "npm:undici@^7.18.2"

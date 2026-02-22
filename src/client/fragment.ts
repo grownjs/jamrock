@@ -23,12 +23,19 @@ interface BroadcastPatch {
   tabId: string;
 }
 
+function getDefaultTabId() {
+  if (typeof sessionStorage !== 'undefined') {
+    let value = sessionStorage.getItem('jamrock:tabId');
+    if (!value) {
+      value = crypto.randomUUID();
+      sessionStorage.setItem('jamrock:tabId', value);
+    }
+    return value;
+  }
+}
+
 const BROADCAST_CHANNEL_NAME = 'jamrock:sync';
-const TAB_ID = sessionStorage.getItem('jamrock:tabId') || (() => {
-  const id = crypto.randomUUID();
-  sessionStorage.setItem('jamrock:tabId', id);
-  return id;
-})();
+const TAB_ID = getDefaultTabId();
 
 export function createFragment({ browser, patchNode, createElement }: FragmentDeps): FragmentAPI {
   const CACHED_FRAGMENTS: Map<string, FragmentNode> = new Map();
