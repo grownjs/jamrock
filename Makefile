@@ -269,3 +269,26 @@ deno-deps\:%:
 winterjs-test:
 	@echo "== winterjs =="
 	@winterjs lib/winterjs/test.js
+
+txiki-server-test:
+	@echo "== txiki integration =="
+	@tjs run scripts/txiki-server-test.mjs
+
+winterjs-server-test:
+	@echo "== winterjs integration =="
+	@wasmer run wasmer/winterjs --net \
+	  --volume=scripts:scripts \
+	  -- scripts/winterjs-server-test.mjs & \
+	  PID=$$!; \
+	  sleep 2; \
+	  BODY=$$(curl -s http://localhost:8080/pages); \
+	  if echo "$$BODY" | grep -q "WinterJS HTTP test"; then \
+	    echo "PASS (status=200 body=\"$$BODY\")"; \
+	    kill $$PID 2>/dev/null; \
+	  else \
+	    echo "FAIL (body=\"$$BODY\")"; \
+	    kill $$PID 2>/dev/null; \
+	    exit 1; \
+	  fi
+
+runtime-integration-tests: gjs-async-server txiki-server-test winterjs-server-test
