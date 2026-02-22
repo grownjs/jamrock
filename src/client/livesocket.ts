@@ -19,7 +19,7 @@ export class LiveSocket {
   declare trigger: (e: any, kind: string, source: string | null, trigger: any, payload: any, callback?: any) => void;
   declare patchSVG: (src: string) => Promise<void>;
   declare patchCSS: (src: string) => void;
-  declare patch: (sources: string[]) => void;
+  declare patch: (sources: string[]) => boolean;
   declare next: (uuid: string) => void;
   declare sync: () => void;
   declare start: () => void;
@@ -192,10 +192,19 @@ export class LiveSocket {
     };
 
     this.patch = (sources: string[]) => {
+      let handled = false;
       for (const src of sources) {
-        if (src.includes('.svg')) this.patchSVG(src);
-        if (src.includes('.css')) this.patchCSS(src);
+        if (src.includes('.svg')) {
+          this.patchSVG(src);
+          handled = true;
+          continue;
+        }
+        if (src.includes('.css')) {
+          this.patchCSS(src);
+          handled = true;
+        }
       }
+      return handled;
     };
 
     // window.onbeforeunload = () => this.close() || null;
@@ -319,7 +328,10 @@ export class LiveSocket {
             if (!sources.length || sources.includes(this.document)) {
               refresh(e);
             } else {
-              this.patch(sources);
+              const patched = this.patch(sources);
+              if (!patched) {
+                refresh(e);
+              }
             }
           } else if (e.data.indexOf('welcome ') === 0) {
             console.debug(e.data, this.location);

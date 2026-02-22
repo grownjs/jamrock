@@ -134,6 +134,48 @@ export function getClientCode(conn: any, patch: string, baseURL: string, prefixU
   return client;
 }
 
+export function injectClientResponse(response: Response, client: string): Response {
+  if (!client) return response;
+
+  const contentType = response.headers.get('content-type') || '';
+  if (!contentType.includes('text/html')) return response;
+
+  if (!response.body) return response;
+
+  const encoder = new TextEncoder();
+  const reader = response.body.getReader();
+
+  const stream = new ReadableStream({
+    start(controller) {
+      const pump = (): void => {
+        reader.read().then(({ done, value }) => {
+          if (done) {
+            controller.enqueue(encoder.encode(client));
+            controller.close();
+            return;
+          }
+          controller.enqueue(value);
+          pump();
+        }).catch((error: any) => controller.error(error));
+      };
+
+      pump();
+    },
+    cancel(reason) {
+      reader.cancel?.(reason);
+    },
+  });
+
+  const headers = new Headers(response.headers);
+  headers.delete('content-length');
+
+  return new Response(stream, {
+    status: response.status,
+    statusText: response.statusText,
+    headers,
+  });
+}
+
 export function createRequest(req: any, limit?: number): Request {
   return new Request(`${req.protocol || 'http'}://${req.headers.host}${req.url}`, {
     // @ts-expect-error
@@ -424,7 +466,7 @@ export async function createPageResponse(env: any, conn: any, clients: any, opti
     const result = await createBody(env, conn, clients, { client, matches, options });
 
     if (result instanceof Response) {
-      return result;
+      return injectClientResponse(result, client);
     }
 
     cookies = result.cookies || cookies || undefined;
@@ -603,7 +645,7 @@ export function createResponseSync(env: any, conn: any, clients: any, options: a
     const result = createBodySync(env, conn, { client, matches, options });
 
     if (result instanceof Response) {
-      return result;
+      return injectClientResponse(result, client);
     }
 
     cookies = result.cookies || cookies || undefined;

@@ -17,11 +17,40 @@ export const createWatcher = ({ fs }: any, watcher: any, compiler: any) => {
 
   const clients: any[] = [];
   const before: any[] = [];
+  const SETTLE_DELAY = 90;
+  const STABLE_DELAY = 60;
+  const STABLE_RETRIES = 8;
+  const REBUILD_RETRIES = 30;
+  const REBUILD_DELAY = 30;
 
   let timeout: any;
   let reloading: boolean;
   let sources: any = {};
-  async function sync(quiet?: boolean, routes?: any) {
+  let syncing: Promise<void> | null = null;
+
+  async function waitForStableSources() {
+    const paths = Object.keys(sources);
+    if (!paths.length) return;
+
+    for (let i = 0; i < STABLE_RETRIES; i++) {
+      const snapshot = paths.map((p: string) => (fs.existsSync(p) ? fs.statSync(p).mtimeMs : null));
+
+      await new Promise<void>(resolve => setTimeout(resolve, STABLE_DELAY));
+
+      const current = paths.map((p: string) => (fs.existsSync(p) ? fs.statSync(p).mtimeMs : null));
+      const stable = snapshot.every((mtime, idx) => {
+        const now = current[idx];
+        if (mtime === null && now === null) return true;
+        if (mtime === null || now === null) return false;
+        return mtime === now;
+      });
+
+      if (stable) return;
+    }
+  }
+
+  async function _sync(quiet?: boolean, routes?: any) {
+    await waitForStableSources();
     const changeset = Object.entries(sources)
       .map(([k, v]: [string, any]) => ({ ...v, src: v.src || k }))
       .sort((a, b) => b.hits - a.hits);
@@ -53,6 +82,13 @@ export const createWatcher = ({ fs }: any, watcher: any, compiler: any) => {
     timeout = setTimeout(() => {
       reloading = false;
     }, 1260);
+  }
+
+  function sync(quiet?: boolean, routes?: any) {
+    syncing = _sync(quiet, routes).finally(() => {
+      syncing = null;
+    });
+    return syncing;
   }
 
   function push(src: string, type: string) {
@@ -110,7 +146,7 @@ export const createWatcher = ({ fs }: any, watcher: any, compiler: any) => {
     changes.forEach(([file, kind]: [string, string]) => {
       if (!sources[file]) {
         clearTimeout(t);
-        t = setTimeout(sync, 60);
+        t = setTimeout(sync, SETTLE_DELAY);
 
         if (pending.includes(file)) {
           push(file, kind);
@@ -128,7 +164,7 @@ export const createWatcher = ({ fs }: any, watcher: any, compiler: any) => {
     });
     if (/\+(?:error|layout|server)/.test(src)) {
       clearTimeout(t);
-      t = setTimeout(sync, 60);
+      t = setTimeout(sync, SETTLE_DELAY);
     }
   });
 
@@ -140,27 +176,34 @@ export const createWatcher = ({ fs }: any, watcher: any, compiler: any) => {
   }
 
   async function retryCompile(url: string, retries: number) {
+    if (syncing) {
+      await syncing;
+    }
+
     const found = compiler.matches(url);
 
     if (found.route) {
       appendSource(found);
       reloading = true;
       await sync(true, found.routes);
+    } else if (Object.keys(sources).length > 0 && retries > 0) {
+      await new Promise<void>(_ => setTimeout(_, REBUILD_DELAY)).then(() => retryCompile(url, retries - 1));
     } else if (retries > 0) {
-      await new Promise<void>(_ => setTimeout(_, 20)).then(() => retryCompile(url, retries - 1));
+      await new Promise<void>(_ => setTimeout(_, REBUILD_DELAY)).then(() => retryCompile(url, retries - 1));
     } else {
       printLog('NOT FOUND', sources);
     }
   }
 
   async function tryRebuild(req: any) {
-    if (reloading) return;
     if (req.url.split('/').pop().includes('.')) return;
     if (req.method === 'GET') {
       try {
         const url = req.url[0] === '/' ? req.url : new URL(req.url).pathname;
         printLog('E_REQ', url);
-        await retryCompile(url, 10);
+        if (reloading && syncing) await syncing;
+        else if (reloading) await new Promise<void>(_ => setTimeout(_, SETTLE_DELAY));
+        await retryCompile(url, REBUILD_RETRIES);
       } catch (e: any) {
         Util.trace(e, 'E_REBUILD');
         reloading = false;
