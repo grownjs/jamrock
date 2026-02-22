@@ -300,6 +300,14 @@ export const createCompiler = ({ fs, path }: any, options: any, external: any) =
       }
     }
 
+    if (external.getLessModule) {
+      const lessModule = await external.getLessModule();
+
+      if (lessModule) {
+        options.use = { ...options.use, less: lessModule.default || lessModule };
+      }
+    }
+
     if (options.__filename && watcher) {
       const _reconfigure = async () => {
         printLog(`⚡ ${options.__filename.replace(cwd, '.')}`);
