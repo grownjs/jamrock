@@ -64,6 +64,11 @@ export function createFragment({ browser, patchNode, createElement }: FragmentDe
       (node as FragmentNode).__vnode = browser.children(node);
       (node as FragmentNode).__anchors = [];
     });
+
+    const queue = (window as any).__fq || [];
+    queue.forEach((args: [string, unknown, number]) => patch(args[0], args[1], args[2]));
+    (window as any).__fq = [];
+    (window as any).__f = patch;
   }
 
   return { patch, teardown, subscribe };

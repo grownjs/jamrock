@@ -100,6 +100,10 @@ export function streamify(): any {
       } finally {
         value?.return(true);
         if (process.env.HEADLESS || !done) next(values);
+        $.stream.delete(`${ref}/${key}`);
+        if ($.streamController && $.stream.size === 0) {
+          $.streamController.close();
+        }
       }
     };
 

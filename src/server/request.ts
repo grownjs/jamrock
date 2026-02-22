@@ -127,14 +127,15 @@ export function getClientCode(conn: any, patch: string, baseURL: string, prefixU
 
   const { uuid, method } = conn.req;
   const state = JSON.stringify({ uuid, patch, method, csrf: conn.csrf_token });
-  const client = `<script>(${generateClientCode.toString().replace(/𝐢𝐦𝐩𝐨𝐫𝐭/g, 'import')
+  const shim = '<script>window.__f=(r,d,m)=>(window.__fq=window.__fq||[]).push([r,d,m]);</script>';
+  const client = `${shim}<script>(${generateClientCode.toString().replace(/𝐢𝐦𝐩𝐨𝐫𝐭/g, 'import')
   })(${state}, ${JSON.stringify(prefixURL)});</script>
 `.replaceAll('./', baseURL);
 
   return client;
 }
 
-export function injectClientResponse(response: Response, client: string): Response {
+export function injectClientResponse(response: Response, client: string, onReady?: (controller: ReadableStreamDefaultController) => void): Response {
   if (!client) return response;
 
   const contentType = response.headers.get('content-type') || '';
@@ -151,7 +152,11 @@ export function injectClientResponse(response: Response, client: string): Respon
         reader.read().then(({ done, value }) => {
           if (done) {
             controller.enqueue(encoder.encode(client));
-            controller.close();
+            if (onReady) {
+              onReady(controller);
+            } else {
+              controller.close();
+            }
             return;
           }
           controller.enqueue(value);
@@ -218,6 +223,7 @@ export function create404(env: any, conn: any, client: string, message: string):
 export async function createBody(env: any, conn: any, clients: any, { client, matches, options }: any): Promise<any> {
   let status;
   let body;
+  const encoder = new TextEncoder();
   try {
     const ctx: any = {
       conn,
@@ -227,16 +233,21 @@ export async function createBody(env: any, conn: any, clients: any, { client, ma
       ready: null,
       socket: null,
       stream: null,
+      streamController: null,
       called: true,
       route: matches,
       cache: env.cache,
       routes: env.routes,
       publish: async (ref: string, key: string, item: any, mode: string, render: any) => {
         const { target, vnode } = await render(key, item);
-        const payload = Markup.encode(JSON.stringify(vnode));
+        const payload = JSON.stringify(vnode);
 
         if (ctx.socket) {
-          ctx.socket.send(`rpc:update ${ctx.socket.identity} ${target} ${mode}\t${payload}`);
+          ctx.socket.send(`rpc:update ${ctx.socket.identity} ${target} ${mode}\t${Markup.encode(payload)}`);
+        } else if (ctx.streamController) {
+          const modeArg = mode === 'replace' ? '0' : mode === 'append' ? '1' : '-1';
+          const chunk = `<script>__f(${JSON.stringify(target)},${payload},${modeArg})</script>`;
+          ctx.streamController.enqueue(encoder.encode(chunk));
         } else {
           Util.dump('__OUTPUT', conn.req.uuid, ref, mode, target, payload);
         }
@@ -259,6 +270,7 @@ export async function createBody(env: any, conn: any, clients: any, { client, ma
         },
         set: (v: any) => {
           _socket = v;
+          ctx.streamController = null;
         },
       });
     }
@@ -388,6 +400,42 @@ export async function createBody(env: any, conn: any, clients: any, { client, ma
       buffer.push(client.replace('this', `{${payload}}`));
       status = conn.status_code;
       body = buffer.join('');
+
+      const hasPendingStreams = ctx.stream && ctx.stream.size > 0 && !ctx.socket;
+
+      if (hasPendingStreams) {
+        const initialBody = body;
+        const headers = new Headers({ 'content-type': 'text/html' });
+        headers.delete('content-length');
+
+        return new Response(new ReadableStream({
+          start(controller) {
+            controller.enqueue(encoder.encode(initialBody));
+
+            ctx.streamController = controller;
+
+            const checkDone = () => {
+              if (ctx.stream.size === 0) {
+                controller.close();
+              }
+            };
+
+            ctx.stream.forEach((entry: any, key: string) => {
+              const originalCancel = entry.cancel;
+              entry.cancel = () => {
+                originalCancel();
+                ctx.stream.delete(key);
+                checkDone();
+              };
+            });
+
+            setTimeout(checkDone, 0);
+          },
+          cancel() {
+            ctx.stream.forEach((entry: any) => entry.cancel());
+          },
+        }), { status, headers });
+      }
     }
   } catch (e: any) {
     Util.trace('E_STATUS', e);
