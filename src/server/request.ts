@@ -128,7 +128,7 @@ export function getClientCode(conn: any, patch: string, baseURL: string, prefixU
   const { uuid, method } = conn.req;
   const state = JSON.stringify({ uuid, patch, method, csrf: conn.csrf_token });
   const shim = '<script>window.__f=(r,d,m)=>(window.__fq=window.__fq||[]).push([r,d,m]);</script>';
-  const client = `${shim}<script>(${generateClientCode.toString().replace(/𝐢𝐦𝐩𝐨𝐫𝐭/g, 'import')
+  const client = `${shim}<script defer>(${generateClientCode.toString().replace(/𝐢𝐦𝐩𝐨𝐫𝐭/g, 'import')
   })(${state}, ${JSON.stringify(prefixURL)});</script>
 `.replaceAll('./', baseURL);
 
@@ -408,7 +408,7 @@ export async function createBody(env: any, conn: any, clients: any, { client, ma
         const headers = new Headers({ 'content-type': 'text/html' });
         headers.delete('content-length');
 
-        return new Response(new ReadableStream({
+        const response = new Response(new ReadableStream({
           start(controller) {
             controller.enqueue(encoder.encode(initialBody));
 
@@ -435,6 +435,8 @@ export async function createBody(env: any, conn: any, clients: any, { client, ma
             ctx.stream.forEach((entry: any) => entry.cancel());
           },
         }), { status, headers });
+        (response as any).__streaming = true;
+        return response;
       }
     }
   } catch (e: any) {
@@ -514,6 +516,7 @@ export async function createPageResponse(env: any, conn: any, clients: any, opti
     const result = await createBody(env, conn, clients, { client, matches, options });
 
     if (result instanceof Response) {
+      if ((result as any).__streaming) return result;
       return injectClientResponse(result, client);
     }
 
