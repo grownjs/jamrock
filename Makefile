@@ -51,6 +51,7 @@ check:
 test: dist smoke
 	@make -s test-bun || true
 	@make -s test-deno || true
+	@make -s spidermonkey-test || true
 
 test-ci:
 	@make -s gjs-test
@@ -234,3 +235,7 @@ deno-deps:
 	@deno run $(DENO_FLAGS) -q --allow-all --unstable lib/deno/deps.js
 deno-deps\:%:
 	@make -s deno-deps DENO_FLAGS="--$(subst :, --,$*)"
+
+spidermonkey-test:
+	@echo "== spidermonkey =="
+	@js lib/spidermonkey/test.js

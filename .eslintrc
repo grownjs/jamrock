@@ -12,6 +12,10 @@
     "es2021": true,
     "browser": true
   },
+  "globals": {
+    "os": "readonly",
+    "loadRelativeToScript": "readonly"
+  },
   "plugins": [
     "@typescript-eslint"
   ],
