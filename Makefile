@@ -211,10 +211,10 @@ else
 	gjs -m bin/gjs $(GJS_ARGS)
 endif
 
-gtk4-vendor:
-	@bun run scripts/bundle-gtk4-vendor.mjs
+vendor:
+	@bun run scripts/bundle-vendor.mjs
 
-gjs-css-test: gtk4-vendor
+gjs-css-test: vendor
 ifeq ($(UNAME_S),Darwin)
 	env DYLD_LIBRARY_PATH=$(LIB_PATH) gjs -m scripts/gjs-css-test.mjs 2>&1
 else

@@ -1,5 +1,5 @@
-import Less from '../lib/gtk4/vendor/less.js';
-import { createGenerator } from '../lib/gtk4/vendor/unocss-core.js';
+import Less from '../lib/vendor/less.js';
+import { createGenerator } from '../lib/vendor/unocss-core.js';
 
 const lessResult = await Less.render('.foo { .bar { color: red; } }');
 const lessOk = lessResult.css.includes('color: red');

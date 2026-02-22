@@ -1,7 +1,7 @@
 import { build } from 'esbuild';
 import { mkdirSync, existsSync } from 'fs';
 
-const vendorDir = 'lib/gtk4/vendor';
+const vendorDir = 'lib/vendor';
 
 if (!existsSync(vendorDir)) {
   mkdirSync(vendorDir, { recursive: true });
@@ -39,15 +39,15 @@ await build({
   define: { 'process.env.NODE_ENV': '"production"' },
 });
 
-console.log('Built lib/gtk4/vendor/less.js');
+console.log('Built lib/vendor/less.js');
 
 await build({
   entryPoints: ['@unocss/core'],
   bundle: true,
   format: 'esm',
   outfile: `${vendorDir}/unocss-core.js`,
-  platform: 'browser',
+  platform: 'neutral',
   define: { 'process.env.NODE_ENV': '"production"' },
 });
 
-console.log('Built lib/gtk4/vendor/unocss-core.js');
+console.log('Built lib/vendor/unocss-core.js');

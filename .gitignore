@@ -27,7 +27,7 @@ pb_data
 pocketbase
 screenshots
 x-gtk-sandbox
-lib/gtk4/vendor
+lib/vendor
 package-lock.json
 !scripts/main.d.ts
 !tests/fixtures/node_modules
