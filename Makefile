@@ -215,9 +215,9 @@ else
 endif
 
 vendor:
-	@bun run scripts/bundle-vendor.mjs
+	@npx bun run scripts/bundle-vendor.mjs
 
-gjs-css-test: vendor
+gjs-css-test:
 ifeq ($(UNAME_S),Darwin)
 	env DYLD_LIBRARY_PATH=$(LIB_PATH) gjs -m scripts/gjs-css-test.mjs 2>&1
 else

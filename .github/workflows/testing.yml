@@ -31,17 +31,10 @@ jobs:
 
       - uses: tacoss/nodejs@master
         with:
-          args: make dist smoke vendor test-nodejs coverage
+          args: make dist smoke test-nodejs coverage
         env:
           PB_ADMIN_URL: http://backend:8090
           CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
-
-      - name: Deno setup
-        uses: denoland/setup-deno@v2
-        with:
-          deno-version: 2.5.4
-
-      - run: make test-deno
 
       - name: Bun setup
         uses: antongolub/action-setup-bun@v1
@@ -49,3 +42,10 @@ jobs:
           bun-version: 1.3.6
 
       - run: make test-bun
+
+      - name: Deno setup
+        uses: denoland/setup-deno@v2
+        with:
+          deno-version: 2.5.4
+
+      - run: make test-deno
