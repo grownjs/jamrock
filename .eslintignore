@@ -2,8 +2,8 @@ scripts/*test.mjs
 tests/fixtures/broken
 tests/old_fixtures
 seed/node_modules
-lib/gtk4
 generated
+vendor
 build
 dist
 tmp

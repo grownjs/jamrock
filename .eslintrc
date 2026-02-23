@@ -15,7 +15,8 @@
   "globals": {
     "os": "readonly",
     "tjs": "readonly",
-    "crypto": "readonly"
+    "crypto": "readonly",
+    "logError": "readonly"
   },
   "plugins": [
     "@typescript-eslint"
