@@ -2,6 +2,7 @@
   import { request_path } from 'jamrock:conn';
 
   import Footer from './lib/footer.html';
+  import SvgIcon from './components/svg-icon.html';
 
   const className = request_path !== '/' ? 'not_home' : '';
 </script>
@@ -44,11 +45,11 @@
   <main class="body">
     <header class="center">
       <a class="welcome" href="/">
-        <svg src="./images/welcome.svg" height="32" />
+        <SvgIcon name="welcome" height="32" />
       </a>
       <h1 class="meteorite floating">
         <a href="/" data-version="{process.env.GIT_REVISION}">
-          <svg src="./images/jamrock-meteorite.svg" size="420" />
+          <SvgIcon name="jamrock-meteorite" size="420" />
         </a>
       </h1>
       <a id="top">&nbsp;</a>

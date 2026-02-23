@@ -1,0 +1,258 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Jamrock Playground</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --rich-black: #01111F;
+      --gunmetal: #13272D;
+      --lighter: #BEBEBE;
+      --light: #8A8A8A;
+      --white: #FEFEFE;
+      --mantis: #79C551;
+      --spring-bud: #B3E72D;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: Montserrat, sans-serif;
+      background-color: var(--rich-black);
+      color: var(--lighter);
+      height: 100vh;
+      display: flex;
+      flex-direction: column;
+    }
+
+    header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0.5rem 1rem;
+      background-color: var(--gunmetal);
+      border-bottom: 1px solid var(--gunmetal);
+    }
+
+    header h1 {
+      font-size: 1rem;
+      color: var(--mantis);
+    }
+
+    header a {
+      color: var(--light);
+      text-decoration: none;
+    }
+
+    header a:hover {
+      color: var(--spring-bud);
+    }
+
+    .main-container {
+      flex: 1;
+      display: flex;
+      overflow: hidden;
+    }
+
+    .sidebar {
+      width: 200px;
+      background-color: var(--gunmetal);
+      border-right: 1px solid var(--gunmetal);
+      display: flex;
+      flex-direction: column;
+    }
+
+    .sidebar-header {
+      padding: 0.5rem 1rem;
+      border-bottom: 1px solid rgba(255,255,255,0.1);
+      font-size: 0.8rem;
+      color: var(--light);
+    }
+
+    .file-tree {
+      flex: 1;
+      overflow-y: auto;
+      padding: 0.5rem;
+    }
+
+    .file-tree li {
+      list-style: none;
+      padding: 0.25rem 0.5rem;
+      cursor: pointer;
+      border-radius: 3px;
+      font-size: 0.85rem;
+    }
+
+    .file-tree li:hover {
+      background-color: rgba(255,255,255,0.05);
+    }
+
+    .file-tree li.active {
+      background-color: var(--mantis);
+      color: var(--rich-black);
+    }
+
+    .editor-container {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      min-width: 0;
+    }
+
+    .editor-panel {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      border-bottom: 1px solid var(--gunmetal);
+    }
+
+    .tab-bar {
+      display: flex;
+      background-color: var(--gunmetal);
+      border-bottom: 1px solid rgba(255,255,255,0.1);
+    }
+
+    .tab {
+      padding: 0.4rem 1rem;
+      font-size: 0.8rem;
+      cursor: pointer;
+      border-right: 1px solid rgba(255,255,255,0.1);
+    }
+
+    .tab.active {
+      background-color: var(--rich-black);
+      color: var(--mantis);
+    }
+
+    #editor {
+      flex: 1;
+      overflow: hidden;
+    }
+
+    .terminal-panel {
+      height: 150px;
+      background-color: #1a1a1a;
+      border-bottom: 1px solid var(--gunmetal);
+      overflow: auto;
+    }
+
+    #terminal {
+      height: 100%;
+      padding: 0.5rem;
+      font-family: monospace;
+      font-size: 12px;
+      white-space: pre-wrap;
+      color: var(--lighter);
+    }
+
+    .preview-panel {
+      height: 300px;
+      background-color: var(--rich-black);
+    }
+
+    .preview-panel iframe {
+      width: 100%;
+      height: 100%;
+      border: none;
+      background-color: #fff;
+    }
+
+    .templates {
+      padding: 0.5rem;
+      border-top: 1px solid rgba(255,255,255,0.1);
+    }
+
+    .templates label {
+      font-size: 0.7rem;
+      color: var(--light);
+    }
+
+    .templates select {
+      width: 100%;
+      margin-top: 0.25rem;
+      padding: 0.3rem;
+      background-color: var(--rich-black);
+      color: var(--lighter);
+      border: 1px solid var(--gunmetal);
+      border-radius: 3px;
+    }
+
+    .status {
+      padding: 0.25rem 1rem;
+      background-color: var(--gunmetal);
+      font-size: 0.75rem;
+      color: var(--light);
+    }
+
+    .status.ready {
+      color: var(--mantis);
+    }
+
+    .status.error {
+      color: #DC3546;
+    }
+
+    .cm-editor {
+      height: 100%;
+      background: #1a1a1a;
+    }
+    .cm-editor .cm-scroller { font-family: monospace; }
+    .cm-editor .cm-content { caret-color: #79C551; }
+    .cm-editor .cm-gutters { background: #1a1a1a; border-right: 1px solid #333; }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>Jamrock Playground</h1>
+    <a href="https://github.com/trys/Jamrock" target="_blank">GitHub</a>
+  </header>
+
+  <div class="main-container">
+    <aside class="sidebar">
+      <div class="sidebar-header">Files</div>
+      <ul class="file-tree" id="fileTree"></ul>
+      <div class="templates">
+        <label for="templateSelect">Load Template:</label>
+        <select id="templateSelect">
+          <option value="hello-world">Hello World</option>
+          <option value="counter">Counter (Actions)</option>
+          <option value="todo">Todo App</option>
+        </select>
+      </div>
+    </aside>
+
+    <main class="editor-container">
+      <div class="editor-panel">
+        <div class="tab-bar">
+          <div class="tab active" id="currentTab">index+page.html</div>
+        </div>
+        <div id="editor"></div>
+      </div>
+
+      <div class="terminal-panel">
+        <pre id="terminal"></pre>
+      </div>
+
+      <div class="preview-panel">
+        <iframe id="preview" title="Preview"></iframe>
+      </div>
+    </main>
+  </div>
+
+  <div class="status" id="status">Initializing...</div>
+
+  <script type="importmap">
+  {
+    "imports": {
+      "@webcontainer/api": "https://esm.sh/@webcontainer/api@1.6.1"
+    }
+  }
+  </script>
+
+  <script type="module" src="./app.js"></script>
+</body>
+</html>

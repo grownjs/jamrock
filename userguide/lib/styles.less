@@ -1,3 +1,7 @@
+// ===========================================================================
+// Design Tokens
+// ===========================================================================
+
 @sidebar: 11em;
 
 @light: #8A8A8A;
@@ -14,10 +18,16 @@
 @spring-bud: #B3E72D;
 @gunmetal: #13272D;
 
-* { box-sizing: border-box; }
+// ===========================================================================
+// Reset / Base
+// ===========================================================================
 
-*::after,
-*::before { box-sizing: inherit; }
+* { box-sizing: border-box; }
+*::after, *::before { box-sizing: inherit; }
+
+// ===========================================================================
+// Animations
+// ===========================================================================
 
 @keyframes floating {
   0% { transform: translateY(0%); }
@@ -25,10 +35,9 @@
   100% { transform: translateY(0%); }
 }
 
-#top { position: absolute; bottom: 0; }
-#search { margin-top: 1rem; min-width: 165px; }
-
-.pagefind-ui__result-thumb:empty { display: none; }
+// ===========================================================================
+// Typography
+// ===========================================================================
 
 body {
   --pagefind-ui-primary: #eeeeee;
@@ -42,26 +51,206 @@ body {
   color: @lighter;
   line-height: 1.33;
 }
+
 svg {
   fill: currentColor;
   vertical-align: middle;
 }
+
 hr {
   border: none;
   margin: 2rem 0;
   border-top: 2px dashed @gunmetal;
   &.break { border: none; }
 }
+
 b, strong {
   color: @white;
   font-weight: bolder;
 }
+
 em { opacity: .6; }
+
 a {
   color: @mantis;
   &:hover { color: @spring-bud; }
 }
-main + nav { margin-top: 30px; }
+
+h1, h2, h3, h4 {
+  color: @darker;
+  text-shadow: 1px 1px 3px #000000;
+}
+
+h1 {
+  small {
+    display: none;
+    font-size: 1.2rem;
+    a { text-decoration: none; }
+  }
+  &:hover small { display: block; }
+}
+
+small { font-size: .8rem; }
+
+var {
+  color: @information;
+  white-space: nowrap;
+}
+
+// ===========================================================================
+// Code Blocks
+// ===========================================================================
+
+code {
+  background-color: rgba(255, 255, 255, .1);
+  border-radius: 3px;
+  padding: 0 2px;
+  color: @light;
+}
+
+li code, p code { color: @white; }
+
+pre code {
+  display: block;
+  padding: .5rem;
+  font-size: .75rem;
+}
+
+.hljs {
+  padding: 0;
+  border-radius: 3px;
+  background-color: rgba(0, 0, 0, .3);
+  code { background-color: unset; }
+  span:not([class]) {
+    color: @attention;
+  }
+  a[aria-current=page] {
+    color: @white;
+  }
+}
+
+// ===========================================================================
+// Lists
+// ===========================================================================
+
+ul, .content > ol {
+  list-style-position: inside;
+  list-style-type: square;
+  padding-left: 1rem;
+}
+
+ul li + li {
+  margin-top: .3rem;
+}
+
+.content > ol {
+  list-style: none;
+  counter-reset: steps;
+  li {
+    counter-increment: steps;
+    + li { margin-top: 1rem; }
+    &::before {
+      content: counter(steps);
+      background-color: @mantis;
+      color: @rich-black;
+      width: 1.5rem;
+      height: 1.5rem;
+      margin-right: .5rem;
+      border-radius: 50%;
+      display: inline-grid;
+      place-items: center;
+      line-height: 1.5rem;
+    }
+  }
+}
+
+// ===========================================================================
+// Tables
+// ===========================================================================
+
+table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+th {
+  color: @white;
+  text-align: left;
+  font-weight: bold;
+}
+
+td { color: @darker; }
+
+tr td, tr th {
+  border-bottom: 1px solid @gunmetal;
+  padding: .3rem;
+}
+
+.has-table {
+  overflow: auto;
+  + p, + div, + blockquote { margin-top: 1rem; }
+}
+
+// ===========================================================================
+// Blockquotes & Callouts
+// ===========================================================================
+
+blockquote {
+  margin: 0;
+  position: relative;
+  padding: 5px 0 5px .5rem;
+  border-radius: 3px;
+  border-left: .5rem solid @gunmetal;
+  background-color: rgba(0, 0, 0, .3);
+
+  &.is-note,
+  &.is-tip,
+  &.is-important,
+  &.is-warning,
+  &.is-caution {
+    padding-top: 1.8rem;
+    &::before {
+      background-repeat: no-repeat;
+      padding-left: 22px;
+      position: absolute;
+      font-size: .8rem;
+      top: .3rem;
+    }
+    code { white-space: nowrap; }
+  }
+
+  &.is-note::before { content: "NOTE"; color: @information; background-image: url('../images/note.svg'); }
+  &.is-tip::before { content: "TIP"; color: @mantis; background-image: url('../images/tip.svg'); }
+  &.is-important::before { content: "IMPORTANT"; color: @important; background-image: url('../images/important.svg'); }
+  &.is-warning::before { content: "WARNING"; color: @attention; background-image: url('../images/warning.svg'); }
+  &.is-caution::before { content: "CAUTION"; color: @failure; background-image: url('../images/caution.svg'); }
+
+  &.is-note { border-color: @information; }
+  &.is-tip { border-color: @mantis; }
+  &.is-important { border-color: @important; }
+  &.is-warning { border-color: @attention; }
+  &.is-caution { border-color: @failure; }
+
+  &.is-note svg { fill: @information; }
+  &.is-tip svg { fill: @mantis; }
+  &.is-important svg { fill: @important; }
+  &.is-warning svg { fill: @attention; }
+  &.is-caution svg { fill: @failure; }
+
+  &.is-note code { color: @information; }
+  &.is-tip code { color: @mantis; }
+  &.is-important code { color: @important; }
+  &.is-warning code { color: @attention; }
+  &.is-caution code { color: @failure; }
+}
+
+blockquote p:first-child { margin-top: 0; }
+blockquote p:last-child { margin-bottom: 0; }
+
+// ===========================================================================
+// Details / Collapsible
+// ===========================================================================
+
 details {
   margin-bottom: 20px;
   summary {
@@ -93,145 +282,40 @@ details {
     background-image: url('../images/code.svg');
   }
 }
-blockquote {
-  margin: 0;
-  position: relative;
-  padding: 5px 0 5px .5rem;
-  border-radius: 3px;
-  border-left: .5rem solid @gunmetal;
-  background-color: rgba(0, 0, 0, .3);
 
-  &.is-note,
-  &.is-tip,
-  &.is-important,
-  &.is-warning,
-  &.is-caution {
-    padding-top: 1.8rem;
-    &::before {
-      background-repeat: no-repeat;
-      padding-left: 22px;
-      position: absolute;
-      font-size: .8rem;
-      top: .3rem;
-    }
-    code {
-      white-space: nowrap;
-    }
-  }
+// ===========================================================================
+// Layout Utilities
+// ===========================================================================
 
-  &.is-note::before { content: "NOTE"; color: @information; background-image: url('../images/note.svg'); }
-  &.is-tip::before { content: "TIP"; color: @mantis; background-image: url('../images/tip.svg'); }
-  &.is-important::before { content: "IMPORTANT"; color: @important; background-image: url('../images/important.svg'); }
+.center { text-align: center; }
+.reset { padding: 0; margin: 0; }
+.h-full { height: 100%; }
 
-  &.is-warning::before { content: "WARNING"; color: @attention; background-image: url('../images/warning.svg'); }
-  &.is-caution::before { content: "CAUTION"; color: @failure; background-image: url('../images/caution.svg'); }
+.px-2 { padding: 0 20px; }
+.p-2 { padding: 20px; }
+.p-1 { padding: 20px; }
 
-  &.is-note { border-color: @information; }
-  &.is-tip { border-color: @mantis; }
-  &.is-important { border-color: @important; }
-  &.is-warning { border-color: @attention; }
-  &.is-caution { border-color: @failure; }
-
-  &.is-note svg { fill: @information; }
-  &.is-tip svg { fill: @mantis; }
-  &.is-important svg { fill: @important; }
-  &.is-warning svg { fill: @attention; }
-  &.is-caution svg { fill: @failure; }
-
-  &.is-note code { color: @information; }
-  &.is-tip code { color: @mantis; }
-  &.is-important code { color: @important; }
-  &.is-warning code { color: @attention; }
-  &.is-caution code { color: @failure; }
-}
-blockquote p:first-child { margin-top: 0; }
-blockquote p:last-child { margin-bottom: 0; }
-pre code {
-  display: block;
-  padding: .5rem;
-  font-size: .75rem;
-}
-li code,
-p code { color: @white; }
-code {
-  background-color: rgba(255, 255, 255, .1);
-  border-radius: 3px;
-  padding: 0 2px;
-  color: @light;
-}
-var {
-  color: @information;
-  white-space: nowrap;
-}
-ul, .content > ol {
-  list-style-position: inside;
-  list-style-type: square;
-  padding-left: 1rem;
-}
-ul li + li {
-  margin-top: .3rem;
-}
-.content > ol {
-  list-style: none;
-  counter-reset: steps;
-  li {
-    counter-increment: steps;
-    + li { margin-top: 1rem; }
-    &::before {
-      content: counter(steps);
-      background-color: @mantis;
-      color: @rich-black;
-      width: 1.5rem;
-      height: 1.5rem;
-      margin-right: .5rem;
-      border-radius: 50%;
-      display: inline-grid;
-      place-items: center;
-      line-height: 1.5rem;
-    }
-  }
-}
-table {
-  width: 100%;
-  border-collapse: collapse;
-}
-th {
-  color: @white;
-  text-align: left;
-  font-weight: bold;
-}
-td { color: @darker; }
-tr td,
-tr th {
-  border-bottom: 1px solid @gunmetal;
-  padding: .3rem;
-}
-small { font-size: .8rem; }
-h1 {
-  small {
-    display: none;
-    font-size: 1.2rem;
-    a { text-decoration: none; }
-  }
-  &:hover small { display: block; }
-}
-h1, h2, h3, h4 {
-  .dimmed;
+.flex {
+  display: flex;
+  .fill { flex: 1; }
+  &.gap-sm { gap: 5px; }
+  &.gap-md { gap: 10px; }
+  &.gap-lg { gap: 20px; }
+  &.wrap { flex-wrap: wrap; }
+  &.end { justify-content: end; }
+  &.justify { justify-content: center; }
+  &.between { justify-content: space-between; }
+  &.centered { align-items: center; }
+  &.vertical { flex-direction: column; }
 }
 
-.has-table {
-  overflow: auto;
-
-  + p,
-  + div,
-  + blockquote { margin-top: 1rem; }
-}
+// ===========================================================================
+// Components
+// ===========================================================================
 
 .meteorite {
   text-align: center;
-  svg {
-    max-width: 87%;
-  }
+  svg { max-width: 87%; }
   a {
     transition: color .5s;
     color: @spring-bud;
@@ -253,20 +337,6 @@ h1, h2, h3, h4 {
   }
 }
 
-.dimmed {
-  color: @darker;
-  text-shadow: 1px 1px 3px #000000;
-}
-
-.center { text-align: center; }
-
-.reset {
-  padding: 0;
-  margin: 0;
-}
-
-.h-full { height: 100%; }
-
 .links {
   list-style-type: none;
   ul li + li { margin-top: 10px; }
@@ -279,81 +349,51 @@ h1, h2, h3, h4 {
   }
 }
 
-.hljs {
-  padding: 0;
-  border-radius: 3px;
-  background-color: rgba(0, 0, 0, .3);
-  code { background-color: unset; }
-  span:not([class]) {
-    color: @attention;
-  }
-  a[aria-current=page] {
-    color: @white;
-  }
-}
-
 .emoji {
   width: auto;
   height: 1rem;
 }
 
-.px-2 { padding: 0 20px; }
-.p-2 { padding: 20px; }
-.p-1 { padding: 20px; }
+// ===========================================================================
+// Page Structure
+// ===========================================================================
 
-.flex {
-  display: flex;
-  .fill { flex: 1; }
-  &.gap-sm { gap: 5px; }
-  &.gap-md { gap: 10px; }
-  &.gap-lg { gap: 20px; }
-  &.wrap { flex-wrap: wrap; }
-  &.end { justify-content: end; }
-  &.justify { justify-content: center; }
-  &.between { justify-content: space-between; }
-  &.centered { align-items: center; }
-  &.vertical { flex-direction: column; }
-}
+#top { position: absolute; bottom: 0; }
+#search { margin-top: 1rem; min-width: 165px; }
 
 .body {
   max-width: calc(42em - 180px);
   padding: 1rem;
   margin: auto;
-
-  > header {
-    position: relative;
-  }
-
-  h1, h2, h3 {
-    &:target { padding-top: 1rem; }
-  }
+  > header { position: relative; }
+  h1, h2, h3 { &:target { padding-top: 1rem; } }
 }
 
 .main {
   margin: auto;
-
-  aside {
-    li +  li { margin: 0; }
-  }
-
-  aside > footer {
-    width: 100%;
-  }
+  aside { li + li { margin: 0; } }
+  aside > footer { width: 100%; }
 }
 
-.content > nav {
-  margin-top: 2rem;
-}
+.content > nav { margin-top: 2rem; }
+main + nav { margin-top: 30px; }
+
+// ===========================================================================
+// Pagefind Overrides
+// ===========================================================================
+
+.pagefind-ui__result-thumb:empty { display: none; }
+
+// ===========================================================================
+// Responsive Breakpoints
+// ===========================================================================
 
 @media screen and (min-width: 960px) {
   .not_home {
-    .body {
-      max-width: 42em;
-    }
+    .body { max-width: 42em; }
     .main {
       display: flex;
       gap: 20px;
-
       aside {
         margin: 0;
         width: 180px;
@@ -363,10 +403,8 @@ h1, h2, h3, h4 {
         margin: 0;
         position: sticky;
       }
-
       .content { min-width: 29em; }
       .content > nav { margin-top: 20px; }
-
       .pagefind-ui__drawer { max-height: calc(100vh - 5rem); overflow: auto; }
     }
   }

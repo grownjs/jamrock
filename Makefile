@@ -30,7 +30,7 @@ endif
 
 export EDITOR APP_KEY MAILDEV FORCE_COLOR GIT_REVISION
 
-.PHONY: seed dist docs install examples coverage
+.PHONY: seed dist docs install examples coverage playground
 
 ci: dist smoke test-deno test-bun
 
@@ -95,6 +95,9 @@ dist-docs:
 	@rm -rf userguide/pagefind/*
 	@bin/node build --src ./userguide --write NODE_ENV=production # --target /jamrock
 	@npx -y pagefind --site $(FROM_FOLDER)
+
+playground:
+	@node playground/server.mjs
 
 live:
 	@npm pack
@@ -268,7 +271,7 @@ deno-deps\:%:
 
 winterjs-test:
 	@echo "== winterjs =="
-	@winterjs lib/winterjs/test.js
+	@wasmer run wasmer/winterjs --volume=$(PWD):$(PWD) -- exec lib/winterjs/test.js
 
 txiki-server-test:
 	@echo "== txiki integration =="
@@ -277,8 +280,8 @@ txiki-server-test:
 winterjs-server-test:
 	@echo "== winterjs integration =="
 	@wasmer run wasmer/winterjs --net \
-	  --volume=scripts:scripts \
-	  -- scripts/winterjs-server-test.mjs & \
+	  --volume=$(PWD):$(PWD) \
+	  -- $(PWD)/scripts/winterjs-server-test.mjs & \
 	  PID=$$!; \
 	  sleep 2; \
 	  BODY=$$(curl -s http://localhost:8080/pages); \

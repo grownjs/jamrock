@@ -1,7 +1,29 @@
-#!/usr/bin/env winterjs
-import('../lib/winterjs/main.mjs').then(env =>
-  import('./cli.mjs').then(cli => {
-    const argv = typeof process !== 'undefined' ? process.argv.slice(2) : [];
-    return cli.default(env.default, argv, env.capabilities);
-  })
-).catch(console.error);
+#!/bin/sh
+set -e
+
+PORT=8080
+SRC=pages
+HOST=127.0.0.1
+QUIET=0
+
+while [ $# -gt 0 ]; do
+  case "$1" in
+    --port)   PORT="$2"; shift 2 ;;
+    --src)    SRC="$2";  shift 2 ;;
+    --host)   HOST="$2"; shift 2 ;;
+    --quiet)  QUIET=1;   shift   ;;
+    serve)    shift ;;
+    *)        shift ;;
+  esac
+done
+
+exec wasmer run wasmer/winterjs --net \
+  --volume="$(pwd):$(pwd)" \
+  --env "WINTERJS_SRC=$SRC" \
+  --env "WINTERJS_HOST=$HOST" \
+  --env "WINTERJS_QUIET=$QUIET" \
+  --env "WINTERJS_PORT=$PORT" \
+  -- serve \
+  --port "$PORT" \
+  --ip "$HOST" \
+  "$(pwd)/lib/winterjs/entry.mjs"
