@@ -24,7 +24,7 @@ export function run(test, driver, expect, createSandbox) {
       expect(el.outerHTML).not.toContain('<x-fragment>');
       expect(el.outerHTML).toContain('Your answer: FIXME');
 
-      const button = el.querySelector('button:nth-child(3)');
+      const button = el.querySelectorAll('button')[1];
 
       button.dispatchEvent(new Event('click'));
 

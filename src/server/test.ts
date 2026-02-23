@@ -12,6 +12,10 @@ async function run(main: any, stack: any): Promise<void> {
   try {
     (Render as any).enable(options);
 
+    if (options?.happydom && typeof window.SyntaxError === 'undefined') {
+      window.SyntaxError = SyntaxError;
+    }
+
     // @ts-expect-error
     window.Jamrock = { Runtime: { ...Runtime } };
 
