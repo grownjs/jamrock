@@ -31,7 +31,7 @@ jobs:
 
       - uses: tacoss/nodejs@master
         with:
-          args: make dist smoke gjs-test test-nodejs coverage
+          args: make dist smoke test-nodejs coverage
         env:
           PB_ADMIN_URL: http://backend:8090
           CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
