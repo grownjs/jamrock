@@ -30,6 +30,7 @@ printLog(Util.$.bold(`■ Jamrock v${PKG_VERSION}`), Util.$.gray(`(${runtime}, $
 
 const USAGE_INFO = `
 Usage: ./bin/{node,deno,bun,gjs} <COMMAND> [OPTIONS]
+       ./bin/{txiki,winterjs} serve [OPTIONS]
 
   init   Generates a new application into the given directory
   serve  Starts the web-server on the given --port and --host
@@ -57,7 +58,7 @@ Options:
   --method   Filter routes by method (exact match)
 `;
 
-export default async function main(env, argv) {
+export default async function main(env, argv, capabilities = { serve: true, build: true, watch: true, init: true }) {
   if (Util.has('version', argv)) return process.exit(1);
 
   argv = argv.filter(value => {
@@ -199,16 +200,25 @@ export type Routes = ${['RouteMap'].concat(typedefs).join('\n& ')};\n`;
         break;
 
       case 'build':
+        if (!capabilities.build) {
+          throw new Error("'build' requires a dev runtime (node, bun, deno, gjs). Current runtime only supports 'serve'.");
+        }
         printLog(`Building ${src} to ${dest}`);
         const self = await env({ ...defaults, ..._options }).build(); // eslint-disable-line no-case-declarations
         if (_write) await self.static();
         break;
 
       case 'route':
+        if (!capabilities.build) {
+          throw new Error("'route' requires a dev runtime (node, bun, deno, gjs). Current runtime only supports 'serve'.");
+        }
         await routeInfo();
         break;
 
       case 'init':
+        if (!capabilities.init) {
+          throw new Error("'init' requires a dev runtime (node, bun, deno). Current runtime does not support this command.");
+        }
         if (!argv[1]) throw new Error('Missing application name');
         if (!Util.has('force', argv)) {
           if (existsSync(argv[1])) throw new Error('Application already exists');

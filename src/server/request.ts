@@ -1,6 +1,7 @@
 import { generateClientCode } from '../client.js';
 
 import { Template, Markup, Handler, Util } from '../main.ts';
+import { dispatch, SSESocket } from '../handler/dispatch.ts';
 
 export function parseCookies(cookie: string): Record<string, string> {
   if (!cookie) return {};
@@ -135,6 +136,7 @@ export function getClientCode(conn: any, patch: string, baseURL: string, prefixU
   return client;
 }
 
+// eslint-disable-next-line no-unused-vars
 export function injectClientResponse(response: Response, client: string, onReady?: (controller: ReadableStreamDefaultController) => void): Response {
   if (!client) return response;
 
@@ -245,6 +247,7 @@ export async function createBody(env: any, conn: any, clients: any, { client, ma
         if (ctx.socket) {
           ctx.socket.send(`rpc:update ${ctx.socket.identity} ${target} ${mode}\t${Markup.encode(payload)}`);
         } else if (ctx.streamController) {
+          // eslint-disable-next-line no-nested-ternary
           const modeArg = mode === 'replace' ? '0' : mode === 'append' ? '1' : '-1';
           const chunk = `<script>__f(${JSON.stringify(target)},${payload},${modeArg})</script>`;
           ctx.streamController.enqueue(encoder.encode(chunk));
@@ -529,39 +532,106 @@ export async function createPageResponse(env: any, conn: any, clients: any, opti
   return defaultResponse(env, conn, client, { body, status, headers, cookies });
 }
 
+function createSSEResponse(env: any, conn: any): Response {
+  const uuid = conn.req.uuid;
+  const encoder = new TextEncoder();
+
+  return new Response(new ReadableStream({
+    start(controller) {
+      Util.dump('START SSE', uuid);
+
+      const sseSocket: SSESocket = {
+        identity: uuid,
+        send: (msg: string) => {
+          controller.enqueue(encoder.encode(`data: ${JSON.stringify(msg)}\n\n`));
+        },
+      };
+
+      if (!env.sseSockets) {
+        env.sseSockets = new Map();
+      }
+      env.sseSockets.set(uuid, sseSocket);
+
+      sseSocket.send(`welcome ${uuid}`);
+
+      conn.req.signal.onabort = () => {
+        env.sseSockets?.delete(uuid);
+        controller.close();
+      };
+    },
+    cancel(reason) {
+      Util.dump('STOP SSE', reason, uuid);
+      env.sseSockets?.delete(uuid);
+      env.context.get(uuid)?.forEach((s: any) => s.cancel());
+      env.context.delete(uuid);
+    },
+  }), {
+    status: 200,
+    headers: {
+      'content-type': 'text/event-stream',
+      'cache-control': 'no-cache',
+      connection: 'keep-alive',
+    },
+  });
+}
+
+async function createRpcResponse(env: any, conn: any): Promise<Response> {
+  if (conn.method !== 'POST') {
+    return new Response('Method not allowed', { status: 405 });
+  }
+
+  try {
+    const formData = await conn.req.formData();
+    const payload = formData.get('cmd');
+
+    if (typeof payload !== 'string') {
+      return new Response(JSON.stringify({ error: 'Missing cmd field' }), {
+        status: 400,
+        headers: { 'content-type': 'application/json' },
+      });
+    }
+
+    const uuid = conn.req.uuid;
+    const sseSocket = env.sseSockets?.get(uuid);
+
+    if (!sseSocket) {
+      return new Response(JSON.stringify({ error: 'No SSE connection found' }), {
+        status: 400,
+        headers: { 'content-type': 'application/json' },
+      });
+    }
+
+    const result = dispatch(payload, sseSocket, env, null);
+
+    if (result && result.welcome) {
+      sseSocket.send(result.welcome);
+    } else if (result && result.dispose) {
+      env.sseSockets?.delete(uuid);
+    }
+
+    return new Response(JSON.stringify({ ok: true }), {
+      status: 200,
+      headers: { 'content-type': 'application/json' },
+    });
+  } catch (e: any) {
+    Util.trace('E_RPC', e);
+    return new Response(JSON.stringify({ error: e.message }), {
+      status: 500,
+      headers: { 'content-type': 'application/json' },
+    });
+  }
+}
+
 export async function createResponse(env: any, conn: any, clients: any, options: any): Promise<any> {
   if (conn.path_info[0] === options.prefix) {
     if (conn.path_info.length > 1) {
+      if (conn.path_info[1] === 'rpc') {
+        return createRpcResponse(env, conn);
+      }
       return createModuleResponse(env, conn);
     }
 
-    return new Response(new ReadableStream({
-      start(controller) {
-        Util.dump('START SSE', conn.req.uuid);
-
-        function sendSSEMessage(data: any) {
-          controller.enqueue(Buffer.from(`data: ${JSON.stringify(data)}\n\n`));
-        }
-
-        sendSSEMessage('READY');
-
-        conn.req.signal.onabort = () => {
-          controller.close();
-        };
-      },
-      cancel(reason) {
-        Util.dump('STOP SSE', reason, conn.req.uuid);
-        env.context.get(conn.req.uuid).forEach((s: any) => s.cancel());
-        env.context.delete(conn.req.uuid);
-      },
-    }), {
-      status: 200,
-      headers: {
-        'content-type': 'text/event-stream',
-        'cache-control': 'no-cache',
-        connection: 'keep-alive',
-      },
-    });
+    return createSSEResponse(env, conn);
   }
   return createPageResponse(env, conn, clients, options);
 }

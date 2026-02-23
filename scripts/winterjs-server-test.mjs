@@ -9,15 +9,28 @@
 //
 // PASS = request completed and got a response (any HTTP status)
 // FAIL = unexpected error
+//
+// This test runs the full Jamrock pipeline:
+// 1. createEnvironment with createServer
+// 2. env.serve() → compiler.reload() (loads routes into memory)
+// 3. Real HTTP request through createHandler → createResponse
 
-addEventListener('fetch', event => {
-  event.respondWith((async () => {
-    const { request } = event;
-    const url = new URL(request.url);
-    const body = `WinterJS HTTP test - ${request.method} ${url.pathname}`;
-    return new Response(body, {
-      status: 200,
-      headers: { 'Content-Type': 'text/plain' },
-    });
-  })());
+import '../lib/winterjs/runtime.js';
+import { createServer } from '../lib/winterjs/server.js';
+import { createEnvironment } from '../dist/server.mjs';
+import { fs, path } from '../lib/winterjs/deps.js';
+
+const options = {
+  src: 'x-gtk-sandbox',
+  dest: 'dist',
+  port: 8080,
+  quiet: false,
+  prefix: '@',
+  public: 'public',
+};
+
+const env = createEnvironment({ fs, path }, options, {
+  createServer,
 });
+
+env.serve().catch(console.error);

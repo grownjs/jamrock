@@ -4,4 +4,4 @@
 import('../lib/bun/runtime.js').then(() => Promise.all([
   import('../lib/bun/main.mjs'),
   import('./cli.mjs'),
-]).then(([env, cli]) => cli.default(env.default, Bun.argv.slice(2)))).catch(console.error);
+]).then(([env, cli]) => cli.default(env.default, Bun.argv.slice(2), env.capabilities))).catch(console.error);

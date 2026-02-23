@@ -510,9 +510,12 @@ export function createEnvironment({ fs, path }: any, options: any, external: any
     this.options = { ...options, ...overrides, location };
 
     if (options.watch) {
-      const watcher = await createFSWatcher(options, external.getChokidarModule);
-
-      this.watcher = createWatcher({ fs }, watcher, compiler);
+      if (!external.getChokidarModule) {
+        printLog('Warning: --watch not supported in this runtime. File watching disabled.');
+      } else {
+        const watcher = await createFSWatcher(options, external.getChokidarModule);
+        this.watcher = createWatcher({ fs }, watcher, compiler);
+      }
     }
 
     await compiler.reload();
@@ -521,6 +524,9 @@ export function createEnvironment({ fs, path }: any, options: any, external: any
   }
 
   async function build(this: any, reload?: boolean) {
+    if (external.capabilities && !external.capabilities.build) {
+      throw new Error('build() is not supported in this runtime. Use node, bun, or deno.');
+    }
     if (reload) {
       await compiler.reload();
     } else {
@@ -669,6 +675,7 @@ export function createEnvironment({ fs, path }: any, options: any, external: any
 
   return Object.defineProperties({
     serve, build, locate, request, context, compiler, static: _static,
+    capabilities: external.capabilities || { serve: true, build: true, watch: true, init: true },
   }, {
     path: { get: () => compiler[PATH_PROPERTY] },
     files: { get: () => compiler[FILES_PROPERTY] },

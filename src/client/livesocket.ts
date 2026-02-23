@@ -2,6 +2,68 @@ import { decode, updatePage, spaNavigate } from '../utils/client.ts';
 
 const protocol = location.protocol === 'http:' ? 'ws' : 'wss';
 
+function createSSESocket(uuid: string, prefix: string, onMessage: (_msg: string) => void): any {
+  let eventSource: EventSource;
+  let readyState = 0;
+
+  const send = async (msg: string) => {
+    try {
+      await fetch(`/${prefix}/rpc`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/x-www-form-urlencoded',
+          'X-Request-UUID': uuid,
+        },
+        body: `cmd=${encodeURIComponent(msg)}`,
+      });
+    } catch (e) {
+      console.error('SSE send error:', e);
+    }
+  };
+
+  const connect = () => {
+    eventSource?.close();
+    readyState = 0;
+    eventSource = new EventSource(`/${prefix}?_=${uuid}`);
+
+    eventSource.onopen = () => {
+      readyState = 1;
+      send(`rpc:connect ${uuid} ${location.pathname}`);
+    };
+
+    eventSource.onmessage = (event: MessageEvent) => {
+      const data = event.data;
+      if (data.startsWith('"') && data.endsWith('"')) {
+        const parsed = JSON.parse(data);
+        onMessage(parsed);
+      } else {
+        onMessage(data);
+      }
+    };
+
+    eventSource.onerror = () => {
+      readyState = eventSource.readyState === EventSource.CLOSED ? 3 : 2;
+      if (eventSource.readyState === EventSource.CLOSED) {
+        setTimeout(connect, 1000);
+      }
+    };
+  };
+
+  connect();
+
+  return {
+    readyState,
+    OPEN: 1,
+    CLOSED: 3,
+    send,
+    close: () => {
+      send(`rpc:disconnect ${uuid}`);
+      eventSource?.close();
+      readyState = 3;
+    },
+  };
+}
+
 export class LiveSocket {
   declare uuid: string;
   declare ready: boolean;
@@ -9,20 +71,31 @@ export class LiveSocket {
   declare headless: boolean;
   declare document: string;
   declare location: string;
+  // eslint-disable-next-line no-unused-vars
   declare send: (...args: any[]) => void;
   declare close: () => void;
+  // eslint-disable-next-line no-unused-vars
   declare call: (msg: string, next?: () => void) => void;
   declare deferred: Promise<any>;
+  // eslint-disable-next-line no-unused-vars
   declare upload: (key: string, file: File) => Promise<void>;
+  // eslint-disable-next-line no-unused-vars
   declare unpack: (payload: any) => URLSearchParams;
+  // eslint-disable-next-line no-unused-vars
   declare submit: (el: any, url: string, body: any, method: string) => void;
+  // eslint-disable-next-line no-unused-vars
   declare trigger: (e: any, kind: string, source: string | null, trigger: any, payload: any, callback?: any) => void;
+  // eslint-disable-next-line no-unused-vars
   declare patchSVG: (src: string) => Promise<void>;
+  // eslint-disable-next-line no-unused-vars
   declare patchCSS: (src: string) => void;
+  // eslint-disable-next-line no-unused-vars
   declare patch: (sources: string[]) => boolean;
+  // eslint-disable-next-line no-unused-vars
   declare next: (uuid: string) => void;
   declare sync: () => void;
   declare start: () => void;
+  // eslint-disable-next-line no-unused-vars
   declare warn: (e: any, msg: string) => void;
 
   constructor(browser: any) {
@@ -209,65 +282,10 @@ export class LiveSocket {
 
     // window.onbeforeunload = () => this.close() || null;
 
-    function connect(doc: string, uuid: string, ready: (doc: string, uuid: string, ws: any, resolved: any) => void): Promise<any> {
-      return new Promise(ok => {
-        ws = new WebSocket(`${protocol}://${location.host}`);
-
-        ws.addEventListener('open', () => {
-          ws.send(`rpc:connect ${uuid} ${doc}`);
-          interval = 100;
-          ready(doc, uuid, ws, ok(ws));
-        });
-
-        ws.addEventListener('error', () => {
-          setTimeout(() => connect(doc, uuid, ready).then(ok), timeout('connect'));
-        });
-      });
-    }
-
-    function open(doc: string, uuid: string, socket: any): void {
-      socket.try = (msg: string, cb?: (socket: any) => void) => {
-        if (socket.readyState !== socket.OPEN) {
-          setTimeout(() => connect(doc, uuid, open).then(() => socket.try(msg, cb)), timeout('open'));
-          return;
-        }
-        socket.send(msg);
-        if (cb) cb(socket);
-      };
-    }
-
-    let eventSource: EventSource;
-    this.start = () => {
-      // this.browser.runtime().then(() => this.browser.resume());
-
-      eventSource?.close();
-      eventSource = new EventSource(`/${this.browser.prefix}?_=${this.uuid}`);
-      eventSource.onopen = () => {
-        this.ready = false;
-        ws?.close();
-        ws = null;
-        this.sync();
-      };
-      eventSource.onerror = () => {
-        if (ws && this.ready) {
-          this.ready = false;
-          ws.close();
-          ws = null;
-        }
-
-        if (eventSource.readyState === EventSource.CLOSED) {
-          console.log('[RECONNECT SSE]');
-        }
-      };
-      eventSource.onmessage = (event: MessageEvent) => {
-        console.log('@@', event.data);
-      };
-    };
-
-    const queue: Array<(jamrock: any) => any> = [];
+    const queue: Array<(_jamrock: any) => any> = [];
 
     let wait: ReturnType<typeof setTimeout>;
-    let ok: boolean;
+    let readyOk: boolean;
     const run = async () => {
       if (this.browser.paused) {
         clearTimeout(wait);
@@ -275,8 +293,8 @@ export class LiveSocket {
         return;
       }
 
-      if (!ok) {
-        ok = true;
+      if (!readyOk) {
+        readyOk = true;
         this.browser.paused = true;
         await this.browser.runtime();
         this.browser.paused = false;
@@ -298,6 +316,126 @@ export class LiveSocket {
         console.error('Error reloading:', error);
         (window as any).Jamrock.Browser.reload(null, true);
       }
+    };
+
+    // eslint-disable-next-line no-shadow
+    function connect(_doc: string, _uuid: string, ready: () => void): Promise<any> {
+      return new Promise(ok => {
+        ws = new WebSocket(`${protocol}://${location.host}`);
+
+        ws.addEventListener('open', () => {
+          ws.send(`rpc:connect ${_uuid} ${_doc}`);
+          interval = 100;
+          ready(_doc, _uuid, ws, ok(ws));
+        });
+
+        ws.addEventListener('error', () => {
+          setTimeout(() => connect(_doc, _uuid, ready).then(ok), timeout('connect'));
+        });
+      });
+    }
+
+    // eslint-disable-next-line no-shadow
+    function open(_doc: string, _uuid: string, _socket: any): void {
+      _socket.try = (msg: string, cb?: (s: any) => void) => {
+        if (_socket.readyState !== _socket.OPEN) {
+          setTimeout(() => connect(_doc, _uuid, open).then(() => _socket.try(msg, cb)), timeout('open'));
+          return;
+        }
+        _socket.send(msg);
+        if (cb) cb(_socket);
+      };
+    }
+
+    let sseSocket: any;
+    this.start = () => {
+      if (sseSocket) {
+        sseSocket.close();
+        sseSocket = null;
+      }
+
+      sseSocket = createSSESocket(this.uuid, this.browser.prefix, (data: string) => {
+        if (data === 'refresh') {
+          refresh({ isTrusted: true });
+          return;
+        }
+
+        if (data.indexOf('reload ') === 0) {
+          const [, ...sources] = data.split(/\s+/).filter(Boolean);
+
+          if (!sources.length || sources.includes(this.document)) {
+            refresh({ isTrusted: true });
+          } else {
+            const patched = this.patch(sources);
+            if (!patched) {
+              refresh({ isTrusted: true });
+            }
+          }
+          return;
+        }
+
+        if (data.indexOf('welcome ') === 0) {
+          console.debug(data, this.location);
+          this.ready = true;
+          return;
+        }
+
+        if (data.indexOf('rpc:') === 0) {
+          const payload = data.substr(4);
+          const body = payload.includes('\t')
+            ? payload.substr(0, payload.indexOf('\t'))
+            : payload;
+
+          const chunk = payload.substr(body.length + 1);
+
+          let msgData: any = {};
+          if (!(chunk === 'null' || chunk === 'undefined')) {
+            msgData = JSON.parse(decode(chunk));
+          }
+
+          const [task, ...args] = body.split(/\s+/);
+
+          if (args[0] !== this.uuid) return;
+
+          if (task === 'response') {
+            console.log('[RESPONSE]', msgData);
+            this.browser.sync(msgData, spaNavigate);
+            return;
+          }
+
+          if (task === 'failure') {
+            this.browser.warn(msgData, 'SSE Failure');
+            return;
+          }
+
+          if (task !== 'update') {
+            console.debug('RPC', task, args);
+            return;
+          }
+
+          queue.push(({ Fragment }: any) => {
+            try {
+              let direction = 0;
+              if (args[2] === 'append') direction = 1;
+              if (args[2] === 'prepend') direction = -1;
+              if (args[0] !== this.uuid) return;
+
+              return Fragment.patch(args[1], msgData, direction);
+            } catch (_e) {
+              return this.browser.warn(_e, `Failed to ${task} fragment '${args[1]}'`);
+            }
+          });
+          throttle(run, 60);
+        }
+      });
+
+      ws = sseSocket;
+      this.send = (...args: any[]) => {
+        if (sseSocket && sseSocket.readyState === sseSocket.OPEN) {
+          sseSocket.send(args[0]);
+          if (args[1]) args[1]();
+        }
+      };
     };
 
     this.next = (_uuid: string) => {
