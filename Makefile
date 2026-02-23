@@ -235,6 +235,7 @@ clean-ts:
 
 prune: clean
 	@rm -f package-lock.json
+	@rm -f lib/vendor
 	@rm -f deno.lock
 	@rm -f cache.json
 	@rm -rf node_modules
