@@ -1,6 +1,27 @@
-import PocketBase from 'pocketbase';
+import PocketBase, { BaseAuthStore } from 'pocketbase';
+
+class MemoryAuthStore extends BaseAuthStore {
+  constructor() {
+    super();
+    this.baseToken = '';
+    this.baseModel = null;
+  }
+
+  save(token, record) {
+    this.baseToken = token || '';
+    this.baseModel = record || null;
+    this.triggerChange();
+  }
+
+  clear() {
+    this.baseToken = '';
+    this.baseModel = null;
+    this.triggerChange();
+  }
+}
 
 export const pb = new PocketBase(process.env.PB_ADMIN_URL || 'http://127.0.0.1:8090');
+pb.authStore = new MemoryAuthStore();
 
 export const connect = (email, password) => pb.collection('_superusers').authWithPassword(email, password);
 try {
