@@ -1,7 +1,7 @@
 import { generateClientCode } from '../client.js';
 
 import { Template, Markup, Handler, Util } from '../main.ts';
-import { dispatch, SSESocket } from '../handler/dispatch.ts';
+import { dispatch, type SSESocket } from '../handler/dispatch.ts';
 
 export function parseCookies(cookie: string): Record<string, string> {
   if (!cookie) return {};
