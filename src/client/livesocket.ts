@@ -326,6 +326,7 @@ export class LiveSocket {
         ws.addEventListener('open', () => {
           ws.send(`rpc:connect ${_uuid} ${_doc}`);
           interval = 100;
+          // @ts-expect-error
           ready(_doc, _uuid, ws, ok(ws));
         });
 
@@ -339,6 +340,7 @@ export class LiveSocket {
     function open(_doc: string, _uuid: string, _socket: any): void {
       _socket.try = (msg: string, cb?: (s: any) => void) => {
         if (_socket.readyState !== _socket.OPEN) {
+          // @ts-expect-error
           setTimeout(() => connect(_doc, _uuid, open).then(() => _socket.try(msg, cb)), timeout('open'));
           return;
         }
@@ -447,6 +449,7 @@ export class LiveSocket {
     this.sync = () => {
       if (this.headless || connecting || (ws && ws.readyState === ws.OPEN)) return;
       connecting = true;
+      // @ts-expect-error
       return connect(this.document, this.uuid, open).then(socket => {
         connecting = false;
         this.ready = true;
