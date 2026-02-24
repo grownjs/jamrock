@@ -597,7 +597,7 @@ export function createEnvironment({ fs, path }: any, options: any, external: any
 
         const env = { files, locate: (k: string) => modules[files[k].filepath].module };
 
-        const result = await createBody(env, conn, [], { uuid, client, options, matches: route });
+        const result = await createBody(env, conn, { uuid, client, options, matches: route });
 
         write(destFile, result.body);
         count++;

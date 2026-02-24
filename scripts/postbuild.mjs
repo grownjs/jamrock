@@ -12,7 +12,7 @@ let code = readFileSync(mainFile).toString();
 if (!code.startsWith('export const process={env:{}}')) {
   // Remove any existing process exports and add our own at the start
   code = code.replace(/export const process=\{[^}]*\};/g, '');
-  code = 'export const process={env:{}};' + code;
+  code = `export const process={env:{}};${code}`;
   writeFileSync(mainFile, code);
 }
 

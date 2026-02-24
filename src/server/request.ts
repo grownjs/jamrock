@@ -1,7 +1,7 @@
-import { generateClientCode } from '../client.js';
-
 import { Template, Markup, Handler, Util } from '../main.ts';
-import { dispatch, type SSESocket } from '../handler/dispatch.ts';
+import type { SSESocket } from '../handler/dispatch.ts';
+
+import { generateClientCode } from '../client.js';
 
 export function parseCookies(cookie: string): Record<string, string> {
   if (!cookie) return {};
@@ -222,14 +222,13 @@ export function create404(env: any, conn: any, client: string, message: string):
 </table>${config}${environment}${client}`;
 }
 
-export async function createBody(env: any, conn: any, clients: any, { client, matches, options }: any): Promise<any> {
+export async function createBody(env: any, conn: any, { client, matches, options }: any): Promise<any> {
   let status;
   let body;
   const encoder = new TextEncoder();
   try {
     const ctx: any = {
       conn,
-      clients,
       depth: 0,
       stack: [],
       ready: null,
@@ -263,20 +262,6 @@ export async function createBody(env: any, conn: any, clients: any, { client, ma
     conn.current_path = matches.path;
 
     conn.routes = ctx.routes || [];
-
-    if (Util.Is.func(ctx.clients) && !ctx.socket) {
-      let _socket: any;
-      Object.defineProperty(ctx, 'socket', {
-        get: () => {
-          // eslint-disable-next-line no-return-assign
-          return _socket || (_socket = ctx.clients().find((x: any) => x.identity === conn.req.uuid));
-        },
-        set: (v: any) => {
-          _socket = v;
-          ctx.streamController = null;
-        },
-      });
-    }
 
     let mod;
     if (matches.src) {
@@ -509,14 +494,14 @@ export function defaultResponse(env: any, conn: any, client: string, { body, sta
   };
 }
 
-export async function createPageResponse(env: any, conn: any, clients: any, options: any): Promise<any> {
+export async function createPageResponse(env: any, conn: any, options: any): Promise<any> {
   let { status, client, matches } = getResponsePrelude(env, conn, options);
 
   let headers = null;
   let body = null;
   let cookies;
   if (matches) {
-    const result = await createBody(env, conn, clients, { client, matches, options });
+    const result = await createBody(env, conn, { client, matches, options });
 
     if (result instanceof Response) {
       if ((result as any).__streaming) return result;
@@ -601,7 +586,7 @@ async function createRpcResponse(env: any, conn: any): Promise<Response> {
       });
     }
 
-    const result = dispatch(payload, sseSocket, env, null);
+    const result = Handler.dispatch(payload, sseSocket, env, null);
 
     if (result && result.welcome) {
       sseSocket.send(result.welcome);
@@ -622,7 +607,7 @@ async function createRpcResponse(env: any, conn: any): Promise<Response> {
   }
 }
 
-export async function createResponse(env: any, conn: any, clients: any, options: any): Promise<any> {
+export async function createResponse(env: any, conn: any, options: any): Promise<any> {
   if (conn.path_info[0] === options.prefix) {
     if (conn.path_info.length > 1) {
       if (conn.path_info[1] === 'rpc') {
@@ -633,7 +618,7 @@ export async function createResponse(env: any, conn: any, clients: any, options:
 
     return createSSEResponse(env, conn);
   }
-  return createPageResponse(env, conn, clients, options);
+  return createPageResponse(env, conn, options);
 }
 
 export function createBodySync(env: any, conn: any, { client, matches, options }: any): any {
@@ -651,10 +636,9 @@ export function createBodySync(env: any, conn: any, { client, matches, options }
       routes: env.routes,
     };
 
+    conn.routes = ctx.routes || [];
     conn.req.params = matches.params;
     conn.current_path = matches.path;
-
-    conn.routes = ctx.routes || [];
 
     let mod;
     if (matches.src) {
@@ -756,7 +740,7 @@ export function createBodySync(env: any, conn: any, { client, matches, options }
   return { body, status };
 }
 
-export function createResponseSync(env: any, conn: any, clients: any, options: any): any {
+export function createResponseSync(env: any, conn: any, options: any): any {
   let { status, client, matches } = getResponsePrelude(env, conn, options);
 
   let headers = null;
