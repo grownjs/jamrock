@@ -1,7 +1,5 @@
 import { decode, updatePage, spaNavigate } from '../utils/client.ts';
 
-const protocol = location.protocol === 'http:' ? 'ws' : 'wss';
-
 function createSSESocket(uuid: string, prefix: string, onMessage: (_msg: string) => void): any {
   let eventSource: EventSource;
   let readyState = 0;
@@ -178,10 +176,6 @@ export class LiveSocket {
       });
     };
 
-    // FIXME: try sending blob to ws... a big difference here
-    // is that we could omit some fields if they were already sent...
-    // so, we can persist a local state on the running server attached
-    // to the websocket...
     this.deferred = Promise.resolve();
     this.upload = (key: string, file: File) => new Promise(ok => {
       setTimeout(() => ok(console.log('UPLOAD', key, file) as any), 300);
@@ -318,37 +312,6 @@ export class LiveSocket {
       }
     };
 
-    // eslint-disable-next-line no-shadow
-    function connect(_doc: string, _uuid: string, ready: () => void): Promise<any> {
-      return new Promise(ok => {
-        ws = new WebSocket(`${protocol}://${location.host}`);
-
-        ws.addEventListener('open', () => {
-          ws.send(`rpc:connect ${_uuid} ${_doc}`);
-          interval = 100;
-          // @ts-expect-error
-          ready(_doc, _uuid, ws, ok(ws));
-        });
-
-        ws.addEventListener('error', () => {
-          setTimeout(() => connect(_doc, _uuid, ready).then(ok), timeout('connect'));
-        });
-      });
-    }
-
-    // eslint-disable-next-line no-shadow
-    function open(_doc: string, _uuid: string, _socket: any): void {
-      _socket.try = (msg: string, cb?: (s: any) => void) => {
-        if (_socket.readyState !== _socket.OPEN) {
-          // @ts-expect-error
-          setTimeout(() => connect(_doc, _uuid, open).then(() => _socket.try(msg, cb)), timeout('open'));
-          return;
-        }
-        _socket.send(msg);
-        if (cb) cb(_socket);
-      };
-    }
-
     let sseSocket: any;
     this.start = () => {
       if (sseSocket) {
@@ -444,94 +407,13 @@ export class LiveSocket {
       if (ws && ws.readyState === ws.OPEN) ws.send(`rpc:reconnect ${this.browser.request_uuid = _uuid}`);
     };
 
-    // FIXME: we could add a layer after some time of inactivity, once we detect
-    // we not longer have ws connectivity... then, once clicked we reconnect and so!
+    // Reconnect via SSE if disconnected
     this.sync = () => {
       if (this.headless || connecting || (ws && ws.readyState === ws.OPEN)) return;
       connecting = true;
-      // @ts-expect-error
-      return connect(this.document, this.uuid, open).then(socket => {
-        connecting = false;
-        this.ready = true;
-
-        let t: ReturnType<typeof setTimeout>;
-        socket.addEventListener('message', (e: MessageEvent) => {
-          clearTimeout(t);
-          t = setTimeout(() => {
-            if (socket.readyState === socket.OPEN) socket.send('alive');
-          }, Math.floor(Math.random() * (7500 - 6000)) + 6000);
-
-          if (e.data === 'refresh') {
-            refresh(e);
-          }
-
-          if (e.data.indexOf('reload ') === 0) {
-            const [, ...sources] = e.data.split(/\s+/).filter(Boolean);
-
-            if (!sources.length || sources.includes(this.document)) {
-              refresh(e);
-            } else {
-              const patched = this.patch(sources);
-              if (!patched) {
-                refresh(e);
-              }
-            }
-          } else if (e.data.indexOf('welcome ') === 0) {
-            console.debug(e.data, this.location);
-          } else if (e.data.indexOf('@debug ') === 0) {
-            const offset = e.data.indexOf('{');
-            const [, kind, args] = e.data.substr(0, offset).split(' ');
-
-            (console as any)[kind](...args);
-          } else if (e.data.indexOf('rpc:') === 0) {
-            const payload = e.data.substr(4);
-            const body = payload.includes('\t')
-              ? payload.substr(0, payload.indexOf('\t'))
-              : payload;
-
-            const chunk = payload.substr(body.length + 1);
-
-            let data: any = {};
-            if (!(chunk === 'null' || chunk === 'undefined')) {
-              data = JSON.parse(decode(chunk));
-            }
-
-            const [task, ...args] = body.split(/\s+/);
-
-            if (args[0] !== this.uuid) return;
-
-            if (task === 'response') {
-              console.log('[RESPONSE]', data);
-              this.browser.sync(data, spaNavigate);
-              return;
-            }
-
-            if (task === 'failure') {
-              this.browser.warn(data, 'WebSocket Failure');
-              return;
-            }
-
-            if (task !== 'update') {
-              console.debug('RPC', task, args);
-              return;
-            }
-
-            queue.push(({ Fragment }: any) => {
-              try {
-                let direction = 0;
-                if (args[2] === 'append') direction = 1;
-                if (args[2] === 'prepend') direction = -1;
-                if (args[0] !== this.uuid) return;
-
-                return Fragment.patch(args[1], data, direction);
-              } catch (_e) {
-                return this.browser.warn(_e, `Failed to ${task} fragment '${args[1]}'`);
-              }
-            });
-            throttle(run, 60);
-          }
-        });
-      });
+      this.start();
+      connecting = false;
+      this.ready = true;
     };
   }
 }
