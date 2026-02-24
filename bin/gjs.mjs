@@ -1,0 +1,5 @@
+// @ts-nocheck
+import('../lib/gtk4/runtime.js').then(() => Promise.all([
+  import('../lib/gtk4/main.mjs'),
+  import('./cli.mjs'),
+]).then(([env, cli]) => cli.default(env.default, process.argv.slice(2), env.capabilities))).catch(logError);

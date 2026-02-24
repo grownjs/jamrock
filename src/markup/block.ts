@@ -508,7 +508,7 @@ for (const [, fn] of Object.entries(__functions)) fn.$ = __src;
       const name = $1.replace(/[*]\s*as/, ignore).replace(/\sas\s/g, '  : ');
       const symbols = `const ${name}`;
 
-      if (['jamrock', 'jamrock:conn', 'jamrock:hooks'].includes($3)) {
+      if (['jamrock', 'jamrock:conn', 'jamrock:hooks', 'jamrock:shared'].includes($3)) {
         internals.push(`${symbols} = __loader('${$3}');`);
         return '';
       }

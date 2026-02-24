@@ -1,6 +1,15 @@
-#!/usr/bin/env gjs -m
-// @ts-nocheck
-import('../lib/gtk4/runtime.js').then(() => Promise.all([
-  import('../lib/gtk4/main.mjs'),
-  import('./cli.mjs'),
-]).then(([env, cli]) => cli.default(env.default, process.argv.slice(2), env.capabilities))).catch(logError);
+#!/bin/bash
+# @ts-nocheck
+set -e
+
+if [[ "$(uname -s)" == "Darwin" ]]; then
+  if [[ -z "$DYLD_LIBRARY_PATH" ]]; then
+    export DYLD_LIBRARY_PATH="$LIB_PATH"
+  else
+    export DYLD_LIBRARY_PATH="$LIB_PATH:$DYLD_LIBRARY_PATH"
+  fi
+fi
+
+SCRIPT_DIR="$(cd "$(dirname "$0")/.." && pwd)"
+
+gjs -m "$SCRIPT_DIR/bin/gjs.mjs" "$@"

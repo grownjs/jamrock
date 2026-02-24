@@ -34,20 +34,11 @@ export async function createStore(hash: any, options: any): Promise<any> {
   };
 }
 
-export function createSessionSync(store: any, sid: string): any {
+export async function createSession(store: any, sid: string): Promise<any> {
   return {
     verifyToken: store.verify,
     nextToken: store.encode,
     state: store.read(sid),
     sid: store.key(sid),
-  };
-}
-
-export async function createSession(store: any, sid: string): Promise<any> {
-  return {
-    verifyToken: store.verify,
-    nextToken: store.encode,
-    state: await store.read(sid),
-    sid: await store.key(sid),
   };
 }

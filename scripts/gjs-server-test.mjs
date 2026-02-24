@@ -130,6 +130,8 @@ GLib.idle_add(GLib.PRIORITY_DEFAULT, () => {
       const env = createEnvironment({ fs, path }, options, {
         createServer: testCreateServer,
         getChokidarModule: createGioWatcher,
+        getUnoCSSModule: () => import('../lib/vendor/unocss-core.js'),
+        getLessModule: () => import('../lib/vendor/less.js'),
       });
 
       // serve() → compiler.reload() (loads routes) → testCreateServer (our hook)

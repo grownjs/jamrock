@@ -8,8 +8,13 @@ const mainFile = 'dist/main.mjs';
 let code = readFileSync(mainFile).toString();
 
 // this makes the `process` object available cross-platform
-const prefix = 'export const process={};';
-if (!code.includes(prefix)) writeFileSync(mainFile, prefix + code);
+// Only add if not already present
+if (!code.startsWith('export const process={env:{}}')) {
+  // Remove any existing process exports and add our own at the start
+  code = code.replace(/export const process=\{[^}]*\};/g, '');
+  code = 'export const process={env:{}};' + code;
+  writeFileSync(mainFile, code);
+}
 
 const serverFile = 'dist/server.mjs';
 

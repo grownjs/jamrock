@@ -143,7 +143,57 @@ function handler7(_server, msg, _path, _query) {
     });
 }
 
-const handlers = { 1: handler1, 2: handler2, 3: handler3, 4: handler4, 5: handler5, 6: handler6, 7: handler7 };
+function runGenerator(generatorFn) {
+  const iterator = generatorFn();
+  function step(nextFn, value) {
+    let state;
+    try {
+      state = nextFn.call(iterator, value);
+    } catch (err) {
+      return Promise.reject(err);
+    }
+    if (state.done) {
+      return Promise.resolve(state.value);
+    }
+    return Promise.resolve(state.value)
+      .then(result => step(iterator.next, result))
+      .catch(err => step(iterator.throw, err));
+  }
+  return step(iterator.next, undefined);
+}
+
+// Test 8: generator coroutine prototype as user-land async alternative.
+function handler8(_server, msg, _path, _query) {
+  msg.pause();
+  runGenerator(function* generatorRoute() {
+    yield new Promise(resolve => GLib.timeout_add(GLib.PRIORITY_DEFAULT, 0, () => {
+      resolve();
+      return GLib.SOURCE_REMOVE;
+    }));
+    return 'PASS-8';
+  })
+    .then((body) => {
+      msg.set_status(200, null);
+      msg.get_response_body().append(body);
+      msg.unpause();
+    })
+    .catch((err) => {
+      msg.set_status(500, null);
+      msg.get_response_body().append(`FAIL-8: ${err}`);
+      msg.unpause();
+    });
+}
+
+const handlers = {
+  1: handler1,
+  2: handler2,
+  3: handler3,
+  4: handler4,
+  5: handler5,
+  6: handler6,
+  7: handler7,
+  8: handler8,
+};
 
 print(`Test ${TEST_NUM}`);
 

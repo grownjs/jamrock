@@ -22,13 +22,13 @@ LIB_PANGO=/opt/homebrew/Cellar/pango/1.57.0_1/lib
 LIB_SOUP=/opt/homebrew/Cellar/libsoup/3.6.5/lib
 LIB_GDK=/opt/homebrew/Cellar/gdk-pixbuf/2.44.4/lib
 LIB_GTK4=/opt/homebrew/Cellar/gjs/1.86.0/lib:/opt/homebrew/Cellar/gtk4/4.20.3/lib
-LIB_PATH="$(LIB_GTK4):$(LIB_PANGO):$(LIB_GDK):$(LIB_SOUP):$(LIB_ADWAITA):$(LIB_CAIRO)"
+LIB_PATH=$(LIB_GTK4):$(LIB_PANGO):$(LIB_GDK):$(LIB_SOUP):$(LIB_ADWAITA):$(LIB_CAIRO)
 
 ifneq ($(wildcard .env),)
 	include .env
 endif
 
-export EDITOR APP_KEY MAILDEV FORCE_COLOR GIT_REVISION
+export EDITOR APP_KEY MAILDEV FORCE_COLOR GIT_REVISION DYLD_LIBRARY_PATH LIB_PATH
 
 .PHONY: seed dist docs install examples coverage playground
 
@@ -131,6 +131,8 @@ admin:
 	@pocketbase migrate
 	@pocketbase superuser create yo@soypache.co Password.123
 
+start\:gjs:
+	@bin/gjs serve --port 3000 --src examples $(START_FLAGS)
 start\:%:
 	@bin/$* serve --port 3000 --src examples $(START_FLAGS)
 
@@ -178,12 +180,12 @@ gjs-esm:
 
 gjs-async-test:
 ifeq ($(UNAME_S),Darwin)
-	@for i in 1 2 3 4 5 6 7; do \
+	@for i in 1 2 3 4 5 6 7 8; do \
 		printf "  handler$$i: "; \
 		env DYLD_LIBRARY_PATH=$(LIB_PATH) gjs -m scripts/soup-async-test.mjs $$i 2>&1 | tail -1; \
 	done
 else
-	@for i in 1 2 3 4 5 6 7; do \
+	@for i in 1 2 3 4 5 6 7 8; do \
 		printf "  handler$$i: "; \
 		gjs -m scripts/soup-async-test.mjs $$i 2>&1 | tail -1; \
 	done
@@ -208,11 +210,7 @@ gjs-route:
 	@make -s gjs-check GJS_ARGS="route --src x-gtk-sandbox"
 
 gjs-check:
-ifeq ($(UNAME_S),Darwin)
-	env DYLD_LIBRARY_PATH=$(LIB_PATH) gjs -m bin/gjs $(GJS_ARGS)
-else
-	gjs -m bin/gjs $(GJS_ARGS)
-endif
+	@bin/gjs $(GJS_ARGS)
 
 vendor:
 	@npx bun run scripts/bundle-vendor.mjs
