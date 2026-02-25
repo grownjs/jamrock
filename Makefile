@@ -198,6 +198,13 @@ else
 	@gjs -m scripts/gjs-server-test.mjs 2>&1
 endif
 
+gjs-gtk4-renderer:
+ifeq ($(UNAME_S),Darwin)
+	@env DYLD_LIBRARY_PATH=$(LIB_PATH) gjs -m scripts/gtk4-widgets.js 2>&1
+else
+	@gjs -m scripts/gtk4-widgets.js 2>&1
+endif
+
 gjs-test: gjs-esm
 	@make -s gjs-check GJS_ARGS="init x-gtk-sandbox --force"
 	@make -s gjs-check GJS_ARGS="build --src x-gtk-sandbox"
