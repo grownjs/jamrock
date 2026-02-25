@@ -1,5 +1,7 @@
-import { deps } from './extensions.ts';
+import { Gtk, Gdk, GLib } from './deps.ts';
 import { createDialog } from './dialog.ts';
+import * as deps from './extensions.ts';
+import { self } from './elements.ts';
 
 import type {
   DialogProps, DialogWindow, CallbackUse, CallbackDeps, WindowProps, WindowContext,
@@ -7,16 +9,19 @@ import type {
 
 type WidgetCallback = (p: CallbackDeps, o: object) => any;
 
+export { Gtk, Gdk, Gio, GLib, Soup, GObject } from './deps.ts';
+export * from './elements.ts';
+
+
 export function use(callback: CallbackUse, props = {}) {
-  return callback(deps(), props);
+  return callback(deps, props);
 }
 
 export function createWidget(callback: WidgetCallback) {
-  return (opts: object) => callback(deps(), opts) as DialogWindow;
+  return (opts: object) => callback(deps, opts) as DialogWindow;
 }
 
 export function createWindow(props: WindowProps = {}) {
-  const { Gtk, Gdk, GLib, self } = deps();
   const { loop, title, width, height, stylesheets, fullscreen, maximize, onClose, ...defaults } = props;
 
   Gtk.init();
@@ -74,8 +79,6 @@ export function createWindow(props: WindowProps = {}) {
 }
 
 export function createApplication(props: WindowProps, callback: (w: WindowContext) => void) {
-  const { Gtk } = deps();
-
   Gtk.init();
 
   const { name, flags, ...defaults } = props;
