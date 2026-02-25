@@ -1,4 +1,4 @@
-export const VERSION = process.env?.VERSION || '0.0.0';
+export const VERSION = process.env.VERSION || '0.0.0';
 
 export * as Util from './utils/server.ts';
 export * as Render from './render/index.ts';

@@ -655,6 +655,7 @@ export class Template {
       return Template.cache.get(id)?.module;
     }
     if (force && id[0] === '/') {
+      // @ts-expect-error
       if (typeof globalThis.imports !== 'undefined') {
         // eslint-disable-next-line
         (globalThis as any).imports.searchPath = (globalThis as any).imports.searchPath.filter((_: string) => !_.includes(id));

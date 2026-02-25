@@ -31,8 +31,13 @@
     "no-promise-executor-return": 0,
     "lines-between-class-members": 0,
     "no-setter-return": 0,
+    "no-unused-vars": "off",
+    "@typescript-eslint/no-unused-vars": ["error", {
+      "varsIgnorePattern": "^_",
+      "argsIgnorePattern": "^_"
+    }],
     "max-len": ["error", {
       "code": 150
-    }]
+    }],
   }
 }
