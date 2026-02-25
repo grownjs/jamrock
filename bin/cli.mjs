@@ -36,13 +36,15 @@ Usage: ./bin/{node,deno,bun,gjs} <COMMAND> [OPTIONS]
   serve  Starts the web-server on the given --port and --host
   build  Compiles *.{md,html} sources into server-components
   route  Prints the available routes found
+  window Opens page routes as GTK windows (GTK4 only)
 
-Options:
+ Options:
 
   --src      Directory of *.{md,html} files to compile (default is ./pages)
   --dest     Destination for compiled files (default is ./build)
 
   --watch    Enable file-watching on the web-server
+  --window   Open pages as desktop windows (gjs only)
   --target   Value for <base href="..." /> (default is /)
   --prefix   Prefix for bundled resources (default is @)
 
@@ -77,6 +79,7 @@ export default async function main(env, argv, capabilities = { serve: true, buil
   let watch = Util.list('watch', argv, Util.has('watch', argv));
 
   const uws = Util.has('uws', argv);
+  const window = Util.has('window', argv);
   const port = +Util.flag('port', argv, 8080);
   const host = Util.flag('host', argv, 'localhost');
   const https = Util.has('https', argv);
@@ -192,6 +195,14 @@ export type Routes = ${['RouteMap'].concat(typedefs).join('\n& ')};\n`;
     }
 
     const _options = { src, dest, host, port, https, prefix: _prefix, target: base_url };
+
+    if (window) {
+      const { startWindowMode } = await import('../lib/gtk4/window.js');
+      printLog(`Building ${src} to ${dest}`);
+      const self = await env({ ...defaults, ..._options }).build();
+      await startWindowMode({ src, dest });
+      return;
+    }
 
     switch (argv[0]) {
       case 'serve':
