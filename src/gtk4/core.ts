@@ -7,9 +7,8 @@ import type { SpawnOptions } from './main.ts';
 const decoder = new TextDecoder();
 
 export function ip() {
-  // const buffer = exec(OS_NAME === 'Darwin' ? 'ipconfig getifaddr en0' : 'hostname -I');
-  // return buffer?.split('')[0];
-  return '0.0.0.0';
+  const buffer = exec(process.env.OS_NAME === 'Darwin' ? 'ipconfig getifaddr en0' : 'hostname -I');
+  return buffer?.split('')[0];
 }
 
 export function exec(cmd: string) {
@@ -75,28 +74,5 @@ export function readDir(filepath: string, callback: any) {
   while (true) {
     const file = children.next_file(null);
     if (!file || (callback(file) === true)) break;
-  }
-}
-
-export function readFile(filepath: string) {
-  const file = Gio.File.new_for_path(filepath);
-  const [ok, contents] = file.load_contents(null);
-
-  if (ok) {
-    const contentsString = decoder.decode(contents);
-    return contentsString;
-  }
-  return null;
-}
-
-export function writeFile(filepath: string, content: string) {
-  try {
-    const file = Gio.File.new_for_path(filepath);
-
-    const [ok, out] = file.replace_contents(content, null, false, Gio.FileCreateFlags.REPLACE_DESTINATION, null);
-
-    if (ok) return out;
-  } catch (e) {
-    console.error(e);
   }
 }

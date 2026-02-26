@@ -647,9 +647,20 @@ export function createEnvironment({ fs, path }: any, options: any, external: any
     }
   }
 
-  function locate(src: string) {
+  function _window(callback: (e: any, o: any) => void) {
+    if (typeof callback === 'function') callback(this, options);
+  }
+
+  function locate(src: string, query = false) {
     const key = Handler.rebase(src)!;
-    const mod = compiler[FILES_PROPERTY][key];
+    let mod = compiler[FILES_PROPERTY][key];
+
+    if (!mod && query) {
+      const pages = Object.keys(compiler[FILES_PROPERTY]).filter(k => k.includes('+page'));
+      const result = pages.find(p => p.includes(src));
+      mod = compiler[FILES_PROPERTY][result];
+      return mod;
+    }
 
     if (!mod) throw new Error(`Could not locate '${key}' file`);
 
@@ -674,7 +685,14 @@ export function createEnvironment({ fs, path }: any, options: any, external: any
   const context = Template.streamify();
 
   return Object.defineProperties({
-    serve, build, locate, request, context, compiler, static: _static,
+    static: _static,
+    window: _window,
+    serve,
+    build,
+    locate,
+    request,
+    context,
+    compiler,
     capabilities: external.capabilities || { serve: true, build: true, watch: true, init: true },
   }, {
     path: { get: () => compiler[PATH_PROPERTY] },

@@ -55,7 +55,7 @@ export function label(text: string, props: ElementProps = {}, cb: AfterCallback 
   return one(Gtk.Label, { ...props, label: text, wrap: true }, 'lbl', cb);
 }
 
-export function entry(placeholder: string, props: ElementProps = {}, cb: AfterCallback | null = null) {
+export function entry(placeholder: string = '', props: ElementProps = {}, cb: AfterCallback | null = null) {
   const { onChange, ...overrides } = props;
 
   const el = one(Gtk.Entry, {
@@ -70,6 +70,11 @@ export function entry(placeholder: string, props: ElementProps = {}, cb: AfterCa
   buffer.connect('notify::length', () => {
     if (typeof onChange === 'function') {
       onChange({ type: 'modified', value: buffer.get_text() });
+    }
+  });
+  el.connect('activate', () => {
+    if (typeof onChange === 'function') {
+      onChange({ type: 'activated', value: buffer.get_text() });
     }
   });
   return el;

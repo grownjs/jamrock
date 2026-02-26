@@ -200,7 +200,7 @@ export type Routes = ${['RouteMap'].concat(typedefs).join('\n& ')};\n`;
       const { startWindowMode } = await import('../lib/gtk4/window.js');
       printLog(`Building ${src} to ${dest}`);
       const self = await env({ ...defaults, ..._options }).build();
-      await startWindowMode({ src, dest });
+      self.window(startWindowMode);
       return;
     }
 
