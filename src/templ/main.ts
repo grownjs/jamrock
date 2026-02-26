@@ -827,35 +827,41 @@ export class Template {
     }
   }
 
-  static relative(base: string, leaf?: string): string {
+  static relative(base: string, leaf?: string, cwd?: string): string {
+    const root = cwd || Template.cwd();
     if (!leaf) {
-      const root = process.cwd();
-      return !base.includes(root) ? Template.join(root, base) : base;
+      return !base.includes(root) && root ? Template.join(root, base) : base;
     }
 
     const c: string[] = [];
     const a = base.split('/');
     const b = leaf.split('/');
 
-    for (let i = 0; i < a.length; i++) {
+    let i = 0;
+    for (; i < a.length && i < b.length; i++) {
       if (a[i] !== b[i]) break;
       c.push(a[i]);
     }
 
     const backtracks = Math.max(a.length - c.length - 1, 0);
-    const diff = b.slice(c.length, b.length);
+    const diff = b.slice(c.length);
 
-    return [...Array.from({ length: backtracks }).fill('..'), ...diff].join('/');
+    return [...Array(backtracks).fill('..'), ...diff].join('/');
   }
 
   static filename(path: string, ext?: string): string {
-    let name = path.split('/').pop()!;
-    if (ext) name = name.replace(ext, '');
-    return name;
+    const name = path.split('/').pop()!;
+    return ext ? name.replace(ext, '') : name;
   }
 
   static dirname(path: string): string {
-    return Template.join(path, '..');
+    const parts = path.split('/');
+    parts.pop();
+    if (parts.length === 0) return '.';
+    if (parts.length === 1 && parts[0] === '') return '/';
+    let result = parts.join('/');
+    if (path.endsWith('/') && !result.endsWith('/')) result += '/';
+    return result;
   }
 
   static exists(filepath: string): boolean {
@@ -868,6 +874,10 @@ export class Template {
 
   static glob(filepath: string): string[] {
     return [filepath];
+  }
+
+  static cwd() {
+    return process.cwd();
   }
 
   static write(dest: string, code: any): void {
