@@ -27,5 +27,6 @@ export function execSync(chunk: any, ctx: any[]): any {
   return chunk;
 }
 
+// FIXME: here we could inject a cusotm "execute" context
 export const executeAsync = (tag: any, loader: any, callback: any) => execute(tag as any, loader as any, callback as any, execAsync);
 export const executeSync = (tag: any, loader: any, callback: any) => execute(tag as any, loader as any, callback as any, execSync);

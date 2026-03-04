@@ -1,10 +1,16 @@
-import { parse, stringify } from 'css';
-
+import {
+  style as ssrStyle,
+  rulify as ssrRulify,
+  specify as ssrSpecify,
+  classify as ssrClassify,
+  scopify as ssrScopify,
+  cssify as ssrCssify,
+} from 'somedom/ssr';
 import { Expr } from './expr.ts';
 import { str } from '../render/hooks.ts';
 import { fixedAdapter } from './adapter.ts';
 import { enhance, extend } from './utils.ts';
-import { Is, stack, trace, findAll } from '../utils/server.ts';
+import { Is, stack, trace } from '../utils/server.ts';
 
 const RE_QUOTES_REQUIRED = /[\s"'`=</_:>-]/;
 
@@ -60,161 +66,70 @@ export function attrs(data: Record<string, any>): string {
 }
 
 export function style(chunk: any): string {
-  const css = stringify({ stylesheet: { rules: [chunk] } }, { compress: true });
-
-  return css;
+  return ssrStyle(chunk);
 }
 
 export function rulify(css: string, filepath: string): any[] {
-  const ast = parse(css, { source: filepath });
-  const out: any[] = [];
-
-  ast.stylesheet.rules.forEach((chunk: any) => {
-    if (chunk.type !== 'rule') {
-      if (chunk.rules) {
-        const rules: string[] = [];
-
-        chunk.rules.forEach((rule: any) => {
-          rules.push(style(rule));
-        });
-
-        out.push([`@${chunk.type} ${chunk[chunk.type]}`, rules]);
-      } else {
-        out.push(style(chunk));
-      }
-      return;
-    }
-
-    out.push(style(chunk));
-  });
-  return out;
+  return ssrRulify(css, filepath);
 }
 
 export function specify(ref: string, value: string, _class?: boolean): string {
-  if (value.includes(']')) {
-    const offset = value.lastIndexOf(']');
-    const prefix = value.substr(0, offset + 1);
-    const suffix = value.substr(offset + 1);
-
-    return _class ? `${prefix}.${ref}${suffix}` : `${prefix}:where(.${ref})${suffix}`;
-  }
-
-  const offset = value.indexOf(':');
-
-  if (offset === -1) {
-    return _class ? `${value}.${ref}` : `${value}:where(.${ref})`;
-  }
-
-  const prefix = value.substr(0, offset);
-  const suffix = value.substr(offset);
-
-  return _class ? `${prefix}.${ref}${suffix}` : `${prefix}:where(.${ref})${suffix}`;
+  return ssrSpecify(ref, value, _class);
 }
 
 export function classify(ref: string, _class: boolean | undefined, chunk: any, children: any): void {
-  const rules = chunk.selectors || [];
-  const parents = rules.map((x: string) => x.split(/[\s~+>]/)[0].split('::')[0]);
-  const subnodes = rules.map((x: string) => x.split(/[\s~+>]/).pop()!.split('::')[0]);
-  const selectors = [...new Set(parents.concat(subnodes))];
+  const options: any = {
+    adapter: fixedAdapter,
+    skipNode(node: any): boolean {
+      return UNSCOPED_ELEMENTS.includes(node.name);
+    },
+    appendScopeClass(node: any, value: string): void {
+      node.attributes = node.attributes || {};
+      const classNames = node.attributes.class || '';
 
-  selectors.forEach((rule: string) => {
-    const matches = findAll(rule, children, fixedAdapter) as any[];
+      if (classNames instanceof Expr) {
+        classNames.concat(` ${value}`);
+      } else {
+        node.attributes.class = `${node.attributes.class || ''} ${value}`.trim();
+      }
+    },
+  };
 
-    if (matches) {
-      chunk.selectors = chunk.selectors.map((selector: string) => {
-        if (!selector.includes(ref) && matches.length > 0) {
-          const tokens = selector.split(' ');
-          const first = tokens.shift()!;
-          const last = tokens.pop();
-
-          [first, last].forEach((sel, i) => {
-            if (!sel) return;
-            sel = specify(ref, sel, _class);
-            if (i === 0) tokens.unshift(sel);
-            else tokens.push(sel);
-          });
-
-          if (_class && tokens.length === 1) {
-            tokens[0] = specify(ref, tokens[0], _class);
-          }
-          return tokens.join(' ');
-        }
-        return selector;
-      });
-      matches.forEach((node: any) => {
-        if (node.matches) return;
-        if (!UNSCOPED_ELEMENTS.includes(node.name)) {
-          const classNames = node.attributes.class || '';
-
-          node.matches = true;
-
-          if (classNames instanceof Expr) {
-            classNames.concat(` ${ref}`);
-          } else {
-            node.attributes.class = `${node.attributes.class || ''} ${ref}`.trim();
-          }
-        }
-      });
-    }
-  });
+  ssrClassify(ref, _class, chunk, children, options);
 }
 
 export function scopify(ref: string, _class: boolean | undefined, styles: string, children: any, filepath: string): any[] {
-  const css = styles.trim();
+  const options: any = {
+    adapter: fixedAdapter,
+    skipNode(node: any): boolean {
+      return UNSCOPED_ELEMENTS.includes(node.name);
+    },
+    appendScopeClass(node: any, value: string): void {
+      node.attributes = node.attributes || {};
+      const classNames = node.attributes.class || '';
+
+      if (classNames instanceof Expr) {
+        classNames.concat(` ${value}`);
+      } else {
+        node.attributes.class = `${node.attributes.class || ''} ${value}`.trim();
+      }
+    },
+  };
 
   try {
-    const ast = parse(css, { source: filepath });
-    const out: any[] = [];
-
-    ast.stylesheet.rules.forEach((chunk: any) => {
-      if (chunk.type !== 'rule') {
-        if (chunk.rules) {
-          const rules: string[] = [];
-
-          chunk.rules.forEach((rule: any) => {
-            classify(ref, _class, rule, children);
-            rules.push(style(rule));
-          });
-
-          out.push([`@${chunk.type} ${chunk[chunk.type]}`, rules]);
-        } else {
-          out.push(style(chunk));
-        }
-        return;
-      }
-
-      classify(ref, _class, chunk, children);
-      out.push(style(chunk));
-    });
-
-    return out;
+    return ssrScopify(ref, _class, styles, children, filepath, options);
   } catch (e: any) {
     trace('E_HTML', e);
     if (e.filename) {
       e.message = `${e.reason} at ${e.filename}:${e.line}:${e.column}`;
-      e.stack = stack(css, e.line, e.column);
+      e.stack = stack(styles.trim(), e.line, e.column);
     }
     throw e;
   }
 }
 
 export function cssify(styles: any[]): string {
-  const out: string[] = [];
-
-  styles.forEach((css: any) => {
-    if (Is.arr(css)) {
-      if (css[0][0] === '@') {
-        if (css[1].length > 0) {
-          out.push(`${css[0]}{${css[1].join('\n')}}`);
-        }
-      } else {
-        out.push(css.join('\n'));
-      }
-    } else {
-      out.push(css);
-    }
-  });
-  return out.join('\n').trim();
+  return ssrCssify(styles);
 }
 
 export function taggify(vnode: any, callback?: (chunk: any) => void): any {

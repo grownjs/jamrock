@@ -1,5 +1,5 @@
-import { isNot as not, isArray as arr, isPlain as plain, isString as str, isScalar as scalar, isFunction as func } from 'somedom/ssr';
 import mime from 'mime/lite';
+import { isNot as not, isArray as arr, isPlain as plain, isString as str, isScalar as scalar, isFunction as func } from 'somedom/ssr';
 import { Is } from './base.ts';
 
 export { COLORS as $ } from '../chalk.js';
