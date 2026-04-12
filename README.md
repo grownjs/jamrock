@@ -1,38 +1,416 @@
-# <img src="https://github.com/grownjs/jamrock-guide/raw/master/docs/images/jamrock.svg" alt="Jamrock" />
+# Jamrock
 
-> [!IMPORTANT]
-> WIP: development in progress, stuff shall change!
+> The herbsman's web framework
 
-## What is Jamrock?
+Jamrock is a server-side rendering (SSR) web framework for JavaScript. It uses Svelte 5-style syntax in `.html` component files with SvelteKit-inspired file-system routing.
 
-It's a SSR framework for Javascript (NodeJS, Deno & Bun)
+**Status:** Pre-release (v0.0.0), actively developed on the `next` branch. `master` holds stable changes.
 
-You can preview the initial version of our website at https://jamrock.dev (ain't much but is honest work!)
+---
 
-I've been working on this shit for a short while, learning a lot while stealing ideas like real-artists&trade;. I am planning to release something usable next year, limited on features, but easy to grasp and extend!
+## Features
 
-I don't want to compete with a vast and wild world of kick-ass technologies... so far, I want to limit what am planning for it.
+- **SSR-first** — All rendering happens on the server; minimal JavaScript on the client
+- **Multi-runtime** — Runs on Node.js, Deno, Bun, GTK4/GJS (desktop), Txiki.js, WinterJS
+- **Svelte 5 syntax** — Components use familiar Svelte syntax in `.html` files
+- **File-system routing** — SvelteKit-style routing with `+page.html`, `+layout.html`, `+error.html`, `+server.mjs`
+- **Scoped CSS** — Styles are scoped by default; Less and UnoCSS supported
+- **Streaming** — Real-time updates via fragments, generators, and SSE/WebSockets
+- **Progressive enhancement** — Forms work without JavaScript; enhanced with client-side hydration
 
-- [x] Components &mdash; a bit of them, based on Svelte 5 syntax but using old `export` style props!
-- [ ] Fragments &mdash; not yet finished, but they are meant for updateable nodes on the browser.
-- [x] Snippets &mdash; yes! well, not so advanced but for most basic usage they just work.
-- [x] Layouts &mdash; support for `+layout` or `+error` components is built-in, nested component rendering is also handled this way.
-- [ ] Scripts &mdash; you can actually embed scripts for client-side usage, or bundle them... something in between!
-- [x] Styles &mdash; scoped css for sure, even we have some basic integration with UnoCSS to have fun.
-- [x] Pages &mdash; this is all we wanted, declare routes and api endpoints through page components.
-- [x] APIs &mdash; support for `+server` modules (middleware) is enabled, along with all your pages.
-- [ ] Data &mdash; what? Yeah, you can render almost from anything but what if we could understand some data-types like a generator? And, in turn, update the DOM whenever the generator yield new values!
-- [ ] E2E &mdash; I would like but front-end is very complicated… so I don’t want to replicate what we already have. However, a plain integration shall be available soon!
-- [ ] DX &mdash; not yet done, but we provide a CLI with enough power to watch and update your app live (it lacks of HMR and nice things, but it helps).
-- [ ] Support &mdash; I am testing everything against NodeJS, Deno and Bun so I think we'll be fine. If everything goes well, we could also run on jsdom/happy-dom/somedom contexts for headless testing.
+---
 
-There are lots of things still floating around, other stuff commented, and we're plenty of broken shit. I you want to stuck in this mud you're already on board!
+## Quick Start
 
-## What branches are usable?
+```bash
+# Install
+curl -L get.jamrock.dev | bash
 
-We have no special branches or tags yet, but we have few commits with squashed work over iterations I made.
+# Create a new app
+jamrock init my-app
+cd my-app
+npm install
+npm run dev
+```
 
-You can compare between them to feel the pain, and if you're enough brave you can try to run the tests locally... fortunately, we have some actions running against the `next` branch to keep the stuff green.
+Open http://localhost:8080 in your browser.
 
-> [!NOTE]
-> I'll be using the `next` branch as for tinkering and make some progress, while the `master` branch will keep the final changes.
+---
+
+## Project Structure
+
+```
+my-app/
+├── pages/                    # Source directory (default)
+│   ├── index+page.html       # Route: /
+│   ├── about+page.html       # Route: /about
+│   ├── blog/
+│   │   ├── index+page.html   # Route: /blog
+│   │   └── [slug]+page.html  # Route: /blog/:slug
+│   ├── +layout.html          # Layout wrapper
+│   ├── +error.html           # Error boundary
+│   └── +server.mjs           # Middleware/API routes
+├── components/               # Reusable components
+│   └── navlink.html
+├── dev.config.mjs            # Configuration
+└── build/                    # Compiled output
+```
+
+---
+
+## Routing
+
+### File-Based Routes
+
+| Filename | Route |
+|----------|-------|
+| `index+page.html` | `/` |
+| `about+page.html` | `/about` |
+| `blog/[slug]+page.html` | `/blog/:slug` |
+| `(lang).blog+page.html` | `/:lang?/blog` |
+| `[...path]+page.html` | `/*path` |
+| `_site/sitemap[.xml]+page.html` | `/sitemap.xml` |
+
+### Special Files
+
+| File | Purpose |
+|------|---------|
+| `+page.html` / `+page.md` | Route component |
+| `+layout.html` | Layout wrapper (applies to nested routes) |
+| `+error.html` | Error boundary for subtree |
+| `+server.mjs` | Middleware, handlers, data loading |
+
+---
+
+## Components
+
+### Script Contexts
+
+```html
+<script>                        <!-- Server-side per-request logic -->
+<script context="module">      <!-- Module-level (runs once) -->
+<script context="client">      <!-- Browser-only JavaScript -->
+```
+
+### Props and Slots
+
+```html
+<script>
+  export let title;
+  export let children;
+</script>
+
+<h1>{title}</h1>
+{@render children?.()}
+```
+
+### Template Syntax
+
+```html
+{variable}                     <!-- Interpolation -->
+{#if condition}...{/if}        <!-- Conditional -->
+{#each items as item}...{/each} <!-- Loop -->
+{#snippet name(args)}...{/snippet} <!-- Reusable snippet -->
+{@render children?.()}         <!-- Render slot -->
+{@html rawString}              <!-- Render raw HTML -->
+```
+
+---
+
+## Styling
+
+### Scoped CSS (Default)
+
+```html
+<style>
+  h1 { color: red; }
+  .active { font-weight: bold; }
+</style>
+```
+
+### Less
+
+```html
+<style lang="less">
+  @primary: #79C551;
+  .button {
+    color: @primary;
+    &:hover { color: darken(@primary, 10%); }
+  }
+</style>
+```
+
+### UnoCSS
+
+Enable in `dev.config.mjs`:
+
+```js
+export default { unocss: true };
+```
+
+Use utility classes:
+
+```html
+<div class="flex gap-4 p-2 text-center">...</div>
+```
+
+---
+
+## Server-Side Logic
+
+### Request Context (`jamrock:conn`)
+
+```html
+<script>
+  import { method, headers, redirect, params } from 'jamrock:conn';
+
+  if (method === 'GET' && !headers.has('authorization')) {
+    redirect('/login');
+  }
+</script>
+```
+
+### Handlers
+
+```html
+<script>
+  export default {
+    use: ['csrf'],           // Middleware to invoke
+    POST: true,              // Allow POST requests
+    DELETE() { /* ... */ },  // Handle DELETE
+    ['GET /:id']({ id }) {   // Custom route handler
+      console.log(id);
+    },
+  };
+</script>
+```
+
+### Middleware (`+server.mjs`)
+
+```js
+export function http(conn) {
+  // Runs on every request
+}
+
+export function csrf(conn) {
+  conn.req.csrfProtect();
+}
+
+export default {
+  use: ['http', 'csrf'],
+  ['GET /api/users']() {
+    return Response.json([{ id: 1, name: 'Alice' }]);
+  },
+};
+```
+
+---
+
+## Fragments (Live Updates)
+
+Fragments enable real-time DOM updates without full page reloads:
+
+```html
+<fragment name="list" tag="ul" mode="append" limit="10">
+  {#each data as item}
+    <li>{item}</li>
+  {/each}
+</fragment>
+```
+
+Options:
+- `name` — Unique identifier (required)
+- `tag` — HTML element to render as
+- `mode` — `append`, `prepend`, or `replace`
+- `limit` — Max items before pausing
+- `timeout` — Max execution time (ms)
+
+---
+
+## CLI Commands
+
+```bash
+jamrock init <dir>     # Create new application
+jamrock serve           # Start development server
+jamrock build           # Compile for production
+jamrock route           # List available routes
+
+# Options
+--src <dir>            # Source directory (default: ./pages)
+--dest <dir>           # Output directory (default: ./build)
+--port <number>        # Server port (default: 8080)
+--watch                # Enable file watching
+--dts                  # Generate TypeScript definitions
+```
+
+### Runtime-Specific Launchers
+
+```bash
+./bin/node serve --watch
+./bin/deno serve --port 3000
+./bin/bun serve
+./bin/gjs serve         # GTK4/GJS runtime
+```
+
+---
+
+## Configuration (`dev.config.mjs`)
+
+```js
+export default {
+  src: 'pages',
+  dest: 'build',
+  port: 3000,
+  host: '0.0.0.0',
+  prefix: '@',
+  
+  // CSS generators
+  unocss: true,
+  less: await import('less'),
+  
+  // Markdown options
+  markdown: {
+    emojify: true,
+    twemoji: true,
+  },
+  
+  // Session storage (production)
+  redis: {
+    url: process.env.REDIS_URL,
+  },
+};
+```
+
+---
+
+## Supported Runtimes
+
+| Runtime | Status | Notes |
+|---------|--------|-------|
+| Node.js | Stable | Primary target |
+| Deno | Stable | Requires `--allow-all` |
+| Bun | Stable | Fastest builds |
+| GTK4/GJS | Experimental | Desktop applications |
+| Txiki.js | WIP | Lightweight runtime |
+| WinterJS | WIP | WinterCG/edge deployment |
+| Cloudflare | WIP | Workers adapter |
+| Vercel Edge | WIP | Edge functions |
+
+---
+
+## Architecture
+
+### Source Modules (`src/`)
+
+| Module | Purpose |
+|--------|---------|
+| `markup/` | HTML parsing, expression evaluation, CSS scoping, AST walking |
+| `templ/` | Template class — compilation, caching, response serialization |
+| `render/` | Async/sync rendering pipelines, React-style hooks |
+| `handler/` | Route matching/ranking, middleware orchestration |
+| `server/` | Request/response handling, sessions, cookies, CSRF, Redis |
+| `client/` | Browser hydration, DOM patching, live socket, form handling |
+
+### Runtime Adapters (`lib/`)
+
+Each adapter implements `createEnvironment()` with runtime-specific modules:
+
+```
+lib/
+├── nodejs/     # Primary adapter
+├── deno/       # Deno-specific
+├── bun/        # Bun-specific
+├── gtk4/       # GJS/SpiderMonkey
+├── txiki/      # QuickJS + libuv
+├── winterjs/   # wasmer-based
+├── cloudflare/ # Workers
+└── vercel-edge/# Edge functions
+```
+
+### Entry Points
+
+| File | Output | Purpose |
+|------|--------|---------|
+| `src/main.ts` | `dist/main.mjs` | Core library |
+| `src/server.ts` | `dist/server.mjs` | Server module |
+| `src/client.js` | `dist/client.mjs` | Browser hydration |
+| `src/gtk.js` | `dist/gtk.mjs` | GTK4 adapter |
+
+---
+
+## Development
+
+### Build
+
+```bash
+make dist              # Full distribution build
+npm run build          # Raw mortero build
+make nodejs:build      # Node.js-specific
+make deno:build        # Deno-specific
+make bun:build         # Bun-specific
+```
+
+### Test
+
+```bash
+npm test               # Lint + unit tests
+npm run test:unit      # Unit tests only
+npm run test:e2e       # Browser tests (TestCafe)
+npm run test:ci        # Coverage report
+
+# Per-runtime
+make test-nodejs
+make test-deno
+make test-bun
+make gjs-test          # GTK4/GJS smoke tests
+```
+
+### Examples
+
+```bash
+make start:node        # Serve examples on port 3000
+make start:bun
+make start:deno
+```
+
+### Documentation Site
+
+```bash
+make docs              # Dev server for userguide/
+make dist-docs         # Production build with Pagefind
+make deploy            # Deploy to gh-pages
+```
+
+---
+
+## Documentation
+
+Live documentation: **https://jamrock.site/**
+
+Pages:
+- [Introduction](/introduction) — Routes, handlers, middleware, request/response
+- [Command Line](/command-line) — CLI usage and configuration
+- [Components](/components) — File naming, props, templating, markdown
+- [Fragments](/fragments) — Live DOM updates
+- [Directives](/directives) — Special attributes, forms
+- [Routing](/routing) — File-based routing, dynamic segments
+- [Middleware](/middleware) — Request pipeline, error handling
+- [Configuration](/configuration) — Build options, generators
+- [Deployment](/deployment) — Runtime targets, production setup
+- [Conn API](/conn) — Request context reference
+
+---
+
+## Known Issues
+
+- **CSRF token** in `src/server/connection.ts` calls `session.nextToken()` synchronously (it's async) — results in Promise being stored instead of token value
+- **`components/svg-icon.html`** — Not implemented; SVG icons are inlined in layouts
+- **`bin/winterjs`** — Requires `wasmer run wasmer/winterjs` wrapper
+- **GJS `btoa`/`atob`** — Implemented via `GLib.base64_encode/decode`
+- **GJS `crypto.subtle.sign`** — Mocked with `GLib.compute_hmac_for_string`
+
+---
+
+## License
+
+MIT — Alvaro Cabrera <pateketrueke@gmail.com>

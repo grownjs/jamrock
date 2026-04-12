@@ -1,4 +1,7 @@
-import { onError, useRef, useMemo, useState, useEffect, createContext } from 'nohooks';
+import { onError, createContext, useRef, useState } from 'nohooks';
+import { signal, computed, effect, batch, untracked } from 'somedom';
+
+const useMemo = computed;
 
 import { wrapComponent, mountableComponent } from './render.ts';
 import { Is, sleep } from '../utils/client.ts';
@@ -326,7 +329,8 @@ export class Components {
       this.loaded = true;
       this.browser.runtime().then(() => {
         Object.assign((window as any).Jamrock.Runtime, {
-          onError, useRef, useMemo, useState, useEffect, createContext, wrapComponent, mountableComponent,
+          onError, useRef, useMemo, useState, createContext, wrapComponent, mountableComponent,
+          signal, computed, effect, batch, untracked,
         });
       });
     }
