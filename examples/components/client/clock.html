@@ -1,14 +1,14 @@
 <script context="client">
-  import { useState, useEffect } from 'jamrock';
+  import { signal, effect } from 'jamrock';
 
-  const [now, setTime] = useState(Date.now());
+  const now = signal(Date.now());
 
-  useEffect(() => {
+  effect(() => {
     const timer = setInterval(() => {
-      setTime(Date.now());
+      now.value = Date.now();
     }, 1000);
     return () => clearInterval(timer);
-  }, []);
+  });
 </script>
 
-{new Date(now).toISOString().substr(11, 8)}
+{new Date(now.value).toISOString().substr(11, 8)}

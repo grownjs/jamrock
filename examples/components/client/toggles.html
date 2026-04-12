@@ -1,22 +1,21 @@
 <script context="client">
-  import { useState, useEffect } from 'jamrock';
+  import { signal, effect } from 'jamrock';
 
   export const names = [];
   export const prefix = 'check-';
   export const checked = 0;
 
-  // FIXME: focus vs selection?
-  const [focused, setFocus] = useState(null);
-  const [selected, setTab] = useState(checked);
+  const focused = signal(null);
+  const selected = signal(checked);
 
   function selectTab() {
     requestAnimationFrame(() => self.querySelector('[aria-selected=true] label').click());
   }
   function prevTab() {
-    if (selected > 0) setTab(selected - 1);
+    if (selected.value > 0) selected.value--;
   }
   function nextTab() {
-    if (selected < names.length - 1) setTab(selected + 1);
+    if (selected.value < names.length - 1) selected.value++;
   }
   function updateTab() {
     requestAnimationFrame(() => {
@@ -30,14 +29,14 @@
         if (tabs[i] === tab) break;
         offset++;
       }
-      setTab(offset);
+      selected.value = offset;
     });
   }
 
   let skip;
   function skipTabs(shift) {
     skip = true;
-    setFocus(true);
+    focused.value = true;
     setTimeout(() => { skip = false; }, 60);
 
     const tabs = self.querySelectorAll('[role=tab]');
@@ -49,14 +48,15 @@
     }
   }
   function focusTabs() {
-    if (skip || focused === null) return;
-    setFocus(null);
+    if (skip || focused.value === null) return;
+    focused.value = null;
     updateTab();
   }
 
-  useEffect(() => {
+  effect(() => {
+    selected.value;
     setTimeout(() => self.querySelector('[aria-selected=true]').focus(), 60);
-  }, [selected]);
+  });
 
   export default {
     prevTab,
@@ -79,7 +79,7 @@
 </style>
 
 {#each names as tab, i}
-<li aria-selected="{selected === i ? 'true' : null}" role="tab" tabindex="0">
-  <label for="{prefix}{i}" on:click="{() => setTab(i)}">{tab}</label>
+<li aria-selected="{selected.value === i ? 'true' : null}" role="tab" tabindex="0">
+  <label for="{prefix}{i}" on:click="{() => selected.value = i}">{tab}</label>
 </li>
 {/each}

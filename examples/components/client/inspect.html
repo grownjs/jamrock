@@ -1,5 +1,5 @@
 <script context="client">
-  import { useState, useEffect } from 'jamrock';
+  import { signal, computed, effect } from 'jamrock';
 
   export let data = [];
   export let fields;
@@ -17,32 +17,34 @@
     return typeof object === 'object' ? JSON.stringify(object) : String(object);
   }
 
-  const [{ filtered, query }, setState] = useState({ filtered: data, query: '' });
+  const query = signal('');
+  const filtered = computed(() => {
+    const q = query.value;
+    if (!q) return data;
+    return data.filter(item => {
+      const subject = JSON.stringify(item).toLowerCase();
+      const filters = q.toLowerCase().split(/\s+/).filter(Boolean);
+
+      return filters.every(_ => {
+        if (_.includes(':')) return subject.includes(`"${_.split(':').join('":"')}"`);
+        return subject.includes(_.toLowerCase());
+      });
+    });
+  });
 
   let t;
   function filter(q) {
     clearTimeout(t);
     t = setTimeout(() => {
-      setState({
-        query: q,
-        filtered: data.filter(item => {
-          const subject = JSON.stringify(item).toLowerCase();
-          const filters = q.toLowerCase().split(/\s+/).filter(Boolean);
-
-          return filters.every(_ => {
-            if (_.includes(':')) return subject.includes(`"${_.split(':').join('":"')}"`);
-            return subject.includes(_.toLowerCase());
-          });
-        }),
-      });
+      query.value = q;
     }, 120);
   }
 
-  useEffect(() => {
+  effect(() => {
     const input = self?.querySelector('input');
     const q = input?.value;
-    if (q && query !== q) filter(q);
-  }, [query]);
+    if (q && query.value !== q) filter(q);
+  });
 </script>
 
 <style>
@@ -95,7 +97,7 @@
 <div>
   <table cellspacing="0">
     <tbody>
-      {#each filtered as item}
+      {#each filtered.value as item}
         <tr>
           {#each fields as key}
             {#if key === main}
@@ -114,8 +116,8 @@
 </div>
 
 <small>
-  <b>{filtered.length}</b> item{filtered.length === 1 ? '' : 's'} found
-  {#if query.length > 0}
-    containing "{query}"
+  <b>{filtered.value.length}</b> item{filtered.value.length === 1 ? '' : 's'} found
+  {#if query.value.length > 0}
+    containing "{query.value}"
   {/if}
 </small>
