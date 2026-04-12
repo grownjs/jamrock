@@ -27,6 +27,11 @@ export function jamLang(): LanguageDefinition {
         excludeEnd: true,
         contains: [
           { begin: /^\s*\$:/, end: /\s*/, className: 'keyword' },
+          {
+            begin: /\b(signal|computed|effect|batch|untracked)\b/,
+            className: 'built_in',
+            relevance: 5,
+          },
         ],
       },
       {
@@ -57,9 +62,14 @@ export function jamLang(): LanguageDefinition {
         contains: [
           { begin: /\{/, end: /\}/, skip: true },
           {
-            begin: /([:#/@])(if|else|each|debug|const|html)/,
+            begin: /([:#/@])(if|else|each|debug|const|html|snippet|render)/,
             className: 'keyword',
             relevance: 10,
+          },
+          {
+            begin: /\b(signal|computed|effect|batch|untracked)\b/,
+            className: 'built_in',
+            relevance: 5,
           },
         ],
       },
