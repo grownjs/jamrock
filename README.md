@@ -115,6 +115,34 @@ my-app/
 {@html rawString}              <!-- Render raw HTML -->
 ```
 
+### Client-Side Signals
+
+Client-side components use **signals** for fine-grained reactivity:
+
+```html
+<script context="client">
+  import { signal, computed, effect } from 'jamrock';
+
+  const count = signal(0);
+  const doubled = computed(() => count.value * 2);
+
+  effect(() => {
+    document.title = `Count: ${count.value}`;
+  });
+</script>
+
+<button on:click={() => count.value++}>{count.value}</button>
+<p>Doubled: {doubled.value}</p>
+```
+
+**DOM bindings with `s:*` attributes:**
+
+```html
+<span s:textContent={message}></span>
+<button s:disabled={isLoading}>Submit</button>
+<div s:style.color={themeColor}></div>
+```
+
 ---
 
 ## Styling
