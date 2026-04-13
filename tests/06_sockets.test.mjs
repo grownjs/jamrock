@@ -221,6 +221,52 @@ test.group('streaming support', () => {
     expect(published[0]).toContain('list');
   });
 
+  test('should stream via SSE when socket is pre-connected', async ({ expect }) => {
+    const sseMessages = [];
+    const uuid = 'sse-test-uuid';
+    
+    const sseSocket = {
+      identity: uuid,
+      send: (msg) => {
+        sseMessages.push(msg);
+      },
+    };
+
+    const ctx = {
+      publish: async (ref, key, item, mode, render) => {
+        const { target, vnode } = await render(key, item);
+        const payload = JSON.stringify(vnode);
+        if (ctx.socket) {
+          ctx.socket.send(`rpc:update ${ctx.socket.identity} ${target} ${mode}\t${payload}`);
+        }
+      },
+      socket: sseSocket,
+    };
+    ctx.stream = streamify().wrap(ctx, uuid);
+
+    fixture`./sse-streaming.html
+      <script>
+        function* items() {
+          yield 'a';
+          yield 'b';
+          yield 'c';
+        }
+      </script>
+      <fragment name="stream" limit="1">
+        {#each items as x}
+          <p>{x}</p>
+        {/each}
+      </fragment>
+    `;
+
+    await fixture.partial('sse-streaming.html', null, ctx);
+    await sleep(50);
+
+    expect(sseMessages.length).toBe(2);
+    expect(sseMessages[0]).toContain('rpc:update');
+    expect(sseMessages[0]).toContain('stream');
+  });
+
   test.skip('should be able to intercept websocket calls', async ({ expect }) => {
     const ctx = useContext({
       conn: {
