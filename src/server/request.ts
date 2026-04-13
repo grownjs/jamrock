@@ -228,12 +228,13 @@ export async function createBody(env: any, conn: any, { client, matches, options
   let body;
   const encoder = new TextEncoder();
   try {
+    const sseSocket = env.sseSockets?.get(conn.req.uuid);
     const ctx: any = {
       conn,
       depth: 0,
       stack: [],
       ready: null,
-      socket: null,
+      socket: sseSocket || null,
       stream: null,
       streamController: null,
       called: true,
@@ -530,7 +531,9 @@ function createSSEResponse(env: any, conn: any): Response {
       sseSocket = {
         identity: uuid,
         send: (msg: string) => {
-          controller.enqueue(encoder.encode(`data: ${JSON.stringify(msg)}\n\n`));
+          const lines = msg.split('\n');
+          const output = lines.map(line => `data: ${line}`).join('\n') + '\n\n';
+          controller.enqueue(encoder.encode(output));
         },
       };
 

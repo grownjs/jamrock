@@ -138,13 +138,13 @@ function useContext(overrides) {
 }
 
 test.group('streaming support', () => {
-  test.skip('should resolve promises from props', async ({ expect }) => {
+  test('should resolve promises from props', async ({ expect }) => {
     const markup = await fixture.partial('resolve.html', null, {});
 
     expect(markup).toContain('Got: number');
   });
 
-  test.skip('should pull data from iterators', async ({ expect }) => {
+  test('should pull data from iterators', async ({ expect }) => {
     const ctx = useContext();
 
     const markup = await fixture.partial('iterators.html', null, ctx);
@@ -163,7 +163,7 @@ test.group('streaming support', () => {
     expect(markup).toContain('<h1 data-location="hello.html:4:1">Hi, OSOM.</h1>');
   });
 
-  test.skip('should push exceeding data from iterators', async ({ expect }) => {
+  test('should push exceeding data from iterators', async ({ expect }) => {
     const ctx = useContext();
 
     await fixture.partial('fragments.html', null, ctx);
@@ -175,6 +175,50 @@ test.group('streaming support', () => {
     expect(callCount).toBeGreaterThanOrEqual(20);
     expect(givenArgs.length).toBeGreaterThanOrEqual(21);
     expect(givenArgs.slice(0, 10)).toEqual([100, 101, 102, 103, 104, 105, 106, 107, 108, 109]);
+  });
+
+  test('should stream fragment updates via socket', async ({ expect }) => {
+    const published = [];
+    const ctx = {
+      publish: async (ref, key, item, mode, render) => {
+        const { target, vnode } = await render(key, item);
+        const payload = JSON.stringify(vnode);
+        if (ctx.socket) {
+          ctx.socket.send(`rpc:update ${ctx.socket.identity} ${target} ${mode}\t${payload}`);
+        }
+      },
+      socket: {
+        identity: 'test-uuid',
+        send: (msg) => {
+          published.push(msg);
+        },
+      },
+    };
+    ctx.stream = streamify().wrap(ctx, 'test-uuid');
+
+    fixture`./streaming.html
+      <script>
+        function* items() {
+          let i = 0;
+          while (i < 10) {
+            yield i;
+            i++;
+          }
+        }
+      </script>
+      <fragment name="list" limit="3">
+        {#each items as x}
+          <span>{x}</span>
+        {/each}
+      </fragment>
+    `;
+
+    await fixture.partial('streaming.html', null, ctx);
+    await sleep(50);
+
+    expect(published.length).toBe(7);
+    expect(published[0]).toContain('rpc:update');
+    expect(published[0]).toContain('list');
   });
 
   test.skip('should be able to intercept websocket calls', async ({ expect }) => {

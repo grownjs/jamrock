@@ -30,13 +30,7 @@ function createSSESocket(uuid: string, prefix: string, onMessage: (_msg: string)
     };
 
     eventSource.onmessage = (event: MessageEvent) => {
-      const data = event.data;
-      if (data.startsWith('"') && data.endsWith('"')) {
-        const parsed = JSON.parse(data);
-        onMessage(parsed);
-      } else {
-        onMessage(data);
-      }
+      onMessage(event.data);
     };
 
     eventSource.onerror = () => {
