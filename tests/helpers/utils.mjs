@@ -258,15 +258,7 @@ fixture.use = (key, opts, block) => {
 fixture.cleanup = () => {
   const keys = Object.keys(fixture).filter(k => k.startsWith('./'));
   keys.forEach(key => {
-    const info = fixture[key];
-    if (info && info.destination) {
-      try {
-        fs.unlinkSync(info.destination);
-      } catch {
-        // ignore
-      }
-      delete fixture[key];
-    }
+    delete fixture[key];
   });
   return keys.length;
 };
