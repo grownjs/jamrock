@@ -137,7 +137,12 @@ export class Expr {
       } else if (_expr.indexOf('@debug ') === 0) {
         _expr = `$$.d({ ${_expr.substr(7)} })`;
       } else if (_expr.indexOf('@html ') === 0) {
-        _expr = `$$.h(${_expr.substr(6)})`;
+        const htmlExpr = _expr.substr(6);
+        if (/^\$\w+$/.test(htmlExpr)) {
+          _expr = `$$.s(${htmlExpr.substr(1)})`;
+        } else {
+          _expr = `$$.h(${htmlExpr})`;
+        }
       } else if (_expr.indexOf('@raw ') === 0) {
         _expr = _expr.substr(5);
       } else if (expression !== false) {

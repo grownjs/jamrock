@@ -25,6 +25,9 @@ export function createRender(): { patchNode: any; createElement: any; renderToEl
         });
         return doc;
       }
+      if (props['d:html']) {
+        return ['div', props, ...children];
+      }
       return children;
     },
   }]);

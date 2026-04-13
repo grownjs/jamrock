@@ -42,6 +42,9 @@ function createSelf(element: ElementFn | null, loader: LoaderFn, next: NextFn, r
     h: (value: unknown): unknown => {
       return Is.arr(value) ? value : ['fragment', { '@html': String(value) }];
     },
+    s: (value: unknown): unknown => {
+      return ['fragment', { 'd:html': value }];
+    },
     if: (cond: unknown, then: () => unknown, ...branches: Array<(() => unknown) | undefined>): unknown => {
       if (cond) return run(then(), []);
 

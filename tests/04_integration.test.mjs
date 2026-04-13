@@ -106,7 +106,7 @@ fixture`./main.html
     <Empty />
     [{@render $$props.children?.()}:{@render $$props.after?.()}]
     {@html ['h1', Object.fromEntries([['style', 'color:red']]), 'It works.']}
-    {@html html.value}
+    {@html $html}
   </div>
 
   <style>
