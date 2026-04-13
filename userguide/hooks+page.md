@@ -128,18 +128,6 @@ Handle errors in client-side components:
 </script>
 ```
 
-## createContext
-
-Create a context for sharing state across components:
-
-```html
-<script context="client">
-  import { createContext, signal } from 'jamrock';
-
-  const ThemeContext = createContext({ theme: 'light' });
-</script>
-```
-
 <nav class="flex gap-sm between">
   <span>
     ➯ Next: <a href="/events#top">Events</a>

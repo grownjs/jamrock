@@ -14,7 +14,10 @@ export {
   untracked,
 };
 
-export { onError, useState, createContext } from 'nohooks';
+// TODO: Add trap and scope when somedom 0.9.5 is published
+// export { trap, scope } from 'somedom';
+
+export { onError, useState } from 'nohooks';
 
 export { wrapComponent, clientComponent as mountableComponent } from '../client/render.ts';
 
