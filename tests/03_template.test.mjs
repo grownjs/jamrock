@@ -250,10 +250,85 @@ fixture`./pause-icon.svg
   </svg>
 `;
 
-fixture.fromFile('pages/resources+page.html');
-fixture.fromFile('pages/markdown+page.html');
-fixture.fromFile('pages/inlines+page.html');
-fixture.fromFile('pages/directives+page.html');
+// eslint-disable-next-line no-unused-expressions
+fixture`./resources+page.html
+  <embed src="pause-icon.svg" />
+
+  <svg>
+    <path d="M6 4l20 12-20 12z" />
+  </svg>
+
+  <svg src="./pause-icon.svg" class="osom" />
+
+  <head>
+    <link rel="icon" href="pause-icon.svg" />
+  </head>
+
+  <img src="pause-icon.svg" />
+`;
+
+// eslint-disable-next-line no-unused-expressions
+fixture`./markdown+page.html
+  <script>
+    const value = 'OSOM';
+  </script>
+
+  # It works.
+  - {value}
+
+  <b>OK</b>
+
+  ## sub
+  - other
+
+  &lt;WUT&gt;
+
+  CODE:
+
+  \`\`\`
+  ■ Jamrock v#[pkg.version] (node {process.version})
+  Processing ./pages to ./build
+  Listening on <a href="http://localhost:8080" target="_blank">http://localhost:8080</a>
+  \`\`\`
+
+  TEXT
+
+  <blockquote>
+    <mkd tag="code">SOME _STUFF_</mkd>
+    <mkd>
+      ### OSOM
+    </mkd>
+  </blockquote>
+
+  Test for emojis:
+  - One is :beers:
+  - Two is :coffee:
+`;
+
+// eslint-disable-next-line no-unused-expressions
+fixture`./inlines+page.html
+  <head>
+    <link rel="stylesheet" href="//unpkg.com/highlight.js@10.7.3/styles/tomorrow.css" inline />
+    <link rel="stylesheet" href="//fonts.googleapis.com/css?family=Montserrat" inline />
+  </head>
+`;
+
+// eslint-disable-next-line no-unused-expressions
+fixture`./directives+page.html
+  <form @multipart>
+    <textarea value="<h1>It works</h1>" />
+    <select value="42">
+      <option>42</option>
+      <option>-1</option>
+    </select>
+    <button test:id="btn">Click me</button>
+  </form>
+  <form @async />
+  <form @put />
+  <form @post />
+  <form @patch />
+  <form @delete />
+`;
 
 test.group('template transformation', t => {
   t.each.setup(async () => {

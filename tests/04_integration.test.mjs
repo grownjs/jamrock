@@ -12,9 +12,27 @@ import { match } from '../src/handler/match.ts';
 
 import { preflight, middleware, controllers, middlewares } from '../src/handler/main.ts';
 
-fixture.fromFile('layouts/+layout.html', './+layout.html');
-fixture.fromFile('errors/some+error.html');
-fixture.fromFile('components/empty.html');
+// eslint-disable-next-line no-unused-expressions
+fixture`./+layout.html
+  <main>
+    {@render $$props.children()}
+  </main>
+`;
+
+// eslint-disable-next-line no-unused-expressions
+fixture`./some+error.html
+  <script>
+    export let failure;
+  </script>
+  <h2>Error {failure.status}</h2>
+  <p>{failure.reason}</p>
+  <small>&mdash; {failure.source}</small>
+`;
+
+// eslint-disable-next-line no-unused-expressions
+fixture`./empty.html
+  Just an {'empty'.toUpperCase()} component
+`;
 
 // eslint-disable-next-line no-unused-expressions
 fixture`./hooks+page.html
