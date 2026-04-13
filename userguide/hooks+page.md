@@ -128,6 +128,47 @@ Handle errors in client-side components:
 </script>
 ```
 
+## trap (Recommended)
+
+Error boundary for effects:
+
+```html
+<script context="client">
+  import { trap, effect, signal } from 'jamrock';
+
+  const count = signal(0);
+
+  const dispose = trap((error) => {
+    console.error('Error:', error);
+  });
+
+  effect(() => {
+    if (count.value < 0) throw new Error('Invalid count');
+  });
+</script>
+```
+
+## scope
+
+Share state across components:
+
+```html
+<script context="client">
+  import { scope, effect } from 'jamrock';
+
+  const Theme = scope('light');
+
+  // Read/write
+  Theme.value; // 'light'
+  Theme.value = 'dark';
+
+  // Scoped value
+  Theme.provide('blue', () => {
+    // Theme.value === 'blue' here
+  });
+</script>
+```
+
 <nav class="flex gap-sm between">
   <span>
     ➯ Next: <a href="/events#top">Events</a>

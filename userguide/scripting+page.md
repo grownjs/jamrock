@@ -109,6 +109,51 @@ effect(() => {
 });
 ```
 
+## Error Handling
+
+Use `trap` to catch errors in effects:
+
+```js
+import { signal, effect, trap } from 'jamrock';
+
+const count = signal(0);
+
+const dispose = trap((error) => {
+  console.error('Caught:', error);
+});
+
+effect(() => {
+  if (count.value < 0) throw new Error('Invalid');
+});
+
+dispose(); // Remove error handler
+```
+
+## Shared State
+
+Use `scope` to share state across components:
+
+```js
+import { scope, effect } from 'jamrock';
+
+const Theme = scope('light');
+
+// Read/write
+Theme.value; // 'light'
+Theme.value = 'dark';
+
+// Scoped value (temporary override)
+Theme.provide('blue', () => {
+  Theme.value; // 'blue'
+});
+Theme.value; // 'dark' (restored)
+
+// Auto-tracking in effects
+effect(() => {
+  console.log(Theme.value); // Re-runs when changed
+});
+```
+
 ## DOM Bindings
 
 Use `s:*` attributes for reactive DOM updates:
