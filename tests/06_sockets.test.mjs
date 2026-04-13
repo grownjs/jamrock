@@ -11,122 +11,6 @@ import { middleware } from '../src/handler/main.ts';
 import { fixture, server } from './helpers/utils.mjs';
 import { sleep, flatten } from '../src/utils/shared.ts';
 
-// eslint-disable-next-line no-unused-expressions
-fixture`./hello.html
-  <script>
-    export let name;
-  </script>
-  <h1>Hi, {name}.</h1>
-`;
-
-// eslint-disable-next-line no-unused-expressions
-fixture`./iterators.html
-  <script context="module">
-    export function* doStuff() {
-      yield -42;
-    }
-  </script>
-  <script>
-    import Hello from './hello.html';
-
-    function* aGenerator() {
-      let count = 0;
-      while (true) {
-        yield count += 1;
-        if (count >= 15) break;
-      }
-    }
-
-    async function* asyncGenerator() {
-      yield new Promise(ok => setTimeout(() => ok(42), 20));
-      yield -1;
-    }
-
-    async function onChange() {
-      throw new Error('This should not happen!');
-    }
-
-    function *once() {
-      yield 'in a life';
-    }
-
-    const local = Promise.resolve('OSOM');
-  </script>
-
-  1. {#each asyncGenerator as i}{i} {/each}
-  2. {#each aGenerator as i}{i} {/each}
-  3. {doStuff}
-  4. {local}
-  5. {once}
-
-  <button on:click={onChange} />
-  <Hello name={local} />
-`;
-
-// eslint-disable-next-line no-unused-expressions
-fixture`./fragments.html
-  <script>
-    let value = 'OK';
-    const values = [1, 2, 3, 4, 5];
-    async function* infinity() {
-      let i = 0;
-      while (true) {
-        if (i > 120) break;
-        yield i;
-        i += 1;
-      }
-    }
-  </script>
-  <fragment name="test">
-    <b>{value}</b>
-  </fragment>
-  <fragment name="other" limit="3">
-    {#each values as x}
-      {x},
-    {/each}
-  </fragment>
-  <fragment name="anything" interval="5">
-    {#each infinity as x}
-      {x},
-    {/each}
-  </fragment>
-`;
-
-// eslint-disable-next-line no-unused-expressions
-fixture`./loops.html
-  <script>
-    let i = 0;
-    async function *data() {
-      for (;;) {
-        yield i++;
-        if (i > 150) break;
-      }
-    }
-  </script>
-  <fragment tag="ul" name="test" interval="5">
-    {#each data as x}
-      <li>{x}</li>
-    {/each}
-  </fragment>
-`;
-
-// eslint-disable-next-line no-unused-expressions
-fixture`./promises.html
-  <script>
-    export let promise;
-  </script>
-  Got: {typeof promise}
-`;
-
-// eslint-disable-next-line no-unused-expressions
-fixture`./resolve.html
-  <script>
-    import Promises from './promises.html';
-    const value = Promise.resolve(42);
-  </script>
-  <Promises promise={value} />
-`;
-
 function useContext(overrides) {
   const ctx = {
     publish: td.func('connect'),
@@ -139,12 +23,77 @@ function useContext(overrides) {
 
 test.group('streaming support', () => {
   test('should resolve promises from props', async ({ expect }) => {
+    fixture`./promises.html
+      <script>
+        export let promise;
+      </script>
+      Got: {typeof promise}
+    `;
+
+    fixture`./resolve.html
+      <script>
+        import Promises from './promises.html';
+        const value = Promise.resolve(42);
+      </script>
+      <Promises promise={value} />
+    `;
+
     const markup = await fixture.partial('resolve.html', null, {});
 
     expect(markup).toContain('Got: number');
   });
 
   test('should pull data from iterators', async ({ expect }) => {
+    fixture`./hello.html
+      <script>
+        export let name;
+      </script>
+      <h1>Hi, {name}.</h1>
+    `;
+
+    fixture`./iterators.html
+      <script context="module">
+        export function* doStuff() {
+          yield -42;
+        }
+      </script>
+      <script>
+        import Hello from './hello.html';
+
+        function* aGenerator() {
+          let count = 0;
+          while (true) {
+            yield count += 1;
+            if (count >= 15) break;
+          }
+        }
+
+        async function* asyncGenerator() {
+          yield new Promise(ok => setTimeout(() => ok(42), 20));
+          yield -1;
+        }
+
+        async function onChange() {
+          throw new Error('This should not happen!');
+        }
+
+        function *once() {
+          yield 'in a life';
+        }
+
+        const local = Promise.resolve('OSOM');
+      </script>
+
+      1. {#each asyncGenerator as i}{i} {/each}
+      2. {#each aGenerator as i}{i} {/each}
+      3. {doStuff}
+      4. {local}
+      5. {once}
+
+      <button on:click={onChange} />
+      <Hello name={local} />
+    `;
+
     const ctx = useContext();
 
     const markup = await fixture.partial('iterators.html', null, ctx);
@@ -164,6 +113,34 @@ test.group('streaming support', () => {
   });
 
   test('should push exceeding data from iterators', async ({ expect }) => {
+    fixture`./fragments.html
+      <script>
+        let value = 'OK';
+        const values = [1, 2, 3, 4, 5];
+        async function* infinity() {
+          let i = 0;
+          while (true) {
+            if (i > 120) break;
+            yield i;
+            i += 1;
+          }
+        }
+      </script>
+      <fragment name="test">
+        <b>{value}</b>
+      </fragment>
+      <fragment name="other" limit="3">
+        {#each values as x}
+          {x},
+        {/each}
+      </fragment>
+      <fragment name="anything" interval="5">
+        {#each infinity as x}
+          {x},
+        {/each}
+      </fragment>
+    `;
+
     const ctx = useContext();
 
     await fixture.partial('fragments.html', null, ctx);
@@ -268,6 +245,23 @@ test.group('streaming support', () => {
   });
 
   test.skip('should be able to intercept websocket calls', async ({ expect }) => {
+    fixture`./loops.html
+      <script>
+        let i = 0;
+        async function *data() {
+          for (;;) {
+            yield i++;
+            if (i > 150) break;
+          }
+        }
+      </script>
+      <fragment tag="ul" name="test" interval="5">
+        {#each data as x}
+          <li>{x}</li>
+        {/each}
+      </fragment>
+    `;
+
     const ctx = useContext({
       conn: {
         someStuff: () => 42,
@@ -329,5 +323,10 @@ test.group('streaming support', () => {
 
     expect(td.explain(onClose).callCount).toEqual(1);
     expect(td.explain(ctx.publish).callCount).toBeGreaterThanOrEqual(26);
+  });
+
+  test('cleanup fixtures', ({ expect }) => {
+    const count = fixture.cleanup();
+    expect(count).toBeGreaterThan(0);
   });
 });
