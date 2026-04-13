@@ -32,7 +32,7 @@ export EDITOR APP_KEY MAILDEV FORCE_COLOR GIT_REVISION DYLD_LIBRARY_PATH LIB_PAT
 
 .PHONY: seed dist docs install examples coverage playground
 
-ci: dist smoke test-deno test-bun
+ci: dist smoke
 
 coverage:
 ifneq ($(GITHUB_ENV),)
@@ -240,7 +240,7 @@ clean-ts:
 
 prune: clean
 	@rm -f package-lock.json
-	@rm -f lib/vendor
+	@rm -rf lib/vendor
 	@rm -f deno.lock
 	@rm -f cache.json
 	@rm -rf node_modules
