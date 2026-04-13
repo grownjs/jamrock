@@ -4,6 +4,8 @@ import {
   effect,
   batch,
   untracked,
+  trap,
+  scope,
 } from 'somedom';
 
 export {
@@ -12,10 +14,9 @@ export {
   effect,
   batch,
   untracked,
+  trap,
+  scope,
 };
-
-// TODO: Add trap and scope when somedom 0.9.5 is published
-// export { trap, scope } from 'somedom';
 
 export { onError, useState } from 'nohooks';
 
