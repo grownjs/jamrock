@@ -451,9 +451,7 @@ ${this.context === 'client'
 export const __handler = ($$props, __loader${this.context === 'client' ? ', self' : ''}) => {
 ${main}
 ${this.context === 'client'
-    ? `\tconst __runtime = __loader('jamrock');
-\tconst __self = __runtime.wrapComponent('${this.src}', __context, __template);
-\treturn {__self,__context};`
+    ? '\treturn {__context};'
     : '\treturn {__context};'}
 };
 

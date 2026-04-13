@@ -3,7 +3,7 @@ import { signal, computed, effect, batch, untracked } from 'somedom';
 const useMemo = computed;
 const ref = <T>(current: T): { current: T } => ({ current });
 
-import { wrapComponent, mountableComponent } from './render.ts';
+import { mountableComponent } from './render.ts';
 import { Is, sleep } from '../utils/client.ts';
 import { flatten } from '../utils/shared.ts';
 
@@ -329,7 +329,7 @@ export class Components {
       this.loaded = true;
       this.browser.runtime().then(() => {
         Object.assign((window as any).Jamrock.Runtime, {
-          ref, useMemo, wrapComponent, mountableComponent,
+          ref, useMemo, mountableComponent,
           signal, computed, effect, batch, untracked,
         });
       });

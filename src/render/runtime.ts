@@ -18,7 +18,7 @@ export {
   scope,
 };
 
-export { wrapComponent, clientComponent as mountableComponent } from '../client/render.ts';
+export { clientComponent as mountableComponent } from '../client/render.ts';
 
 export const ref = <T,>(current: T): { current: T } => ({ current });
 

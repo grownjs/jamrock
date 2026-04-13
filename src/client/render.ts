@@ -1,14 +1,5 @@
 import { executeAsync } from '../render/async.ts';
 
-export function wrapComponent(this: any, src: any, context: any, template: any): any {
-  return {
-    loop: () => ({ __scope: {}, __default: null }),
-    patch: async () => {},
-    clear: () => {},
-    defer: (ms: number) => new Promise(resolve => setTimeout(resolve, ms)),
-  };
-}
-
 export function clientComponent(this: any, mod: any, context: any, filepath?: string): { mount: (el: any, props?: any, _events?: any) => Promise<any> } {
   if (!mod) {
     console.log('E_MOD', { context, filepath });
@@ -37,29 +28,15 @@ export function clientComponent(this: any, mod: any, context: any, filepath?: st
     let vnode: any;
     if (mod.__handler) {
       const main = await mod.__handler({ ...props }, loader, el);
-      const store = await main.__self;
-      const data = await store.loop();
+      const data = main.__context ? main.__context() : { __scope: {}, __default: null };
 
-      store.patch = async (peek: any) => {
-        Object.assign(el.__state, peek.__scope);
-        const patch = await next(el.__state);
-        el.current = peek.__default;
-
-        return typeof process !== 'undefined'
-          ? this.patchNode(el, vnode, vnode = patch)
-          : requestAnimationFrame(() => this.patchNode(el, vnode, vnode = patch));
-      };
-
-      if (el.__store) el.__store.clear();
       el.current = data.__default;
       el.__state = { ...props, ...data.__scope };
-      el.__store = store;
     }
 
     el.__defer = el.__defer || Promise.resolve();
     el.__update = (_mod: any, _props: any) => {
       console.log('[UPDATE]', _props);
-      if (el.__store) el.__store.clear();
       el.__state = null;
       el.__defer = el.__defer
         .then(() => clientComponent.call(this, _mod, context).mount(el, _props));

@@ -20,7 +20,6 @@ const NO_HOOKS = {
   trap: () => null,
   scope: (v: any) => ({ value: v }),
   ref: () => ({ current: null }),
-  wrapComponent: () => null,
 };
 
 const LIBDIR = 'jamrock';
