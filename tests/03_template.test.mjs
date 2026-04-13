@@ -74,12 +74,6 @@ fixture`./scoping.html
   <a class:name={1} />
 `;
 
-// eslint-disable-next-line no-unused-expressions
-fixture`./unocss.html
-  <p class="m-1" class:m-3=1 class:p-2={false}>OSOM</p>
-`;
-
-// eslint-disable-next-line no-unused-expressions
 fixture`./fonts/Bravo.otf
   FONT
 `;
@@ -567,6 +561,10 @@ ul:where(.jam-420) li span:where(.jam-420){color:pink;}
   });
 
   test('should support css-generators, like unocss', async ({ expect }) => {
+    fixture`./unocss.html
+      <p class="m-1" class:m-3=1 class:p-2={false}>OSOM</p>
+    `;
+
     const generators = {
       css: await createGenerator({
         rules: [
