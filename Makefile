@@ -149,6 +149,7 @@ shot:
 	@make -sC seed dist
 
 smoke:
+	@rm -rf generated
 	@npm run lint
 	@npm run test:ci
 	@npm run test:run -- --examples
