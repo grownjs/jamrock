@@ -854,7 +854,8 @@ export class Template {
     const backtracks = Math.max(a.length - c.length - 1, 0);
     const diff = b.slice(c.length);
 
-    return [...Array(backtracks).fill('..'), ...diff].join('/');
+    const result = [...Array(backtracks).fill('..'), ...diff].join('/');
+    return result || '.';
   }
 
   static filename(path: string, ext?: string): string {
