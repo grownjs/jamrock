@@ -136,12 +136,22 @@ export class Expr {
         _expr = `$$.r(${_expr.substr(7)})?.($$)`;
       } else if (_expr.indexOf('@debug ') === 0) {
         _expr = `$$.d({ ${_expr.substr(7)} })`;
-      } else if (_expr.indexOf('@html ') === 0) {
-        const htmlExpr = _expr.substr(6);
-        if (/^\$\w+$/.test(htmlExpr)) {
-          _expr = `$$.s(${htmlExpr.substr(1)})`;
+      } else if (_expr.indexOf('@html') === 0) {
+        let htmlExpr = _expr.substr(5);
+        let tag = 'div';
+        if (htmlExpr[0] === ':') {
+          const colonEnd = htmlExpr.indexOf(' ');
+          if (colonEnd > 1) {
+            tag = htmlExpr.substring(1, colonEnd);
+            htmlExpr = htmlExpr.substr(colonEnd + 1);
+          }
         } else {
-          _expr = `$$.h(${htmlExpr})`;
+          htmlExpr = htmlExpr.substr(1);
+        }
+        if (/^\$\w+$/.test(htmlExpr)) {
+          _expr = `$$.s(${htmlExpr.substr(1)}, '${tag}')`;
+        } else {
+          _expr = `$$.h(${htmlExpr}, '${tag}')`;
         }
       } else if (_expr.indexOf('@raw ') === 0) {
         _expr = _expr.substr(5);

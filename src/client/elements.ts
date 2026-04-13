@@ -16,17 +16,9 @@ export function createRender(): { patchNode: any; createElement: any; renderToEl
     },
     fragment: (props: any, children: any) => {
       if (props['@html']) {
-        const doc = document.createDocumentFragment();
-        const div = document.createElement('div');
-
-        div.innerHTML = props['@html'];
-        [].slice.call(div.childNodes).forEach((node: Node) => {
-          doc.appendChild(node);
-        });
-        return doc;
-      }
-      if (props['d:html']) {
-        return ['div', props, ...children];
+        const template = document.createElement('template');
+        template.innerHTML = props['@html'];
+        return template.content;
       }
       return children;
     },
