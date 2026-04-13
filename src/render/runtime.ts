@@ -20,7 +20,7 @@ export {
 
 export { wrapComponent, clientComponent as mountableComponent } from '../client/render.ts';
 
-export const useRef = <T,>(current: T): { current: T } => ({ current });
+export const ref = <T,>(current: T): { current: T } => ({ current });
 
 export const useMemo = computed;
 

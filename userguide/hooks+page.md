@@ -92,15 +92,15 @@ Share state across components:
 </script>
 ```
 
-### useRef
+### ref
 
 Create a mutable reference:
 
 ```html
 <script context="client">
-  import { useRef } from 'jamrock';
+  import { ref } from 'jamrock';
 
-  const inputRef = useRef(null);
+  const inputRef = ref(null);
 
   function focus() {
     inputRef.current.focus();
