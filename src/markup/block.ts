@@ -241,16 +241,18 @@ export const __attributes = ${this.$attributes};
   }
 
   resolve(node: any, resources: any): void {
-    const { src, href } = node.attributes;
+    const { src, href, inline } = node.attributes;
     const path = src || href;
+    const srcAttr = src ? 'src' : 'href';
 
-    if (!path || !Is.str(path)) return;
-    if (path.includes('://')) return;
-    if (path.charAt(0) === '/') return;
+    if (!path) return;
 
-    const file = path && Template.join(this.base, path);
+    if (Is.str(path)) {
+      if (path.includes('://')) return;
+      if (path.charAt(0) === '/') return;
 
-    if (file) {
+      const file = Template.join(this.base, path);
+
       if (!Template.exists(file)) {
         throw new Error(`File not found '${path}' (${this.src})`);
       }
@@ -260,35 +262,72 @@ export const __attributes = ${this.$attributes};
       if (!resources.media.includes(file)) {
         resources.media.push(file);
       }
-    }
 
-    if (node.name === 'svg') {
-      const size = node.attributes.size;
+      if (node.name === 'svg') {
+        const size = node.attributes.size;
 
-      delete node.attributes.size;
-      delete node.attributes.href;
-      delete node.attributes.src;
+        delete node.attributes.size;
+        delete node.attributes.href;
+        delete node.attributes.src;
+        delete node.attributes.inline;
 
-      if (size) {
-        node.attributes.width = node.attributes.width || size;
-        node.attributes.height = node.attributes.height || size;
-      }
+        if (size) {
+          node.attributes.width = node.attributes.width || size;
+          node.attributes.height = node.attributes.height || size;
+        }
 
-      if (node.elements.length > 0) {
-        node.attributes.xmlns = node.attributes.xmlns || 'http://www.w3.org/2000/svg';
+        if (inline) {
+          const svgContent = Template.read(file)
+            .trim()
+            .replace(/>\s*</g, '><');
+
+          const innerContent = svgContent
+            .replace(/<svg[^>]*>/, '')
+            .replace(/<\/svg>$/, '');
+
+          node.attributes['@html'] = innerContent;
+        } else if (node.elements.length > 0) {
+          node.attributes.xmlns = node.attributes.xmlns || 'http://www.w3.org/2000/svg';
+        } else {
+          node.elements.push({
+            name: 'use',
+            type: 'element',
+            attributes: {
+              'xlink:href': `#${Template.filename(path, '.svg')}`,
+              'data-location': file,
+            },
+          });
+        }
       } else {
-        node.elements.push({
-          name: 'use',
-          type: 'element',
-          attributes: {
-            'xlink:href': `#${Template.filename(path, '.svg')}`,
-            'data-location': file,
-          },
-        });
+        if (node.attributes.href) node.attributes.href = `@/${file}`;
+        if (node.attributes.src) node.attributes.src = `@/${file}`;
       }
-    } else {
-      if (node.attributes.href) node.attributes.href = `@/${file}`;
-      if (node.attributes.src) node.attributes.src = `@/${file}`;
+    } else if (path instanceof Expr) {
+      const originalName = node.name;
+      const originalAttrs = { ...node.attributes };
+
+      node.name = 'resource';
+      node.attributes = {
+        'data-tag': originalName,
+        'data-src': srcAttr,
+        [srcAttr]: path,
+      };
+
+      if (originalAttrs.inline) {
+        node.attributes['data-inline'] = true;
+      }
+      if (originalAttrs.size) {
+        node.attributes.size = originalAttrs.size;
+      }
+      if (originalAttrs.width) {
+        node.attributes.width = originalAttrs.width;
+      }
+      if (originalAttrs.height) {
+        node.attributes.height = originalAttrs.height;
+      }
+      if (originalAttrs.class) {
+        node.attributes.class = originalAttrs.class;
+      }
     }
   }
 

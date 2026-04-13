@@ -225,10 +225,12 @@ export class Template {
     const images: string[] = [];
     const fragments: any = {};
 
-    const assets: string[] = [...new Set<string>([].concat(...Object.values(chunk.media) as any))];
+    const chunkAssets: string[] = [...new Set<string>([].concat(...Object.values(chunk.media) as any))];
+    const contextAssets: string[] = self.media ? [...self.media] : [];
+    const assets: string[] = [...new Set<string>([...chunkAssets, ...contextAssets])];
 
     for (const asset of assets) {
-      if (asset.includes('.svg')) {
+      if (asset.endsWith('.svg')) {
         const svg = Template.read(asset)
           .trim()
           .replace(/>\s*</g, '><')
@@ -285,6 +287,7 @@ export class Template {
     context.scope = context.scope || {};
     context.depth = context.depth || 0;
     context.tag = context.tag || Template.tag(context);
+    context.media = context.media || new Set<string>();
   }
 
   static async reduce(component: any, filepath: string, context: any, props: any, cb: any): Promise<any> {
@@ -486,6 +489,8 @@ export class Template {
   static async render(component: any, parent: any, props: any, ctx: any, cb: any = null): Promise<any> {
     const { scripts, styles, media, loader } = Template.prepare(component, parent, ctx);
 
+    ctx.base = Template.dirname(component.__src);
+
     await Template.settle(props);
 
     const self = component.__handler
@@ -568,6 +573,8 @@ export class Template {
 
   static renderSync(component: any, parent: any, props: any, ctx: any, cb: any = null): any {
     const { scripts, styles, media, loader } = Template.prepare(component, parent, ctx);
+
+    ctx.base = Template.dirname(component.__src);
 
     const self = component.__handler
       ? component.__handler(props, loader)
@@ -943,6 +950,33 @@ export class Template {
 
   static tag(context: any) {
     return (name: string, attrs: any, children: any) => {
+      if (name === 'resource') {
+        const tag = attrs['data-tag'];
+        const srcAttr = attrs['data-src'];
+        const path = attrs[srcAttr];
+        const isInline = attrs['data-inline'];
+        const { 'data-tag': _, 'data-src': __, 'data-inline': ___, [srcAttr]: ____, ...restAttrs } = attrs;
+
+        const result = Template.media(path, context);
+        if (!result) return [tag, restAttrs, children || []];
+
+        if (tag === 'svg') {
+          if (isInline && result.file) {
+            const svgContent = Template.read(result.file)
+              .trim()
+              .replace(/>\s*</g, '><');
+
+            const innerContent = svgContent
+              .replace(/<svg[^>]*>/, '')
+              .replace(/<\/svg>$/, '');
+
+            return ['svg', { ...restAttrs, '@html': innerContent }, []];
+          }
+          return ['svg', restAttrs, [['use', { 'xlink:href': `#${result.id}` }]]];
+        }
+        return [tag, { ...restAttrs, [srcAttr]: result.path }, children || []];
+      }
+
       if (
         ['form', 'select', 'textarea'].includes(name)
         || (name === 'input' && attrs.type !== 'hidden')
@@ -967,5 +1001,24 @@ export class Template {
 
   static url(base_url: string, segment: string, timestamp?: boolean): string {
     return `/${[base_url, segment].join('/')}${timestamp ? `?_=${Date.now()}` : ''}`.replace(/\/+/g, '/');
+  }
+
+  static media(path: string, context: any): { type: string; id?: string; path?: string; file: string } | null {
+    if (!path || path.includes('://') || path.charAt(0) === '/') return null;
+
+    const file = Template.join(context.base || '.', path);
+
+    if (!Template.exists(file)) {
+      if (context.strict) throw new Error(`File not found '${path}'`);
+      return null;
+    }
+
+    context.media = context.media || new Set<string>();
+    context.media.add(file);
+
+    if (path.endsWith('.svg')) {
+      return { type: 'svg', id: Template.filename(path, '.svg'), file };
+    }
+    return { type: 'asset', path: `@/${file}`, file };
   }
 }
