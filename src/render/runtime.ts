@@ -1,4 +1,6 @@
-import {
+import * as somedom from 'somedom/ssr';
+
+const {
   signal,
   computed,
   effect,
@@ -6,7 +8,7 @@ import {
   untracked,
   trap,
   scope,
-} from 'somedom';
+} = somedom as any;
 
 export {
   signal,

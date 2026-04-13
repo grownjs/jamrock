@@ -102,7 +102,7 @@ fixture`./main.html
     {@render $$props.before?.()}
     <button on:click="{() => fun.value = prompt(message)}">insight</button>
     <button onclick="{fixme}">truth</button>
-    <p {el} onsomethingelse={callme}>Your answer: {fun.value}</p>
+    <p {el} onsomethingelse={callme}>Your answer: {$fun}</p>
     <Empty />
     [{@render $$props.children?.()}:{@render $$props.after?.()}]
     {@html ['h1', Object.fromEntries([['style', 'color:red']]), 'It works.']}

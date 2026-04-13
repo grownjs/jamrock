@@ -141,7 +141,12 @@ export class Expr {
       } else if (_expr.indexOf('@raw ') === 0) {
         _expr = _expr.substr(5);
       } else if (expression !== false) {
-        _expr = `$$.$(${_expr})`;
+        if (_expr.includes('$')) {
+          _expr = _expr.replace(/\$(\w+)/g, '$1.value');
+          _expr = `() => ${_expr}`;
+        } else {
+          _expr = `$$.$(${_expr})`;
+        }
       }
 
       if (this.token && _ref) {
