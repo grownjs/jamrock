@@ -172,9 +172,9 @@ test.group('parsing', t => {
       interlude: '\n',
     });
 
-    expect(script("import { useState } from 'jamrock';")).toEqual({
+    expect(script("import { signal } from 'jamrock';")).toEqual({
       prelude: '',
-      interlude: "const  { useState }  = __loader('jamrock');\n",
+      interlude: "const  { signal }  = __loader('jamrock');\n",
     });
 
     expect(script(`

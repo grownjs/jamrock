@@ -2,7 +2,6 @@
 
 import { test } from '@japa/runner';
 import * as td from 'testdouble';
-import * as hooks from 'nohooks';
 
 import {
   createView, generated, fixture, server, setup, reset, build,
@@ -60,7 +59,7 @@ fixture`./hooks+page.html
 // eslint-disable-next-line no-unused-expressions
 fixture`./main.html
   <script context="client">
-    import { onError, useRef, useState, useEffect } from 'jamrock';
+    import { trap, ref, signal, effect } from 'jamrock';
 
     import Empty from './empty.html';
 
@@ -68,47 +67,47 @@ fixture`./main.html
     export let answer = 'OSOM';
     export let markup = '';
 
-    const [fun, check] = useState('FIXME');
-    const [html, update] = useState(markup);
+    const fun = signal('FIXME');
+    const html = signal(markup);
 
-    const ref = useRef();
+    const el = ref(null);
 
-    onError(e => { console.log('E_MAIN', e);
+    trap(e => { console.log('E_MAIN', e);
       if (confirm('Are you OK?')) {
-        check('Thank you!');
+        fun.value = 'Thank you!';
       } else {
-        check(':(');
+        fun.value = ':(';
       }
     });
 
-    useEffect(() => {
-      if (fun === 'D:') throw new Error(fun);
-      if (fun === '42') alert(ref.current.outerHTML);
-      if (fun === 'FIXME') setTimeout(() => check(fun), 150);
-    }, [fun]);
+    effect(() => {
+      if (fun.value === 'D:') throw new Error(fun.value);
+      if (fun.value === '42') alert(el.current.outerHTML);
+      if (fun.value === 'FIXME') setTimeout(() => fun.value = 'FIXME', 150);
+    });
 
     if (markup.includes('HTML')) {
       markup += '!!';
     }
 
     function callme() {
-      console.log('HTML', update(markup = '<em>OSOM</em>'));
+      console.log('HTML', html.value = markup = '<em>OSOM</em>');
     }
     function fixme() {
       console.log('ANSWER?', answer);
-      check(answer);
+      fun.value = answer;
     }
   </script>
 
   <div>
     {@render $$props.before?.()}
-    <button on:click="{() => check(prompt(message))}">insight</button>
+    <button on:click="{() => fun.value = prompt(message)}">insight</button>
     <button onclick="{fixme}">truth</button>
-    <p {ref} onsomethingelse={callme}>Your answer: {fun}</p>
+    <p {el} onsomethingelse={callme}>Your answer: {fun.value}</p>
     <Empty />
     [{@render $$props.children?.()}:{@render $$props.after?.()}]
     {@html ['h1', Object.fromEntries([['style', 'color:red']]), 'It works.']}
-    {@html html}
+    {@html html.value}
   </div>
 
   <style>
@@ -287,10 +286,12 @@ test.group('integration only!', t => {
       depth: 0,
       stack: [],
       uuid: 'jam-uuid',
-      useRef: () => null,
-      onError: () => null,
-      useState: () => [],
-      useEffect: () => null,
+      signal: v => ({ value: v }),
+      computed: fn => ({ value: fn() }),
+      effect: () => null,
+      trap: () => null,
+      scope: v => ({ value: v }),
+      ref: () => ({ current: null }),
       // registerComponent: mod => mod,
     };
   });
@@ -613,49 +614,6 @@ test.group('integration only!', t => {
       '<button data-location="main.html:45:3" class="jam-420" data-source="generated/main.html/2" data-on:click="true" name="_action" value=fixme>truth</button>',
       '<p data-location="main.html:46:3" data-on:somethingelse="callme">Your answer: FIXME</p>Just an EMPTY component\n\n',
       '  [:]\n  <h1 style="color:red">It works.</h1></div></div></body></html>',
-    ].join(''));
-
-    function loader() {
-      // eslint-disable-next-line no-use-before-define
-      return { ...hooks, wrapComponent };
-    }
-
-    const cb = createView(loader);
-
-    let inc = 0;
-    let out;
-    function wrapComponent(_, loop, render) {
-      return hooks.createContext(loop, (sync, update) => {
-        let deferred = Promise.resolve();
-        update(self => {
-          if (!self.equals()) {
-            inc++;
-            deferred = deferred
-              .then(() => self.loop())
-              .then(main => cb(render, main.__scope))
-              .then(result => { out = result; });
-          }
-          return deferred;
-        });
-        return sync();
-      });
-    }
-
-    const mod = await fixture.use('./main.html');
-    const main = await mod.__handler({ markup: 'HTML' }, loader);
-    const state = await main.__self();
-    const data = await state.result;
-
-    await cb(mod.__template, data.__scope);
-    await state.defer(150);
-
-    expect(inc).toEqual(1);
-    expect(taggify(out)).toEqual([
-      '<div data-location="main.html:42:1">',
-      '<button data-location="main.html:44:3">insight</button>',
-      '<button data-location="main.html:45:3">truth</button>',
-      '<p data-location="main.html:46:3">Your answer: FIXME</p>Just an EMPTY component',
-      '\n\n  [:]\n  <h1 style="color:red">It works.</h1>HTML</div>',
     ].join(''));
   });
 

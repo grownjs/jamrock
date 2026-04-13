@@ -14,10 +14,12 @@ const RE_EXTERNALS = /\b(?:import[^;=]*\(?(?:"([^;]+)"|'([^;]+)')|(?:export|impo
 const RE_COMMENTS = /\/\*[\S\s]*?\*\/|\/\/.*/g;
 
 const NO_HOOKS = {
-  useState: (v: any) => [v],
-  useRef: () => null,
-  onError: () => null,
-  useEffect: () => null,
+  signal: (v: any) => ({ value: v }),
+  computed: (fn: any) => ({ value: fn() }),
+  effect: () => null,
+  trap: () => null,
+  scope: (v: any) => ({ value: v }),
+  ref: () => ({ current: null }),
   wrapComponent: () => null,
 };
 
