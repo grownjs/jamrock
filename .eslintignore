@@ -1,5 +1,5 @@
 scripts/*test.mjs
-tests/fixtures/broken
+tests/fixtures
 tests/old_fixtures
 seed/node_modules
 generated

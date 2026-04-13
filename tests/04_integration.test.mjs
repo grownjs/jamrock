@@ -16,6 +16,7 @@ fixture.fromFile('layouts/+layout.html', './+layout.html');
 fixture.fromFile('errors/some+error.html');
 fixture.fromFile('components/empty.html');
 
+// eslint-disable-next-line no-unused-expressions
 fixture`./hooks+page.html
   <script context="module">
     function test(_, params) {

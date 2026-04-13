@@ -23,6 +23,7 @@ function useContext(overrides) {
 
 test.group('streaming support', () => {
   test('should resolve promises from props', async ({ expect }) => {
+    // eslint-disable-next-line no-unused-expressions
     fixture`./promises.html
       <script>
         export let promise;
@@ -30,6 +31,7 @@ test.group('streaming support', () => {
       Got: {typeof promise}
     `;
 
+    // eslint-disable-next-line no-unused-expressions
     fixture`./resolve.html
       <script>
         import Promises from './promises.html';
@@ -44,6 +46,7 @@ test.group('streaming support', () => {
   });
 
   test('should pull data from iterators', async ({ expect }) => {
+    // eslint-disable-next-line no-unused-expressions
     fixture`./hello.html
       <script>
         export let name;
@@ -51,6 +54,7 @@ test.group('streaming support', () => {
       <h1>Hi, {name}.</h1>
     `;
 
+    // eslint-disable-next-line no-unused-expressions
     fixture`./iterators.html
       <script context="module">
         export function* doStuff() {
@@ -113,6 +117,7 @@ test.group('streaming support', () => {
   });
 
   test('should push exceeding data from iterators', async ({ expect }) => {
+    // eslint-disable-next-line no-unused-expressions
     fixture`./fragments.html
       <script>
         let value = 'OK';
@@ -166,13 +171,14 @@ test.group('streaming support', () => {
       },
       socket: {
         identity: 'test-uuid',
-        send: (msg) => {
+        send: msg => {
           published.push(msg);
         },
       },
     };
     ctx.stream = streamify().wrap(ctx, 'test-uuid');
 
+    // eslint-disable-next-line no-unused-expressions
     fixture`./streaming.html
       <script>
         function* items() {
@@ -201,10 +207,10 @@ test.group('streaming support', () => {
   test('should stream via SSE when socket is pre-connected', async ({ expect }) => {
     const sseMessages = [];
     const uuid = 'sse-test-uuid';
-    
+
     const sseSocket = {
       identity: uuid,
-      send: (msg) => {
+      send: msg => {
         sseMessages.push(msg);
       },
     };
@@ -221,6 +227,7 @@ test.group('streaming support', () => {
     };
     ctx.stream = streamify().wrap(ctx, uuid);
 
+    // eslint-disable-next-line no-unused-expressions
     fixture`./sse-streaming.html
       <script>
         function* items() {
@@ -245,6 +252,7 @@ test.group('streaming support', () => {
   });
 
   test.skip('should be able to intercept websocket calls', async ({ expect }) => {
+    // eslint-disable-next-line no-unused-expressions
     fixture`./loops.html
       <script>
         let i = 0;
