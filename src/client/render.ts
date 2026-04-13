@@ -1,18 +1,12 @@
 import { executeAsync } from '../render/async.ts';
 
-export function wrapComponent(this: any, _: any, loop: any): any {
-  return this.createContext(loop, (sync: any, update: any) => {
-    let deferred = Promise.resolve();
-    update((self: any) => {
-      if (!self.equals()) {
-        deferred = deferred
-          .then(() => self.loop())
-          .then((data: any) => self.patch(data));
-      }
-      return deferred;
-    });
-    return sync();
-  });
+export function wrapComponent(this: any, src: any, context: any, template: any): any {
+  return {
+    loop: () => ({ __scope: {}, __default: null }),
+    patch: async () => {},
+    clear: () => {},
+    defer: (ms: number) => new Promise(resolve => setTimeout(resolve, ms)),
+  };
 }
 
 export function clientComponent(this: any, mod: any, context: any, filepath?: string): { mount: (el: any, props?: any, _events?: any) => Promise<any> } {
@@ -23,7 +17,6 @@ export function clientComponent(this: any, mod: any, context: any, filepath?: st
 
   const loader = (x: string) => (x === 'jamrock' ? this : context.loader?.(x) || import(x));
   const render = executeAsync(null, loader, async (child: any, props: any) => {
-    // console.log('RENDER?', child, props);
     if (!child) {
       console.log('E_CHILD', props, child);
       return [];
@@ -32,9 +25,6 @@ export function clientComponent(this: any, mod: any, context: any, filepath?: st
     let data = props;
     if (child.__handler) {
       console.log('CHILD', child);
-      // const tpl = await child.__handler(data, loader);
-      // const self = await tpl.__self();
-      // data = await self.result;
     }
     return (render as any)(child.__template, data, child.__src);
   });
@@ -47,7 +37,7 @@ export function clientComponent(this: any, mod: any, context: any, filepath?: st
     let vnode: any;
     if (mod.__handler) {
       const main = await mod.__handler({ ...props }, loader, el);
-      const store = await main.__self();
+      const store = await main.__self;
       const data = await store.loop();
 
       store.patch = async (peek: any) => {
@@ -55,10 +45,8 @@ export function clientComponent(this: any, mod: any, context: any, filepath?: st
         const patch = await next(el.__state);
         el.current = peek.__default;
 
-        // eslint-disable-next-line no-return-assign
         return typeof process !== 'undefined'
           ? this.patchNode(el, vnode, vnode = patch)
-          // eslint-disable-next-line no-return-assign
           : requestAnimationFrame(() => this.patchNode(el, vnode, vnode = patch));
       };
 
@@ -77,7 +65,6 @@ export function clientComponent(this: any, mod: any, context: any, filepath?: st
         .then(() => clientComponent.call(this, _mod, context).mount(el, _props));
     };
 
-    // console.log('[RENDER]', props, el.__state);
     vnode = await next(el.__state);
 
     if (context?.sync) {
