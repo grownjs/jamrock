@@ -1,7 +1,7 @@
-import { onError, useRef, useState } from 'nohooks';
 import { signal, computed, effect, batch, untracked } from 'somedom';
 
 const useMemo = computed;
+const useRef = <T>(current: T): { current: T } => ({ current });
 
 import { wrapComponent, mountableComponent } from './render.ts';
 import { Is, sleep } from '../utils/client.ts';
@@ -329,7 +329,7 @@ export class Components {
       this.loaded = true;
       this.browser.runtime().then(() => {
         Object.assign((window as any).Jamrock.Runtime, {
-          onError, useRef, useMemo, useState, wrapComponent, mountableComponent,
+          useRef, useMemo, wrapComponent, mountableComponent,
           signal, computed, effect, batch, untracked,
         });
       });

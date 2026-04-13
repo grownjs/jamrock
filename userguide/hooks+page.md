@@ -4,9 +4,93 @@
 
 # Hooks
 
-Jamrock provides React-style hooks for backward compatibility, but **signals** are the recommended approach for new code.
+Jamrock uses **signals** for reactivity. The old React-style hooks have been removed.
 
-## Available Hooks
+## Available APIs
+
+### signal
+
+Create a reactive value:
+
+```html
+<script context="client">
+  import { signal } from 'jamrock';
+
+  const count = signal(0);
+</script>
+
+<button on:click={() => count.value++}>{count.value}</button>
+```
+
+### computed
+
+Create a derived value:
+
+```html
+<script context="client">
+  import { signal, computed } from 'jamrock';
+
+  const a = signal(2);
+  const b = signal(3);
+  const sum = computed(() => a.value + b.value);
+</script>
+
+<p>Sum: {sum.value}</p>
+```
+
+### effect
+
+Run side effects when signals change:
+
+```html
+<script context="client">
+  import { signal, effect } from 'jamrock';
+
+  const count = signal(0);
+
+  effect(() => {
+    document.title = `Count: ${count.value}`;
+  });
+</script>
+```
+
+### trap
+
+Error boundary for effects:
+
+```html
+<script context="client">
+  import { trap, effect, signal } from 'jamrock';
+
+  const count = signal(0);
+
+  trap((error) => {
+    console.error('Error:', error);
+  });
+
+  effect(() => {
+    if (count.value < 0) throw new Error('Invalid count');
+  });
+</script>
+```
+
+### scope
+
+Share state across components:
+
+```html
+<script context="client">
+  import { scope, effect } from 'jamrock';
+
+  const Theme = scope('light');
+
+  Theme.value = 'dark';
+
+  Theme.provide('blue', () => {
+    // Theme.value === 'blue' here
+  });
+</script>
+```
 
 ### useRef
 
@@ -25,148 +109,6 @@ Create a mutable reference:
 
 <input ref={inputRef} />
 <button on:click={focus}>Focus</button>
-```
-
-### useState (Legacy)
-
-> [!WARNING]
-> `useState` is deprecated. Use `signal` instead.
-
-```html
-<script context="client">
-  import { useState } from 'jamrock';
-
-  const [count, setCount] = useState(0);
-</script>
-
-<button on:click={() => setCount(count + 1)}>{count}</button>
-```
-
-**Recommended:**
-
-```html
-<script context="client">
-  import { signal } from 'jamrock';
-
-  const count = signal(0);
-</script>
-
-<button on:click={() => count.value++}>{count.value}</button>
-```
-
-### useEffect (Legacy)
-
-> [!WARNING]
-> `useEffect` is deprecated. Use `effect` instead.
-
-```html
-<script context="client">
-  import { useState, useEffect } from 'jamrock';
-
-  const [count, setCount] = useState(0);
-
-  useEffect(() => {
-    document.title = `Count: ${count}`;
-  }, [count]);
-</script>
-```
-
-**Recommended:**
-
-```html
-<script context="client">
-  import { signal, effect } from 'jamrock';
-
-  const count = signal(0);
-
-  effect(() => {
-    document.title = `Count: ${count.value}`;
-  });
-</script>
-```
-
-### useMemo (Legacy)
-
-> [!WARNING]
-> `useMemo` is deprecated. Use `computed` instead.
-
-```html
-<script context="client">
-  import { useState, useMemo } from 'jamrock';
-
-  const [a, setA] = useState(2);
-  const [b, setB] = useState(3);
-
-  const sum = useMemo(() => a + b, [a, b]);
-</script>
-```
-
-**Recommended:**
-
-```html
-<script context="client">
-  import { signal, computed } from 'jamrock';
-
-  const a = signal(2);
-  const b = signal(3);
-
-  const sum = computed(() => a.value + b.value);
-</script>
-```
-
-## onError
-
-Handle errors in client-side components:
-
-```html
-<script context="client">
-  import { onError } from 'jamrock';
-
-  onError((error) => {
-    console.error('Component error:', error);
-  });
-</script>
-```
-
-## trap (Recommended)
-
-Error boundary for effects:
-
-```html
-<script context="client">
-  import { trap, effect, signal } from 'jamrock';
-
-  const count = signal(0);
-
-  const dispose = trap((error) => {
-    console.error('Error:', error);
-  });
-
-  effect(() => {
-    if (count.value < 0) throw new Error('Invalid count');
-  });
-</script>
-```
-
-## scope
-
-Share state across components:
-
-```html
-<script context="client">
-  import { scope, effect } from 'jamrock';
-
-  const Theme = scope('light');
-
-  // Read/write
-  Theme.value; // 'light'
-  Theme.value = 'dark';
-
-  // Scoped value
-  Theme.provide('blue', () => {
-    // Theme.value === 'blue' here
-  });
-</script>
 ```
 
 <nav class="flex gap-sm between">
