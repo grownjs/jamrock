@@ -131,7 +131,7 @@ dispose(); // Remove error handler
 
 ## Shared State
 
-Use `scope` to share state across components:
+Use `scope` for shared state across the component tree:
 
 ```js
 import { scope, effect } from 'jamrock';
@@ -153,6 +153,8 @@ effect(() => {
   console.log(Theme.value); // Re-runs when changed
 });
 ```
+
+Note: `scope` is for shared state, not a replacement for React-style context providers.
 
 ## DOM Bindings
 

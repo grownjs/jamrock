@@ -76,7 +76,7 @@ Error boundary for effects:
 
 ### scope
 
-Share state across components:
+Shared state across the component tree:
 
 ```html
 <script context="client">
@@ -87,10 +87,13 @@ Share state across components:
   Theme.value = 'dark';
 
   Theme.provide('blue', () => {
-    // Theme.value === 'blue' here
+    // Theme.value === 'blue' here (scoped override)
   });
+  // Theme.value === 'dark' (restored)
 </script>
 ```
+
+Note: `scope` is for shared state, not a replacement for React-style context providers.
 
 ### ref
 
