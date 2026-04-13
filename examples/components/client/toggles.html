@@ -54,7 +54,7 @@
   }
 
   effect(() => {
-    selected.value;
+    const _ = selected.value; // subscribe to changes
     setTimeout(() => self.querySelector('[aria-selected=true]').focus(), 60);
   });
 

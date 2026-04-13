@@ -4,12 +4,11 @@ import { test } from '@japa/runner';
 import * as td from 'testdouble';
 
 import {
-  createView, generated, fixture, server, setup, reset, build,
+  generated, fixture, server, setup, reset, build,
 } from './helpers/utils.mjs';
 
 import { Template } from '../src/templ/main.ts';
 import { match } from '../src/handler/match.ts';
-import { taggify } from '../src/markup/html.ts';
 
 import { preflight, middleware, controllers, middlewares } from '../src/handler/main.ts';
 
