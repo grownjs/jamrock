@@ -20,6 +20,7 @@ function createSelf(element: ElementFn | null, loader: LoaderFn, next: NextFn, r
     $: (value: any): unknown => {
       if (value === null || value === false || typeof value === 'undefined') return '';
       if (value.current) value = value.current;
+      if (Is.func(value) && value.name === '$signal') value = value();
       if (!Is.scalar(value)) {
         return Is.arr(value)
           ? value.map(self.$).join('')

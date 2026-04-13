@@ -16,7 +16,7 @@ export async function execAsync(chunk: any, ctx: any[]): Promise<any> {
 }
 
 export function execSync(chunk: any, ctx: any[]): any {
-  if (Is.func(chunk) && !(chunk as Function).name) {
+  if (Is.func(chunk) && (!(chunk as Function).name || (chunk as Function).name === '$signal')) {
     chunk = (chunk as Function).apply(undefined, ctx);
   }
 

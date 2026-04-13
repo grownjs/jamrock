@@ -143,7 +143,7 @@ export class Expr {
       } else if (expression !== false) {
         if (_expr.includes('$')) {
           _expr = _expr.replace(/\$(\w+)/g, '$1.value');
-          _expr = `() => ${_expr}`;
+          _expr = `function $signal() { return ${_expr}; }`;
         } else {
           _expr = `$$.$(${_expr})`;
         }
