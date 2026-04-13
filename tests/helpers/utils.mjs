@@ -114,6 +114,19 @@ export function fixture(str, ...splat) {
   fs.writeFileSync(destination, source);
 }
 
+fixture.fromFile = (name, alias) => {
+  const fixturesDir = path.join(cwd, 'tests', 'fixtures');
+  const source = fs.readFileSync(path.join(fixturesDir, name), 'utf-8');
+  const filepath = alias || `./${path.basename(name)}`;
+  const destination = filepath.replace(/^\./, `${cwd}/generated`);
+
+  fixture[filepath] = { source, filepath, destination };
+
+  fs.mkdirSync(path.dirname(destination), { recursive: true });
+  fs.writeFileSync(destination, source);
+  return filepath;
+};
+
 export async function generated(block) {
   const filepath = block.src;
   const source = block.code;
