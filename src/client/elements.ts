@@ -16,9 +16,17 @@ export function createRender(): { patchNode: any; createElement: any; renderToEl
     },
     fragment: (props: any, children: any) => {
       if (props['@html']) {
+        if (!props['@html']) return null;
         const template = document.createElement('template');
         template.innerHTML = props['@html'];
         return template.content;
+      }
+      if (props['d:html']) {
+        const signal = props['d:html'];
+        if (!signal || !signal.value) return null;
+        const tag = props.tag || 'div';
+        delete props.tag;
+        return [tag, { 'd:html': signal }, ...children];
       }
       return children;
     },

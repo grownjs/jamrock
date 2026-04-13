@@ -138,7 +138,7 @@ export class Expr {
         _expr = `$$.d({ ${_expr.substr(7)} })`;
       } else if (_expr.indexOf('@html') === 0) {
         let htmlExpr = _expr.substr(5);
-        let tag = 'div';
+        let tag = 'fragment';
         if (htmlExpr[0] === ':') {
           const colonEnd = htmlExpr.indexOf(' ');
           if (colonEnd > 1) {

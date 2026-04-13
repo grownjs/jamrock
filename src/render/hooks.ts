@@ -39,11 +39,11 @@ function createSelf(element: ElementFn | null, loader: LoaderFn, next: NextFn, r
     e: (tag: string, props: Record<string, unknown>, children: unknown): unknown => {
       return element ? element(tag, props, children) : [tag, props, children];
     },
-    h: (value: unknown, tag: string = 'div'): unknown => {
+    h: (value: unknown, tag: string = 'fragment'): unknown => {
       return Is.arr(value) ? value : [tag, { '@html': String(value) }];
     },
-    s: (value: unknown, tag: string = 'div'): unknown => {
-      return [tag, { 'd:html': value }];
+    s: (value: unknown, tag: string = 'fragment'): unknown => {
+      return [tag, { 'd:html': value, tag }];
     },
     if: (cond: unknown, then: () => unknown, ...branches: Array<(() => unknown) | undefined>): unknown => {
       if (cond) return run(then(), []);
