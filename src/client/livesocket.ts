@@ -10,7 +10,7 @@ function createSSESocket(uuid: string, prefix: string, onMessage: (_msg: string)
         method: 'POST',
         headers: {
           'Content-Type': 'application/x-www-form-urlencoded',
-          'X-Request-UUID': uuid,
+          'request-uuid': uuid,
         },
         body: `cmd=${encodeURIComponent(msg)}`,
       });

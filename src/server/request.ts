@@ -1,5 +1,6 @@
 import { Template, Markup, Handler, Util } from '../main.ts';
 import type { SSESocket } from '../handler/dispatch.ts';
+import { PKG_VERSION } from '../version.ts';
 
 import { generateClientCode } from '../client.js';
 
@@ -130,7 +131,7 @@ export function getClientCode(conn: any, patch: string, baseURL: string, prefixU
   const state = JSON.stringify({ uuid, patch, method, csrf: conn.csrf_token });
   const shim = '<script>window.__f=(r,d,m)=>(window.__fq=window.__fq||[]).push([r,d,m]);</script>';
   const client = `${shim}<script defer>(${generateClientCode.toString().replace(/𝐢𝐦𝐩𝐨𝐫𝐭/g, 'import')
-  })(${state}, ${JSON.stringify(prefixURL)});</script>
+  })(${state}, ${JSON.stringify(prefixURL)}, ${JSON.stringify(PKG_VERSION)});</script>
 `.replaceAll('./', baseURL);
 
   return client;
@@ -520,12 +521,13 @@ export async function createPageResponse(env: any, conn: any, options: any): Pro
 function createSSEResponse(env: any, conn: any): Response {
   const uuid = conn.req.uuid;
   const encoder = new TextEncoder();
+  let sseSocket: SSESocket;
 
   return new Response(new ReadableStream({
     start(controller) {
       Util.dump('START SSE', uuid);
 
-      const sseSocket: SSESocket = {
+      sseSocket = {
         identity: uuid,
         send: (msg: string) => {
           controller.enqueue(encoder.encode(`data: ${JSON.stringify(msg)}\n\n`));
@@ -537,16 +539,26 @@ function createSSEResponse(env: any, conn: any): Response {
       }
       env.sseSockets.set(uuid, sseSocket);
 
+      if (env.watcher?.subscribe) {
+        env.watcher.subscribe(sseSocket);
+      }
+
       sseSocket.send(`welcome ${uuid}`);
 
       conn.req.signal.onabort = () => {
         env.sseSockets?.delete(uuid);
+        if (env.watcher?.unsubscribe) {
+          env.watcher.unsubscribe(sseSocket);
+        }
         controller.close();
       };
     },
     cancel(reason) {
       Util.dump('STOP SSE', reason, uuid);
       env.sseSockets?.delete(uuid);
+      if (env.watcher?.unsubscribe && sseSocket) {
+        env.watcher.unsubscribe(sseSocket);
+      }
       env.context.get(uuid)?.forEach((s: any) => s.cancel());
       env.context.delete(uuid);
     },
