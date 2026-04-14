@@ -110,7 +110,6 @@ export function createFragment({ browser, patchNode, createElement }: FragmentDe
       (node as FragmentNode).__vnode = browser.children(node);
       (node as FragmentNode).__anchors = [];
     });
-    console.log(42);
 
     if (typeof BroadcastChannel !== 'undefined') {
       broadcastChannel = new BroadcastChannel(BROADCAST_CHANNEL_NAME);

@@ -2,21 +2,16 @@ import { executeAsync } from '../render/async.ts';
 
 export function clientComponent(this: any, mod: any, context: any, filepath?: string): { mount: (el: any, props?: any, _events?: any) => Promise<any> } {
   if (!mod) {
-    console.log('E_MOD', { context, filepath });
     return { mount: (el: any) => el };
   }
 
   const loader = (x: string) => (x === 'jamrock' ? this : context.loader?.(x) || import(x));
   const render = executeAsync(null, loader, async (child: any, props: any) => {
     if (!child) {
-      console.log('E_CHILD', props, child);
       return [];
     }
 
     let data = props;
-    if (child.__handler) {
-      console.log('CHILD', child);
-    }
     return (render as any)(child.__template, data, child.__src);
   });
   const next = (data: any) => (render as any)(mod.__template, data, mod.__src);
@@ -36,7 +31,6 @@ export function clientComponent(this: any, mod: any, context: any, filepath?: st
 
     el.__defer = el.__defer || Promise.resolve();
     el.__update = (_mod: any, _props: any) => {
-      console.log('[UPDATE]', _props);
       el.__state = null;
       el.__defer = el.__defer
         .then(() => clientComponent.call(this, _mod, context).mount(el, _props));

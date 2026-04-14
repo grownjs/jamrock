@@ -890,7 +890,7 @@ export class Template {
   }
 
   static write(dest: string, code: any): void {
-    console.log(dest, code);
+    // TODO: implement file writing
   }
 
   static join(...args: string[]): string {
