@@ -3,11 +3,12 @@
   export let size;
   export let height;
   export let width;
+  export let alt = '';
 
-  width = size || width;
-  height = size || height;
+  const w = size || width;
+  const h = size || height;
 
   const src = `../images/${name}.svg`;
 </script>
 
-<svg {src} {size} {height} {width} />
+<img {src} width={w} height={h} alt={alt} />
