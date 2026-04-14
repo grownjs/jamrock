@@ -1,0 +1,55 @@
+<script>
+  import { signal } from 'jamrock';
+  
+  let lastKey = signal('None');
+  let keyCount = signal(0);
+  let shortcuts = signal([
+    { key: 'Ctrl+N', action: 'New File', count: 0 },
+    { key: 'Ctrl+O', action: 'Open File', count: 0 },
+    { key: 'Ctrl+S', action: 'Save File', count: 0 },
+    { key: 'Ctrl+Z', action: 'Undo', count: 0 },
+    { key: 'Ctrl+Y', action: 'Redo', count: 0 },
+    { key: 'Ctrl+C', action: 'Copy', count: 0 },
+    { key: 'Ctrl+V', action: 'Paste', count: 0 },
+    { key: 'Ctrl+X', action: 'Cut', count: 0 },
+  ]);
+  
+  function triggerShortcut(index) {
+    const shortcut = shortcuts.value[index];
+    shortcuts.value = shortcuts.value.map((s, i) => 
+      i === index ? { ...s, count: s.count + 1 } : s
+    );
+    lastKey.value = shortcut.key;
+    keyCount.value += 1;
+  }
+  
+  function resetCounts() {
+    shortcuts.value = shortcuts.value.map(s => ({ ...s, count: 0 }));
+    lastKey.value = 'None';
+    keyCount.value = 0;
+  }
+</script>
+
+<vstack>
+  <label>⌨️ Keyboard Shortcuts Demo</label>
+  <label>─</label>
+  
+  <label>Last Action: {$lastKey}</label>
+  <label>Total Actions: {$keyCount}</label>
+  
+  <label>─</label>
+  
+  <label>Shortcuts (click to simulate):</label>
+  
+  {#each $shortcuts as shortcut, index}
+    <hstack>
+      <label>{$shortcut.key}</label>
+      <button onclick="{() => triggerShortcut($index)}">{$shortcut.action}</button>
+      <label>Used: {$shortcut.count}x</label>
+    </hstack>
+  {/each}
+  
+  <label>─</label>
+  
+  <button onclick="{resetCounts}">Reset Counts</button>
+</vstack>

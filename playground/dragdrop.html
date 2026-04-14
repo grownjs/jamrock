@@ -1,0 +1,82 @@
+<script>
+  import { signal } from 'jamrock';
+  
+  let items = signal([
+    { id: 1, name: 'Item 1', color: '🔴' },
+    { id: 2, name: 'Item 2', color: '🟢' },
+    { id: 3, name: 'Item 3', color: '🔵' },
+    { id: 4, name: 'Item 4', color: '🟡' },
+    { id: 5, name: 'Item 5', color: '🟣' },
+  ]);
+  
+  let draggedItem = signal(null);
+  let dropTarget = signal(null);
+  let dropCount = signal(0);
+  
+  function startDrag(item) {
+    draggedItem.value = item;
+  }
+  
+  function endDrag() {
+    draggedItem.value = null;
+  }
+  
+  function onDrop(targetId) {
+    if (draggedItem.value && draggedItem.value.id !== targetId) {
+      dropCount.value += 1;
+      // Swap items
+      const itemIds = items.value.map(i => i.id);
+      const dragIdx = itemIds.indexOf(draggedItem.value.id);
+      const targetIdx = itemIds.indexOf(targetId);
+      
+      const newItems = [...items.value];
+      [newItems[dragIdx], newItems[targetIdx]] = [newItems[targetIdx], newItems[dragIdx]];
+      items.value = newItems;
+    }
+    draggedItem.value = null;
+  }
+  
+  function setDropTarget(id) {
+    dropTarget.value = id;
+  }
+  
+  function clearDropTarget() {
+    dropTarget.value = null;
+  }
+</script>
+
+<vstack>
+  <label>🎯 Drag & Drop Demo</label>
+  <label>─</label>
+  
+  <label>Click to select, then click another to swap</label>
+  <label>Drops: {$dropCount}</label>
+  
+  <label>─</label>
+  
+  {#if $draggedItem}
+    <label>Dragging: {$draggedItem.color} {$draggedItem.name}</label>
+  {:else}
+    <label>Select an item to drag</label>
+  {/if}
+  
+  <label>─</label>
+  
+  {#each $items as item}
+    <hstack>
+      <button onclick="{() => $draggedItem ? onDrop($item.id) : startDrag($item)}">
+        {$item.color} {$item.name}
+        {#if $dropTarget === $item.id}
+          [DROP]
+        {/if}
+      </button>
+      {#if $draggedItem && $draggedItem.id !== $item.id}
+        <button onclick="{() => onDrop($item.id)}">⬇️ Drop Here</button>
+      {/if}
+    </hstack>
+  {/each}
+  
+  <label>─</label>
+  
+  <button onclick="{endDrag}">Cancel Drag</button>
+</vstack>

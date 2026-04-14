@@ -1,0 +1,84 @@
+<script>
+  import { signal } from 'jamrock';
+  
+  let notifications = signal([]);
+  let notificationId = signal(0);
+  let notificationType = signal('info');
+  let notificationMessage = signal('');
+  
+  function addNotification() {
+    const id = notificationId.value + 1;
+    notificationId.value = id;
+    
+    const icons = {
+      info: 'ℹ️',
+      success: '✅',
+      warning: '⚠️',
+      error: '❌'
+    };
+    
+    notifications.value = [...notifications.value, {
+      id,
+      type: notificationType.value,
+      message: notificationMessage.value || `Notification ${id}`,
+      icon: icons[notificationType.value] || 'ℹ️',
+      timestamp: new Date().toLocaleTimeString()
+    }];
+    
+    notificationMessage.value = '';
+  }
+  
+  function removeNotification(id) {
+    notifications.value = notifications.value.filter(n => n.id !== id);
+  }
+  
+  function clearAll() {
+    notifications.value = [];
+  }
+  
+  function setType(type) {
+    notificationType.value = type;
+  }
+</script>
+
+<vstack>
+  <label>🔔 Notifications Demo</label>
+  <label>─</label>
+  
+  <label>Active: {$notifications.length}</label>
+  
+  <label>─</label>
+  
+  <label>Type: {$notificationType}</label>
+  <hstack>
+    <button onclick="{() => setType('info')}">ℹ️ Info</button>
+    <button onclick="{() => setType('success')}">✅ Success</button>
+    <button onclick="{() => setType('warning')}">⚠️ Warning</button>
+    <button onclick="{() => setType('error')}">❌ Error</button>
+  </hstack>
+  
+  <label>─</label>
+  
+  <entry placeholder="Message..." onchange="{(e) => notificationMessage.value = e.value}" />
+  <button onclick="{addNotification}">Add Notification</button>
+  
+  <label>─</label>
+  
+  <label>Notifications:</label>
+  {#each $notifications as notif}
+    <hstack>
+      <label>{$notif.icon}</label>
+      <label>{$notif.message}</label>
+      <label>{$notif.timestamp}</label>
+      <button onclick="{() => removeNotification($notif.id)}">✕</button>
+    </hstack>
+  {/each}
+  
+  {#if $notifications.length === 0}
+    <label>No notifications</label>
+  {/if}
+  
+  <label>─</label>
+  
+  <button onclick="{clearAll}">Clear All</button>
+</vstack>
