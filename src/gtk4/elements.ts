@@ -236,21 +236,34 @@ export function progress(value: number, props: ElementProps = {}, cb: AfterCallb
 }
 
 export function level(value: number, props: ElementProps = {}, cb: AfterCallback | null = null) {
-  const el = one(Gtk.LevelBar, props, 'lvl', cb);
-  console.log('LEVEL', value);
-  return el;
+  return one(Gtk.LevelBar, { ...props, value }, 'lvl', cb);
 }
 
 export function range(value: number, props: ElementProps = {}, cb: AfterCallback | null = null) {
+  const { onChange, ...defaults } = props;
+  const adjustment = new Gtk.Adjustment({
+    value,
+    lower: 0,
+    upper: 100,
+    step_increment: 1,
+    page_increment: 10,
+  });
+
   const el = one(Gtk.Scale, {
-    ...props,
+    ...defaults,
     orientation: Gtk.Orientation.HORIZONTAL,
-    adjustment: value,
-    digits: 2, // Display 2 decimal places in the scale's built-in value display
-    draw_value: true, // Show the value next to the slider
-    hexpand: true, // Expand horizontally to fill the window width
+    adjustment,
+    digits: 2,
+    draw_value: true,
+    hexpand: true,
   }, 'rg', cb);
-  console.log('RANGE', value);
+
+  adjustment.connect('value-changed', () => {
+    if (typeof onChange === 'function') {
+      onChange({ type: 'modified', value: adjustment.get_value() });
+    }
+  });
+
   return el;
 }
 
