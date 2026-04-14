@@ -245,4 +245,140 @@ test.group('GTK4 Apps', () => {
     
     reset();
   });
+  
+  test('calendar widget compiles', async ({ expect }) => {
+    setup();
+    
+    const source = `
+<script>
+  import { signal } from 'jamrock';
+  
+  let selectedDate = signal(null);
+  
+  function onCalendarChange(e) {
+    selectedDate.value = e.value;
+  }
+</script>
+
+<vstack>
+  <label>Selected: {\$selectedDate}</label>
+  <calendar onchange="{onCalendarChange}" />
+</vstack>
+`;
+    
+    const { mod, code } = await compileGTK(source, 'gtk-calendar.html');
+    
+    expect(code).toContain('calendar');
+    
+    const result = await renderGTK(mod);
+    expect(result).toBeDefined();
+    
+    reset();
+  });
+  
+  test('spinner widget compiles', async ({ expect }) => {
+    setup();
+    
+    const source = `
+<vstack>
+  <spinner />
+</vstack>
+`;
+    
+    const { mod, code } = await compileGTK(source, 'gtk-spinner.html');
+    
+    expect(code).toContain('spinner');
+    
+    const result = await renderGTK(mod);
+    expect(result).toBeDefined();
+    
+    reset();
+  });
+  
+  test('revealer widget compiles', async ({ expect }) => {
+    setup();
+    
+    const source = `
+<script>
+  import { signal } from 'jamrock';
+  
+  let revealed = signal(true);
+  
+  function toggle() {
+    revealed.value = !revealed.value;
+  }
+</script>
+
+<vstack>
+  <button onclick="{toggle}">Toggle</button>
+  <revealer>
+    <label>Hidden content</label>
+  </revealer>
+</vstack>
+`;
+    
+    const { mod, code } = await compileGTK(source, 'gtk-revealer.html');
+    
+    expect(code).toContain('revealer');
+    
+    const result = await renderGTK(mod);
+    expect(result).toBeDefined();
+    
+    reset();
+  });
+  
+  test('grid widget compiles', async ({ expect }) => {
+    setup();
+    
+    const source = `
+<vstack>
+  <grid columns="3">
+    <label>1</label>
+    <label>2</label>
+    <label>3</label>
+    <label>4</label>
+    <label>5</label>
+    <label>6</label>
+  </grid>
+</vstack>
+`;
+    
+    const { mod, code } = await compileGTK(source, 'gtk-grid.html');
+    
+    expect(code).toContain('grid');
+    
+    const result = await renderGTK(mod);
+    expect(result).toBeDefined();
+    
+    reset();
+  });
+  
+  test('textview widget compiles', async ({ expect }) => {
+    setup();
+    
+    const source = `
+<script>
+  import { signal } from 'jamrock';
+  
+  let content = signal('Hello World');
+  
+  function onTextChange(e) {
+    content.value = e.value;
+  }
+</script>
+
+<vstack>
+  <textview onchange="{onTextChange}" />
+</vstack>
+`;
+    
+    const { mod, code } = await compileGTK(source, 'gtk-textview.html');
+    
+    expect(code).toContain('textview');
+    
+    const result = await renderGTK(mod);
+    expect(result).toBeDefined();
+    
+    reset();
+  });
 });

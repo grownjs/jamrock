@@ -7,6 +7,10 @@
   let progress = signal(0.5);
   let level = signal(0.7);
   let range = signal(50);
+  let spinValue = signal(42);
+  let revealed = signal(true);
+  let expanded = signal(true);
+  let selectedDate = signal('No date selected');
   
   function increment() {
     count.value += 1;
@@ -27,10 +31,29 @@
   function onRangeChange(e) {
     range.value = e.value;
   }
+  
+  function onSpinChange(e) {
+    spinValue.value = e.value;
+  }
+  
+  function toggleReveal() {
+    revealed.value = !revealed.value;
+  }
+  
+  function toggleExpand() {
+    expanded.value = !expanded.value;
+  }
+  
+  function onCalendarChange(e) {
+    selectedDate.value = e.value ? e.value.format('%Y-%m-%d') : 'No date';
+  }
 </script>
 
 <vstack>
-  <label>Widget Gallery</label>
+  <label>🎨 Complete Widget Gallery</label>
+  <label>─</label>
+  
+  <label>Basic Widgets</label>
   <label>─</label>
   
   <label>Counter: {$count}</label>
@@ -40,22 +63,75 @@
   </hstack>
   
   <label>─</label>
+  
   <label>Text Input: {$text}</label>
   <entry placeholder="Type something..." onchange="{onInput}" />
   
   <label>─</label>
-  <label>Toggle: {$toggled}</label>
-  <button onclick="{toggle}">{$toggled ? 'ON' : 'OFF'}</button>
+  
+  <label>Toggle: {$toggled ? 'ON' : 'OFF'}</label>
+  <button onclick="{toggle}">{toggled ? 'ON' : 'OFF'}</button>
   
   <label>─</label>
-  <label>Progress: {$progress}</label>
+  
+  <label>Value Widgets</label>
+  <label>─</label>
+  
+  <label>Progress: {Math.round($progress * 100)}%</label>
   <progress value={$progress} />
   
   <label>─</label>
-  <label>Level: {$level}</label>
+  
+  <label>Level: {Math.round($level * 100)}%</label>
   <level value={$level} />
   
   <label>─</label>
+  
   <label>Range: {$range}</label>
   <range value={$range} onchange="{onRangeChange}" />
+  
+  <label>─</label>
+  
+  <label>SpinButton: {$spinValue}</label>
+  <spinbutton value={$spinValue} min="0" max="100" onchange="{onSpinChange}" />
+  
+  <label>─</label>
+  
+  <label>Container Widgets</label>
+  <label>─</label>
+  
+  <label>Revealer: {$revealed ? 'Visible' : 'Hidden'}</label>
+  <button onclick="{toggleReveal}">Toggle Reveal</button>
+  
+  <label>─</label>
+  
+  <label>Expander: {$expanded ? 'Expanded' : 'Collapsed'}</label>
+  <button onclick="{toggleExpand}">Toggle Expand</button>
+  
+  <label>─</label>
+  
+  <label>Special Widgets</label>
+  <label>─</label>
+  
+  <label>Calendar: {$selectedDate}</label>
+  <calendar onchange="{onCalendarChange}" />
+  
+  <label>─</label>
+  
+  <label>Spinner:</label>
+  <spinner />
+  
+  <label>─</label>
+  
+  <separator />
+  
+  <label>─</label>
+  
+  <label>Image:</label>
+  <image icon="dialog-information-symbolic" />
+  
+  <label>─</label>
+  
+  <label>Link Button:</label>
+  <linkbutton uri="https://jamrock.site">Visit Jamrock</linkbutton>
 </vstack>
