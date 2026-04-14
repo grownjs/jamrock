@@ -1,0 +1,110 @@
+<script>
+  import { signal } from 'jamrock';
+  
+  let notes = signal([
+    { id: 1, title: 'Welcome', content: 'This is your first note!' },
+    { id: 2, title: 'Tip', content: 'Click a note to view it' },
+  ]);
+  let selected = signal(null);
+  let editing = signal(false);
+  let editTitle = signal('');
+  let editContent = signal('');
+  
+  function selectNote(note) {
+    selected.value = note;
+    editing.value = false;
+  }
+  
+  function startEdit() {
+    if (selected.value) {
+      editTitle.value = selected.value.title;
+      editContent.value = selected.value.content;
+      editing.value = true;
+    }
+  }
+  
+  function saveEdit() {
+    if (selected.value) {
+      notes.value = notes.value.map(n => 
+        n.id === selected.value.id 
+          ? { ...n, title: editTitle.value, content: editContent.value }
+          : n
+      );
+      selected.value = { ...selected.value, title: editTitle.value, content: editContent.value };
+      editing.value = false;
+    }
+  }
+  
+  function cancelEdit() {
+    editing.value = false;
+  }
+  
+  function newNote() {
+    const note = { id: Date.now(), title: 'New Note', content: '' };
+    notes.value = [note, ...notes.value];
+    selected.value = note;
+    editTitle.value = note.title;
+    editContent.value = note.content;
+    editing.value = true;
+  }
+  
+  function deleteNote() {
+    if (selected.value) {
+      notes.value = notes.value.filter(n => n.id !== selected.value.id);
+      selected.value = null;
+    }
+  }
+  
+  function onTitleInput(e) {
+    editTitle.value = e.value;
+  }
+  
+  function onContentInput(e) {
+    editContent.value = e.value;
+  }
+</script>
+
+<vstack>
+  <label>📝 Notes App</label>
+  <label>─</label>
+  
+  <hstack>
+    <button onclick={newNote}>+ New</button>
+    {#if $selected}
+      <button onclick={startEdit}>Edit</button>
+      <button onclick={deleteNote}>Delete</button>
+    {/if}
+  </hstack>
+  
+  <label>─</label>
+  
+  <hstack>
+    <vstack>
+      <label>Notes ({$notes.length})</label>
+      <label>─</label>
+      {#each $notes as note}
+        <button onclick={() => selectNote(note)}>{note.title}</button>
+      {/each}
+    </vstack>
+    
+    <vstack>
+      {#if $selected}
+        {#if $editing}
+          <label>Editing:</label>
+          <entry placeholder="Title" onchange={onTitleInput} />
+          <entry placeholder="Content" onchange={onContentInput} />
+          <hstack>
+            <button onclick={saveEdit}>Save</button>
+            <button onclick={cancelEdit}>Cancel</button>
+          </hstack>
+        {:else}
+          <label>{$selected.title}</label>
+          <label>─</label>
+          <label>{$selected.content}</label>
+        {/if}
+      {:else}
+        <label>Select a note</label>
+      {/if}
+    </vstack>
+  </hstack>
+</vstack>

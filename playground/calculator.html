@@ -1,0 +1,113 @@
+<script>
+  import { signal } from 'jamrock';
+  
+  let display = signal('0');
+  let previous = signal(null);
+  let operator = signal(null);
+  let waiting = signal(false);
+  
+  function input(d) {
+    if (waiting.value) {
+      display.value = String(d);
+      waiting.value = false;
+    } else {
+      display.value = display.value === '0' ? String(d) : display.value + d;
+    }
+  }
+  
+  function decimal() {
+    if (waiting.value) {
+      display.value = '0.';
+      waiting.value = false;
+    } else if (!display.value.includes('.')) {
+      display.value = display.value + '.';
+    }
+  }
+  
+  function clear() {
+    display.value = '0';
+    previous.value = null;
+    operator.value = null;
+    waiting.value = false;
+  }
+  
+  function op(nextOp) {
+    const val = parseFloat(display.value);
+    
+    if (previous.value === null) {
+      previous.value = val;
+    } else if (operator.value) {
+      const prev = previous.value;
+      let result;
+      
+      if (operator.value === '+') result = prev + val;
+      else if (operator.value === '-') result = prev - val;
+      else if (operator.value === '*') result = prev * val;
+      else if (operator.value === '/') result = val !== 0 ? prev / val : 'Error';
+      
+      display.value = String(result);
+      previous.value = result;
+    }
+    
+    waiting.value = true;
+    operator.value = nextOp;
+  }
+  
+  function calculate() {
+    if (!operator.value || previous.value === null) return;
+    
+    const val = parseFloat(display.value);
+    const prev = previous.value;
+    let result;
+    
+    if (operator.value === '+') result = prev + val;
+    else if (operator.value === '-') result = prev - val;
+    else if (operator.value === '*') result = prev * val;
+    else if (operator.value === '/') result = val !== 0 ? prev / val : 'Error';
+    
+    display.value = String(result);
+    previous.value = null;
+    operator.value = null;
+    waiting.value = true;
+  }
+</script>
+
+<vstack>
+  <label>🧮 Calculator</label>
+  <label>─</label>
+  
+  <label>{$display}</label>
+  <label>─</label>
+  
+  <hstack>
+    <button onclick={clear}>C</button>
+    <button onclick={() => op('/')}>÷</button>
+  </hstack>
+  
+  <hstack>
+    <button onclick={() => input(7)}>7</button>
+    <button onclick={() => input(8)}>8</button>
+    <button onclick={() => input(9)}>9</button>
+    <button onclick={() => op('*')}>×</button>
+  </hstack>
+  
+  <hstack>
+    <button onclick={() => input(4)}>4</button>
+    <button onclick={() => input(5)}>5</button>
+    <button onclick={() => input(6)}>6</button>
+    <button onclick={() => op('-')}>−</button>
+  </hstack>
+  
+  <hstack>
+    <button onclick={() => input(1)}>1</button>
+    <button onclick={() => input(2)}>2</button>
+    <button onclick={() => input(3)}>3</button>
+    <button onclick={() => op('+')}>+</button>
+  </hstack>
+  
+  <hstack>
+    <button onclick={() => input(0)}>0</button>
+    <button onclick={decimal}>.</button>
+    <button onclick={calculate}>=</button>
+  </hstack>
+</vstack>

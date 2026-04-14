@@ -1,0 +1,94 @@
+<script>
+  import { signal } from 'jamrock';
+  
+  let mode = signal('work');
+  let timeLeft = signal(25 * 60);
+  let running = signal(false);
+  let sessions = signal(0);
+  let interval = null;
+  
+  const WORK_TIME = 25 * 60;
+  const BREAK_TIME = 5 * 60;
+  
+  function formatTime(seconds) {
+    const mins = Math.floor(seconds / 60);
+    const secs = seconds % 60;
+    return String(mins).padStart(2, '0') + ':' + String(secs).padStart(2, '0');
+  }
+  
+  function progress() {
+    const total = mode.value === 'work' ? WORK_TIME : BREAK_TIME;
+    return (total - timeLeft.value) / total;
+  }
+  
+  function tick() {
+    if (timeLeft.value > 0) {
+      timeLeft.value -= 1;
+    } else {
+      if (mode.value === 'work') {
+        sessions.value += 1;
+        mode.value = 'break';
+        timeLeft.value = BREAK_TIME;
+      } else {
+        mode.value = 'work';
+        timeLeft.value = WORK_TIME;
+      }
+    }
+  }
+  
+  function start() {
+    if (!running.value) {
+      running.value = true;
+      interval = setInterval(tick, 1000);
+    }
+  }
+  
+  function stop() {
+    running.value = false;
+    clearInterval(interval);
+  }
+  
+  function reset() {
+    stop();
+    timeLeft.value = mode.value === 'work' ? WORK_TIME : BREAK_TIME;
+  }
+  
+  function toggle() {
+    running.value ? stop() : start();
+  }
+  
+  function switchMode(newMode) {
+    stop();
+    mode.value = newMode;
+    timeLeft.value = newMode === 'work' ? WORK_TIME : BREAK_TIME;
+  }
+</script>
+
+<vstack>
+  <label>🍅 Pomodoro Timer</label>
+  <label>─</label>
+  
+  <hstack>
+    <button onclick={() => switchMode('work')}>Work</button>
+    <button onclick={() => switchMode('break')}>Break</button>
+  </hstack>
+  
+  <label>─</label>
+  
+  <label>{$mode === 'work' ? '💼 Work Time' : '☕ Break Time'}</label>
+  
+  <label>{formatTime($timeLeft)}</label>
+  
+  <progress value={progress()} />
+  
+  <label>─</label>
+  
+  <hstack>
+    <button onclick={toggle}>{$running ? 'Pause' : 'Start'}</button>
+    <button onclick={reset}>Reset</button>
+  </hstack>
+  
+  <label>─</label>
+  
+  <label>Sessions completed: {$sessions}</label>
+</vstack>

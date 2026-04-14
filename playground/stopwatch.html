@@ -1,0 +1,72 @@
+<script>
+  import { signal } from 'jamrock';
+  
+  let time = signal(0);
+  let running = signal(false);
+  let laps = signal([]);
+  let interval = null;
+  
+  function formatTime(ms) {
+    const totalSeconds = Math.floor(ms / 1000);
+    const minutes = Math.floor(totalSeconds / 60);
+    const seconds = totalSeconds % 60;
+    const centiseconds = Math.floor((ms % 1000) / 10);
+    return String(minutes).padStart(2, '0') + ':' + String(seconds).padStart(2, '0') + '.' + String(centiseconds).padStart(2, '0');
+  }
+  
+  function start() {
+    if (!running.value) {
+      running.value = true;
+      const startTime = Date.now() - time.value;
+      interval = setInterval(() => {
+        time.value = Date.now() - startTime;
+      }, 10);
+    }
+  }
+  
+  function stop() {
+    if (running.value) {
+      running.value = false;
+      clearInterval(interval);
+    }
+  }
+  
+  function reset() {
+    stop();
+    time.value = 0;
+    laps.value = [];
+  }
+  
+  function lap() {
+    if (running.value) {
+      laps.value = [...laps.value, time.value];
+    }
+  }
+  
+  function toggle() {
+    running.value ? stop() : start();
+  }
+</script>
+
+<vstack>
+  <label>⏱️ Stopwatch</label>
+  <label>─</label>
+  
+  <label>{formatTime($time)}</label>
+  
+  <label>─</label>
+  
+  <hstack>
+    <button onclick={toggle}>{$running ? 'Stop' : 'Start'}</button>
+    <button onclick={lap}>Lap</button>
+    <button onclick={reset}>Reset</button>
+  </hstack>
+  
+  <label>─</label>
+  
+  <label>Laps: {$laps.length}</label>
+  
+  {#each $laps as lapTime, i}
+    <label>Lap {i + 1}: {formatTime(lapTime)}</label>
+  {/each}
+</vstack>
