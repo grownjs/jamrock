@@ -1,4 +1,5 @@
 // @ts-nocheck
+/* eslint-disable no-undef */
 const GLib = imports.gi.GLib;
 
 function loadEnv() {

@@ -4,8 +4,7 @@ import { test } from '@japa/runner';
 import * as td from 'testdouble';
 
 import { streamify } from '../src/templ/send.ts';
-import { middleware } from '../src/handler/main.ts';
-import { fixture, server } from './helpers/utils.mjs';
+import { fixture } from './helpers/utils.mjs';
 import { sleep, flatten } from '../src/utils/shared.ts';
 
 function useContext(overrides) {

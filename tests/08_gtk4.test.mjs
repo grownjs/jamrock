@@ -1,22 +1,21 @@
 import { test } from '@japa/runner';
-import { fixture, setup, reset } from './helpers/utils.mjs';
-import { executeAsync } from '../src/render/async.ts';
-import { Block } from '../src/markup/block.ts';
 import * as path from 'path';
 import * as fs from 'fs';
+import { setup, reset } from './helpers/utils.mjs';
+import { Block } from '../src/markup/block.ts';
 
 const GTK_HOOKS = {
-  signal: (value) => ({
+  signal: value => ({
     value,
-    subscribe: (fn) => () => {},
+    subscribe: _fn => () => {},
     peek: () => value,
   }),
-  computed: (fn) => ({ value: fn(), subscribe: () => () => {} }),
-  effect: (fn) => () => {},
-  batch: (fn) => fn(),
-  untracked: (fn) => fn(),
-  scope: (value) => ({ value }),
-  ref: (value) => ({ current: value }),
+  computed: fn => ({ value: fn(), subscribe: () => () => {} }),
+  effect: _fn => () => {},
+  batch: fn => fn(),
+  untracked: fn => fn(),
+  scope: value => ({ value }),
+  ref: value => ({ current: value }),
 };
 
 function gtkLoader(name) {
@@ -29,21 +28,21 @@ function gtkLoader(name) {
 async function compileGTK(source, filepath) {
   const cwd = process.cwd();
   const dest = `${cwd}/generated/${filepath}`;
-  
+
   fs.mkdirSync(path.dirname(dest), { recursive: true });
   fs.writeFileSync(dest, source);
-  
+
   const block = new Block(source, filepath, { cwd: 'generated' });
   const code = block.toString();
-  
+
   const file = dest.replace('.html', '.mjs');
-  
+
   const fixedCode = `const __src = '${filepath}';
 const __dest = '${dest}';
 ${code}`;
-  
+
   fs.writeFileSync(file, fixedCode);
-  
+
   const mod = await import(`${file}?_=${Date.now()}`);
   return { mod, code, filepath };
 }
@@ -52,11 +51,11 @@ async function renderGTK(mod, props = {}) {
   const handler = mod.__handler ? mod.__handler(props, gtkLoader) : null;
   const ctx = handler?.__context ? handler.__context() : { __scope: props };
   const data = ctx.__scope ?? ctx.__callback?.();
-  
+
   // Create a mock $$ object
   const mockSelf = {
-    e: (tag, props, children) => [tag, props, children],
-    $: (value) => {
+    e: (tag, attrs, children) => [tag, attrs, children],
+    $: value => {
       if (typeof value === 'function' && value.name === '$signal') {
         return value();
       }
@@ -70,7 +69,10 @@ async function renderGTK(mod, props = {}) {
       if (!Array.isArray(subj)) {
         subj = subj ? [...subj] : [];
       }
-      return subj.length ? subj.map((item, i) => body(item, i)) : (fallback ? fallback() : []);
+      if (subj.length) {
+        return subj.map((item, i) => body(item, i));
+      }
+      return fallback ? fallback() : [];
     },
     if: (cond, then, ...branches) => {
       // Handle signals
@@ -82,10 +84,10 @@ async function renderGTK(mod, props = {}) {
       return fallback ? fallback() : null;
     },
   };
-  
+
   // Call the template directly
   const result = mod.__template(mockSelf, data);
-  
+
   // Process with execAsync to resolve $signal functions
   const { execAsync } = await import('../src/render/async.ts');
   return execAsync(result, []);
@@ -94,7 +96,7 @@ async function renderGTK(mod, props = {}) {
 test.group('GTK4 Apps', () => {
   test('button.html compiles and renders', async ({ expect }) => {
     setup();
-    
+
     const source = `
 <script>
   import { signal } from 'jamrock';
@@ -107,27 +109,27 @@ test.group('GTK4 Apps', () => {
 </script>
 
 <vstack>
-  <label>Clicks: {\$clicks}</label>
+  <label>Clicks: {$clicks}</label>
   <button onclick="{onClick}">Click Me</button>
 </vstack>
 `;
-    
+
     const { mod, code } = await compileGTK(source, 'gtk-button.html');
-    
-    expect(code).toContain('function \$signal');
+
+    expect(code).toContain('function $signal');
     expect(code).toContain('clicks.value');
-    
+
     const result = await renderGTK(mod);
-    
+
     expect(result).toBeDefined();
     expect(Array.isArray(result)).toBe(true);
-    
+
     reset();
   });
-  
+
   test('gallery.html compiles and renders', async ({ expect }) => {
     setup();
-    
+
     const source = `
 <script>
   import { signal } from 'jamrock';
@@ -140,25 +142,25 @@ test.group('GTK4 Apps', () => {
 </script>
 
 <vstack>
-  <label>Counter: {\$count}</label>
+  <label>Counter: {$count}</label>
   <button onclick="{increment}">+</button>
 </vstack>
 `;
-    
+
     const { mod, code } = await compileGTK(source, 'gtk-gallery.html');
-    
-    expect(code).toContain('function \$signal');
-    
+
+    expect(code).toContain('function $signal');
+
     const result = await renderGTK(mod);
-    
+
     expect(result).toBeDefined();
-    
+
     reset();
   });
-  
+
   test('{#each} block compiles and renders', async ({ expect }) => {
     setup();
-    
+
     const source = `
 <script>
   import { signal } from 'jamrock';
@@ -172,21 +174,21 @@ test.group('GTK4 Apps', () => {
   {/each}
 </vstack>
 `;
-    
+
     const { mod, code } = await compileGTK(source, 'gtk-each.html');
-    
-    expect(code).toContain('\$$.map');
-    
+
+    expect(code).toContain('$$.map');
+
     const result = await renderGTK(mod);
-    
+
     expect(result).toBeDefined();
-    
+
     reset();
   });
-  
+
   test('{#if} block compiles and renders', async ({ expect }) => {
     setup();
-    
+
     const source = `
 <script>
   import { signal } from 'jamrock';
@@ -200,21 +202,21 @@ test.group('GTK4 Apps', () => {
   {/if}
 </vstack>
 `;
-    
+
     const { mod, code } = await compileGTK(source, 'gtk-if.html');
-    
-    expect(code).toContain('\$$.if');
-    
+
+    expect(code).toContain('$$.if');
+
     const result = await renderGTK(mod);
-    
+
     expect(result).toBeDefined();
-    
+
     reset();
   });
-  
+
   test('generator function works in script', async ({ expect }) => {
     setup();
-    
+
     const source = `
 <script>
   import { signal } from 'jamrock';
@@ -234,21 +236,21 @@ test.group('GTK4 Apps', () => {
   {/each}
 </vstack>
 `;
-    
+
     const { mod, code } = await compileGTK(source, 'gtk-generator.html');
-    
+
     expect(code).toContain('function*');
-    
+
     const result = await renderGTK(mod);
-    
+
     expect(result).toBeDefined();
-    
+
     reset();
   });
-  
+
   test('calendar widget compiles', async ({ expect }) => {
     setup();
-    
+
     const source = `
 <script>
   import { signal } from 'jamrock';
@@ -261,43 +263,43 @@ test.group('GTK4 Apps', () => {
 </script>
 
 <vstack>
-  <label>Selected: {\$selectedDate}</label>
+  <label>Selected: {$selectedDate}</label>
   <calendar onchange="{onCalendarChange}" />
 </vstack>
 `;
-    
+
     const { mod, code } = await compileGTK(source, 'gtk-calendar.html');
-    
+
     expect(code).toContain('calendar');
-    
+
     const result = await renderGTK(mod);
     expect(result).toBeDefined();
-    
+
     reset();
   });
-  
+
   test('spinner widget compiles', async ({ expect }) => {
     setup();
-    
+
     const source = `
 <vstack>
   <spinner />
 </vstack>
 `;
-    
+
     const { mod, code } = await compileGTK(source, 'gtk-spinner.html');
-    
+
     expect(code).toContain('spinner');
-    
+
     const result = await renderGTK(mod);
     expect(result).toBeDefined();
-    
+
     reset();
   });
-  
+
   test('revealer widget compiles', async ({ expect }) => {
     setup();
-    
+
     const source = `
 <script>
   import { signal } from 'jamrock';
@@ -316,20 +318,20 @@ test.group('GTK4 Apps', () => {
   </revealer>
 </vstack>
 `;
-    
+
     const { mod, code } = await compileGTK(source, 'gtk-revealer.html');
-    
+
     expect(code).toContain('revealer');
-    
+
     const result = await renderGTK(mod);
     expect(result).toBeDefined();
-    
+
     reset();
   });
-  
+
   test('grid widget compiles', async ({ expect }) => {
     setup();
-    
+
     const source = `
 <vstack>
   <grid columns="3">
@@ -342,20 +344,20 @@ test.group('GTK4 Apps', () => {
   </grid>
 </vstack>
 `;
-    
+
     const { mod, code } = await compileGTK(source, 'gtk-grid.html');
-    
+
     expect(code).toContain('grid');
-    
+
     const result = await renderGTK(mod);
     expect(result).toBeDefined();
-    
+
     reset();
   });
-  
+
   test('textview widget compiles', async ({ expect }) => {
     setup();
-    
+
     const source = `
 <script>
   import { signal } from 'jamrock';
@@ -371,14 +373,14 @@ test.group('GTK4 Apps', () => {
   <textview onchange="{onTextChange}" />
 </vstack>
 `;
-    
+
     const { mod, code } = await compileGTK(source, 'gtk-textview.html');
-    
+
     expect(code).toContain('textview');
-    
+
     const result = await renderGTK(mod);
     expect(result).toBeDefined();
-    
+
     reset();
   });
 });
