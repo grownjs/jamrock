@@ -156,12 +156,14 @@ export class Expr {
       } else if (_expr.indexOf('@raw ') === 0) {
         _expr = _expr.substr(5);
       } else if (expression !== false) {
-        if (_expr.includes('$')) {
-          _expr = _expr.replace(/\$(\w+)/g, '$1.value');
+        if (_expr.includes('$') && !_expr.includes('$$')) {
+          _expr = _expr.replace(/(?<!\$)\$(\w+)/g, '$1.value');
           _expr = `function $signal() { return ${_expr}; }`;
         } else {
           _expr = `$$.$(${_expr})`;
         }
+      } else if (_expr.includes('$') && !_expr.includes('$$')) {
+        _expr = _expr.replace(/(?<!\$)\$(\w+)/g, '$1.value');
       }
 
       if (this.token && _ref) {
