@@ -66,7 +66,7 @@
   
   <label>─</label>
   
-  {#if $page === 'home'}
+  {#if page.value === 'home'}
     <vstack>
       <label>Welcome to Jamrock GTK4!</label>
       <label>Build native desktop apps with HTML-like syntax</label>
@@ -77,7 +77,7 @@
       <label>• Hot reload during development</label>
       <label>• Cross-platform (Linux, macOS)</label>
     </vstack>
-  {:else if $page === 'widgets'}
+  {:else if page.value === 'widgets'}
     <vstack>
       <label>Widget Showcase</label>
       <label>─</label>
@@ -112,7 +112,7 @@
       
       <label>Dropdown: {$dropdownValue}</label>
     </vstack>
-  {:else if $page === 'layout'}
+  {:else if page.value === 'layout'}
     <vstack>
       <label>Layout Demo</label>
       <label>─</label>
@@ -125,7 +125,7 @@
       
       <label>Revealer: {$revealText ? 'Visible' : 'Hidden'}</label>
       <button onclick="{toggleReveal}">{$revealText ? 'Hide' : 'Show'}</button>
-      {#if $revealText}
+      {#if revealText.value}
         <label>This text is revealed!</label>
       {/if}
       
@@ -134,7 +134,7 @@
       <label>Overlay: {$overlayVisible ? 'On' : 'Off'}</label>
       <button onclick="{toggleOverlay}">Toggle Overlay</button>
     </vstack>
-  {:else if $page === 'lists'}
+  {:else if page.value === 'lists'}
     <vstack>
       <label>List Demo</label>
       <label>─</label>

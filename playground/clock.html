@@ -82,10 +82,10 @@
   <label>─</label>
   
   <label>Alarms ({$alarms.length})</label>
-  {#each $alarms as alarm}
+  {#each alarms as alarm}
     <hstack>
-      <label>{$alarm.label}</label>
-      <button onclick="{() => removeAlarm($alarm.id)}">Remove</button>
+      <label>{alarm.label}</label>
+      <button onclick="{() => removeAlarm(alarm.id)}">Remove</button>
     </hstack>
   {/each}
   
@@ -113,7 +113,7 @@
   </hstack>
   
   <label>Laps: {$laps.length}</label>
-  {#each $laps as lap, index}
-    <label>Lap {$index + 1}: {formatStopwatch($lap)}</label>
+  {#each laps as lap, index}
+    <label>Lap {index + 1}: {formatStopwatch(lap)}</label>
   {/each}
 </vstack>

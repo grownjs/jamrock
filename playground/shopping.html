@@ -52,8 +52,8 @@
       <label>─</label>
       {#each $items as item}
         <hstack>
-          <button onclick="{() => selectItem(item)}">{$item.name}</button>
-          <label>${$item.price.toFixed(2)}</label>
+          <button onclick="{() => selectItem(item)}">{item.name}</button>
+          <label>${item.price.toFixed(2)}</label>
         </hstack>
       {/each}
     </vstack>
@@ -62,9 +62,9 @@
       <label>Selected Item</label>
       <label>─</label>
       {#if $selectedItem}
-        <label>Name: {$selectedItem.name}</label>
-        <label>Price: ${$selectedItem.price.toFixed(2)}</label>
-        <button onclick="{() => removeItem($selectedItem.id)}">Remove</button>
+        <label>Name: {selectedItem.value.name}</label>
+        <label>Price: ${selectedItem.value.price.toFixed(2)}</label>
+        <button onclick="{() => removeItem(selectedItem.value.id)}">Remove</button>
       {:else}
         <label>No item selected</label>
       {/if}

@@ -89,7 +89,7 @@
   
   <label>Saved Colors: {$savedColors.length}</label>
   
-  {#each $savedColors as color}
+  {#each savedColors as color}
     <hstack>
       <button onclick="{() => loadColor(color)}">{color.name}</button>
       <label>{color.r}, {color.g}, {color.b}</label>

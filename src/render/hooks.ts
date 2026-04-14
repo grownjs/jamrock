@@ -78,6 +78,7 @@ function createSelf(element: ElementFn | null, loader: LoaderFn, next: NextFn, r
 
       let input: unknown[] = [];
       if (subj?.current) subj = subj.current;
+      if (subj?.value !== undefined && typeof subj.value !== 'function') subj = subj.value;
       if (Is.iterable(subj) || Is.arr(subj)) input = [...subj];
       else if (Is.num(subj)) input = Array.from({ length: subj }).map((_, i) => i);
 

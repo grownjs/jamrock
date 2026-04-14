@@ -29,21 +29,21 @@
   
   <label>─</label>
   
-  {#if $currentPage === 'home'}
+  {#if currentPage.value === 'home'}
     <vstack>
       <label>🏠 Home Page</label>
       <label>Welcome to the Stack demo!</label>
       <label>Click count: {$clickCount}</label>
       <button onclick="{increment}">Click Me!</button>
     </vstack>
-  {:else if $currentPage === 'settings'}
+  {:else if currentPage.value === 'settings'}
     <vstack>
       <label>⚙️ Settings Page</label>
       <label>Configure your preferences here</label>
       <label>Theme: Dark</label>
       <label>Language: English</label>
     </vstack>
-  {:else if $currentPage === 'about'}
+  {:else if currentPage.value === 'about'}
     <vstack>
       <label>ℹ️ About Page</label>
       <label>Jamrock GTK4 Explorer</label>

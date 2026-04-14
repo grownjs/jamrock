@@ -46,7 +46,7 @@
   
   <label>─</label>
   
-  {#each $todos as todo}
+  {#each todos as todo}
     <hstack>
       <button onclick="{() => toggleTodo(todo.id)}">{todo.done ? '✓' : '○'}</button>
       <label>{todo.text}</label>

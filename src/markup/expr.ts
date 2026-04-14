@@ -7,6 +7,15 @@ const RE_ALL_EXPRESSIONS = /\{[:/#]?[^{}]+?\}/;
 const RE_EXPR_VALUE = /\{[^{}]+\}/;
 const RE_EXPR_STRICT = /^\{[^{}]+\}$/;
 
+function unwrapSignal(expr: string): string {
+  const trimmed = expr.trim();
+  if (trimmed.startsWith('$')) {
+    const ident = trimmed.slice(1);
+    return `${ident}.value`;
+  }
+  return trimmed;
+}
+
 export class Expr {
   raw: string[];
   expr: any[];
@@ -119,9 +128,9 @@ export class Expr {
       if (_expr.indexOf('#each') === 0) {
         const [subj, locals] = _expr.replace(RE_CLEAN_BLOCKS, '').split(RE_AS_LOCAL);
 
-        _expr = `$$.map(${subj}, (${locals || ''}) => { ${ctx}return [`;
+        _expr = `$$.map(${unwrapSignal(subj)}, (${locals || ''}) => { ${ctx}return [`;
       } else if (_expr.indexOf('#if') === 0) {
-        _expr = `$$.if(${_expr.replace(RE_CLEAN_BLOCKS, '')}, () => { ${ctx}return [`;
+        _expr = `$$.if(${unwrapSignal(_expr.replace(RE_CLEAN_BLOCKS, ''))}, () => { ${ctx}return [`;
       } else if (_expr.indexOf('/each') === 0) {
         _expr = ']; /*each*/ }),';
         _ref = null;
@@ -129,7 +138,7 @@ export class Expr {
         _expr = ']; /*if*/ }),';
         _ref = null;
       } else if (_expr.replace(/\s+/g, ' ').indexOf(':else if') === 0) {
-        _expr = `]; /*elseif*/ }, () => { ${ctx}if (${_expr.replace(RE_CLEAN_BLOCKS, '')}) return () => [`;
+        _expr = `]; /*elseif*/ }, () => { ${ctx}if (${unwrapSignal(_expr.replace(RE_CLEAN_BLOCKS, ''))}) return () => [`;
       } else if (_expr.indexOf(':else') === 0) {
         _expr = `]; /*else*/ }, () => { ${ctx}return [`;
       } else if (_expr.indexOf('@render ') === 0) {

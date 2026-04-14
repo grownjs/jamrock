@@ -65,8 +65,8 @@
   
   <label>Files ({$files.length})</label>
   
-  {#each $files as file}
-    {#if !$searchFilter || file.name.toLowerCase().includes($searchFilter)}
+  {#each files as file}
+    {#if !searchFilter.value || file.name.toLowerCase().includes(searchFilter.value)}
       <hstack>
         <button onclick="{() => selectItem(file)}">
           {file.type === 'folder' ? '📁' : '📄'} {file.name}
@@ -78,11 +78,11 @@
   
   <label>─</label>
   
-  {#if $selectedItem}
+  {#if selectedItem.value}
     <vstack>
-      <label>Selected: {$selectedItem.name}</label>
-      <label>Type: {$selectedItem.type}</label>
-      <label>Size: {$selectedItem.size}</label>
+      <label>Selected: {selectedItem.value.name}</label>
+      <label>Type: {selectedItem.value.type}</label>
+      <label>Size: {selectedItem.value.size}</label>
     </vstack>
   {:else}
     <label>No file selected</label>

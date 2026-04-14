@@ -66,7 +66,7 @@
   
   <label>Laps: {$laps.length}</label>
   
-  {#each $laps as lapTime, i}
+  {#each laps as lapTime, i}
     <label>Lap {i + 1}: {formatTime(lapTime)}</label>
   {/each}
 </vstack>

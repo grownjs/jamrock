@@ -41,11 +41,11 @@
   
   <label>Shortcuts (click to simulate):</label>
   
-  {#each $shortcuts as shortcut, index}
+  {#each shortcuts as shortcut, index}
     <hstack>
-      <label>{$shortcut.key}</label>
-      <button onclick="{() => triggerShortcut($index)}">{$shortcut.action}</button>
-      <label>Used: {$shortcut.count}x</label>
+      <label>{shortcut.key}</label>
+      <button onclick="{() => triggerShortcut(index)}">{shortcut.action}</button>
+      <label>Used: {shortcut.count}x</label>
     </hstack>
   {/each}
   

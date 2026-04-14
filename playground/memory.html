@@ -75,39 +75,39 @@
   
   <label>─</label>
   
-  {#if $gameWon}
+  {#if gameWon.value}
     <vstack>
       <label>🎉 You Won!</label>
-      <label>Completed in {$moves} moves</label>
+      <label>Completed in {moves} moves</label>
       <button onclick="{initGame}">Play Again</button>
     </vstack>
   {:else}
     <vstack>
       <label>Row 1:</label>
       <hstack>
-        {#each $cards.slice(0, 4) as card}
-          <button onclick="{() => flipCard($card.id)}">{getCardDisplay($card)}</button>
+        {#each cards.value.slice(0, 4) as card}
+          <button onclick="{() => flipCard(card.id)}">{getCardDisplay(card)}</button>
         {/each}
       </hstack>
       
       <label>Row 2:</label>
       <hstack>
-        {#each $cards.slice(4, 8) as card}
-          <button onclick="{() => flipCard($card.id)}">{getCardDisplay($card)}</button>
+        {#each cards.value.slice(4, 8) as card}
+          <button onclick="{() => flipCard(card.id)}">{getCardDisplay(card)}</button>
         {/each}
       </hstack>
       
       <label>Row 3:</label>
       <hstack>
-        {#each $cards.slice(8, 12) as card}
-          <button onclick="{() => flipCard($card.id)}">{getCardDisplay($card)}</button>
+        {#each cards.value.slice(8, 12) as card}
+          <button onclick="{() => flipCard(card.id)}">{getCardDisplay(card)}</button>
         {/each}
       </hstack>
       
       <label>Row 4:</label>
       <hstack>
-        {#each $cards.slice(12, 16) as card}
-          <button onclick="{() => flipCard($card.id)}">{getCardDisplay($card)}</button>
+        {#each cards.value.slice(12, 16) as card}
+          <button onclick="{() => flipCard(card.id)}">{getCardDisplay(card)}</button>
         {/each}
       </hstack>
     </vstack>

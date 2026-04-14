@@ -52,18 +52,18 @@
     <vstack>
       <label>Cities</label>
       <label>─</label>
-      {#each $cities as city}
-        <button onclick="{() => selectCity($city)}">{$city.icon} {$city.name}</button>
+      {#each cities as city}
+        <button onclick="{() => selectCity(city)}">{city.icon} {city.name}</button>
       {/each}
     </vstack>
     
     <vstack>
       <label>Details</label>
       <label>─</label>
-      {#if $selectedCity}
-        <label>{$selectedCity.icon} {$selectedCity.name}</label>
-        <label>{convertTemp($selectedCity.temp)}°{$unit}</label>
-        <label>{$selectedCity.condition}</label>
+      {#if selectedCity.value}
+        <label>{selectedCity.value.icon} {selectedCity.value.name}</label>
+        <label>{convertTemp(selectedCity.value.temp)}°{$unit}</label>
+        <label>{selectedCity.value.condition}</label>
       {:else}
         <label>Select a city</label>
       {/if}
@@ -73,12 +73,12 @@
   <label>─</label>
   
   <label>All Cities</label>
-  {#each $cities as city}
+  {#each cities as city}
     <hstack>
-      <label>{$city.icon}</label>
-      <label>{$city.name}</label>
-      <label>{convertTemp($city.temp)}°{$unit}</label>
-      <label>{$city.condition}</label>
+      <label>{city.icon}</label>
+      <label>{city.name}</label>
+      <label>{convertTemp(city.temp)}°{$unit}</label>
+      <label>{city.condition}</label>
     </hstack>
   {/each}
 </vstack>

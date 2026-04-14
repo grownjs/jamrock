@@ -65,16 +65,16 @@
   <label>─</label>
   
   <label>Notifications:</label>
-  {#each $notifications as notif}
+  {#each notifications as notif}
     <hstack>
-      <label>{$notif.icon}</label>
-      <label>{$notif.message}</label>
-      <label>{$notif.timestamp}</label>
-      <button onclick="{() => removeNotification($notif.id)}">✕</button>
+      <label>{notif.icon}</label>
+      <label>{notif.message}</label>
+      <label>{notif.timestamp}</label>
+      <button onclick="{() => removeNotification(notif.id)}">✕</button>
     </hstack>
   {/each}
   
-  {#if $notifications.length === 0}
+  {#if notifications.value.length === 0}
     <label>No notifications</label>
   {/if}
   

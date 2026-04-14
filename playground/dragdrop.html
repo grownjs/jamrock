@@ -54,24 +54,24 @@
   
   <label>─</label>
   
-  {#if $draggedItem}
-    <label>Dragging: {$draggedItem.color} {$draggedItem.name}</label>
+  {#if draggedItem.value}
+    <label>Dragging: {draggedItem.value.color} {draggedItem.value.name}</label>
   {:else}
     <label>Select an item to drag</label>
   {/if}
   
   <label>─</label>
   
-  {#each $items as item}
+  {#each items as item}
     <hstack>
-      <button onclick="{() => $draggedItem ? onDrop($item.id) : startDrag($item)}">
-        {$item.color} {$item.name}
-        {#if $dropTarget === $item.id}
+      <button onclick="{() => draggedItem.value ? onDrop(item.id) : startDrag(item)}">
+        {item.color} {item.name}
+        {#if dropTarget.value === item.id}
           [DROP]
         {/if}
       </button>
-      {#if $draggedItem && $draggedItem.id !== $item.id}
-        <button onclick="{() => onDrop($item.id)}">⬇️ Drop Here</button>
+      {#if draggedItem.value && draggedItem.value.id !== item.id}
+        <button onclick="{() => onDrop(item.id)}">⬇️ Drop Here</button>
       {/if}
     </hstack>
   {/each}
