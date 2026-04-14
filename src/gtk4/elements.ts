@@ -282,5 +282,14 @@ export function push(text: string, props: ElementProps = {}, cb: AfterCallback |
 }
 
 export function toggle(_: any, props: ElementProps = {}, cb: AfterCallback | null = null) {
-  return one(Gtk.Switch, props, 'tgl', cb);
+  const { onChange, active, ...defaults } = props;
+  const el = one(Gtk.Switch, { ...defaults, active: active ?? false }, 'tgl', cb);
+
+  el.connect('state-set', (_, state) => {
+    if (typeof onChange === 'function') {
+      onChange({ type: 'toggled', value: state });
+    }
+  });
+
+  return el;
 }
