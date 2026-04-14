@@ -732,7 +732,7 @@ export class Template {
     const _parent = ctx.stack?.at(-1) ?? parent?.__src;
 
     return {
-      renderHook: (fn: any) => {
+      render: (fn: any) => {
         try {
           let ret = fn;
           while (typeof ret === 'function') ret = ret();
@@ -741,15 +741,15 @@ export class Template {
           console.error('E_HOOK', e);
         }
       },
-      onComplete: (fn: any) => {
+      after: (fn: any) => {
         const stack = ctx.scope[ctx.ref] ?? ctx.scope[_parent];
         if (stack) stack.handlers.push(fn);
       },
-      getContext: (k: string) => {
+      get: (k: string) => {
         const stack = ctx.scope[ctx.ref] ?? ctx.scope[_parent];
         return stack?.values[k];
       },
-      setContext: (k: string, v: any) => {
+      set: (k: string, v: any) => {
         const _component = ctx.stack?.at(-1);
         const current = ctx.scope[_component] ?? { handlers: [], values: {} };
 

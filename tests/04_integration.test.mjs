@@ -231,10 +231,10 @@ fixture`./_hidden/stuff+page.html
 // eslint-disable-next-line no-unused-expressions
 fixture`./parent.html
   <script>
-    import { setContext, getContext } from 'jamrock:hooks';
-    setContext('OSOM', { value: 42 });
+    import { set, get } from 'jamrock:hooks';
+    set('OSOM', { value: 42 });
 
-    const check = getContext('OSOM');
+    const check = get('OSOM');
   </script>
   <form>
     {@render $$props.children?.()} (CHECK: {typeof check})
@@ -244,9 +244,9 @@ fixture`./parent.html
 // eslint-disable-next-line no-unused-expressions
 fixture`./child.html
   <script>
-    import { getContext, onComplete } from 'jamrock:hooks';
-    const test = getContext('OSOM');
-    onComplete(() => console.info('GREAT!'));
+    import { get, after } from 'jamrock:hooks';
+    const test = get('OSOM');
+    after(() => console.info('GREAT!'));
   </script>
   Got: {test.value}
 `;

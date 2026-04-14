@@ -1,0 +1,12 @@
+<script>
+  let clicks = 0;
+  
+  function onClick() {
+    clicks += 1;
+  }
+</script>
+
+<vstack>
+  <label>Clicks: {clicks}</label>
+  <button onclick={onClick}>Click Me</button>
+</vstack>

@@ -31,7 +31,7 @@ export interface ServerInfo {
 }
 
 export interface Connection {
-  req: Request;
+  req: RequestContext;
   method: string;
   headers: Record<string, string>;
   server: ServerInfo;
@@ -122,7 +122,7 @@ export function createConnection(
   });
 
   const conn: Connection = {
-    req: request as Request,
+    req: request,
     method: request.method,
     server,
     headers: _headers,

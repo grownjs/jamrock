@@ -4,7 +4,7 @@
   } from 'jamrock:conn';
 
   import {
-    getContext,
+    get,
   } from 'jamrock:hooks';
 
   import Failure from './failure.html';
@@ -25,7 +25,7 @@
     return typeof input !== 'undefined' && input !== null ? [input] : [];
   }
 
-  const form = getContext('current_form') || {};
+  const form = get('current_form') || {};
 
   const hasValidMethod = form.method === method.toLowerCase();
   const currentForm = body_params._form === form.name;

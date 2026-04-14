@@ -2,7 +2,7 @@
   import { existsSync, unlinkSync } from 'jamrock:shared';
 
   import {
-    onComplete, getContext, setContext, renderHook,
+    after, get, set, render,
   } from 'jamrock:hooks';
 
   import {
@@ -22,7 +22,7 @@
   const hasValidMethod = method === _method.toLowerCase();
   const currentForm = body_params._form === name;
 
-  const forms = getContext('registered_forms') || [];
+  const forms = get('registered_forms') || [];
 
   let error;
   try {
@@ -37,19 +37,19 @@
       throw new ReferenceError(`Form with name '${name}' has been already declared`);
     }
 
-    setContext('current_form', { name, method, fields: [] });
-    setContext('registered_forms', forms.concat(name));
+    set('current_form', { name, method, fields: [] });
+    set('registered_forms', forms.concat(name));
   } catch (e) {
     error = e;
   }
 
-  const ctx = getContext('current_form');
+  const ctx = get('current_form');
   const files = [];
   const payload = {};
 
-  const content = renderHook($$props.children);
+  const content = render($$props.children);
 
-  onComplete(() => {
+  after(() => {
     files.forEach(file => {
       if (existsSync(file)) unlinkSync(file);
     });

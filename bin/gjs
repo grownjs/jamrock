@@ -3,6 +3,7 @@
 set -e
 
 if [[ "$(uname -s)" == "Darwin" ]]; then
+  LIB_PATH="${LIB_PATH:-/opt/homebrew/lib}"
   if [[ -z "$DYLD_LIBRARY_PATH" ]]; then
     export DYLD_LIBRARY_PATH="$LIB_PATH"
   else
