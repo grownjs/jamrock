@@ -33,29 +33,29 @@
   <label>Widget Gallery</label>
   <label>─</label>
   
-  <label>Counter: {count}</label>
+  <label>Counter: {$count}</label>
   <hstack>
-    <button onclick={decrement}>-</button>
-    <button onclick={increment}>+</button>
+    <button onclick="{decrement}">-</button>
+    <button onclick="{increment}">+</button>
   </hstack>
   
   <label>─</label>
-  <label>Text Input: {text}</label>
-  <entry placeholder="Type something..." onchange={onInput} />
+  <label>Text Input: {$text}</label>
+  <entry placeholder="Type something..." onchange="{onInput}" />
   
   <label>─</label>
-  <label>Toggle: {toggled}</label>
-  <button onclick={toggle}>{toggled ? 'ON' : 'OFF'}</button>
+  <label>Toggle: {$toggled}</label>
+  <button onclick="{toggle}">{$toggled ? 'ON' : 'OFF'}</button>
   
   <label>─</label>
-  <label>Progress: {progress}</label>
-  <progress value={progress} />
+  <label>Progress: {$progress}</label>
+  <progress value={$progress} />
   
   <label>─</label>
-  <label>Level: {level}</label>
-  <level value={level} />
+  <label>Level: {$level}</label>
+  <level value={$level} />
   
   <label>─</label>
-  <label>Range: {range}</label>
-  <range value={range} onchange={onRangeChange} />
+  <label>Range: {$range}</label>
+  <range value={$range} onchange="{onRangeChange}" />
 </vstack>
