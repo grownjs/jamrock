@@ -73,7 +73,7 @@ test-deno:
 	@make -s deno:test
 	@DENO_DOM=1 make -s deno:test
 	@make -s seed:deno
-	@deno run --import-map=import_map.json -A scripts/check.ts
+	@deno run --import-map=import_map.json --node -A scripts/check.ts
 	@make -s e2e:deno
 test-nodejs:
 	@echo "== node =="
@@ -167,7 +167,7 @@ nodejs:
 deno\:build: deno-deps
 	@deno run -q --allow-all --import-map=import_map.json --unstable --node-modules-dir scripts/deno-build.ts
 deno\:test: deno-deps
-	@deno run -q --allow-all --import-map=import_map.json --unstable scripts/deno-testing.ts
+	@deno run -q --allow-all --import-map=import_map.json --unstable --node scripts/deno-testing.ts
 deno: deno-deps
 	@deno run -q --no-check --import-map=import_map.json --unstable --allow-all scripts/deno-server.ts
 
