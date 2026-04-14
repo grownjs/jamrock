@@ -1,0 +1,119 @@
+<script>
+  import { signal } from 'jamrock';
+  
+  const symbols = ['🍎', '🍊', '🍋', '🍇', '🍓', '🍑', '🥝', '🍒'];
+  
+  let cards = signal([]);
+  let flipped = signal([]);
+  let matched = signal([]);
+  let moves = signal(0);
+  let gameWon = signal(false);
+  
+  function initGame() {
+    const deck = [...symbols, ...symbols];
+    const shuffled = deck.sort(() => Math.random() - 0.5);
+    cards.value = shuffled.map((symbol, index) => ({
+      id: index,
+      symbol,
+      flipped: false,
+      matched: false
+    }));
+    flipped.value = [];
+    matched.value = [];
+    moves.value = 0;
+    gameWon.value = false;
+  }
+  
+  function flipCard(cardId) {
+    if (flipped.value.length >= 2) return;
+    if (flipped.value.includes(cardId)) return;
+    if (matched.value.includes(cardId)) return;
+    
+    flipped.value = [...flipped.value, cardId];
+    
+    if (flipped.value.length === 2) {
+      moves.value += 1;
+      
+      const [first, second] = flipped.value;
+      const firstCard = cards.value[first];
+      const secondCard = cards.value[second];
+      
+      if (firstCard.symbol === secondCard.symbol) {
+        matched.value = [...matched.value, first, second];
+        flipped.value = [];
+        
+        if (matched.value.length === cards.value.length) {
+          gameWon.value = true;
+        }
+      } else {
+        setTimeout(() => {
+          flipped.value = [];
+        }, 1000);
+      }
+    }
+  }
+  
+  function getCardDisplay(card) {
+    if (flipped.value.includes(card.id) || matched.value.includes(card.id)) {
+      return card.symbol;
+    }
+    return '?';
+  }
+  
+  // Initialize game on load
+  initGame();
+</script>
+
+<vstack>
+  <label>🃏 Memory Game</label>
+  <label>─</label>
+  
+  <hstack>
+    <label>Moves: {$moves}</label>
+    <label>Matched: {$matched.length / 2} / {$cards.length / 2}</label>
+  </hstack>
+  
+  <label>─</label>
+  
+  {#if $gameWon}
+    <vstack>
+      <label>🎉 You Won!</label>
+      <label>Completed in {$moves} moves</label>
+      <button onclick="{initGame}">Play Again</button>
+    </vstack>
+  {:else}
+    <vstack>
+      <label>Row 1:</label>
+      <hstack>
+        {#each $cards.slice(0, 4) as card}
+          <button onclick="{() => flipCard($card.id)}">{getCardDisplay($card)}</button>
+        {/each}
+      </hstack>
+      
+      <label>Row 2:</label>
+      <hstack>
+        {#each $cards.slice(4, 8) as card}
+          <button onclick="{() => flipCard($card.id)}">{getCardDisplay($card)}</button>
+        {/each}
+      </hstack>
+      
+      <label>Row 3:</label>
+      <hstack>
+        {#each $cards.slice(8, 12) as card}
+          <button onclick="{() => flipCard($card.id)}">{getCardDisplay($card)}</button>
+        {/each}
+      </hstack>
+      
+      <label>Row 4:</label>
+      <hstack>
+        {#each $cards.slice(12, 16) as card}
+          <button onclick="{() => flipCard($card.id)}">{getCardDisplay($card)}</button>
+        {/each}
+      </hstack>
+    </vstack>
+  {/if}
+  
+  <label>─</label>
+  
+  <button onclick="{initGame}">New Game</button>
+</vstack>

@@ -1,0 +1,84 @@
+<script>
+  import { signal } from 'jamrock';
+  
+  let cities = signal([
+    { name: 'New York', temp: 72, condition: 'Sunny', icon: '☀️' },
+    { name: 'London', temp: 58, condition: 'Rainy', icon: '🌧️' },
+    { name: 'Tokyo', temp: 68, condition: 'Cloudy', icon: '☁️' },
+    { name: 'Sydney', temp: 82, condition: 'Sunny', icon: '☀️' },
+    { name: 'Paris', temp: 64, condition: 'Partly Cloudy', icon: '⛅' },
+  ]);
+  
+  let selectedCity = signal(null);
+  let unit = signal('F');
+  
+  function selectCity(city) {
+    selectedCity.value = city;
+  }
+  
+  function toggleUnit() {
+    unit.value = unit.value === 'F' ? 'C' : 'F';
+  }
+  
+  function convertTemp(tempF) {
+    if (unit.value === 'C') {
+      return Math.round((tempF - 32) * 5 / 9);
+    }
+    return tempF;
+  }
+  
+  function refreshWeather() {
+    // Simulate weather update
+    cities.value = cities.value.map(city => ({
+      ...city,
+      temp: city.temp + Math.floor(Math.random() * 5) - 2
+    }));
+  }
+</script>
+
+<vstack>
+  <label>🌤️ Weather App</label>
+  <label>─</label>
+  
+  <hstack>
+    <label>Unit: {$unit}</label>
+    <button onclick="{toggleUnit}">Switch to {$unit === 'F' ? 'Celsius' : 'Fahrenheit'}</button>
+    <button onclick="{refreshWeather}">Refresh</button>
+  </hstack>
+  
+  <label>─</label>
+  
+  <hstack>
+    <vstack>
+      <label>Cities</label>
+      <label>─</label>
+      {#each $cities as city}
+        <button onclick="{() => selectCity($city)}">{$city.icon} {$city.name}</button>
+      {/each}
+    </vstack>
+    
+    <vstack>
+      <label>Details</label>
+      <label>─</label>
+      {#if $selectedCity}
+        <label>{$selectedCity.icon} {$selectedCity.name}</label>
+        <label>{convertTemp($selectedCity.temp)}°{$unit}</label>
+        <label>{$selectedCity.condition}</label>
+      {:else}
+        <label>Select a city</label>
+      {/if}
+    </vstack>
+  </hstack>
+  
+  <label>─</label>
+  
+  <label>All Cities</label>
+  {#each $cities as city}
+    <hstack>
+      <label>{$city.icon}</label>
+      <label>{$city.name}</label>
+      <label>{convertTemp($city.temp)}°{$unit}</label>
+      <label>{$city.condition}</label>
+    </hstack>
+  {/each}
+</vstack>

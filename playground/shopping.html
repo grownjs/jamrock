@@ -1,0 +1,82 @@
+<script>
+  import { signal } from 'jamrock';
+  
+  let items = signal([
+    { id: 1, name: 'Apple', price: 1.99 },
+    { id: 2, name: 'Banana', price: 0.99 },
+    { id: 3, name: 'Orange', price: 1.49 },
+    { id: 4, name: 'Mango', price: 2.99 },
+    { id: 5, name: 'Grapes', price: 3.99 },
+  ]);
+  
+  let selectedItem = signal(null);
+  let newItemName = signal('');
+  let newItemPrice = signal('');
+  
+  function selectItem(item) {
+    selectedItem.value = item;
+  }
+  
+  function addItem() {
+    if (newItemName.value && newItemPrice.value) {
+      const newId = Math.max(...items.value.map(i => i.id)) + 1;
+      items.value = [...items.value, {
+        id: newId,
+        name: newItemName.value,
+        price: parseFloat(newItemPrice.value)
+      }];
+      newItemName.value = '';
+      newItemPrice.value = '';
+    }
+  }
+  
+  function removeItem(id) {
+    items.value = items.value.filter(i => i.id !== id);
+    if (selectedItem.value && selectedItem.value.id === id) {
+      selectedItem.value = null;
+    }
+  }
+  
+  function clearSelection() {
+    selectedItem.value = null;
+  }
+</script>
+
+<vstack>
+  <label>🛒 Shopping List</label>
+  <label>─</label>
+  
+  <hstack>
+    <vstack>
+      <label>Items ({$items.length})</label>
+      <label>─</label>
+      {#each $items as item}
+        <hstack>
+          <button onclick="{() => selectItem(item)}">{$item.name}</button>
+          <label>${$item.price.toFixed(2)}</label>
+        </hstack>
+      {/each}
+    </vstack>
+    
+    <vstack>
+      <label>Selected Item</label>
+      <label>─</label>
+      {#if $selectedItem}
+        <label>Name: {$selectedItem.name}</label>
+        <label>Price: ${$selectedItem.price.toFixed(2)}</label>
+        <button onclick="{() => removeItem($selectedItem.id)}">Remove</button>
+      {:else}
+        <label>No item selected</label>
+      {/if}
+    </vstack>
+  </hstack>
+  
+  <label>─</label>
+  
+  <label>Add New Item</label>
+  <hstack>
+    <entry placeholder="Item name" onchange="{(e) => newItemName.value = e.value}" />
+    <entry placeholder="Price" onchange="{(e) => newItemPrice.value = e.value}" />
+    <button onclick="{addItem}">Add</button>
+  </hstack>
+</vstack>

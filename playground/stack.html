@@ -1,0 +1,56 @@
+<script>
+  import { signal } from 'jamrock';
+  
+  let currentPage = signal('home');
+  let clickCount = signal(0);
+  
+  function increment() {
+    clickCount.value += 1;
+  }
+  
+  function setPage(page) {
+    currentPage.value = page;
+  }
+</script>
+
+<vstack>
+  <label>📑 Stack & StackSwitcher Demo</label>
+  <label>─</label>
+  
+  <hstack>
+    <button onclick="{() => setPage('home')}">Home</button>
+    <button onclick="{() => setPage('settings')}">Settings</button>
+    <button onclick="{() => setPage('about')}">About</button>
+  </hstack>
+  
+  <label>─</label>
+  
+  <label>Current Page: {$currentPage}</label>
+  
+  <label>─</label>
+  
+  {#if $currentPage === 'home'}
+    <vstack>
+      <label>🏠 Home Page</label>
+      <label>Welcome to the Stack demo!</label>
+      <label>Click count: {$clickCount}</label>
+      <button onclick="{increment}">Click Me!</button>
+    </vstack>
+  {:else if $currentPage === 'settings'}
+    <vstack>
+      <label>⚙️ Settings Page</label>
+      <label>Configure your preferences here</label>
+      <label>Theme: Dark</label>
+      <label>Language: English</label>
+    </vstack>
+  {:else if $currentPage === 'about'}
+    <vstack>
+      <label>ℹ️ About Page</label>
+      <label>Jamrock GTK4 Explorer</label>
+      <label>Version: 0.0.0</label>
+      <label>Built with GTK4 and GJS</label>
+    </vstack>
+  {:else}
+    <label>Unknown page</label>
+  {/if}
+</vstack>

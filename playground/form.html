@@ -1,0 +1,82 @@
+<script>
+  import { signal } from 'jamrock';
+  
+  let name = signal('');
+  let email = signal('');
+  let age = signal(25);
+  let bio = signal('');
+  let notifications = signal(true);
+  let theme = signal('dark');
+  let volume = signal(75);
+  
+  function submitForm() {
+    console.log('Form submitted:', {
+      name: name.value,
+      email: email.value,
+      age: age.value,
+      bio: bio.value,
+      notifications: notifications.value,
+      theme: theme.value,
+      volume: volume.value
+    });
+  }
+  
+  function resetForm() {
+    name.value = '';
+    email.value = '';
+    age.value = 25;
+    bio.value = '';
+    notifications.value = true;
+    theme.value = 'dark';
+    volume.value = 75;
+  }
+</script>
+
+<vstack>
+  <label>📝 Form Demo</label>
+  <label>─</label>
+  
+  <label>Name: {$name || '(not set)'}</label>
+  <entry placeholder="Enter your name" onchange="{(e) => name.value = e.value}" />
+  
+  <label>─</label>
+  
+  <label>Email: {$email || '(not set)'}</label>
+  <entry placeholder="Enter your email" onchange="{(e) => email.value = e.value}" />
+  
+  <label>─</label>
+  
+  <label>Age: {$age}</label>
+  <range value={$age} onchange="{(e) => age.value = parseInt(e.value)}" />
+  
+  <label>─</label>
+  
+  <label>Bio: {$bio || '(not set)'}</label>
+  <entry placeholder="Tell us about yourself" onchange="{(e) => bio.value = e.value}" />
+  
+  <label>─</label>
+  
+  <label>Notifications: {$notifications ? 'ON' : 'OFF'}</label>
+  <button onclick="{() => notifications.value = !$notifications}">{$notifications ? 'Disable' : 'Enable'}</button>
+  
+  <label>─</label>
+  
+  <label>Theme: {$theme}</label>
+  <hstack>
+    <button onclick="{() => theme.value = 'light'}">Light</button>
+    <button onclick="{() => theme.value = 'dark'}">Dark</button>
+    <button onclick="{() => theme.value = 'system'}">System</button>
+  </hstack>
+  
+  <label>─</label>
+  
+  <label>Volume: {$volume}%</label>
+  <range value={$volume} onchange="{(e) => volume.value = parseInt(e.value)}" />
+  
+  <label>─</label>
+  
+  <hstack>
+    <button onclick="{submitForm}">Submit</button>
+    <button onclick="{resetForm}">Reset</button>
+  </hstack>
+</vstack>

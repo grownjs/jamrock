@@ -1,0 +1,119 @@
+<script>
+  import { signal } from 'jamrock';
+  
+  let time = signal(new Date());
+  let alarms = signal([]);
+  let newAlarmHour = signal(8);
+  let newAlarmMinute = signal(0);
+  let stopwatchRunning = signal(false);
+  let stopwatchTime = signal(0);
+  let laps = signal([]);
+  
+  function updateTime() {
+    time.value = new Date();
+    
+    // Check alarms
+    const now = time.value;
+    alarms.value.forEach(alarm => {
+      if (alarm.hour === now.getHours() && alarm.minute === now.getMinutes() && now.getSeconds() === 0) {
+        console.log('ALARM:', alarm.label);
+      }
+    });
+    
+    // Update stopwatch
+    if (stopwatchRunning.value) {
+      stopwatchTime.value += 1;
+    }
+  }
+  
+  // Start timer
+  setInterval(updateTime, 1000);
+  
+  function formatTime(date) {
+    return date.toLocaleTimeString();
+  }
+  
+  function formatDate(date) {
+    return date.toLocaleDateString();
+  }
+  
+  function addAlarm() {
+    alarms.value = [...alarms.value, {
+      id: Date.now(),
+      hour: newAlarmHour.value,
+      minute: newAlarmMinute.value,
+      label: `${newAlarmHour.value}:${newAlarmMinute.value.toString().padStart(2, '0')}`
+    }];
+  }
+  
+  function removeAlarm(id) {
+    alarms.value = alarms.value.filter(a => a.id !== id);
+  }
+  
+  function toggleStopwatch() {
+    stopwatchRunning.value = !stopwatchRunning.value;
+  }
+  
+  function resetStopwatch() {
+    stopwatchRunning.value = false;
+    stopwatchTime.value = 0;
+    laps.value = [];
+  }
+  
+  function addLap() {
+    laps.value = [...laps.value, stopwatchTime.value];
+  }
+  
+  function formatStopwatch(seconds) {
+    const mins = Math.floor(seconds / 60);
+    const secs = seconds % 60;
+    return `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
+  }
+</script>
+
+<vstack>
+  <label>⏰ Clock & Timer</label>
+  <label>─</label>
+  
+  <label>Current Time</label>
+  <label>{formatTime($time)}</label>
+  <label>{formatDate($time)}</label>
+  
+  <label>─</label>
+  
+  <label>Alarms ({$alarms.length})</label>
+  {#each $alarms as alarm}
+    <hstack>
+      <label>{$alarm.label}</label>
+      <button onclick="{() => removeAlarm($alarm.id)}">Remove</button>
+    </hstack>
+  {/each}
+  
+  <hstack>
+    <range value={$newAlarmHour} onchange="{(e) => newAlarmHour.value = parseInt(e.value)}" />
+    <label>Hour: {$newAlarmHour}</label>
+  </hstack>
+  
+  <hstack>
+    <range value={$newAlarmMinute} onchange="{(e) => newAlarmMinute.value = parseInt(e.value)}" />
+    <label>Min: {$newAlarmMinute}</label>
+  </hstack>
+  
+  <button onclick="{addAlarm}">Add Alarm</button>
+  
+  <label>─</label>
+  
+  <label>Stopwatch</label>
+  <label>{formatStopwatch($stopwatchTime)}</label>
+  
+  <hstack>
+    <button onclick="{toggleStopwatch}">{$stopwatchRunning ? 'Pause' : 'Start'}</button>
+    <button onclick="{addLap}">Lap</button>
+    <button onclick="{resetStopwatch}">Reset</button>
+  </hstack>
+  
+  <label>Laps: {$laps.length}</label>
+  {#each $laps as lap, index}
+    <label>Lap {$index + 1}: {formatStopwatch($lap)}</label>
+  {/each}
+</vstack>
