@@ -343,18 +343,21 @@ function syncByKey(
  * });
  */
 export function syncToStore(
-  signal: Signal<any[]>,
+  sig: Signal<any[]>,
   store: Gio.ListStore,
   Klass: typeof GObject.Object,
   options: SyncOptions = {}
 ): void {
   const { key, create, update } = options;
 
-  signal.subscribe((newData) => {
+  function sync(newData: any[]) {
     if (key) {
       syncByKey(newData, store, Klass, key, create, update);
     } else {
       syncByIndex(newData, store, Klass, create, update);
     }
-  });
+  }
+
+  sync(sig.peek());
+  sig.subscribe(sync);
 }
