@@ -38,7 +38,7 @@ export async function createSession(store: any, sid: string): Promise<any> {
   return {
     verifyToken: store.verify,
     nextToken: store.encode,
-    state: store.read(sid),
+    state: await store.read(sid),
     sid: store.key(sid),
   };
 }
