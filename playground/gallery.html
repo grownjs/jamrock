@@ -1,0 +1,61 @@
+<script>
+  import { signal } from 'jamrock';
+  
+  let count = signal(0);
+  let text = signal('');
+  let toggled = signal(false);
+  let progress = signal(0.5);
+  let level = signal(0.7);
+  let range = signal(50);
+  
+  function increment() {
+    count.value += 1;
+  }
+  
+  function decrement() {
+    count.value -= 1;
+  }
+  
+  function toggle() {
+    toggled.value = !toggled.value;
+  }
+  
+  function onInput(e) {
+    text.value = e.value;
+  }
+  
+  function onRangeChange(e) {
+    range.value = e.value;
+  }
+</script>
+
+<vstack>
+  <label>Widget Gallery</label>
+  <label>─</label>
+  
+  <label>Counter: {count}</label>
+  <hstack>
+    <button onclick={decrement}>-</button>
+    <button onclick={increment}>+</button>
+  </hstack>
+  
+  <label>─</label>
+  <label>Text Input: {text}</label>
+  <entry placeholder="Type something..." onchange={onInput} />
+  
+  <label>─</label>
+  <label>Toggle: {toggled}</label>
+  <button onclick={toggle}>{toggled ? 'ON' : 'OFF'}</button>
+  
+  <label>─</label>
+  <label>Progress: {progress}</label>
+  <progress value={progress} />
+  
+  <label>─</label>
+  <label>Level: {level}</label>
+  <level value={level} />
+  
+  <label>─</label>
+  <label>Range: {range}</label>
+  <range value={range} onchange={onRangeChange} />
+</vstack>
