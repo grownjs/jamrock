@@ -293,3 +293,160 @@ export function toggle(_: any, props: ElementProps = {}, cb: AfterCallback | nul
 
   return el;
 }
+
+export function calendar(props: ElementProps = {}, cb: AfterCallback | null = null) {
+  const { onChange, ...defaults } = props;
+  const el = one(Gtk.Calendar, defaults, 'cal', cb) as unknown as Gtk.Calendar;
+
+  el.connect('day-selected', () => {
+    if (typeof onChange === 'function') {
+      const date = el.get_date();
+      onChange({ type: 'selected', value: date });
+    }
+  });
+
+  return el;
+}
+
+export function spinner(props: ElementProps = {}, cb: AfterCallback | null = null) {
+  const { spinning = true, ...defaults } = props;
+  const el = one(Gtk.Spinner, defaults, 'spn', cb) as unknown as Gtk.Spinner;
+  if (spinning) el.start();
+  return el;
+}
+
+export function separator(props: ElementProps = {}, cb: AfterCallback | null = null) {
+  const { orientation = Gtk.Orientation.HORIZONTAL, ...defaults } = props;
+  return one(Gtk.Separator, { ...defaults, orientation }, 'sep', cb);
+}
+
+export function overlay(child: GtkWidget, props: ElementProps = {}, cb: AfterCallback | null = null) {
+  const { ...defaults } = props;
+  const el = one(Gtk.Overlay, defaults, 'ovl', cb) as unknown as Gtk.Overlay;
+  if (child) el.set_child(child);
+  return el;
+}
+
+export function revealer(child: GtkWidget, props: ElementProps = {}, cb: AfterCallback | null = null) {
+  const { reveal = true, transition = Gtk.RevealerTransitionType.CROSSFADE, ...defaults } = props;
+  const el = one(Gtk.Revealer, { ...defaults, transition_type: transition }, 'rvl', cb) as unknown as Gtk.Revealer;
+  if (child) el.set_child(child);
+  el.set_reveal_child(reveal);
+  return el;
+}
+
+export function grid(elements: GtkWidgets, props: ElementProps = {}, cb: AfterCallback | null = null) {
+  const { columns = 1, ...defaults } = props;
+  const el = one(Gtk.Grid, defaults, 'grd', cb) as unknown as Gtk.Grid;
+  
+  let col = 0;
+  let row = 0;
+  elements.forEach((child: GtkWidget) => {
+    if (child) {
+      el.attach(child, col, row, 1, 1);
+      col++;
+      if (col >= columns) {
+        col = 0;
+        row++;
+      }
+    }
+  });
+  
+  return el;
+}
+
+export function frame(child: GtkWidget, props: ElementProps = {}, cb: AfterCallback | null = null) {
+  const { label: frameLabel, ...defaults } = props;
+  const el = one(Gtk.Frame, { ...defaults, label: frameLabel }, 'frm', cb) as unknown as Gtk.Frame;
+  if (child) el.set_child(child);
+  return el;
+}
+
+export function expander(child: GtkWidget, props: ElementProps = {}, cb: AfterCallback | null = null) {
+  const { label: expanderLabel, expanded = false, onChange, ...defaults } = props;
+  const el = one(Gtk.Expander, { ...defaults, label: expanderLabel, expanded }, 'exp', cb) as unknown as Gtk.Expander;
+  if (child) el.set_child(child);
+  
+  el.connect('notify::expanded', () => {
+    if (typeof onChange === 'function') {
+      onChange({ type: 'toggled', value: el.get_expanded() });
+    }
+  });
+  
+  return el;
+}
+
+export function image(props: ElementProps = {}, cb: AfterCallback | null = null) {
+  const { icon = 'image-missing', size = Gtk.IconSize.LARGE, ...defaults } = props;
+  return one(Gtk.Image, { ...defaults, icon_name: icon, pixel_size: size === Gtk.IconSize.LARGE ? 48 : 24 }, 'img', cb);
+}
+
+export function linkbutton(text: string, props: ElementProps = {}, cb: AfterCallback | null = null) {
+  const { uri = '#', onClick, ...defaults } = props;
+  const el = one(Gtk.LinkButton, { ...defaults, label: text, uri }, 'lnk', cb) as unknown as Gtk.LinkButton;
+  
+  if (onClick) {
+    el.connect('clicked', () => onClick(el));
+  }
+  
+  return el;
+}
+
+export function spinbutton(props: ElementProps = {}, cb: AfterCallback | null = null) {
+  const { value = 0, min = 0, max = 100, step = 1, onChange, ...defaults } = props;
+  const adjustment = new Gtk.Adjustment({ value, lower: min, upper: max, step_increment: step });
+  const el = one(Gtk.SpinButton, { ...defaults, adjustment }, 'spb', cb) as unknown as Gtk.SpinButton;
+  
+  if (onChange) {
+    el.connect('value-changed', () => {
+      onChange({ type: 'modified', value: el.get_value() });
+    });
+  }
+  
+  return el;
+}
+
+export function textview(props: ElementProps = {}, cb: AfterCallback | null = null) {
+  const { text = '', onChange, ...defaults } = props;
+  const el = one(Gtk.TextView, { ...defaults, wrap_mode: Gtk.WrapMode.WORD }, 'txv', cb) as unknown as Gtk.TextView;
+  
+  if (text) {
+    el.get_buffer().set_text(text, text.length);
+  }
+  
+  if (onChange) {
+    el.get_buffer().connect('changed', () => {
+      const buffer = el.get_buffer();
+      const start = buffer.get_start_iter();
+      const end = buffer.get_end_iter();
+      const content = buffer.get_text(start, end, false);
+      onChange({ type: 'modified', value: content });
+    });
+  }
+  
+  return el;
+}
+
+export function infobar(props: ElementProps = {}, cb: AfterCallback | null = null) {
+  const { message = '', type = Gtk.MessageType.INFO, revealed = true, onClose, ...defaults } = props;
+  const el = one(Gtk.InfoBar, { ...defaults, message_type: type, revealed }, 'inf', cb) as unknown as Gtk.InfoBar;
+  
+  if (message) {
+    const label = new Gtk.Label({ label: message });
+    el.add_child(label);
+  }
+  
+  if (onClose) {
+    el.connect('response', () => {
+      onClose();
+    });
+  }
+  
+  return el;
+}
+
+export function levelbar(value: number, props: ElementProps = {}, cb: AfterCallback | null = null) {
+  const { min = 0, max = 1, ...defaults } = props;
+  const el = one(Gtk.LevelBar, { ...defaults, min_value: min, max_value: max, value }, 'lvl', cb) as unknown as Gtk.LevelBar;
+  return el;
+}
