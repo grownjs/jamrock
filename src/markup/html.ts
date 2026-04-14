@@ -150,6 +150,15 @@ export function taggify(vnode: any, callback?: (chunk: any) => void): any {
         return;
       }
 
+      if ('d:html' in props) {
+        const signal = props['d:html'];
+        const html = signal && signal.value ? signal.value : '';
+        if (!html) return;
+        if (!Is.func(callback)) return html;
+        callback(html);
+        return;
+      }
+
       if (props.tag) {
         tagName = props.tag;
         props['@fragment'] = props.name;
