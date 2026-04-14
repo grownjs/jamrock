@@ -3,9 +3,6 @@
 import { test } from '@japa/runner';
 import * as td from 'testdouble';
 
-// import * as sockets from '../src/handler/sockets.ts';
-const sockets = {};
-
 import { streamify } from '../src/templ/send.ts';
 import { middleware } from '../src/handler/main.ts';
 import { fixture, server } from './helpers/utils.mjs';
@@ -249,88 +246,6 @@ test.group('streaming support', () => {
     expect(sseMessages.length).toBe(2);
     expect(sseMessages[0]).toContain('rpc:update');
     expect(sseMessages[0]).toContain('stream');
-  });
-
-  test.skip('should be able to intercept websocket calls', async ({ expect }) => {
-    // eslint-disable-next-line no-unused-expressions
-    fixture`./loops.html
-      <script>
-        let i = 0;
-        async function *data() {
-          for (;;) {
-            yield i++;
-            if (i > 150) break;
-          }
-        }
-      </script>
-      <fragment tag="ul" name="test" interval="5">
-        {#each data as x}
-          <li>{x}</li>
-        {/each}
-      </fragment>
-    `;
-
-    const ctx = useContext({
-      conn: {
-        someStuff: () => 42,
-        current_path: '/app',
-        current_module: 'app+page.html',
-      },
-      route: {
-        layout: null,
-        error: null,
-      },
-    });
-
-    const app = server(async conn => {
-      ctx.write = out => conn.res.write(out);
-
-      if (conn.path_info.length > 0) {
-        ctx.conn.current_path = conn.path_info.join('/');
-        ctx.conn.current_module = `${ctx.conn.current_path}.html`;
-        await fixture.partial(ctx.conn.current_module, null, ctx, middleware);
-        await sleep(150);
-      }
-      conn.res.end();
-    }, ctx);
-
-    const ev = [];
-    const wss = app.sockets();
-    const client = wss.connect();
-    const onClose = td.func('close');
-
-    let _ws;
-    app.on('open', ws => {
-      _ws = ws;
-      ws.on('message', x => ev.push(['IN', x]));
-      client.on('disconnect', onClose);
-      client.on('message', x => ev.push(['OUT', x.data]));
-      client.on('callback', (...args) => ev.push(['CALL', ...args]));
-    });
-
-    sockets.setup(app, null, null, null, 50);
-
-    await app.request('GET /loops', (err, conn) => {
-      conn.res.ok(err);
-      expect(conn.res.body.split('<li data-location="loops.html:').length).toEqual(101);
-      expect(conn.res.body).toContain('<ul data-location="loops.html:10:1" data-fragment=test data-interval=5>');
-    });
-
-    ctx.stream.get('loops.html/1/data').cancel();
-    client.send('rpc:trigger');
-    await sleep(100);
-
-    app.emit('close', _ws);
-    wss.stop();
-
-    expect(ev).toEqual([
-      ['IN', 'rpc:trigger'],
-      ['CALL', 'trigger', [], ''],
-      ['OUT', 'keep'],
-    ]);
-
-    expect(td.explain(onClose).callCount).toEqual(1);
-    expect(td.explain(ctx.publish).callCount).toBeGreaterThanOrEqual(26);
   });
 
   test('cleanup fixtures', ({ expect }) => {
