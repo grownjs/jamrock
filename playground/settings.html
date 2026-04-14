@@ -1,0 +1,101 @@
+<script>
+  import { signal } from 'jamrock';
+  
+  let darkMode = signal(false);
+  let notifications = signal(true);
+  let autoSave = signal(true);
+  let soundEffects = signal(false);
+  let animations = signal(true);
+  let fontSize = signal(14);
+  let volume = signal(75);
+  
+  function toggleDarkMode() {
+    darkMode.value = !darkMode.value;
+  }
+  
+  function toggleNotifications() {
+    notifications.value = !notifications.value;
+  }
+  
+  function toggleAutoSave() {
+    autoSave.value = !autoSave.value;
+  }
+  
+  function toggleSoundEffects() {
+    soundEffects.value = !soundEffects.value;
+  }
+  
+  function toggleAnimations() {
+    animations.value = !animations.value;
+  }
+  
+  function onFontSizeChange(e) {
+    fontSize.value = Math.round(e.value);
+  }
+  
+  function onVolumeChange(e) {
+    volume.value = Math.round(e.value);
+  }
+</script>
+
+<vstack>
+  <label>⚙️ Settings</label>
+  <label>─</label>
+  
+  <label>Appearance</label>
+  <label>─</label>
+  
+  <hstack>
+    <label>Dark Mode</label>
+    <button onclick="{toggleDarkMode}">{$darkMode ? 'ON' : 'OFF'}</button>
+  </hstack>
+  
+  <hstack>
+    <label>Animations</label>
+    <button onclick="{toggleAnimations}">{$animations ? 'ON' : 'OFF'}</button>
+  </hstack>
+  
+  <hstack>
+    <label>Font Size: {$fontSize}px</label>
+  </hstack>
+  <range value={$fontSize} onchange="{onFontSizeChange}" />
+  
+  <label>─</label>
+  
+  <label>Notifications</label>
+  <label>─</label>
+  
+  <hstack>
+    <label>Enable Notifications</label>
+    <button onclick="{toggleNotifications}">{$notifications ? 'ON' : 'OFF'}</button>
+  </hstack>
+  
+  <hstack>
+    <label>Sound Effects</label>
+    <button onclick="{toggleSoundEffects}">{$soundEffects ? 'ON' : 'OFF'}</button>
+  </hstack>
+  
+  <hstack>
+    <label>Volume: {$volume}%</label>
+  </hstack>
+  <range value={$volume} onchange="{onVolumeChange}" />
+  
+  <label>─</label>
+  
+  <label>Data</label>
+  <label>─</label>
+  
+  <hstack>
+    <label>Auto Save</label>
+    <button onclick="{toggleAutoSave}">{$autoSave ? 'ON' : 'OFF'}</button>
+  </hstack>
+  
+  <label>─</label>
+  
+  <label>Current Settings:</label>
+  <label>Dark: {$darkMode ? 'Yes' : 'No'}</label>
+  <label>Notifications: {$notifications ? 'On' : 'Off'}</label>
+  <label>Auto Save: {$autoSave ? 'On' : 'Off'}</label>
+  <label>Sound: {$soundEffects ? 'On' : 'Off'}</label>
+  <label>Animations: {$animations ? 'On' : 'Off'}</label>
+</vstack>

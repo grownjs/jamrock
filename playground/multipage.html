@@ -1,0 +1,150 @@
+<script>
+  import { signal } from 'jamrock';
+  
+  let page = signal('home');
+  let searchQuery = signal('');
+  let selectedIcon = signal('None');
+  let selectedFruit = signal('None');
+  let progress = signal(0.5);
+  let revealText = signal(true);
+  let overlayVisible = signal(true);
+  let calendarDate = signal('Select a date');
+  let entryText = signal('');
+  let dropdownValue = signal('One');
+  
+  function navigate(p) {
+    page.value = p;
+  }
+  
+  function onSearch(e) {
+    searchQuery.value = e.value;
+  }
+  
+  function selectIcon(name) {
+    selectedIcon.value = name;
+  }
+  
+  function selectFruit(name) {
+    selectedFruit.value = name;
+  }
+  
+  function toggleReveal() {
+    revealText.value = !revealText.value;
+  }
+  
+  function toggleOverlay() {
+    overlayVisible.value = !overlayVisible.value;
+  }
+  
+  function onProgressChange(e) {
+    progress.value = e.value / 100;
+  }
+  
+  function onEntryActivate(e) {
+    entryText.value = e.value;
+  }
+  
+  function onDropdownChange(e) {
+    dropdownValue.value = e.value;
+  }
+</script>
+
+<vstack>
+  <label>🏠 Multi-Page App</label>
+  <label>─</label>
+  
+  <hstack>
+    <button onclick="{() => navigate('home')}">Home</button>
+    <button onclick="{() => navigate('widgets')}">Widgets</button>
+    <button onclick="{() => navigate('layout')}">Layout</button>
+    <button onclick="{() => navigate('lists')}">Lists</button>
+  </hstack>
+  
+  <label>─</label>
+  
+  <entry placeholder="Search..." onchange="{onSearch}" />
+  
+  <label>─</label>
+  
+  {#if $page === 'home'}
+    <vstack>
+      <label>Welcome to Jamrock GTK4!</label>
+      <label>Build native desktop apps with HTML-like syntax</label>
+      <label>─</label>
+      <label>Features:</label>
+      <label>• Reactive signals for live updates</label>
+      <label>• All GTK4 widgets available</label>
+      <label>• Hot reload during development</label>
+      <label>• Cross-platform (Linux, macOS)</label>
+    </vstack>
+  {:else if $page === 'widgets'}
+    <vstack>
+      <label>Widget Showcase</label>
+      <label>─</label>
+      
+      <label>Selected Icon: {$selectedIcon}</label>
+      <hstack>
+        <button onclick="{() => selectIcon('Info')}">ℹ️ Info</button>
+        <button onclick="{() => selectIcon('Warning')}">⚠️ Warning</button>
+        <button onclick="{() => selectIcon('Error')}">❌ Error</button>
+        <button onclick="{() => selectIcon('Success')}">✅ Success</button>
+      </hstack>
+      
+      <label>─</label>
+      
+      <label>Selected Fruit: {$selectedFruit}</label>
+      <hstack>
+        <button onclick="{() => selectFruit('Apple')}">🍎 Apple</button>
+        <button onclick="{() => selectFruit('Orange')}">🍊 Orange</button>
+        <button onclick="{() => selectFruit('Banana')}">🍌 Banana</button>
+      </hstack>
+      
+      <label>─</label>
+      
+      <label>Calendar: {$calendarDate}</label>
+      
+      <label>─</label>
+      
+      <label>Entry: {$entryText}</label>
+      <entry placeholder="Type and press Enter..." onchange="{onEntryActivate}" />
+      
+      <label>─</label>
+      
+      <label>Dropdown: {$dropdownValue}</label>
+    </vstack>
+  {:else if $page === 'layout'}
+    <vstack>
+      <label>Layout Demo</label>
+      <label>─</label>
+      
+      <label>Progress: {Math.round($progress * 100)}%</label>
+      <progress value={$progress} />
+      <range value={$progress * 100} onchange="{onProgressChange}" />
+      
+      <label>─</label>
+      
+      <label>Revealer: {$revealText ? 'Visible' : 'Hidden'}</label>
+      <button onclick="{toggleReveal}">{$revealText ? 'Hide' : 'Show'}</button>
+      {#if $revealText}
+        <label>This text is revealed!</label>
+      {/if}
+      
+      <label>─</label>
+      
+      <label>Overlay: {$overlayVisible ? 'On' : 'Off'}</label>
+      <button onclick="{toggleOverlay}">Toggle Overlay</button>
+    </vstack>
+  {:else if $page === 'lists'}
+    <vstack>
+      <label>List Demo</label>
+      <label>─</label>
+      <label>Use {#each} to render lists</label>
+      <label>─</label>
+      {#each ['Item 1', 'Item 2', 'Item 3', 'Item 4', 'Item 5'] as item}
+        <label>• {item}</label>
+      {/each}
+    </vstack>
+  {:else}
+    <label>Unknown page</label>
+  {/if}
+</vstack>

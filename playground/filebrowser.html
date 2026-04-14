@@ -1,0 +1,90 @@
+<script>
+  import { signal } from 'jamrock';
+  
+  let currentPath = signal('/');
+  let selectedItem = signal(null);
+  let viewMode = signal('list');
+  let searchFilter = signal('');
+  
+  let files = signal([
+    { name: 'Documents', type: 'folder', size: '-' },
+    { name: 'Downloads', type: 'folder', size: '-' },
+    { name: 'Pictures', type: 'folder', size: '-' },
+    { name: 'Music', type: 'folder', size: '-' },
+    { name: 'Videos', type: 'folder', size: '-' },
+    { name: 'readme.txt', type: 'file', size: '2 KB' },
+    { name: 'config.json', type: 'file', size: '1 KB' },
+    { name: 'app.log', type: 'file', size: '15 KB' },
+  ]);
+  
+  function selectItem(item) {
+    selectedItem.value = item;
+  }
+  
+  function navigateTo(path) {
+    currentPath.value = path;
+  }
+  
+  function goUp() {
+    const parts = currentPath.value.split('/').filter(Boolean);
+    parts.pop();
+    currentPath.value = '/' + parts.join('/');
+  }
+  
+  function toggleView() {
+    viewMode.value = viewMode.value === 'list' ? 'grid' : 'list';
+  }
+  
+  function onSearch(e) {
+    searchFilter.value = e.value.toLowerCase();
+  }
+  
+  const filteredFiles = () => {
+    if (!searchFilter.value) return files.value;
+    return files.value.filter(f => f.name.toLowerCase().includes(searchFilter.value));
+  };
+</script>
+
+<vstack>
+  <label>📁 File Browser</label>
+  <label>─</label>
+  
+  <hstack>
+    <button onclick="{goUp}">⬆️ Up</button>
+    <label>Path: {$currentPath}</label>
+  </hstack>
+  
+  <label>─</label>
+  
+  <hstack>
+    <entry placeholder="Search files..." onchange="{onSearch}" />
+    <button onclick="{toggleView}">{$viewMode === 'list' ? '📋 List' : '⊞ Grid'}</button>
+  </hstack>
+  
+  <label>─</label>
+  
+  <label>Files ({$files.length})</label>
+  
+  {#each $files as file}
+    {#if !$searchFilter || file.name.toLowerCase().includes($searchFilter)}
+      <hstack>
+        <button onclick="{() => selectItem(file)}">
+          {file.type === 'folder' ? '📁' : '📄'} {file.name}
+        </button>
+        <label>{file.size}</label>
+      </hstack>
+    {/if}
+  {/each}
+  
+  <label>─</label>
+  
+  {#if $selectedItem}
+    <vstack>
+      <label>Selected: {$selectedItem.name}</label>
+      <label>Type: {$selectedItem.type}</label>
+      <label>Size: {$selectedItem.size}</label>
+    </vstack>
+  {:else}
+    <label>No file selected</label>
+  {/if}
+</vstack>

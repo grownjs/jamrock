@@ -1,0 +1,98 @@
+<script>
+  import { signal } from 'jamrock';
+  
+  let red = signal(128);
+  let green = signal(64);
+  let blue = signal(192);
+  let alpha = signal(255);
+  let savedColors = signal([]);
+  
+  function onRedChange(e) {
+    red.value = Math.round(e.value);
+  }
+  
+  function onGreenChange(e) {
+    green.value = Math.round(e.value);
+  }
+  
+  function onBlueChange(e) {
+    blue.value = Math.round(e.value);
+  }
+  
+  function onAlphaChange(e) {
+    alpha.value = Math.round(e.value);
+  }
+  
+  function saveColor() {
+    const color = {
+      name: `Color ${savedColors.value.length + 1}`,
+      r: red.value,
+      g: green.value,
+      b: blue.value,
+      a: alpha.value,
+    };
+    savedColors.value = [...savedColors.value, color];
+  }
+  
+  function loadColor(color) {
+    red.value = color.r;
+    green.value = color.g;
+    blue.value = color.b;
+    alpha.value = color.a;
+  }
+  
+  function clearColors() {
+    savedColors.value = [];
+  }
+  
+  const hexColor = () => {
+    const r = red.value.toString(16).padStart(2, '0');
+    const g = green.value.toString(16).padStart(2, '0');
+    const b = blue.value.toString(16).padStart(2, '0');
+    return `#${r}${g}${b}`;
+  };
+  
+  const rgbaColor = () => {
+    return `rgba(${red.value}, ${green.value}, ${blue.value}, ${(alpha.value / 255).toFixed(2)})`;
+  };
+</script>
+
+<vstack>
+  <label>🎨 Color Picker</label>
+  <label>─</label>
+  
+  <label>Red: {$red}</label>
+  <range value={$red} onchange="{onRedChange}" />
+  
+  <label>Green: {$green}</label>
+  <range value={$green} onchange="{onGreenChange}" />
+  
+  <label>Blue: {$blue}</label>
+  <range value={$blue} onchange="{onBlueChange}" />
+  
+  <label>Alpha: {$alpha}</label>
+  <range value={$alpha} onchange="{onAlphaChange}" />
+  
+  <label>─</label>
+  
+  <label>HEX: {hexColor()}</label>
+  <label>RGBA: {rgbaColor()}</label>
+  
+  <label>─</label>
+  
+  <hstack>
+    <button onclick="{saveColor}">💾 Save Color</button>
+    <button onclick="{clearColors}">🗑️ Clear All</button>
+  </hstack>
+  
+  <label>─</label>
+  
+  <label>Saved Colors: {$savedColors.length}</label>
+  
+  {#each $savedColors as color}
+    <hstack>
+      <button onclick="{() => loadColor(color)}">{color.name}</button>
+      <label>{color.r}, {color.g}, {color.b}</label>
+    </hstack>
+  {/each}
+</vstack>
