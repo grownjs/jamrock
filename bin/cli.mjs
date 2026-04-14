@@ -210,7 +210,7 @@ export type Routes = ${['RouteMap'].concat(typedefs).join('\n& ')};\n`;
         throw new Error("'explorer' requires GTK4/GJS runtime.");
       }
       const { startExplorer } = await import('../lib/gtk4/explorer.js');
-      const explorerSrc = Util.flag('src', argv, './playground');
+      const explorerSrc = argv[1] || Util.flag('src', argv, './playground');
       const explorerDest = Util.flag('dest', argv, './generated');
       printLog(`Building ${explorerSrc} to ${explorerDest}`);
       const self = await env({ ...defaults, ..._options, src: explorerSrc, dest: explorerDest }).build();

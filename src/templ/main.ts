@@ -451,7 +451,7 @@ export class Template {
       : null;
 
     const loader = (id: string) => {
-      if (id === 'jamrock') return NO_HOOKS;
+      if (id === 'jamrock') return ctx.hooks || NO_HOOKS;
       if (id === 'jamrock:conn') return ctx.conn;
       if (id === 'jamrock:hooks') return hooks;
       if (id === 'jamrock:shared') return { /* shared utils from given runtime? */ };
