@@ -2,6 +2,7 @@ import { Is } from '../utils/client.ts';
 
 export function str(value: unknown): string {
   if (!Is.value(value)) value = Object.prototype.toString.call(value);
+  if (Is.func(value)) value = (value as Function)();
   if (!Is.str(value)) value = (value as any).toString();
   return value as string;
 }
@@ -10,7 +11,7 @@ export function ents(value: unknown): string {
   return str(value).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
 }
 
-type RunFn = (chunk: unknown, ctx: unknown[]) => unknown;
+type RunFn = (chunk: unknown, ctx: unknown[], isSsr?: boolean) => unknown;
 type LoaderFn = (name: string) => unknown;
 type NextFn = (tpl: unknown, props: unknown, loader: LoaderFn, self: ReturnType<typeof createSelf>) => unknown;
 type ElementFn = (tag: string, props: Record<string, unknown>, children: unknown) => unknown;
@@ -99,7 +100,9 @@ export const execute = (element: ElementFn | null, loader: LoaderFn, next: NextF
     if (!tpl) {
       throw new TypeError(`Invalid template (${label})`);
     }
-    const self = createSelf(element, loader, next, run);
-    return run(tpl(self, props), []);
+    const isSsr = element !== null;
+    const wrappedRun: RunFn = (chunk, ctx) => run(chunk, ctx, isSsr);
+    const self = createSelf(element, loader, next, wrappedRun);
+    return wrappedRun(tpl(self, props), []);
   };
 };
