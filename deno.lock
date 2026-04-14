@@ -164,6 +164,9 @@
     "https://deno.land/x/static_files@1.1.6/src/utils.ts": "9e6172dc97fed01e70a6b063c5afff40e20fe726b3bae0c5f0a962bad74b7107"
   },
   "workspace": {
+    "dependencies": [
+      "npm:expect@*"
+    ],
     "packageJson": {
       "dependencies": [
         "npm:@grown/conn@^0.0.44",
