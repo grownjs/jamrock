@@ -3,7 +3,6 @@
   
   let todos = signal([]);
   let input = signal('');
-  let filter = signal('all');
   
   function addTodo() {
     const text = input.value.trim();
@@ -27,10 +26,6 @@
     todos.value = todos.value.filter(t => t.id !== id);
   }
   
-  function clearDone() {
-    todos.value = todos.value.filter(t => !t.done);
-  }
-  
   function onInput(e) {
     input.value = e.value;
   }
@@ -41,8 +36,8 @@
   <label>─</label>
   
   <hstack>
-    <entry placeholder="Add a todo..." onchange={onInput} />
-    <button onclick={addTodo}>Add</button>
+    <entry placeholder="Add a todo..." onchange="{onInput}" />
+    <button onclick="{addTodo}">Add</button>
   </hstack>
   
   <label>─</label>
@@ -53,9 +48,9 @@
   
   {#each $todos as todo}
     <hstack>
-      <button onclick={() => toggleTodo(todo.id)}>{todo.done ? '✓' : '○'}</button>
+      <button onclick="{() => toggleTodo(todo.id)}">{todo.done ? '✓' : '○'}</button>
       <label>{todo.text}</label>
-      <button onclick={() => removeTodo(todo.id)}>✕</button>
+      <button onclick="{() => removeTodo(todo.id)}">✕</button>
     </hstack>
   {/each}
 </vstack>

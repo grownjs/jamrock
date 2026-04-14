@@ -69,10 +69,10 @@
   <label>─</label>
   
   <hstack>
-    <button onclick={newNote}>+ New</button>
+    <button onclick="{newNote}">+ New</button>
     {#if $selected}
-      <button onclick={startEdit}>Edit</button>
-      <button onclick={deleteNote}>Delete</button>
+      <button onclick="{startEdit}">Edit</button>
+      <button onclick="{deleteNote}">Delete</button>
     {/if}
   </hstack>
   
@@ -83,7 +83,7 @@
       <label>Notes ({$notes.length})</label>
       <label>─</label>
       {#each $notes as note}
-        <button onclick={() => selectNote(note)}>{note.title}</button>
+        <button onclick="{() => selectNote(note)}">{note.title}</button>
       {/each}
     </vstack>
     
@@ -91,11 +91,11 @@
       {#if $selected}
         {#if $editing}
           <label>Editing:</label>
-          <entry placeholder="Title" onchange={onTitleInput} />
-          <entry placeholder="Content" onchange={onContentInput} />
+          <entry placeholder="Title" onchange="{onTitleInput}" />
+          <entry placeholder="Content" onchange="{onContentInput}" />
           <hstack>
-            <button onclick={saveEdit}>Save</button>
-            <button onclick={cancelEdit}>Cancel</button>
+            <button onclick="{saveEdit}">Save</button>
+            <button onclick="{cancelEdit}">Cancel</button>
           </hstack>
         {:else}
           <label>{$selected.title}</label>

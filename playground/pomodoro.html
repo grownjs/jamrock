@@ -69,8 +69,8 @@
   <label>─</label>
   
   <hstack>
-    <button onclick={() => switchMode('work')}>Work</button>
-    <button onclick={() => switchMode('break')}>Break</button>
+    <button onclick="{() => switchMode('work')}">Work</button>
+    <button onclick="{() => switchMode('break')}">Break</button>
   </hstack>
   
   <label>─</label>
@@ -84,8 +84,8 @@
   <label>─</label>
   
   <hstack>
-    <button onclick={toggle}>{$running ? 'Pause' : 'Start'}</button>
-    <button onclick={reset}>Reset</button>
+    <button onclick="{toggle}">{$running ? 'Pause' : 'Start'}</button>
+    <button onclick="{reset}">Reset</button>
   </hstack>
   
   <label>─</label>

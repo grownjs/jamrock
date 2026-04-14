@@ -80,34 +80,34 @@
   <label>─</label>
   
   <hstack>
-    <button onclick={clear}>C</button>
-    <button onclick={() => op('/')}>÷</button>
+    <button onclick="{clear}">C</button>
+    <button onclick="{() => op('/')}">÷</button>
   </hstack>
   
   <hstack>
-    <button onclick={() => input(7)}>7</button>
-    <button onclick={() => input(8)}>8</button>
-    <button onclick={() => input(9)}>9</button>
-    <button onclick={() => op('*')}>×</button>
+    <button onclick="{() => input(7)}">7</button>
+    <button onclick="{() => input(8)}">8</button>
+    <button onclick="{() => input(9)}">9</button>
+    <button onclick="{() => op('*')}">×</button>
   </hstack>
   
   <hstack>
-    <button onclick={() => input(4)}>4</button>
-    <button onclick={() => input(5)}>5</button>
-    <button onclick={() => input(6)}>6</button>
-    <button onclick={() => op('-')}>−</button>
+    <button onclick="{() => input(4)}">4</button>
+    <button onclick="{() => input(5)}">5</button>
+    <button onclick="{() => input(6)}">6</button>
+    <button onclick="{() => op('-')}">−</button>
   </hstack>
   
   <hstack>
-    <button onclick={() => input(1)}>1</button>
-    <button onclick={() => input(2)}>2</button>
-    <button onclick={() => input(3)}>3</button>
-    <button onclick={() => op('+')}>+</button>
+    <button onclick="{() => input(1)}">1</button>
+    <button onclick="{() => input(2)}">2</button>
+    <button onclick="{() => input(3)}">3</button>
+    <button onclick="{() => op('+')}">+</button>
   </hstack>
   
   <hstack>
-    <button onclick={() => input(0)}>0</button>
-    <button onclick={decimal}>.</button>
-    <button onclick={calculate}>=</button>
+    <button onclick="{() => input(0)}">0</button>
+    <button onclick="{decimal}">.</button>
+    <button onclick="{calculate}">=</button>
   </hstack>
 </vstack>
