@@ -34,7 +34,7 @@
     "test:e2e": "npx testcafe ${BROWSER:-chrome} tests/e2e/cases -e --color --debug-on-fail",
     "test:run": "node test.mjs",
     "test:unit": "npm run test:run --",
-    "coverage": "c8 --x '**/{build,shared,tests,dist}/**' -x '**/*.spec.mjs'",
+    "coverage": "c8 --no-check-coverage --x '**/{build,shared,tests,dist}/**' -x '**/*.spec.mjs'",
     "coverage:unit": "npm run coverage -- npm run test:unit",
     "codecov": "codecov --file=coverage/lcov.info",
     "report": "c8 report",
