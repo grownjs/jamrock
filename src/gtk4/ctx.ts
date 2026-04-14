@@ -11,6 +11,8 @@ type WidgetCallback = (p: CallbackDeps, o: object) => any;
 
 export { Gtk, Gdk, Gio, GLib, Soup, GObject } from './deps.ts';
 export * from './elements.ts';
+export { signal, computed, define, syncToStore } from './runtime.ts';
+export type { Signal, Computed } from './runtime.ts';
 
 
 export function use(callback: CallbackUse, props = {}) {
