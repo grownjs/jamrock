@@ -1,0 +1,23 @@
+{
+  "imports": {
+    "expect": "npm:expect",
+    "fs": "node:fs",
+    "path": "node:path",
+    "url": "node:url",
+    "crypto": "node:crypto",
+    "stream": "node:stream",
+    "util": "node:util",
+    "events": "node:events",
+    "buffer": "node:buffer",
+    "http": "node:http",
+    "https": "node:https",
+    "zlib": "node:zlib",
+    "os": "node:os",
+    "child_process": "node:child_process",
+    "net": "node:net",
+    "tls": "node:tls",
+    "querystring": "node:querystring",
+    "string_decoder": "node:string_decoder"
+  },
+  "nodeModulesDir": "auto"
+}
