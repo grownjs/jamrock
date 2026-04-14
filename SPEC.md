@@ -1,7 +1,7 @@
 # Jamrock Syntax Specification
 
 **Version:** 0.0.0 (pre-release)
-**Last Updated:** 2026-04-13
+**Last Updated:** 2026-04-14
 
 ---
 
@@ -258,11 +258,13 @@ Jamrock uses Svelte 5-inspired syntax in `.html` component files. This spec docu
 
 ## Signals (Reactivity)
 
+Jamrock uses signals from somedom for fine-grained reactivity in both SSR and client-side contexts.
+
 ### Declaration
 
 ```html
 <script>
-  import { signal, computed } from 'jamrock';
+  import { signal, computed, effect } from 'jamrock';
   
   let count = signal(0);
   let doubled = computed(() => count.value * 2);
@@ -271,7 +273,7 @@ Jamrock uses Svelte 5-inspired syntax in `.html` component files. This spec docu
 
 ### Usage in Templates
 
-Use `$` prefix to read signal values:
+Use `$` prefix to read signal values in templates:
 
 ```html
 <p>Count: {$count}</p>
@@ -286,18 +288,45 @@ The `$` prefix is compiled to `.value` access:
 | `{$count + 1}` | `count.value + 1` |
 | `{$obj.name}` | `obj.value.name` |
 
+### In Attributes
+
+For attributes, the `$` prefix is also compiled:
+
+```html
+<button class="btn-{$count}">Click</button>
+<!-- Compiles to: class="btn-" + count.value -->
+```
+
 ### Update
 
 ```html
 <button onclick="{() => count.value = count.value + 1}">Increment</button>
 ```
 
+### Signal API
+
+| Function | Description |
+|----------|-------------|
+| `signal(value)` | Create reactive value with `.value` property |
+| `computed(fn)` | Create derived value, auto-updates when dependencies change |
+| `effect(fn)` | Run side effect when dependencies change |
+| `batch(fn)` | Group multiple updates into one |
+| `untracked(fn)` | Read signals without subscribing |
+
 ### How It Works
 
-1. Declare signals without `$`: `let count = signal(0)`
-2. Use `$` prefix in templates to read: `{$count}` → compiles to `count.value`
-3. Signals are objects with `.value` property (both SSR and client)
-4. Read: `count.value` / Write: `count.value = newValue`
+1. **Declaration:** `let count = signal(0)` — creates reactive container
+2. **Template usage:** `{$count}` → compiles to `count.value`
+3. **Read:** `count.value` — get current value
+4. **Write:** `count.value = newValue` — update and notify subscribers
+5. **SSR:** Signals are evaluated to their values for stringification
+6. **Client:** `$signal` functions are preserved for somedom reactivity
+
+### Important Notes
+
+- `$$props` is NOT a signal — it's the props object, never use `.value`
+- Signal names in templates must use `$` prefix: `{$count}` not `{count}`
+- In script code, always use `.value`: `count.value` not `count()`
 
 ---
 
@@ -393,36 +422,84 @@ Content here...
 
 For GTK4 desktop apps, use these elements instead of HTML:
 
+### Layout Containers
+
 | Element | Description |
 |---------|-------------|
 | `vstack` | Vertical box container |
 | `hstack` | Horizontal box container |
-| `box` | Generic container |
-| `label` | Text label |
+| `box` | Generic container with `spacing`, `homogeneous` props |
+| `grid` | Grid layout with `row`, `column`, `row-span`, `col-span` |
+| `scroll` | Scrollable container |
+| `overlay` | Stack widgets on top of each other |
+| `stack` | Switch between visible children |
+| `paned` | Resizable split pane |
+| `expander` | Collapsible container |
+| `revealer` | Animated show/hide container |
+| `frame` | Bordered container with label |
+| `center` | Center box container |
+
+### Input Widgets
+
+| Element | Description |
+|---------|-------------|
 | `button` | Button with label |
-| `entry` | Text input field |
 | `toggle` | Switch widget |
 | `push` | Toggle button |
+| `check` | Checkbox |
+| `entry` | Text input field |
+| `search` | Search entry with clear button |
+| `spin` | Numeric spinner |
+| `range` | Scale/slider widget |
+| `dropdown` | Dropdown selector |
+| `color` | Color picker button |
+| `font` | Font picker button |
+| `file` | File chooser button |
+
+### Display Widgets
+
+| Element | Description |
+|---------|-------------|
+| `label` | Text label (supports markup) |
+| `image` | Image from file or resource |
+| `spinner` | Loading spinner |
 | `progress` | Progress bar |
 | `level` | Level bar indicator |
-| `range` | Scale/slider widget |
-| `scroll` | Scrollable container |
+| `calendar` | Calendar widget |
+| `clock` | Digital clock display |
+| `textview` | Multi-line text editor |
 | `listview` | List view widget |
-| `dropdown` | Dropdown selector |
+| `columnview` | Table with columns |
+| `treeview` | Hierarchical tree view |
 
-Example:
+### Example
 
 ```html
 <script>
-  let clicks = 0;
-  function onClick() { clicks++; }
+  import { signal } from 'jamrock';
+  
+  let clicks = signal(0);
+  function onClick() { clicks.value++; }
 </script>
 
-<vstack>
-  <label>Clicks: {clicks}</label>
+<vstack spacing="10">
+  <label>Clicks: {$clicks}</label>
   <button onclick={onClick}>Click Me</button>
 </vstack>
 ```
+
+### GTK4-Specific Attributes
+
+| Attribute | Description |
+|-----------|-------------|
+| `spacing` | Gap between children (box containers) |
+| `homogeneous` | Equal child sizes (box containers) |
+| `halign` / `valign` | Alignment: `fill`, `start`, `end`, `center`, `baseline` |
+| `hexpand` / `vexpand` | Allow widget to expand |
+| `margin-top` / `margin-bottom` / `margin-start` / `margin-end` | Margins |
+| `opacity` | Widget opacity (0-1) |
+| `sensitive` | Enable/disable widget |
+| `visible` | Show/hide widget |
 
 ---
 
@@ -448,6 +525,13 @@ Components compile to ES modules with these exports:
 
 ## Changelog
 
+### 2026-04-14
+- Added complete GTK4 widget reference (26+ widgets)
+- Documented GTK4-specific attributes
+- Expanded signal documentation with API reference
+- Clarified signal behavior in SSR vs client contexts
+- Noted `$$props` is not a signal
+
 ### 2026-04-13
 - Initial spec creation
 - Documented GTK4 elements for desktop apps
@@ -469,3 +553,5 @@ Components compile to ES modules with these exports:
 - [ ] WebKitGTK preview vs GTK widget rendering
 - [x] Signal syntax finalization — **Done: use `.value` property**
 - [x] Arrow function syntax in attributes — **Done: quotes required**
+- [x] GTK4 widget coverage — **Done: 26+ widgets documented**
+- [x] Signal behavior in SSR vs client — **Done: documented**

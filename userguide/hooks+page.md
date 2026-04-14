@@ -4,7 +4,7 @@
 
 # Hooks
 
-Jamrock uses **signals** for reactivity. The old React-style hooks have been removed.
+Jamrock uses **signals** from somedom for fine-grained reactivity in both SSR and client-side contexts.
 
 ## Available APIs
 
@@ -13,29 +13,33 @@ Jamrock uses **signals** for reactivity. The old React-style hooks have been rem
 Create a reactive value:
 
 ```html
-<script context="client">
+<script>
   import { signal } from 'jamrock';
 
-  const count = signal(0);
+  let count = signal(0);
 </script>
 
-<button on:click={() => count.value++}>{count.value}</button>
+<button onclick={() => count.value++}>{$count}</button>
 ```
+
+> [!NOTE]
+> Use `$count` in templates to read the value. This compiles to `count.value`.
+> In script code, always use `count.value` to read or write.
 
 ### computed
 
-Create a derived value:
+Create a derived value that auto-updates when dependencies change:
 
 ```html
-<script context="client">
+<script>
   import { signal, computed } from 'jamrock';
 
-  const a = signal(2);
-  const b = signal(3);
-  const sum = computed(() => a.value + b.value);
+  let a = signal(2);
+  let b = signal(3);
+  let sum = computed(() => a.value + b.value);
 </script>
 
-<p>Sum: {sum.value}</p>
+<p>Sum: {$sum}</p>
 ```
 
 ### effect
@@ -50,6 +54,47 @@ Run side effects when signals change:
 
   effect(() => {
     document.title = `Count: ${count.value}`;
+  });
+</script>
+```
+
+> [!NOTE]
+> `effect` is primarily for client-side code. In SSR, signals are evaluated once for stringification.
+
+### batch
+
+Group multiple signal updates into one:
+
+```html
+<script>
+  import { signal, batch } from 'jamrock';
+
+  let a = signal(1);
+  let b = signal(2);
+
+  function updateBoth() {
+    batch(() => {
+      a.value = 10;
+      b.value = 20;
+    });
+  }
+</script>
+```
+
+### untracked
+
+Read signals without subscribing:
+
+```html
+<script>
+  import { signal, untracked, effect } from 'jamrock';
+
+  let count = signal(0);
+
+  effect(() => {
+    // This effect won't re-run when count changes
+    const current = untracked(() => count.value);
+    console.log('Current count:', current);
   });
 </script>
 ```
@@ -74,30 +119,9 @@ Error boundary for effects:
 </script>
 ```
 
-### scope
-
-Shared state across the component tree:
-
-```html
-<script context="client">
-  import { scope, effect } from 'jamrock';
-
-  const Theme = scope('light');
-
-  Theme.value = 'dark';
-
-  Theme.provide('blue', () => {
-    // Theme.value === 'blue' here (scoped override)
-  });
-  // Theme.value === 'dark' (restored)
-</script>
-```
-
-Note: `scope` is for shared state, not a replacement for React-style context providers.
-
 ### ref
 
-Create a mutable reference:
+Create a mutable reference (useful for DOM references):
 
 ```html
 <script context="client">
@@ -110,9 +134,27 @@ Create a mutable reference:
   }
 </script>
 
-<input ref={inputRef} />
-<button on:click={focus}>Focus</button>
+<input bind:this={inputRef} />
+<button onclick={focus}>Focus</button>
 ```
+
+## SSR vs Client Behavior
+
+| Context | Behavior |
+|---------|----------|
+| SSR | Signals are evaluated to their values for HTML stringification |
+| Client | `$signal` functions are preserved for somedom reactivity |
+
+> [!IMPORTANT]
+> `$$props` is NOT a signal — it's the props object. Never use `.value` on it.
+
+## Template Syntax
+
+| Template | Compiled |
+|----------|----------|
+| `{$count}` | `count.value` |
+| `{$count + 1}` | `count.value + 1` |
+| `class="btn-{$count}"` | `"btn-" + count.value` |
 
 <nav class="flex gap-sm between">
   <span>

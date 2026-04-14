@@ -13,6 +13,7 @@ Jamrock supports multiple runtimes and deployment targets. Choose the one that f
 | Node.js | Stable | General-purpose, npm ecosystem |
 | Deno | Stable | TypeScript-native, secure defaults |
 | Bun | Stable | Fast startup, Node-compatible |
+| GTK4/GJS | Experimental | Desktop applications |
 | WinterJS | WIP | Serverless, WinterCG compatible |
 | Cloudflare Workers | WIP | Edge deployment |
 | Vercel Edge | WIP | Vercel platform |
@@ -92,6 +93,43 @@ bun run lib/bun/main.mjs
 # Production
 bun run dist/server.mjs
 ```
+
+## GTK4 Desktop Apps
+
+Build native desktop applications with GTK4 widgets:
+
+```bash
+# Development
+./bin/gjs serve --src playground
+
+# Run the explorer
+./bin/gjs explorer
+```
+
+### Available Widgets
+
+Layout: `vstack`, `hstack`, `box`, `grid`, `scroll`, `overlay`, `stack`, `paned`, `expander`, `revealer`, `frame`, `center`
+
+Input: `button`, `toggle`, `push`, `check`, `entry`, `search`, `spin`, `range`, `dropdown`, `color`, `font`, `file`
+
+Display: `label`, `image`, `spinner`, `progress`, `level`, `calendar`, `clock`, `textview`, `listview`, `columnview`, `treeview`
+
+### Example
+
+```html
+<script>
+  import { signal } from 'jamrock';
+  let count = signal(0);
+</script>
+
+<vstack spacing="10">
+  <label>Count: {$count}</label>
+  <button onclick={() => count.value++}>Increment</button>
+</vstack>
+```
+
+> [!NOTE]
+> GTK4 apps use the same component syntax as web apps, but with GTK-specific elements instead of HTML.
 
 ## Static Export
 

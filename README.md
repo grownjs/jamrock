@@ -17,6 +17,8 @@ Jamrock is a server-side rendering (SSR) web framework for JavaScript. It uses S
 - **Scoped CSS** — Styles are scoped by default; Less and UnoCSS supported
 - **Streaming** — Real-time updates via fragments, generators, and SSE/WebSockets
 - **Progressive enhancement** — Forms work without JavaScript; enhanced with client-side hydration
+- **Fine-grained reactivity** — Signals for efficient DOM updates
+- **Desktop apps** — Build native GTK4 applications with the same component syntax
 
 ---
 
@@ -318,11 +320,31 @@ export default {
 | Node.js | Stable | Primary target |
 | Deno | Stable | Requires `--allow-all` |
 | Bun | Stable | Fastest builds |
-| GTK4/GJS | Experimental | Desktop applications |
+| GTK4/GJS | Experimental | Desktop applications (26+ widgets) |
 | Txiki.js | WIP | Lightweight runtime |
 | WinterJS | WIP | WinterCG/edge deployment |
 | Cloudflare | WIP | Workers adapter |
 | Vercel Edge | WIP | Edge functions |
+
+### GTK4 Desktop Apps
+
+Build native desktop applications using GTK4 widgets:
+
+```html
+<script>
+  import { signal } from 'jamrock';
+  let count = signal(0);
+</script>
+
+<vstack spacing="10">
+  <label>Count: {$count}</label>
+  <button onclick={() => count.value++}>Increment</button>
+</vstack>
+```
+
+Run with: `./bin/gjs serve --src playground`
+
+**Available widgets:** `vstack`, `hstack`, `box`, `grid`, `scroll`, `overlay`, `stack`, `paned`, `expander`, `revealer`, `frame`, `button`, `toggle`, `check`, `entry`, `search`, `spin`, `range`, `dropdown`, `color`, `font`, `file`, `label`, `image`, `spinner`, `progress`, `level`, `calendar`, `clock`, `textview`, `listview`, `columnview`, `treeview`
 
 ---
 
@@ -431,11 +453,19 @@ Pages:
 
 ## Known Issues
 
-- **CSRF token** in `src/server/connection.ts` calls `session.nextToken()` synchronously (it's async) — results in Promise being stored instead of token value
 - **`components/svg-icon.html`** — Not implemented; SVG icons are inlined in layouts
 - **`bin/winterjs`** — Requires `wasmer run wasmer/winterjs` wrapper
 - **GJS `btoa`/`atob`** — Implemented via `GLib.base64_encode/decode`
 - **GJS `crypto.subtle.sign`** — Mocked with `GLib.compute_hmac_for_string`
+
+## Recent Changes
+
+### 2026-04-14
+- Fixed JSDOM localStorage issue (somedom update)
+- Fixed signal handling in SSR vs client contexts
+- Added 26+ GTK4 widgets for desktop apps
+- Consolidated polyfills for SSR vs GTK4 builds
+- 76 unit tests passing
 
 ---
 
