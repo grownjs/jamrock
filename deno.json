@@ -18,6 +18,5 @@
     "tls": "node:tls",
     "querystring": "node:querystring",
     "string_decoder": "node:string_decoder"
-  },
-  "nodeModulesDir": "auto"
+  }
 }
