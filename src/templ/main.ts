@@ -634,7 +634,7 @@ export class Template {
     } else if (!RE_SAFE_IMPORTS.test(id)) {
       const [mod, name] = id.split(':');
 
-      resolved = Template.path(`${process.cwd()}/node_modules/${mod}/shared/${name}`);
+      resolved = Template.path(`${Template.cwd()}/node_modules/${mod}/shared/${name}`);
 
       if (!resolved) {
         return Template.reload(id);
@@ -652,7 +652,7 @@ export class Template {
     if (resolved && Template.exists(resolved)) {
       return resolved[0] === '/'
         ? Template.reload(`file://${resolved}`)
-        : Template.reload(`file://${process.cwd()}/${resolved}`);
+        : Template.reload(`file://${Template.cwd()}/${resolved}`);
     }
 
     return Template.reload(id);
@@ -774,7 +774,7 @@ export class Template {
 
         if (src[0] !== '.' || filepath === source) return _;
 
-        const key = rebase(source, process.cwd())!;
+        const key = rebase(source, Template.cwd())!;
 
         if (imported.has(key)) {
           const { set, found } = imported.get(key)!;
@@ -886,7 +886,7 @@ export class Template {
   }
 
   static cwd() {
-    return process.cwd();
+    return typeof process === 'object' && typeof process.cwd === 'function' ? process.cwd() : '.';
   }
 
   static write(dest: string, code: any): void {
