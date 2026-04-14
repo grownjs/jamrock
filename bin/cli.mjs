@@ -37,6 +37,7 @@ Usage: ./bin/{node,deno,bun,gjs} <COMMAND> [OPTIONS]
   build  Compiles *.{md,html} sources into server-components
   route  Prints the available routes found
   window Opens page routes as GTK windows (GTK4 only)
+  explorer Opens Jamrock Explorer for testing components (GTK4 only)
 
  Options:
 
@@ -201,6 +202,17 @@ export type Routes = ${['RouteMap'].concat(typedefs).join('\n& ')};\n`;
       printLog(`Building ${src} to ${dest}`);
       const self = await env({ ...defaults, ..._options }).build();
       self.window(startWindowMode);
+      return;
+    }
+
+    if (argv[0] === 'explorer') {
+      if (!capabilities.explorer) {
+        throw new Error("'explorer' requires GTK4/GJS runtime.");
+      }
+      const { startExplorer } = await import('../lib/gtk4/explorer.js');
+      printLog(`Building ${src} to ${dest}`);
+      const self = await env({ ...defaults, ..._options }).build();
+      self.window(startExplorer);
       return;
     }
 
