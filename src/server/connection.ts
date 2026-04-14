@@ -2,7 +2,78 @@ import { Template } from '../main.ts';
 
 import { getError } from './request.ts';
 
-export function createConnection(store: any, session: any, cookies: any, options: any, request: any, location: any, teardown: any): any {
+export interface ConnectionOptions {
+  target?: string;
+}
+
+export interface RequestContext {
+  url: string;
+  method: string;
+  headers: Headers;
+  body?: string;
+  signal?: AbortSignal;
+  params?: Record<string, string>;
+  uuid?: string;
+  query?: Record<string, string>;
+  type?: string;
+  fields?: Record<string, any>;
+  text?: () => Promise<string>;
+  formData?: () => Promise<FormData>;
+  json?: () => Promise<any>;
+  sid?: string;
+}
+
+export interface ServerInfo {
+  protocol: string;
+  hostname: string;
+  port: string;
+  teardown?: () => void;
+}
+
+export interface Connection {
+  req: Request;
+  method: string;
+  headers: Record<string, string>;
+  server: ServerInfo;
+  options: ConnectionOptions;
+  base_url: string;
+  routes: any[];
+  current_path: string;
+  current_module: string;
+  current_options: Record<string, any>;
+  header(key: string, value: string): void;
+  status(code: number): void;
+  redirect(url: string, code?: number): void;
+  raise(code: number, message: string): never;
+  send(code: number, body: any, headers?: Record<string, string>): void;
+  toJSON(): Record<string, any>;
+  cookie?(key: string, value: any, config?: any): void;
+  flash?(type?: string, value?: any): any;
+  csrfProtect?(): void;
+  get aborted(): boolean;
+  get params(): Record<string, any>;
+  get path_info(): string[];
+  get path_params(): Record<string, string>;
+  get body_params(): Record<string, any>;
+  get request_path(): string;
+  get query_string(): string;
+  get query_params(): Record<string, string>;
+  get resp_headers(): Headers;
+  get status_code(): number;
+  set status_code(code: number);
+  get resp_body(): any;
+  set resp_body(value: any);
+  get has_body(): boolean;
+  get is_close(): boolean;
+  get is_json(): boolean;
+  get is_xhr(): boolean;
+}
+
+export function createConnection(
+  request: RequestContext,
+  server: ServerInfo,
+  options: ConnectionOptions = {},
+): Connection {
   const response: any = {
     headers: new Headers(),
     cookies: new Map(),
@@ -13,18 +84,17 @@ export function createConnection(store: any, session: any, cookies: any, options
 
   const _headers = Object.fromEntries(request.headers);
 
-  const hostname = request.headers.get('host') || location.hostname;
-  const port = request.headers.get('port') || location.port;
+  const hostname = request.headers.get('host') || server.hostname;
+  const port = request.headers.get('port') || server.port;
   const protocol = +port === 443 ? 'https' : 'http';
-  const offset = request.url.indexOf(':');
 
+  const offset = request.url.indexOf(':');
   const base = request.url.substr(offset + hostname.length + 3);
   const _url = base.split('?')[0];
   const qs = base.split('?')[1] || '';
 
-  response.cookies.set('sid', { value: request.sid = session.sid });
-
-  request.uuid = qs.match(/^_=([^&]+)$/)?.[1]
+  request.uuid = request.uuid
+    || qs.match(/^_=([^&]+)$/)?.[1]
     || request.headers.get('request-uuid')
     || `0.${Date.now().toString(36).replace(/.{3}/g, '$&-')}`;
 
@@ -51,49 +121,17 @@ export function createConnection(store: any, session: any, cookies: any, options
     },
   });
 
-  Object.defineProperty(request, 'csrfProtect', {
-    value() {
-      if (!(process.env.HEADLESS || ['GET', 'HEAD', 'OPTIONS'].includes(request.method))) {
-        const token = (request.fields && request.fields._csrf)
-          || request.query._csrf
-          || _headers['csrf-token']
-          || _headers['xsrf-token']
-          || _headers['x-csrf-token']
-          || _headers['x-xsrf-token'];
-
-        if (!session.verifyToken(token, session.state.csrf)) {
-          throw getError(403, 'the given csrf-token is not valid');
-        }
-        delete session.state.csrf;
-      }
-    },
-  });
-
-  const serverInfo = { teardown, protocol, hostname, port };
-
-  const conn: any = {
-    req: request,
-    store: store.shared,
+  const conn: Connection = {
+    req: request as Request,
     method: request.method,
-    server: serverInfo,
+    server,
     headers: _headers,
     base_url: options.target || '/',
-    session: session.state,
-    cookies,
     options,
     routes: [],
     current_path: '',
     current_module: '',
     current_options: {},
-    cookie(key: string, value: any, config?: any) {
-      if (value === null) {
-        config = { expires: new Date(0) };
-      }
-      if (typeof config === 'number') {
-        config = { expires: new Date(Date.now() + (config * 1000)) };
-      }
-      response.cookies.set(key, { value, options: config });
-    },
     header(key: string, value: string) {
       response.headers.set(key, value);
     },
@@ -108,7 +146,6 @@ export function createConnection(store: any, session: any, cookies: any, options
     },
     toJSON() {
       return {
-        csrf: conn.csrf_token,
         uuid: conn.req.uuid,
         path: conn.request_path,
         query: conn.query_params,
@@ -116,18 +153,7 @@ export function createConnection(store: any, session: any, cookies: any, options
         params: conn.path_params,
       };
     },
-    flash(type?: string, value?: any) {
-      if (!type) {
-        const data = session.state.flash || [];
-        session.state.flash = [];
-        return data;
-      }
-
-      const timestamp = new Date();
-      session.state.flash = session.state.flash || [];
-      session.state.flash.push({ type, value, timestamp });
-    },
-    raise(code: number, message: string) {
+    raise(code: number, message: string): never {
       throw getError(code, message);
     },
     send(code: number, body: any, headers?: any) {
@@ -144,7 +170,7 @@ export function createConnection(store: any, session: any, cookies: any, options
       }
     },
     get aborted() {
-      return request.signal.aborted;
+      return request.signal?.aborted || false;
     },
     get params() {
       return { ...conn.query_params, ...conn.body_params, ...conn.path_params };
@@ -166,13 +192,6 @@ export function createConnection(store: any, session: any, cookies: any, options
     },
     get query_params() {
       return { ...request.query };
-    },
-    get csrf_token() {
-      // eslint-disable-next-line no-return-assign
-      return session.state.csrf || (session.state.csrf = session.nextToken());
-    },
-    get resp_cookies() {
-      return response.cookies;
     },
     get resp_headers() {
       return response.headers;
@@ -216,6 +235,77 @@ export function createConnection(store: any, session: any, cookies: any, options
       return _headers['x-requested-with'] === 'XMLHttpRequest';
     },
   };
+
+  return conn;
+}
+
+export interface SessionExtension {
+  store: any;
+  session: any;
+  cookies: Map<string, any>;
+}
+
+export function extendConnection(
+  conn: Connection,
+  extension: SessionExtension,
+): Connection {
+  const { store, session, cookies } = extension;
+  const _headers = conn.headers;
+
+  conn.cookie = function cookie(key: string, value: any, config?: any) {
+    if (value === null) {
+      config = { expires: new Date(0) };
+    }
+    if (typeof config === 'number') {
+      config = { expires: new Date(Date.now() + (config * 1000)) };
+    }
+    (conn as any).resp_cookies.set(key, { value, options: config });
+  };
+
+  conn.flash = function flash(type?: string, value?: any) {
+    if (!type) {
+      const data = session.state.flash || [];
+      session.state.flash = [];
+      return data;
+    }
+
+    const timestamp = new Date();
+    session.state.flash = session.state.flash || [];
+    session.state.flash.push({ type, value, timestamp });
+  };
+
+  conn.csrfProtect = function csrfProtect() {
+    if (!(process.env.HEADLESS || ['GET', 'HEAD', 'OPTIONS'].includes(conn.method))) {
+      const token = (conn.req.fields && conn.req.fields._csrf)
+        || conn.query_params._csrf
+        || _headers['csrf-token']
+        || _headers['xsrf-token']
+        || _headers['x-csrf-token']
+        || _headers['x-xsrf-token'];
+
+      if (!session.verifyToken(token, session.state.csrf)) {
+        throw getError(403, 'the given csrf-token is not valid');
+      }
+      delete session.state.csrf;
+    }
+  };
+
+  Object.defineProperty(conn, 'store', {
+    get: () => store.shared,
+  });
+
+  Object.defineProperty(conn, 'session', {
+    get: () => session.state,
+    set: (val) => { session.state = val; },
+  });
+
+  Object.defineProperty(conn, 'csrf_token', {
+    get: () => session.state.csrf || (session.state.csrf = session.nextToken()),
+  });
+
+  Object.defineProperty(conn, 'resp_cookies', {
+    get: () => new Map(cookies),
+  });
 
   return conn;
 }
