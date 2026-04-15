@@ -30,9 +30,10 @@ export function updatePage(title: string, url: string): void {
 }
 
 export function spaNavigate(callback: () => unknown): unknown {
-  return (document as any).startViewTransition
-    ? (document as any).startViewTransition(callback).finished
-    : callback();
+  if (!(document as any).startViewTransition) return callback();
+  const transition = (document as any).startViewTransition(callback);
+  transition.ready.then(() => transition.skipTransition());
+  return transition.finished;
 }
 
 export function findNodes(key: string, node: Element | null, skip?: number): Element | undefined {
