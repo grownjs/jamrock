@@ -74,37 +74,13 @@ export class AppRunner {
   #spawn() {
     if (this.#proc) this.#killProc();
 
-    const appFile = Gio.File.new_for_path(this.#appPath);
-    const appDir = appFile.get_parent().get_path();
-    const injectedSrc = this.#buildInjectedSource(this.#appPath);
-
-    // Write injected source to tmp file
-    const tmpPath = '/tmp/jamrock-devtools-target.mjs';
-    try {
-      Gio.File.new_for_path(tmpPath).replace_contents(
-        new TextEncoder().encode(injectedSrc),
-        null, false,
-        Gio.FileCreateFlags.REPLACE_DESTINATION,
-        null
-      );
-    } catch (e) {
-      this.#emit('error', { message: 'Failed to write tmp file: ' + e.message });
-      return;
-    }
-
-    const env = [
-      ...GLib.get_environ(),
-      'DYLD_LIBRARY_PATH=' + LIB_PATH,
-      'JAMROCK_DEVTOOLS=1',
-    ];
-
     try {
       const launcher = new Gio.SubprocessLauncher({
         flags: Gio.SubprocessFlags.STDOUT_PIPE | Gio.SubprocessFlags.STDERR_MERGE,
       });
       launcher.setenv('DYLD_LIBRARY_PATH', LIB_PATH, true);
       launcher.setenv('JAMROCK_DEVTOOLS', '1', true);
-      this.#proc = launcher.spawnv([GJS_BIN, '-m', tmpPath]);
+      this.#proc = launcher.spawnv([GJS_BIN, '-m', this.#appPath]);
 
       this.#emit('start', { pid: this.#proc.get_identifier(), path: this.#appPath });
       this.#readOutput();
@@ -150,47 +126,6 @@ export class AppRunner {
     };
 
     readNext();
-  }
-
-  // ─── Source Injection ──────────────────────────────────────────────────────
-
-  #buildInjectedSource(appPath) {
-    // Absolute path for the devtools module
-    const cwd = GLib.get_current_dir();
-
-    return `
-// === DevTools Injected Wrapper ===
-import { attachDevTools } from '${cwd}/devtools/bridge-agent.mjs';
-
-// Import the original app — but we need to intercept createWindow
-// We do this by patching after open() is called.
-// The app must call open(); we wrap it.
-
-const _origImport = '${appPath}';
-
-// Patch: re-export createWindow with devtools hook
-import { createWindow as _createWindow } from '${cwd}/dist/gtk.mjs';
-
-let _win = null;
-let _close = null;
-
-const createWindow = (props) => {
-  const ctx = _createWindow(props);
-  const _origOpen = ctx.open;
-  ctx.open = (cb) => {
-    const result = _origOpen(cb);
-    _win = ctx.win;
-    // Attach devtools after open
-    attachDevTools(_win);
-    return result;
-  };
-  return ctx;
-};
-
-// Inject createWindow override into module scope via dynamic import
-// The target app is re-executed with the patched createWindow
-const mod = await import('${appPath}');
-`;
   }
 
   // ─── File Watching ─────────────────────────────────────────────────────────
