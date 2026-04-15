@@ -91,7 +91,7 @@ export default async function cli(createEnv, argv, capabilities) {
   }
 
   const src = opts.src || './pages';
-  const dest = opts.dest || './build';
+  const dest = opts.dest || './generated';
 
   if (cmd === 'init') {
     if (!capabilities.init) {
@@ -145,6 +145,7 @@ export default async function cli(createEnv, argv, capabilities) {
     printLog('Building...', src, '→', dest);
 
     const env = await createEnv({ src, dest });
+    await env.build();
 
     if (opts.log) {
       env.routes.forEach(route => {
@@ -212,8 +213,7 @@ export default async function cli(createEnv, argv, capabilities) {
 
     printLog('Opening explorer...');
 
-    const app = createExplorer(env, opts);
-    app.run([]);
+    await createExplorer({ env, options: { src, dest } });
 
     return;
   }

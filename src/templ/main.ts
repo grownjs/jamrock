@@ -286,7 +286,7 @@ export class Template {
     context.stack = context.stack || [];
     context.scope = context.scope || {};
     context.depth = context.depth || 0;
-    context.tag = context.tag || Template.tag(context);
+    if (context.tag === undefined) context.tag = Template.tag(context);
     context.media = context.media || new Set<string>();
   }
 
