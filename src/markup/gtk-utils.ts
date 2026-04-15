@@ -30,26 +30,52 @@ function replaceSignalsWithValue(content: string): string {
   return content.replace(/\{\$(\w+)\}/g, "' + $1.value + '");
 }
 
-function extractTextContent(node: any): { text: string; signals: string[] } {
-  if (!node.elements) return { text: '', signals: [] };
+function extractTextContent(node: any): { text: string; signals: string[]; original: string } {
+  if (!node.elements) return { text: '', signals: [], original: '' };
   
   const texts: string[] = [];
+  const originals: string[] = [];
   const allSignals: string[] = [];
   
   for (const child of node.elements) {
-    if (child.type === 'text') {
+    if (child instanceof Expr) {
+      for (const token of child.expr) {
+        if (typeof token === 'object' && token.type === 'text') {
+          texts.push(token.content);
+          originals.push(token.content);
+        } else if (typeof token === 'object' && token.type === 'code') {
+          if (token.content instanceof Expr) {
+            for (const t of token.content.expr) {
+              if (typeof t === 'string') {
+                const signals = extractSignals(t);
+                allSignals.push(...signals);
+                texts.push(t.replace(/\{\$(\w+)\}/g, "' + $1.value + '"));
+                originals.push(t);
+              }
+            }
+          }
+        } else if (typeof token === 'string') {
+          const signals = extractSignals(token);
+          allSignals.push(...signals);
+          texts.push(token.replace(/\{\$(\w+)\}/g, "' + $1.value + '"));
+          originals.push(token);
+        }
+      }
+    } else if (child.type === 'text') {
       const signals = extractSignals(child.content);
       allSignals.push(...signals);
       texts.push(child.content);
+      originals.push(child.content);
     } else if (child.type === 'code' && child.content) {
       const code = child.content.toString();
       const signals = extractSignals(code);
       allSignals.push(...signals);
       texts.push(code.replace(/\{\$(\w+)\}/g, "' + $1.value + '"));
+      originals.push(code);
     }
   }
   
-  return { text: texts.join('').trim(), signals: allSignals };
+  return { text: texts.join('').trim(), signals: allSignals, original: originals.join('').trim() };
 }
 
 export function reduceGTK(tree: any, context: any, indent: number = 0): string {
@@ -62,7 +88,7 @@ export function reduceGTK(tree: any, context: any, indent: number = 0): string {
     if (['element', 'fragment'].includes(node.type)) {
       const name = node.name;
       const widgetId = getWidgetId(name);
-      const { text, signals } = extractTextContent(node);
+      const { text, signals, original } = extractTextContent(node);
       const hasSignals = signals.length > 0;
       
       const children = node.elements && node.type !== 'fragment'
@@ -80,7 +106,8 @@ export function reduceGTK(tree: any, context: any, indent: number = 0): string {
         memo.push(`${_tabs}${prefix} ${name}.createWidget({ ${props} })`);
       } else {
         const childArray = children ? `[${children}]` : '[]';
-        const propsStr = props ? `{ ${props}, name: '${widgetId}' }` : `{ name: '${widgetId}' }`;
+        let propsStr = props ? `{ ${props}, name: '${widgetId}' }` : `{ name: '${widgetId}' }`;
+        propsStr = propsStr.replace(/, }/, ' }').replace(/,,/g, ',');
         
         if (['vstack', 'hstack', 'box'].includes(name)) {
           memo.push(`${_tabs}${prefix} ${name}(${childArray}, ${propsStr})`);
@@ -90,7 +117,8 @@ export function reduceGTK(tree: any, context: any, indent: number = 0): string {
           
           if (hasSignals) {
             for (const sig of signals) {
-              subscriptions.push(`${sig}.subscribe(v => self.${widgetId}.set_label('${text.replace(/\{\$(\w+)\}/g, "' + v + '")}'));`);
+              const template = original.replace(/\{\$(\w+)\}/g, "' + v + '");
+              subscriptions.push(`${sig}.subscribe(v => self.${widgetId}.set_label('${template}'));`);
             }
           }
         } else if (name === 'label') {
@@ -99,7 +127,8 @@ export function reduceGTK(tree: any, context: any, indent: number = 0): string {
           
           if (hasSignals) {
             for (const sig of signals) {
-              subscriptions.push(`${sig}.subscribe(v => self.${widgetId}.set_label('${text.replace(/\{\$(\w+)\}/g, "' + v + '")}'));`);
+              const template = original.replace(/\{\$(\w+)\}/g, "' + v + '");
+              subscriptions.push(`${sig}.subscribe(v => self.${widgetId}.set_label('${template}'));`);
             }
           }
         } else if (name === 'entry') {
@@ -158,7 +187,18 @@ export function reduceGTK(tree: any, context: any, indent: number = 0): string {
     } else if (node.type === 'code') {
       memo.push(node.content.wrap(_tabs));
     } else if (node instanceof Expr) {
-      memo.push(node.wrap(_tabs));
+      const text = node.toString();
+      const signals = extractSignals(text);
+      if (signals.length > 0) {
+        const widgetId = getWidgetId('label');
+        const code = node.wrap(_tabs, true).replace(/function \$signal\(\) \{ return ([^;]+); \}/, "' + $1 + '");
+        memo.push(`${_tabs}label('${code}', { name: '${widgetId}' })`);
+        for (const sig of signals) {
+          subscriptions.push(`${sig}.subscribe(v => self.${widgetId}.set_label('${text.replace(/\{\$(\w+)\}/g, "' + v + '")}'));`);
+        }
+      } else if (text.trim().length > 0) {
+        memo.push(`${_tabs}label('${escapeText(text)}')`);
+      }
     }
     return memo;
   }, []).join(',\n');

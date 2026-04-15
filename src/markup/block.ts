@@ -6,6 +6,7 @@ import { render } from './mkd.ts';
 import { traverse } from './walk.ts';
 import { lexer } from '../templ/utils.ts';
 import { reduce, visit } from './utils.ts';
+import { reduceGTK, getSubscriptions, resetGTKCompiler } from './gtk-utils.ts';
 import { Template } from '../templ/main.ts';
 import { extract, rebase } from '../handler/utils.ts';
 import { Is, parseMarkup, identifier, ignore, dump } from '../utils/server.ts';
@@ -421,13 +422,30 @@ export const __attributes = ${this.$attributes};
 
   toString(): string {
     const defaults = '__src,__dest,__media,__context,__snippets,__fragments,__scripts,__styles,__doctype,__metadata,__attributes,__template';
-    const template = reduce(this.markup.content, this.context, 1);
+    
+    const isGTK = this.opts.target === 'gtk';
+    
+    if (isGTK) {
+      resetGTKCompiler();
+    }
+    
+    const template = isGTK
+      ? reduceGTK(this.markup.content, this.context, 1)
+      : reduce(this.markup.content, this.context, 1);
 
     if (!this.script) {
       const scope = Object.keys(this.snippets)
         .map((_: string) => `${_}=__snippets.${_}`)
         .concat(this.opts.props || [])
         .concat('...$$props').join(',');
+
+      if (isGTK) {
+        return `/* eslint-disable */
+${this.$prefix}
+${this.buildGTKTemplate(template)}
+export default {${defaults.replace('__template', '__gtk')}};
+`.replace(/\(\$\$\)/g, '($$$$,$$$$props)');
+      }
 
       return `/* eslint-disable */
 ${this.$prefix}
@@ -496,7 +514,7 @@ ${this.context === 'client'
 
 export const __routes = ${JSON.stringify(matched.routes)};
 ${this.$prefix}
-export const __template = ($$) => [${Block.wrap(template)}];
+${isGTK ? this.buildGTKTemplate(template) : `export const __template = ($$) => [${Block.wrap(template)}];`}
 export const __exported = ${JSON.stringify(exported)};
 export const __functions = {${calls.join(',')}};
 export default {${defaults},__functions,__exported,__handler,__routes};
@@ -507,6 +525,31 @@ for (const [, fn] of Object.entries(__functions)) fn.$ = __src;
       ? js.replace(/\(\$\$\)/g, `($$$$,{${lets.join(',')},...$$$$props})`)
       : js;
 
+    return code;
+  }
+
+  buildGTKTemplate(template: string): string {
+    const subs = getSubscriptions();
+    
+    const widgetCode = template.trim().startsWith('[')
+      ? template.trim().slice(1, -1)
+      : template.trim();
+    
+    let code = `export const __gtk = ({ ${this.opts.gtkImports || 'vstack, hstack, box, label, button, entry, toggle, check, scroll, stack, overlay, paned, expander, revealer, frame, progress, level, spinner, image, dropdown, calendar, listview'} }) => {\n`;
+    
+    code += `\tconst self = {};\n`;
+    code += `\tconst widget = ${widgetCode};\n`;
+    
+    if (subs.length > 0) {
+      code += `\n\t// Signal subscriptions\n`;
+      for (const sub of subs) {
+        code += `\t${sub}\n`;
+      }
+    }
+    
+    code += `\treturn { widget, self };\n`;
+    code += `};\n`;
+    
     return code;
   }
 
