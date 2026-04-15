@@ -7,3 +7,4 @@ vendor
 build
 dist
 tmp
+examples/components/main.html

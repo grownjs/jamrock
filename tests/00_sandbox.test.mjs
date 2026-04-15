@@ -4,6 +4,7 @@ import { test } from '@japa/runner';
 
 import { fixture } from './helpers/utils.mjs';
 
+fixture.fromFile('components/main.html');
 fixture.fromFile('components/basic/constants.html');
 fixture.fromFile('components/basic/static.html');
 fixture.fromFile('components/snippets/component.html');
