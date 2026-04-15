@@ -4,7 +4,7 @@
  * Shows all reactive signals from the target app with live values.
  */
 
-import { Gtk } from '../../dist/gtk.mjs';
+import { Gtk, GLib } from '../../dist/gtk.mjs';
 
 export function createSignalsPanel(bridge) {
   const signals = new Map(); // name → { value, prev, count, lastTime, row }
@@ -139,15 +139,19 @@ export function createSignalsPanel(bridge) {
 
     // Flash highlight
     entry.row.add_css_class('suggested-action');
-    setTimeout(() => entry.row.remove_css_class('suggested-action'), 500);
+    GLib.timeout_add(GLib.PRIORITY_DEFAULT, 500, () => {
+      entry.row.remove_css_class('suggested-action');
+      return GLib.SOURCE_REMOVE;
+    });
   }
 
   // Refresh time labels every second
-  setInterval(() => {
-    for (const [name, entry] of signals) {
+  GLib.timeout_add_seconds(GLib.PRIORITY_DEFAULT, 1, () => {
+    for (const [, entry] of signals) {
       entry.timeLbl.set_label(timeAgo(entry.lastTime));
     }
-  }, 1000);
+    return GLib.SOURCE_CONTINUE;
+  });
 
   // ─── Bridge Events ───────────────────────────────────────────────────────────
 

@@ -106,18 +106,18 @@ export function createEventsPanel(bridge) {
     row.set_margin_end(8);
     row.set_name('evtRow');
 
-    const mk = (text, w, css = '') => {
+    const mk = (text, w, ...classes) => {
       const l = new Gtk.Label({ label: text });
       l.set_halign(Gtk.Align.START);
       l.set_size_request(w, -1);
       l.set_ellipsize(3);
-      if (css) l.add_css_class(css);
+      for (const cls of classes) if (cls) l.add_css_class(cls);
       return l;
     };
 
     const kindCss = msg.kind === 'clicked' ? 'success' : msg.kind === 'signal' ? 'accent' : '';
 
-    row.append(mk(formatTime(msg.time ?? Date.now()), 70, 'dim-label monospace'));
+    row.append(mk(formatTime(msg.time ?? Date.now()), 70, 'dim-label', 'monospace'));
     row.append(mk(msg.widget ?? msg.name ?? '—', 120, 'monospace'));
     row.append(mk(msg.kind ?? msg.type, 90, kindCss));
     row.append(mk(formatEventValue(msg), 200, 'dim-label'));
