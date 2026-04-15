@@ -16,7 +16,7 @@ jobs:
 
     services:
       backend:
-        image: ghcr.io/muchobien/pocketbase:latest
+        image: ghcr.io/muchobien/pocketbase:0.22.21
         ports:
           - "8090:8090"
 
