@@ -252,6 +252,13 @@ export function extendConnection(
   const { store, session, cookies } = extension;
   const _headers = conn.headers;
 
+  // Set the session ID on the request so it can be saved later
+  (conn as any).req.sid = session.sid;
+
+  // Set the sid cookie so the browser persists the session
+  (conn as any).resp_cookies = (conn as any).resp_cookies || new Map();
+  (conn as any).resp_cookies.set('sid', { value: session.sid, options: { httpOnly: true, path: '/' } });
+
   conn.cookie = function cookie(key: string, value: any, config?: any) {
     if (value === null) {
       config = { expires: new Date(0) };

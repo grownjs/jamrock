@@ -5,16 +5,14 @@ export async function execAsync(chunk: any, ctx: any[], isSsr: boolean = true): 
   let result: any = await chunk;
 
   if (Is.func(result)) {
-    if (!isSsr && result.name === '$signal') {
+    const name = (result as Function).name;
+    if (!isSsr && name === '$signal') {
       // Preserve $signal functions for client-side reactivity
-    } else if (!result.name) {
-      // Original behavior: only call unnamed functions in SSR
-      result = await result.apply(undefined, ctx);
-    } else if (!isSsr) {
-      // Client-side: call all named functions except $signal
+    } else if (!name || name === '$signal') {
+      // Original: call unnamed functions and $signal in both SSR and client
       result = await result.apply(undefined, ctx);
     }
-    // SSR + named function (not $signal): pass through unchanged (original behavior)
+    // Named functions (not $signal): pass through — original SSR behavior
   }
 
   if (Is.arr(result)) {
