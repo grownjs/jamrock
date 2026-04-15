@@ -7,6 +7,10 @@ const RE_COMMENTS = /\/\*[\S\s]*?\*\/|\/\/.*/g;
 // Matches dynamic import() calls: import('specifier') or import("specifier")
 const RE_DYNAMIC = /\bimport\s*\(\s*(['"])([^'"]+)\1\s*\)/g;
 
+// Matches CSS @import statements: @import "file" or @import url("file")
+// Captures the specifier from both quoted and url() forms.
+const RE_CSS_IMPORT = /@import\s+(?:url\s*\(\s*)?(['"]?)([^'"\s)]+)\1\s*\)?/g;
+
 function extractSpecifier($1: string, $2: string, $3: string, $4: string): string {
   return $4 || $3 || $2 || $1;
 }
@@ -54,6 +58,40 @@ export function rewriteImports(content: string, destFile: string, dest: string, 
       if (!isRelative(src)) return match;
       return match.replace(src, rewriteSpec(src));
     });
+}
+
+/**
+ * Resolve plain CSS @import statements recursively, inlining all imported
+ * files into a single flat CSS string. HTTP/HTTPS and absolute imports are
+ * left as-is. Returns the flattened source and the list of imported paths
+ * (for dependency tracking / hot-reload).
+ */
+export function resolveCssImports(
+  content: string,
+  filepath: string,
+  visited: Set<string> = new Set(),
+): { source: string; children: string[] } {
+  const children: string[] = [];
+  const dir = Template.dirname(filepath);
+
+  const source = content.replace(RE_CSS_IMPORT, (match: string, _quote: string, src: string) => {
+    // Skip HTTP/HTTPS and absolute paths — leave them for the browser
+    if (!isRelative(src)) return match;
+
+    const abs = Template.join(dir, src);
+    if (!Template.exists(abs)) return match;
+    if (visited.has(abs)) return ''; // cycle guard — drop duplicate import
+
+    visited.add(abs);
+
+    const childContent = Template.read(abs);
+    const { source: inlined, children: nested } = resolveCssImports(childContent, abs, visited);
+
+    children.push(abs, ...nested);
+    return inlined;
+  });
+
+  return { source, children };
 }
 
 /**
