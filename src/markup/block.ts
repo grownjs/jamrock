@@ -7,9 +7,11 @@ import { traverse } from './walk.ts';
 import { lexer } from '../templ/utils.ts';
 import { reduce, visit } from './utils.ts';
 import { reduceGTK, getSubscriptions, resetGTKCompiler } from './gtk-utils.ts';
-import { Template } from '../templ/main.ts';
 import { extract, rebase } from '../handler/utils.ts';
 import { Is, parseMarkup, identifier, ignore, dump } from '../utils/server.ts';
+import { join, dirname, relative, filename } from '../utils/path.ts';
+import { read, exists, getShared, runtime as loaderRuntime } from '../templ/loader.ts';
+import { refetch } from '../templ/compiler.ts';
 
 const RE_EXPORT_DEFAULT = /\nexport default[\s{]/;
 const RE_RESOLVE_IMPORTS = /\/\*@@\*\/__resolve\('(.+?)'\)/g;
@@ -57,7 +59,7 @@ export class Block {
     const dest = rebase(`${base}${src}`);
     const id = opts.scope || (identifier('jam', src) as string[]).join('-');
 
-    const __dirname = Template.dirname(`${base}/${src}`);
+    const __dirname = dirname(`${base}/${src}`);
     const chunks: any[] = [];
 
     tpl = tpl.replace(/```(\w+\n)?([^]*?)```/g, (_: string, $1: string, $2: string) => {
@@ -175,12 +177,12 @@ export class Block {
 
       children = this.module.children.concat(this.script.children)
         .filter((_: string) => _.includes('.md') || _.includes('.html'))
-        .map((_: string) => ({ ref: _, src: Template.join(this.base, _) }))
-        .map((_: any) => Object.defineProperty(_, 'code', { get: () => Template.read(_.src) }));
+        .map((_: string) => ({ ref: _, src: join(this.base, _) }))
+        .map((_: any) => Object.defineProperty(_, 'code', { get: () => read(_.src) }));
 
       imports = this.module.children.concat(this.script.children)
         .filter((_: string) => !(_.includes('.md') || _.includes('.html')) && _[0] === '.')
-        .map((_: string) => ({ ref: _, src: Template.join(this.base, _) }));
+        .map((_: string) => ({ ref: _, src: join(this.base, _) }));
     }
 
     Object.defineProperty(this, 'locations', { value: locations });
@@ -261,9 +263,9 @@ export const __attributes = ${this.$attributes};
       if (path.includes('://')) return;
       if (path.charAt(0) === '/') return;
 
-      const file = Template.join(this.base, path);
+      const file = join(this.base, path);
 
-      if (!Template.exists(file)) {
+      if (!exists(file)) {
         throw new Error(`File not found '${path}' (${this.src})`);
       }
 
@@ -287,7 +289,7 @@ export const __attributes = ${this.$attributes};
         }
 
         if (inline) {
-          const svgContent = Template.read(file)
+          const svgContent = read(file)
             .trim()
             .replace(/>\s*</g, '><');
 
@@ -303,7 +305,7 @@ export const __attributes = ${this.$attributes};
             name: 'use',
             type: 'element',
             attributes: {
-              'xlink:href': `#${Template.filename(path, '.svg')}`,
+              'xlink:href': `#${filename(path, '.svg')}`,
               'data-location': file,
             },
           });
@@ -372,7 +374,7 @@ export const __attributes = ${this.$attributes};
           }
           if (node.attributes.rel === 'stylesheet' && node.attributes.inline && process.env.NODE_ENV === 'production') {
             node.name = 'style';
-            node.attributes = { '@html': await Template.refetch(node.attributes.href, this.base, this.opts) };
+            node.attributes = { '@html': await refetch(node.attributes.href, this.base, this.opts) };
           }
           break;
 
@@ -590,7 +592,7 @@ for (const [, fn] of Object.entries(__functions)) fn.$ = __src;
       .replace(/\bexport\b/g, ignore);
   }
 
-  static script(code: string, inline?: boolean, basedir: string = Template.shared): { prelude: string; interlude: string; hasImports?: boolean } {
+  static script(code: string, inline?: boolean, basedir: string = loaderRuntime.shared): { prelude: string; interlude: string; hasImports?: boolean } {
     const internals: string[] = [];
 
     let lastChunk = '';
@@ -653,20 +655,20 @@ for (const [, fn] of Object.entries(__functions)) fn.$ = __src;
       target ? `\nexport const __dest = '${target}';` : '',
     ].join('');
 
-    const base = source ? Template.dirname(source) : null;
-    const leaf = target ? Template.dirname(target) : null;
+    const base = source ? dirname(source) : null;
+    const leaf = target ? dirname(target) : null;
 
     if (!code.replace) dump({ code, source });
 
     return code
       .replace(RE_EXPORT_DEFAULT, (_: string) => [info, _].join('\n'))
       .replace(RE_RESOLVE_IMPORTS, (_: string, src: string) => {
-        const a = Template.join(base!, src);
-        const b = Template.join(leaf!, src);
+        const a = join(base!, src);
+        const b = join(leaf!, src);
 
         if (a === b) return `'${src}'`;
 
-        const c = Template.relative(b, a);
+        const c = relative(b, a);
 
         return `'${c}'`;
       });

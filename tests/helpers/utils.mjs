@@ -1,7 +1,6 @@
 import s from 'tiny-dedent';
 import util from 'util';
 import glob from 'fast-glob';
-import { Readable } from 'stream';
 import * as path from 'path';
 import * as fs from 'fs';
 
@@ -56,7 +55,8 @@ export function setup() {
   Template.read = x => fs.readFileSync(x).toString();
   Template.write = (f, x) => fs.writeFileSync(f, x);
   Template.exists = x => fs.existsSync(x) && fs.statSync(x).isFile();
-  Template.transpile = createTranspiler({ fs, Readable, getESbuildModule: () => import('esbuild') });
+  Template.transpile = createTranspiler({ fs });
+  Template.installAdapter();
 }
 
 export function reset() {
