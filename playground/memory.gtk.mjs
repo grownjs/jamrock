@@ -2,6 +2,7 @@ import {
   createWindow, vstack, hstack, label, button, grid,
   signal, GLib,
 } from '../dist/gtk.mjs';
+import { attachDevTools } from '../devtools/bridge-agent.mjs';
 
 const symbols = ['🍎', '🍊', '🍋', '🍇', '🍓', '🍑', '🥝', '🍒'];
 
@@ -65,7 +66,12 @@ function flipCard(cardId) {
 
 initGame();
 
-const { open } = createWindow({ title: 'Memory Game', width: 400, height: 450 });
+const { open, close, win } = createWindow({ title: 'Memory Game', width: 400, height: 450 });
+
+attachDevTools(win, { signals: { cards, flipped, matched, moves, gameWon } });
+
+// Fallback timeout for E2E / headless runs
+GLib.timeout_add_seconds(GLib.PRIORITY_DEFAULT, 30, () => { close(); return GLib.SOURCE_REMOVE; });
 
 open(() => vstack([
   label('Memory Game'),

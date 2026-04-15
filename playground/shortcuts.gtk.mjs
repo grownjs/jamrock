@@ -1,7 +1,7 @@
 import {
   createWindow, vstack, hstack, label, button,
-  signal,
-} from '../dist/gtk.mjs';
+  signal, GLib} from '../dist/gtk.mjs';
+import { attachDevTools } from '../devtools/bridge-agent.mjs';
 
 const lastKey = signal('None');
 const keyCount = signal(0);
@@ -31,7 +31,12 @@ function resetCounts() {
   keyCount.value = 0;
 }
 
-const { open } = createWindow({ title: 'Keyboard Shortcuts Demo', width: 350, height: 450 });
+const { open, close, win } = createWindow({ title: 'Keyboard Shortcuts Demo', width: 350, height: 450 });
+
+attachDevTools(win, { signals: { lastKey, keyCount, shortcuts } });
+
+// Fallback timeout for E2E / headless runs
+GLib.timeout_add_seconds(GLib.PRIORITY_DEFAULT, 30, () => { close(); return GLib.SOURCE_REMOVE; });
 
 open(() => vstack([
   label('Keyboard Shortcuts Demo'),

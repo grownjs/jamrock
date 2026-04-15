@@ -2,6 +2,7 @@ import {
   createWindow, vstack, hstack, label, button, range,
   signal, computed, GLib,
 } from '../dist/gtk.mjs';
+import { attachDevTools } from '../devtools/bridge-agent.mjs';
 
 const time = signal(new Date());
 const stopwatchRunning = signal(false);
@@ -36,7 +37,7 @@ function addLap() {
   laps.value = [...laps.value, stopwatchTime.value];
 }
 
-const { open, close } = createWindow({ title: 'Clock & Timer', width: 300, height: 450 });
+const { open, close, win } = createWindow({ title: 'Clock & Timer', width: 300, height: 450 });
 
 const timeout = GLib.timeout_add_seconds(GLib.PRIORITY_DEFAULT, 1, () => {
   time.value = new Date();
@@ -45,6 +46,11 @@ const timeout = GLib.timeout_add_seconds(GLib.PRIORITY_DEFAULT, 1, () => {
   }
   return GLib.SOURCE_CONTINUE;
 });
+
+attachDevTools(win, { signals: { time, stopwatchRunning, stopwatchTime, laps } });
+
+// Fallback timeout for E2E / headless runs
+GLib.timeout_add_seconds(GLib.PRIORITY_DEFAULT, 30, () => { close(); return GLib.SOURCE_REMOVE; });
 
 open(() => vstack([
   label('Clock & Timer'),

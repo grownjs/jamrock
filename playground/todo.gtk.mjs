@@ -2,6 +2,7 @@ import {
   createWindow, vstack, hstack, label, button, entry, range,
   signal, computed, GLib,
 } from '../dist/gtk.mjs';
+import { attachDevTools } from '../devtools/bridge-agent.mjs';
 
 const todos = signal([]);
 const input = signal('');
@@ -28,7 +29,12 @@ function removeTodo(id) {
   todos.value = todos.value.filter(t => t.id !== id);
 }
 
-const { open } = createWindow({ title: 'Todo App', width: 350, height: 400 });
+const { open, close, win } = createWindow({ title: 'Todo App', width: 350, height: 400 });
+
+attachDevTools(win, { signals: { todos, input } });
+
+// Fallback timeout for E2E / headless runs
+GLib.timeout_add_seconds(GLib.PRIORITY_DEFAULT, 30, () => { close(); return GLib.SOURCE_REMOVE; });
 
 open(() => vstack([
   label('Todo App'),

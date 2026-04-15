@@ -2,6 +2,7 @@ import {
   createWindow, vstack, hstack, label, button, progress,
   signal, GLib,
 } from '../dist/gtk.mjs';
+import { attachDevTools } from '../devtools/bridge-agent.mjs';
 
 const WORK_TIME = 25 * 60;
 const BREAK_TIME = 5 * 60;
@@ -72,7 +73,12 @@ function switchMode(newMode) {
   timeLeft.value = newMode === 'work' ? WORK_TIME : BREAK_TIME;
 }
 
-const { open } = createWindow({ title: 'Pomodoro Timer', width: 300, height: 350 });
+const { open, close, win } = createWindow({ title: 'Pomodoro Timer', width: 300, height: 350 });
+
+attachDevTools(win, { signals: { mode, timeLeft, running, sessions } });
+
+// Fallback timeout for E2E / headless runs
+GLib.timeout_add_seconds(GLib.PRIORITY_DEFAULT, 30, () => { close(); return GLib.SOURCE_REMOVE; });
 
 open(() => vstack([
   label('Pomodoro Timer'),

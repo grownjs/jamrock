@@ -1,7 +1,7 @@
 import {
   createWindow, vstack, hstack, label, button, range,
-  signal,
-} from '../dist/gtk.mjs';
+  signal, GLib} from '../dist/gtk.mjs';
+import { attachDevTools } from '../devtools/bridge-agent.mjs';
 
 const darkMode = signal(false);
 const notifications = signal(true);
@@ -11,7 +11,12 @@ const animations = signal(true);
 const fontSize = signal(14);
 const volume = signal(75);
 
-const { open } = createWindow({ title: 'Settings', width: 350, height: 500 });
+const { open, close, win } = createWindow({ title: 'Settings', width: 350, height: 500 });
+
+attachDevTools(win, { signals: { darkMode, notifications, autoSave, soundEffects, animations, fontSize, volume } });
+
+// Fallback timeout for E2E / headless runs
+GLib.timeout_add_seconds(GLib.PRIORITY_DEFAULT, 30, () => { close(); return GLib.SOURCE_REMOVE; });
 
 open(() => vstack([
   label('Settings'),

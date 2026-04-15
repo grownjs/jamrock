@@ -1,7 +1,7 @@
 import {
   createWindow, vstack, hstack, label, button, entry,
-  signal,
-} from '../dist/gtk.mjs';
+  signal, GLib} from '../dist/gtk.mjs';
+import { attachDevTools } from '../devtools/bridge-agent.mjs';
 
 const notes = signal([
   { id: 1, title: 'Welcome', content: 'This is your first note!' },
@@ -57,7 +57,12 @@ function deleteNote() {
   }
 }
 
-const { open } = createWindow({ title: 'Notes App', width: 450, height: 400 });
+const { open, close, win } = createWindow({ title: 'Notes App', width: 450, height: 400 });
+
+attachDevTools(win, { signals: { notes, selected, editing, editTitle, editContent } });
+
+// Fallback timeout for E2E / headless runs
+GLib.timeout_add_seconds(GLib.PRIORITY_DEFAULT, 30, () => { close(); return GLib.SOURCE_REMOVE; });
 
 open(() => vstack([
   label('Notes App'),

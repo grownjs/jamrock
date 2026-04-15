@@ -1,7 +1,7 @@
 import {
   createWindow, vstack, hstack, label, button, range,
-  signal, computed,
-} from '../dist/gtk.mjs';
+  signal, computed, GLib} from '../dist/gtk.mjs';
+import { attachDevTools } from '../devtools/bridge-agent.mjs';
 
 const red = signal(128);
 const green = signal(64);
@@ -42,7 +42,12 @@ function clearColors() {
   savedColors.value = [];
 }
 
-const { open } = createWindow({ title: 'Color Picker', width: 350, height: 500 });
+const { open, close, win } = createWindow({ title: 'Color Picker', width: 350, height: 500 });
+
+attachDevTools(win, { signals: { red, green, blue, alpha, savedColors } });
+
+// Fallback timeout for E2E / headless runs
+GLib.timeout_add_seconds(GLib.PRIORITY_DEFAULT, 30, () => { close(); return GLib.SOURCE_REMOVE; });
 
 open(() => vstack([
   label('Color Picker'),

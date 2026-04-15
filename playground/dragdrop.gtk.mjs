@@ -1,7 +1,7 @@
 import {
   createWindow, vstack, hstack, label, button,
-  signal,
-} from '../dist/gtk.mjs';
+  signal, GLib} from '../dist/gtk.mjs';
+import { attachDevTools } from '../devtools/bridge-agent.mjs';
 
 const items = signal([
   { id: 1, name: 'Item 1', color: '🔴' },
@@ -36,7 +36,12 @@ function onDrop(targetId) {
   draggedItem.value = null;
 }
 
-const { open } = createWindow({ title: 'Drag & Drop Demo', width: 350, height: 400 });
+const { open, close, win } = createWindow({ title: 'Drag & Drop Demo', width: 350, height: 400 });
+
+attachDevTools(win, { signals: { items, draggedItem, dropCount } });
+
+// Fallback timeout for E2E / headless runs
+GLib.timeout_add_seconds(GLib.PRIORITY_DEFAULT, 30, () => { close(); return GLib.SOURCE_REMOVE; });
 
 open(() => vstack([
   label('Drag & Drop Demo'),

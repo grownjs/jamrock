@@ -1,8 +1,8 @@
 import {
   createWindow, vstack, hstack, label, button, entry, toggle, progress, level, range,
   spinbutton, revealer, expander, calendar, spinner, separator, image, linkbutton,
-  signal,
-} from '../dist/gtk.mjs';
+  signal, GLib} from '../dist/gtk.mjs';
+import { attachDevTools } from '../devtools/bridge-agent.mjs';
 
 const count = signal(0);
 const text = signal('');
@@ -15,7 +15,12 @@ const revealed = signal(true);
 const expanded = signal(true);
 const selectedDate = signal('No date selected');
 
-const { open } = createWindow({ title: 'Widget Gallery', width: 350, height: 600 });
+const { open, close, win } = createWindow({ title: 'Widget Gallery', width: 350, height: 600 });
+
+attachDevTools(win, { signals: { count, text, toggled, progressVal, levelVal, rangeVal, spinValue, revealed, expanded, selectedDate } });
+
+// Fallback timeout for E2E / headless runs
+GLib.timeout_add_seconds(GLib.PRIORITY_DEFAULT, 30, () => { close(); return GLib.SOURCE_REMOVE; });
 
 open(() => vstack([
   label('Widget Gallery'),

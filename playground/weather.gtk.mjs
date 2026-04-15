@@ -1,7 +1,7 @@
 import {
   createWindow, vstack, hstack, label, button,
-  signal,
-} from '../dist/gtk.mjs';
+  signal, GLib} from '../dist/gtk.mjs';
+import { attachDevTools } from '../devtools/bridge-agent.mjs';
 
 const cities = signal([
   { name: 'New York', temp: 72, condition: 'Sunny', icon: '☀️' },
@@ -36,7 +36,12 @@ function refreshWeather() {
   }));
 }
 
-const { open } = createWindow({ title: 'Weather App', width: 450, height: 400 });
+const { open, close, win } = createWindow({ title: 'Weather App', width: 450, height: 400 });
+
+attachDevTools(win, { signals: { cities, selectedCity, unit } });
+
+// Fallback timeout for E2E / headless runs
+GLib.timeout_add_seconds(GLib.PRIORITY_DEFAULT, 30, () => { close(); return GLib.SOURCE_REMOVE; });
 
 open(() => vstack([
   label('Weather App'),

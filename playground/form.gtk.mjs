@@ -1,7 +1,7 @@
 import {
   createWindow, vstack, hstack, label, button, entry, range,
-  signal,
-} from '../dist/gtk.mjs';
+  signal, GLib} from '../dist/gtk.mjs';
+import { attachDevTools } from '../devtools/bridge-agent.mjs';
 
 const name = signal('');
 const email = signal('');
@@ -33,7 +33,12 @@ function resetForm() {
   volume.value = 75;
 }
 
-const { open } = createWindow({ title: 'Form Demo', width: 350, height: 500 });
+const { open, close, win } = createWindow({ title: 'Form Demo', width: 350, height: 500 });
+
+attachDevTools(win, { signals: { name, email, age, bio, notifications, theme, volume } });
+
+// Fallback timeout for E2E / headless runs
+GLib.timeout_add_seconds(GLib.PRIORITY_DEFAULT, 30, () => { close(); return GLib.SOURCE_REMOVE; });
 
 open(() => vstack([
   label('Form Demo'),

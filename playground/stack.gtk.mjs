@@ -1,7 +1,7 @@
 import {
   createWindow, vstack, hstack, label, button,
-  signal,
-} from '../dist/gtk.mjs';
+  signal, GLib} from '../dist/gtk.mjs';
+import { attachDevTools } from '../devtools/bridge-agent.mjs';
 
 const currentPage = signal('home');
 const clickCount = signal(0);
@@ -14,7 +14,12 @@ function setPage(page) {
   currentPage.value = page;
 }
 
-const { open } = createWindow({ title: 'Stack Demo', width: 350, height: 350 });
+const { open, close, win } = createWindow({ title: 'Stack Demo', width: 350, height: 350 });
+
+attachDevTools(win, { signals: { currentPage, clickCount } });
+
+// Fallback timeout for E2E / headless runs
+GLib.timeout_add_seconds(GLib.PRIORITY_DEFAULT, 30, () => { close(); return GLib.SOURCE_REMOVE; });
 
 open(() => vstack([
   label('Stack Demo'),

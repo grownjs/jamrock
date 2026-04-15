@@ -2,6 +2,7 @@ import {
   createWindow, vstack, hstack, label, button,
   signal, GLib,
 } from '../dist/gtk.mjs';
+import { attachDevTools } from '../devtools/bridge-agent.mjs';
 
 const time = signal(0);
 const running = signal(false);
@@ -59,7 +60,12 @@ function toggle() {
   running.value ? stop() : start();
 }
 
-const { open } = createWindow({ title: 'Stopwatch', width: 300, height: 400 });
+const { open, close, win } = createWindow({ title: 'Stopwatch', width: 300, height: 400 });
+
+attachDevTools(win, { signals: { time, running, laps } });
+
+// Fallback timeout for E2E / headless runs
+GLib.timeout_add_seconds(GLib.PRIORITY_DEFAULT, 30, () => { close(); return GLib.SOURCE_REMOVE; });
 
 open(() => vstack([
   label('Stopwatch'),

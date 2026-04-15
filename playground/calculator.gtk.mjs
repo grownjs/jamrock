@@ -1,7 +1,7 @@
 import {
   createWindow, vstack, hstack, label, button, grid,
-  signal,
-} from '../dist/gtk.mjs';
+  signal, GLib} from '../dist/gtk.mjs';
+import { attachDevTools } from '../devtools/bridge-agent.mjs';
 
 const display = signal('0');
 const previous = signal(null);
@@ -73,7 +73,12 @@ function calculate() {
   waiting.value = true;
 }
 
-const { open } = createWindow({ title: 'Calculator', width: 280, height: 350 });
+const { open, close, win } = createWindow({ title: 'Calculator', width: 280, height: 350 });
+
+attachDevTools(win, { signals: { display, previous, operator, waiting } });
+
+// Fallback timeout for E2E / headless runs
+GLib.timeout_add_seconds(GLib.PRIORITY_DEFAULT, 30, () => { close(); return GLib.SOURCE_REMOVE; });
 
 open(() => vstack([
   label('Calculator'),

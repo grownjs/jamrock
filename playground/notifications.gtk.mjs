@@ -1,7 +1,7 @@
 import {
   createWindow, vstack, hstack, label, button, entry,
-  signal,
-} from '../dist/gtk.mjs';
+  signal, GLib} from '../dist/gtk.mjs';
+import { attachDevTools } from '../devtools/bridge-agent.mjs';
 
 const notifications = signal([]);
 const notificationId = signal(0);
@@ -42,7 +42,12 @@ function setType(type) {
   notificationType.value = type;
 }
 
-const { open } = createWindow({ title: 'Notifications Demo', width: 400, height: 450 });
+const { open, close, win } = createWindow({ title: 'Notifications Demo', width: 400, height: 450 });
+
+attachDevTools(win, { signals: { notifications, notificationId, notificationType, notificationMessage } });
+
+// Fallback timeout for E2E / headless runs
+GLib.timeout_add_seconds(GLib.PRIORITY_DEFAULT, 30, () => { close(); return GLib.SOURCE_REMOVE; });
 
 open(() => vstack([
   label('Notifications Demo'),

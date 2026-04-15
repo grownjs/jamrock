@@ -1,7 +1,7 @@
 import {
   createWindow, vstack, hstack, label, button, entry,
-  signal,
-} from '../dist/gtk.mjs';
+  signal, GLib} from '../dist/gtk.mjs';
+import { attachDevTools } from '../devtools/bridge-agent.mjs';
 
 const currentPath = signal('/');
 const selectedItem = signal(null);
@@ -38,7 +38,12 @@ function getFilteredFiles() {
   return files.value.filter(f => f.name.toLowerCase().includes(searchFilter.value));
 }
 
-const { open } = createWindow({ title: 'File Browser', width: 400, height: 450 });
+const { open, close, win } = createWindow({ title: 'File Browser', width: 400, height: 450 });
+
+attachDevTools(win, { signals: { currentPath, selectedItem, viewMode, searchFilter, files } });
+
+// Fallback timeout for E2E / headless runs
+GLib.timeout_add_seconds(GLib.PRIORITY_DEFAULT, 30, () => { close(); return GLib.SOURCE_REMOVE; });
 
 open(() => vstack([
   label('File Browser'),

@@ -1,7 +1,7 @@
 import {
   createWindow, vstack, hstack, label, button, entry, progress, range, revealer,
-  signal,
-} from '../dist/gtk.mjs';
+  signal, GLib} from '../dist/gtk.mjs';
+import { attachDevTools } from '../devtools/bridge-agent.mjs';
 
 const page = signal('home');
 const searchQuery = signal('');
@@ -27,7 +27,12 @@ function toggleReveal() {
   revealText.value = !revealText.value;
 }
 
-const { open } = createWindow({ title: 'Multi-Page App', width: 400, height: 500 });
+const { open, close, win } = createWindow({ title: 'Multi-Page App', width: 400, height: 500 });
+
+attachDevTools(win, { signals: { page, searchQuery, selectedIcon, selectedFruit, progressVal, revealText, entryText } });
+
+// Fallback timeout for E2E / headless runs
+GLib.timeout_add_seconds(GLib.PRIORITY_DEFAULT, 30, () => { close(); return GLib.SOURCE_REMOVE; });
 
 open(() => vstack([
   label('Multi-Page App'),

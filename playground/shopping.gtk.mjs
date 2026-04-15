@@ -1,7 +1,7 @@
 import {
   createWindow, vstack, hstack, label, button, entry,
-  signal,
-} from '../dist/gtk.mjs';
+  signal, GLib} from '../dist/gtk.mjs';
+import { attachDevTools } from '../devtools/bridge-agent.mjs';
 
 const items = signal([
   { id: 1, name: 'Apple', price: 1.99 },
@@ -39,7 +39,12 @@ function removeItem(id) {
   }
 }
 
-const { open } = createWindow({ title: 'Shopping List', width: 500, height: 400 });
+const { open, close, win } = createWindow({ title: 'Shopping List', width: 500, height: 400 });
+
+attachDevTools(win, { signals: { items, selectedItem, newItemName, newItemPrice } });
+
+// Fallback timeout for E2E / headless runs
+GLib.timeout_add_seconds(GLib.PRIORITY_DEFAULT, 30, () => { close(); return GLib.SOURCE_REMOVE; });
 
 open(() => vstack([
   label('Shopping List'),
