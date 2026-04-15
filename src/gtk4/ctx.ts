@@ -58,7 +58,7 @@ export function createWindow(props: WindowProps = {}) {
     if (minimize) win.minimize();
     // Headless mode: hide window after present — no borders, not mapped,
     // but widgets are realized and emit() works normally
-    if (GLib.getenv('JAMROCK_HEADLESS') === '1') win.set_visible(false);
+    if (GLib.getenv('JAMROCK_HEADLESS') === '1') win.hide();
     win.present();
     main.run();
     return win;
