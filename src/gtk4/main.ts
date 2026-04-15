@@ -96,8 +96,13 @@ export type WindowProps = {
   height?: number;
   onClose?: () => boolean;
   maximize?: boolean;
-  decorated?: boolean;
+  minimize?: boolean;
   fullscreen?: boolean;
+  decorated?: boolean;
+  deletable?: boolean;
+  resizable?: boolean;
+  modal?: boolean;
+  transientFor?: Gtk.Window;
   stylesheets?: string[];
   application?: Gtk.Application;
 };

@@ -24,7 +24,13 @@ export function createWidget(callback: WidgetCallback) {
 }
 
 export function createWindow(props: WindowProps = {}) {
-  const { loop, title, width, height, stylesheets, fullscreen, maximize, onClose, ...defaults } = props;
+  const {
+    loop, title, width, height,
+    fullscreen, maximize, minimize,
+    decorated, deletable, resizable,
+    modal, transientFor,
+    stylesheets, onClose, ...defaults
+  } = props;
 
   Gtk.init();
 
@@ -42,8 +48,14 @@ export function createWindow(props: WindowProps = {}) {
 
   function open(callback: CallbackUse) {
     win.set_child(use(callback) as any);
+    if (decorated !== undefined) win.set_decorated(decorated);
+    if (deletable !== undefined) win.set_deletable(deletable);
+    if (resizable !== undefined) win.set_resizable(resizable);
+    if (modal !== undefined) win.set_modal(modal);
+    if (transientFor) win.set_transient_for(transientFor);
     if (fullscreen) win.fullscreen();
     if (maximize) win.maximize();
+    if (minimize) win.minimize();
     win.present();
     main.run();
     return win;
