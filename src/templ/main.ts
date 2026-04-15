@@ -546,7 +546,7 @@ export class Template {
 
       let [doc, body, head, attrs]: any[] = await Promise.all([
         view(component.__doctype, state, `${component.__src}#doctype`),
-        view(component.__template, state, `${component.__src}#template`),
+        view(component.__vdom, state, `${component.__src}#vdom`),
         view(component.__metadata, state, `${component.__src}#metadata`),
         view(component.__attributes, state, `${component.__src}#attributes`),
       ]);
@@ -602,7 +602,7 @@ export class Template {
       let state = { ...props, ...data };
       let [doc, body, head, attrs]: any[] = [
         view(component.__doctype, state, `${component.__src}#doctype`),
-        view(component.__template, state, `${component.__src}#template`),
+        view(component.__vdom, state, `${component.__src}#vdom`),
         view(component.__metadata, state, `${component.__src}#metadata`),
         view(component.__attributes, state, `${component.__src}#attributes`),
       ];

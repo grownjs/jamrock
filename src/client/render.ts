@@ -12,9 +12,9 @@ export function clientComponent(this: any, mod: any, context: any, filepath?: st
     }
 
     let data = props;
-    return (render as any)(child.__template, data, child.__src);
+    return (render as any)(child.__vdom, data, child.__src);
   });
-  const next = (data: any) => (render as any)(mod.__template, data, mod.__src);
+  const next = (data: any) => (render as any)(mod.__vdom, data, mod.__src);
   const mount = async (el: any, props?: any, _events?: any) => {
     if (el.__state) {
       throw new Error('Component already mounted');

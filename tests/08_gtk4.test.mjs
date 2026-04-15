@@ -86,7 +86,7 @@ async function renderGTK(mod, props = {}) {
   };
 
   // Call the template directly
-  const result = mod.__template(mockSelf, data);
+  const result = mod.__vdom(mockSelf, data);
 
   // Process with execAsync to resolve $signal functions
   const { execAsync } = await import('../src/render/async.ts');

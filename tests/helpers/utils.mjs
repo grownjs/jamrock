@@ -25,7 +25,7 @@ export function createView(loader) {
   return executeAsync(null, loader, async (tpl, props, _loader, _context) => {
     return Promise.resolve(tpl.__handler ? tpl.__handler(props, _loader) : null)
       .then(ctx => (ctx?.__context ? ctx.__context() : { __scope: props }))
-      .then(ctx => tpl.__template(_context, ctx.__scope ?? ctx.__callback?.()));
+      .then(ctx => tpl.__vdom(_context, ctx.__scope ?? ctx.__callback?.()));
   });
 }
 
@@ -146,7 +146,7 @@ export async function generated(block) {
 
         const main = self?.__context ? self.__context() : null;
         const data = main?.__scope ?? main?.__callback?.();
-        const result = await view(mod.__template, { ...props, ...data });
+        const result = await view(mod.__vdom, { ...props, ...data });
         const html = taggify(result);
 
         return { html };

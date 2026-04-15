@@ -421,7 +421,7 @@ export const __attributes = ${this.$attributes};
   }
 
   toString(): string {
-    const defaults = '__src,__dest,__media,__context,__snippets,__fragments,__scripts,__styles,__doctype,__metadata,__attributes,__template';
+    const defaults = '__src,__dest,__media,__context,__snippets,__fragments,__scripts,__styles,__doctype,__metadata,__attributes,__vdom';
     
     const isGTK = this.opts.target === 'gtk';
     
@@ -443,13 +443,13 @@ export const __attributes = ${this.$attributes};
         return `/* eslint-disable */
 ${this.$prefix}
 ${this.buildGTKTemplate(template, [])}
-export default {${defaults.replace('__template', '__gtk')}};
+export default {${defaults.replace('__vdom', '__gtk')}};
 `.replace(/\(\$\$\)/g, '($$$$,$$$$props)');
       }
 
       return `/* eslint-disable */
 ${this.$prefix}
-export const __template = ($$,{${scope}}) => {
+export const __vdom = ($$,{${scope}}) => {
   return [${Block.wrap(template)}];
 };
 export default {${defaults}};
@@ -514,10 +514,10 @@ ${this.context === 'client'
 
 export const __routes = ${JSON.stringify(matched.routes)};
 ${this.$prefix}
-${isGTK ? this.buildGTKTemplate(template, lets) : `export const __template = ($$) => [${Block.wrap(template)}];`}
+${isGTK ? this.buildGTKTemplate(template, lets) : `export const __vdom = ($$) => [${Block.wrap(template)}];`}
 export const __exported = ${JSON.stringify(exported)};
 export const __functions = {${calls.join(',')}};
-export default {${isGTK ? defaults.replace('__template', '__gtk') : defaults},__functions,__exported,__handler,__routes};
+export default {${isGTK ? defaults.replace('__vdom', '__gtk') : defaults},__functions,__exported,__handler,__routes};
 for (const [, fn] of Object.entries(__functions)) fn.$ = __src;
 `;
 

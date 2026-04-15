@@ -338,7 +338,7 @@ test.group('template transformation', t => {
       export const __styles = [];
       export const __scripts = [];
       export const __doctype = () => ({});
-      export const __template = () => ['FIXME'];
+      export const __vdom = () => ['FIXME'];
       export const __metadata = () => [];
       export const __attributes = () => ({});
     `;
