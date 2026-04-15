@@ -49,11 +49,11 @@ export function attrs(data: Record<string, any>): string {
       && !(Is.func(value) || Is.plain(value))
     ) {
       const truthy = value === true || value === 'true' || value === key;
-      const unsafe = value === '' || key.includes(':');
-      const quotes = RE_QUOTES_REQUIRED.test(value);
+      const unsafe = value === '' || key.includes(':') || Is.arr(value);
+      const quotes = RE_QUOTES_REQUIRED.test(value) || Is.arr(value);
 
-      value = (truthy && (unsafe ? 'true' : key)) || String(value);
-      value = quotes || unsafe ? `"${value.replace(/"/g, '&quot;')}"` : value;
+      value = (truthy && (unsafe ? 'true' : key)) || (Is.arr(value) ? JSON.stringify(value) : String(value));
+      value = quotes || unsafe ? `"${(Is.arr(value) ? JSON.stringify(value) : value).replace(/"/g, '&quot;')}"` : value;
       memo.push(` ${key}${!truthy || unsafe ? `=${value}` : ''}`);
     }
     return memo;

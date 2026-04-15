@@ -722,7 +722,7 @@ export class Template {
 
     const fields = component.__exported.concat('tag');
     const attrs = Object.keys(props).reduce((memo: any, key: string) => {
-      if (Is.scalar(props[key]) && !fields.includes(key)) memo[key] = props[key];
+      if ((Is.scalar(props[key]) || Is.arr(props[key])) && !fields.includes(key)) memo[key] = props[key];
       return memo;
     }, { 'data-component': ctx.ref });
 
