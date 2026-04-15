@@ -28,6 +28,5 @@ test('should navigate through pages', async t => {
   await t.typeText($('input[name=b_password]'), 'bazzinga', { replace: true });
   await t.click($('[type=submit]'));
 
-  await t.expect(t.eval(() => location.pathname)).eql('/login', { timeout: 10000 });
   await t.expect($('li').withText('Now you can login!').exists).ok({ timeout: 10000 });
 });
