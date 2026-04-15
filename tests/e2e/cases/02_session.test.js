@@ -28,5 +28,7 @@ test('should navigate through pages', async t => {
   await t.typeText($('input[name=b_password]'), 'bazzinga', { replace: true });
   await t.click($('[type=submit]'));
 
+  // Wait for the page to navigate to /login after successful registration
+  await t.expect($('h3').withText('Please log in').exists).ok({ timeout: 10000 });
   await t.expect($('li').withText('Now you can login!').exists).ok({ timeout: 10000 });
 });
