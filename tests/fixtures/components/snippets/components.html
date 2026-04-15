@@ -1,0 +1,14 @@
+<script context="module">
+  import Component from './component.html';
+  import Static from '../basic/static.html';
+</script>
+<head>
+  <title>It works?</title>
+</head>
+<body class="something" />
+<Component>
+  {#snippet other()}...{/snippet}
+</Component>
+<Static>
+  {#snippet after(value)}!!!({value}???){/snippet}
+</Static>

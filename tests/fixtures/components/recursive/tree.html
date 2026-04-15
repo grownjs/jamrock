@@ -1,0 +1,14 @@
+<script>
+  import Tree from './tree.html';
+  export let data = [];
+</script>
+{#if data.length}
+  <ul>
+    {#each data as item}
+      <li>
+        {item.label}
+        <Tree data={item.children} />
+      </li>
+    {/each}
+  </ul>
+{/if}

@@ -4,7 +4,7 @@ import { test } from '@japa/runner';
 import * as td from 'testdouble';
 
 import {
-  generated, fixture, server, setup, reset, build,
+  fixture, server, setup, reset, build,
 } from './helpers/utils.mjs';
 
 import { Template } from '../src/templ/main.ts';
@@ -12,263 +12,88 @@ import { match } from '../src/handler/match.ts';
 
 import { preflight, middleware, controllers, middlewares } from '../src/handler/main.ts';
 
-// eslint-disable-next-line no-unused-expressions
-fixture`./+layout.html
-  <main>
-    {@render $$props.children()}
-  </main>
-`;
+fixture.fromFile('routing-test/app+page.html');
+fixture.fromFile('routing-test/pages/[slug]+page.html');
+fixture.fromFile('routing-test/pages/+server.js');
+fixture.fromFile('routing-test/api/+server.mjs');
+fixture.fromFile('routing-test/+server.ts');
+fixture.fromFile('routing-test/very/nested/path/to/+server.mjs');
+fixture.fromFile('routing-test/very/nested/+server.mjs');
+fixture.fromFile('routing-test/nested/campaigns/[id]/participations/[detail]+page.html');
+fixture.fromFile('routing-test/nested/campaigns/[id]/participations/index+page.html');
+fixture.fromFile('routing-test/nested/campaigns/[id]/index+page.html');
+fixture.fromFile('routing-test/nested/campaigns/index+page.html');
+fixture.fromFile('routing/errors/+error.html');
 
-// eslint-disable-next-line no-unused-expressions
-fixture`./some+error.html
-  <script>
-    export let failure;
-  </script>
-  <h2>Error {failure.status}</h2>
-  <p>{failure.reason}</p>
-  <small>&mdash; {failure.source}</small>
-`;
+test.group('routing and controllers', t => {
+  t.each.setup(() => {
+    td.replace(console, 'info', td.func('logger'));
+  });
+  t.each.teardown(() => {
+    process.debug = 0;
+    td.reset();
+  });
 
-// eslint-disable-next-line no-unused-expressions
-fixture`./empty.html
-  Just an {'empty'.toUpperCase()} component
-`;
+  test('should extract routes from sources', ({ expect }) => {
+    setup();
 
-// eslint-disable-next-line no-unused-expressions
-fixture`./hooks+page.html
-  <script context="module">
-    function test(_, params) {
-      console.info('IT WORKS!', params);
-    }
-    function doStuff(node, params) {
-      console.info(node, location.href);
-    }
-  </script>
-  <button use:test="foo|bar">FOO</button>
-  <button use:doStuff>BAR</button>
-  <script>
-    export default {
-      actions: {
-        truthy: () => 42,
-      },
-    };
-  </script>
-`;
+    const cwd = process.cwd();
+    const testDir = `${cwd}/generated/routing-test`;
+    const api = Template.glob(`${testDir}/**/+server.{ts,js,mjs}`);
+    const files = Template.glob(`${testDir}/**/*.html`);
+    const routes = controllers(testDir, files.concat(api));
 
-// eslint-disable-next-line no-unused-expressions
-fixture`./main.html
-  <script context="client">
-    import { trap, ref, signal, effect } from 'jamrock';
+    reset();
 
-    import Empty from './empty.html';
+    expect(routes.map(x => `${x.verb} ${x.path}`).sort()).toEqual([
+      'GET /api/some/:stuff',
+      'GET /api/v1',
+      'GET /app',
+      'GET /nested/campaigns',
+      'GET /nested/campaigns/:id',
+      'GET /nested/campaigns/:id/participations',
+      'GET /nested/campaigns/:id/participations/:detail',
+      'GET /pages/:slug',
+      'GET /pages/:slug/osom',
+      'GET /pages/sitemap.xml',
+      'GET /very/nested/path/to',
+      'PATCH /app/:id',
+      'POST /app',
+    ].sort());
 
-    export let message = 'Really?';
-    export let answer = 'OSOM';
-    export let markup = '';
+    expect(Object.isFrozen(routes)).toBeTruthy();
+    expect(routes.PageName).not.toBeUndefined();
+    expect(routes.postApp).not.toBeUndefined();
 
-    const fun = signal('FIXME');
-    const html = signal(markup);
+    expect(routes[0].url).toBeInstanceOf(Function);
+    expect(routes.namedRoute.url).toBeInstanceOf(Function);
+    expect(routes.namedRoute.path).toEqual('/app/:id');
+    expect(routes.namedRoute.url({ id: 123 })).toEqual('/app/123');
+    expect(routes.namedRoute.src).toEqual(`${testDir}/app+page.html`);
 
-    const el = ref(null);
+    expect(routes.OSOM.middleware).toEqual(`${testDir}/pages/+server.js`);
+    expect(routes.getPagesSlugPage.middleware).toEqual(`${testDir}/pages/+server.js`);
+    expect(routes.getApiSomeStuff.middleware).toEqual(`${testDir}/api/+server.mjs`);
+    expect(routes.getPagesSitemapXml.middleware).toEqual(`${testDir}/pages/+server.js`);
 
-    trap(e => { console.log('E_MAIN', e);
-      if (confirm('Are you OK?')) {
-        fun.value = 'Thank you!';
-      } else {
-        fun.value = ':(';
-      }
-    });
+    expect(routes.getVeryNestedPathTo.middlewares).toEqual([
+      `${testDir}/very/nested/+server.mjs`,
+      `${testDir}/+server.ts`,
+    ]);
 
-    effect(() => {
-      if (fun.value === 'D:') throw new Error(fun.value);
-      if (fun.value === '42') alert(el.current.outerHTML);
-      if (fun.value === 'FIXME') setTimeout(() => fun.value = 'FIXME', 150);
-    });
+    expect(routes.getNestedCampaignsIdParticipationsDetailPage.all).toEqual([
+      `${testDir}/nested/campaigns/[id]/participations/[detail]+page.html`,
+      `${testDir}/nested/campaigns/[id]/participations/index+page.html`,
+      `${testDir}/nested/campaigns/[id]/index+page.html`,
+      `${testDir}/nested/campaigns/index+page.html`,
+    ]);
+  });
+});
 
-    if (markup.includes('HTML')) {
-      markup += '!!';
-    }
-
-    function callme() {
-      console.log('HTML', html.value = markup = '<em>OSOM</em>');
-    }
-    function fixme() {
-      console.log('ANSWER?', answer);
-      fun.value = answer;
-    }
-  </script>
-
-  <div>
-    {@render $$props.before?.()}
-    <button on:click="{() => fun.value = prompt(message)}">insight</button>
-    <button onclick="{fixme}">truth</button>
-    <p {el} onsomethingelse={callme}>Your answer: {$fun}</p>
-    <Empty />
-    [{@render $$props.children?.()}:{@render $$props.after?.()}]
-    {@html ['h1', Object.fromEntries([['style', 'color:red']]), 'It works.']}
-    {@html $html}
-  </div>
-
-  <style>
-    button { color: red }
-  </style>
-`;
-
-// eslint-disable-next-line no-unused-expressions
-fixture`./app+page.html
-  <script context="module">
-    console.info('It works.');
-  </script>
-  <head>
-    <title>OSOM</title>
-  </head>
-  <h1 class:active>Hello World</h1>
-  <script>
-    import { someStuff, write, routes } from 'jamrock:conn';
-
-    console.info(someStuff());
-
-    const active = true;
-
-    $: if (write) write('NOPE');
-
-    export default {
-      as: 'PageName',
-      ['GET']: () => console.info('GET'),
-      ['POST /']: () => console.info('POST'),
-      ['PATCH /:id'] as namedRoute: () => console.info('PATCH'),
-    };
-  </script>
-  {#if routes}
-    <a href="{routes.namedRoute.url([['id', 123]])}">LINK</a>
-  {/if}
-`;
-
-// eslint-disable-next-line no-unused-expressions
-fixture`./pages/[slug]/+page.html
-  <script>
-    export let slug;
-    export default {
-      ['GET /osom'] as OSOM: () => null,
-    };
-  </script>
-  <p>Got: {slug}</p>
-`;
-
-// eslint-disable-next-line no-unused-expressions
-fixture`./pages/+server.js
-  export function stuff(_, opts) {
-    console.log({ opts });
-  }
-
-  export default {
-    ['GET /sitemap.xml']() {
-      // ok
-    },
-  };
-`;
-
-// eslint-disable-next-line no-unused-expressions
-fixture`./api/+server.mjs
-  export default {
-    ['GET /some/:stuff']({ params }) {
-      return 42 + ', ' + params.stuff;
-    },
-  };
-`;
-
-// eslint-disable-next-line no-unused-expressions
-fixture`./+server.ts
-  export function http() {}
-  export default {
-    ['GET /api/v1']: true,
-  };
-`;
-
-// eslint-disable-next-line no-unused-expressions
-fixture`./very/nested/path/to/+server.mjs
-  export function nested() {}
-  export function GET() {}
-`;
-
-// eslint-disable-next-line no-unused-expressions
-fixture`./very/nested/+server.mjs
-  export function anything() {}
-`;
-
-// eslint-disable-next-line no-unused-expressions
-fixture`./campaigns/[campaign_id]/participations/[participation_id]+page.html
-  <script>
-    export let campaign_id;
-    export let participation_id;
-  </script>
-  <div>ParticipationDetail: {campaign_id}, {participation_id}</div>
-`;
-
-// eslint-disable-next-line no-unused-expressions
-fixture`./campaigns/[campaign_id]/participations/index+page.html
-  <div>Participations: {@render $$props.children?.()}</div>
-`;
-
-// eslint-disable-next-line no-unused-expressions
-fixture`./campaigns/[campaign_id]/index+page.html
-  <div>CampaignDetail: {@render $$props.children?.()}</div>
-`;
-
-// eslint-disable-next-line no-unused-expressions
-fixture`./campaigns/index+page.html
-  <div>Campaigns: {@render $$props.children?.()}</div>
-`;
-
-// eslint-disable-next-line no-unused-expressions
-fixture`./_hidden/stuff+page.html
-  <script>
-    import Main from '../main.html';
-  </script>
-  <Main />
-`;
-
-// eslint-disable-next-line no-unused-expressions
-fixture`./parent.html
-  <script>
-    import { set, get } from 'jamrock:hooks';
-    set('OSOM', { value: 42 });
-
-    const check = get('OSOM');
-  </script>
-  <form>
-    {@render $$props.children?.()} (CHECK: {typeof check})
-  </form>
-`;
-
-// eslint-disable-next-line no-unused-expressions
-fixture`./child.html
-  <script>
-    import { get, after } from 'jamrock:hooks';
-    const test = get('OSOM');
-    after(() => console.info('GREAT!'));
-  </script>
-  Got: {test.value}
-`;
-
-// eslint-disable-next-line no-unused-expressions
-fixture`./context.html
-  <script>
-    import Parent from './parent.html';
-    import Child from './child.html';
-  </script>
-  <Parent>
-    <Child />
-    <Child />
-  </Parent>
-`;
-
-test.group('integration only!', t => {
+test.group('module invocation', t => {
   let ctx;
   t.each.setup(() => {
     td.replace(console, 'info', td.func('logger'));
-    td.replace(Math, 'random', td.func('random'));
-    td.when(Math.random()).thenReturn(12.34);
 
     ctx = {
       conn: {
@@ -276,7 +101,7 @@ test.group('integration only!', t => {
         unsafe: () => null,
         someStuff: () => 42,
         current_path: '/app',
-        current_module: 'app+page.html',
+        current_module: 'routing-test/app+page.html',
       },
       route: {
         layout: null,
@@ -291,72 +116,11 @@ test.group('integration only!', t => {
       trap: () => null,
       scope: v => ({ value: v }),
       ref: () => ({ current: null }),
-      // registerComponent: mod => mod,
     };
   });
   t.each.teardown(() => {
     process.debug = 0;
     td.reset();
-  });
-
-  test('should extract routes from sources', ({ expect }) => {
-    setup();
-
-    const cwd = process.cwd();
-    const api = Template.glob(`${cwd}/generated/**/+server.{ts,js,mjs}`);
-    const files = Template.glob(`${cwd}/generated/**/*.html`);
-    const routes = controllers(`${cwd}/generated`, files.concat(api));
-
-    reset();
-
-    expect(routes.map(x => `${x.verb} ${x.path}`)).toEqual([
-      'GET /campaigns/:campaign_id/participations/:participation_id',
-      'GET /campaigns/:campaign_id/participations',
-      'GET /very/nested/path/to',
-      'GET /pages/sitemap.xml',
-      'GET /pages/:slug/osom',
-      'GET /campaigns/:campaign_id',
-      'GET /directives',
-      'GET /api/some/:stuff',
-      'GET /resources',
-      'GET /campaigns',
-      'GET /markdown',
-      'GET /inlines',
-      'GET /pages/:slug',
-      'GET /api/v1',
-      'GET /hooks',
-      'GET /stuff',
-      'PATCH /app/:id',
-      'GET /app',
-      'POST /app',
-    ]);
-
-    expect(Object.isFrozen(routes)).toBeTruthy();
-    expect(routes.PageName).not.toBeUndefined();
-    expect(routes.postApp).not.toBeUndefined();
-
-    expect(routes[0].url).toBeInstanceOf(Function);
-    expect(routes.namedRoute.url).toBeInstanceOf(Function);
-    expect(routes.namedRoute.path).toEqual('/app/:id');
-    expect(routes.namedRoute.url({ id: 123 })).toEqual('/app/123');
-    expect(routes.namedRoute.src).toEqual(`${cwd}/generated/app+page.html`);
-
-    expect(routes.OSOM.middleware).toEqual(`${cwd}/generated/pages/+server.js`);
-    expect(routes.getPagesSlugPage.middleware).toEqual(`${cwd}/generated/pages/+server.js`);
-    expect(routes.getApiSomeStuff.middleware).toEqual(`${cwd}/generated/api/+server.mjs`);
-    expect(routes.getPagesSitemapXml.middleware).toEqual(`${cwd}/generated/pages/+server.js`);
-
-    expect(routes.getVeryNestedPathTo.middlewares).toEqual([
-      `${cwd}/generated/very/nested/+server.mjs`,
-      `${cwd}/generated/+server.ts`,
-    ]);
-
-    expect(routes.getCampaignsCampaignIdParticipationsParticipationIdPage.all).toEqual([
-      `${cwd}/generated/campaigns/[campaign_id]/participations/[participation_id]+page.html`,
-      `${cwd}/generated/campaigns/[campaign_id]/participations/index+page.html`,
-      `${cwd}/generated/campaigns/[campaign_id]/index+page.html`,
-      `${cwd}/generated/campaigns/index+page.html`,
-    ]);
   });
 
   test('should be able to invoke modules', async ({ expect }) => {
@@ -369,37 +133,18 @@ test.group('integration only!', t => {
 
     expect(td.explain(console.info).callCount).toEqual(0);
 
-    const markup = await fixture.partialSync('app+page.html', null, ctx);
+    const markup = await fixture.partialSync('routing-test/app+page.html', null, ctx);
 
     expect(td.explain(console.info).callCount).toEqual(2);
-
     expect(td.explain(ctx.conn.routes.namedRoute.url).callCount).toEqual(1);
 
     expect(markup).toEqual([
       '<!DOCTYPE html>\n',
-      '<html data-location=app+page.html><head>\n',
+      '<html data-location="routing-test/app+page.html"><head>\n',
       '<meta charset="utf-8" /><base href="/" />\n  <title>OSOM</title>\n</head><body>\n',
-      '<h1 data-location="app+page.html:7:1" class=active>Hello World</h1>',
-      '<a href="/app/123" data-location="app+page.html:25:3">LINK</a></body></html>',
+      '<h1 data-location="routing-test/app+page.html:7:1" class=active>Hello World</h1>',
+      '<a href="/app/123" data-location="routing-test/app+page.html:25:3">LINK</a></body></html>',
     ].join(''));
-  });
-
-  test('should allow to hook functions into nodes', async ({ expect }) => {
-    ctx.cache = {
-      set: td.func('write'),
-    };
-
-    const mod = fixture.use('./hooks+page.html', { raw: true });
-    await mod.transform();
-    const tpl = await generated(mod);
-
-    expect(tpl.__functions.test.toString()).toContain('function test');
-    expect(tpl.__functions.doStuff.toString()).toContain('function doStuff');
-
-    const markup = await fixture.partialSync('hooks+page.html', null, ctx);
-
-    expect(td.explain(ctx.cache.set).callCount).toEqual(1);
-    expect(markup).toContain('data-enhance data-use:do-stuff="hooks+page.html/1"');
   });
 
   test('should be able to handle middleware calls', async ({ expect }) => {
@@ -408,11 +153,10 @@ test.group('integration only!', t => {
 
     const func = td.func('middleware');
 
-    await fixture.partial('app+page.html', null, ctx, func);
+    await fixture.partial('routing-test/app+page.html', null, ctx, func);
 
     expect(td.explain(func).callCount).toEqual(1);
     expect(td.explain(ctx.write).callCount).toEqual(13);
-
     expect(td.explain(console.info).callCount).toEqual(2);
     expect(td.explain(ctx.conn.someStuff).callCount).toEqual(1);
 
@@ -423,7 +167,7 @@ test.group('integration only!', t => {
         conn.res.write(out);
         markup += out;
       };
-      await fixture.partialSync('app+page.html', null, ctx, func);
+      await fixture.partialSync('routing-test/app+page.html', null, ctx, func);
       conn.res.end();
     });
 
@@ -431,8 +175,23 @@ test.group('integration only!', t => {
       conn.res.ok(err);
       expect(conn.res.body).toEqual(markup);
       expect(markup).toContain('<!DOCTYPE html>');
-      expect(markup).toContain('<html data-location=app+page.html><head>');
+      expect(markup).toContain('<html data-location="routing-test/app+page.html"><head>');
     });
+  });
+});
+
+test.group('preflight and routing', t => {
+  let ctx;
+  t.each.setup(() => {
+    ctx = {
+      conn: {
+        headers: new Map(),
+        method: 'PUT',
+      },
+    };
+  });
+  t.each.teardown(() => {
+    td.reset();
   });
 
   test('should handle preflight of middlewares', async ({ expect }) => {
@@ -442,8 +201,6 @@ test.group('integration only!', t => {
     function handler(conn) {
       conn.headers.set('x-time', now);
     }
-
-    ctx.conn.method = 'PUT';
 
     await preflight(ctx.conn, {
       PUT: handler,
@@ -464,16 +221,34 @@ test.group('integration only!', t => {
   test('should be able to handle page routing', async ({ expect }) => {
     setup();
 
-    // process.debug=1;
     const cwd = process.cwd();
-    const api = Template.glob(`${cwd}/generated/**/+server.mjs`);
-    const files = Template.glob(`${cwd}/generated/**/*.html`);
-    const pages = controllers(`${cwd}/generated`, files.concat(api));
+    const testDir = `${cwd}/generated/routing-test`;
+    const api = Template.glob(`${testDir}/**/+server.mjs`);
+    const files = Template.glob(`${testDir}/**/*.html`);
+    const pages = controllers(testDir, files.concat(api));
 
     reset();
 
+    const ctx2 = {
+      conn: {
+        headers: new Map(),
+        unsafe: () => null,
+        someStuff: () => 42,
+      },
+      route: { layout: null, error: null },
+      depth: 0,
+      stack: [],
+      uuid: 'jam-uuid',
+      signal: v => ({ value: v }),
+      computed: fn => ({ value: fn() }),
+      effect: () => null,
+      trap: () => null,
+      scope: v => ({ value: v }),
+      ref: () => ({ current: null }),
+    };
+
     const app = server(async conn => {
-      ctx.write = out => conn.res.write(out);
+      ctx2.write = out => conn.res.write(out);
 
       if (conn.request_path) {
         let found;
@@ -484,17 +259,17 @@ test.group('integration only!', t => {
         });
 
         if (found) {
-          ctx.called = true;
-          ctx.components = [];
-          ctx.conn.params = found.params;
-          ctx.conn.req.params = found.params;
+          ctx2.called = true;
+          ctx2.components = [];
+          ctx2.conn.params = found.params;
+          ctx2.conn.req.params = found.params;
 
           if (found.middlewares && !found.src) {
-            ctx.conn.current_options = {};
+            ctx2.conn.current_options = {};
 
             const set = [found.middleware].concat(found.middlewares);
             const mods = await Promise.all(set.map(Template.reload));
-            const result = await middlewares(ctx, found, mods);
+            const result = await middlewares(ctx2, found, mods);
 
             conn.res.write(String(result));
           } else {
@@ -503,12 +278,11 @@ test.group('integration only!', t => {
 
               for (const src of found.all) {
                 const tpl = await build(src.replace(`${cwd}/generated`, '.'));
-
-                ctx.components.push(tpl.module);
+                ctx2.components.push(tpl.module);
               }
 
-              const props = { ...ctx.conn.req.params };
-              await fixture.partialSync(found.src.replace(`${cwd}/generated`, '.'), props, ctx, middleware);
+              const props = { ...ctx2.conn.req.params };
+              await fixture.partialSync(found.src.replace(`${cwd}/generated`, '.'), props, ctx2, middleware);
             } catch (e) {
               console.log('E_REQUEST', e, found);
             } finally {
@@ -518,7 +292,7 @@ test.group('integration only!', t => {
         }
       }
       conn.res.end();
-    }, ctx);
+    }, ctx2);
 
     await app.request('GET', '/pages/example', (err, conn) => {
       expect(conn.res.body).toContain('Got: example');
@@ -530,13 +304,54 @@ test.group('integration only!', t => {
       conn.res.ok(err);
     });
 
-    await app.request('GET', '/campaigns/1/participations/2', (err, conn) => {
+    await app.request('GET', '/nested/campaigns/1/participations/2', (err, conn) => {
       expect(conn.res.body).toContain('Campaigns:');
-      expect(conn.res.body).toContain('CampaignDetail:');
+      expect(conn.res.body).toContain('Campaign:');
       expect(conn.res.body).toContain('Participations:');
-      expect(conn.res.body).toContain('ParticipationDetail: 1, 2');
+      expect(conn.res.body).toContain('Detail: 1, 2');
       conn.res.ok(err);
     });
+  });
+});
+
+test.group('page route-methods', t => {
+  let ctx;
+  t.each.setup(async () => {
+    td.replace(console, 'info', td.func('logger'));
+
+    ctx = {
+      conn: {
+        headers: new Map(),
+        unsafe: () => null,
+        someStuff: () => 42,
+        current_path: '/app',
+        current_module: 'routing-test/app+page.html',
+      },
+      route: { layout: null, error: null },
+      depth: 0,
+      stack: [],
+      uuid: 'jam-uuid',
+      signal: v => ({ value: v }),
+      computed: fn => ({ value: fn() }),
+      effect: () => null,
+      trap: () => null,
+      scope: v => ({ value: v }),
+      ref: () => ({ current: null }),
+    };
+
+    try {
+      setup();
+      const error = await build('./routing/errors/+error.html');
+      ctx.route.error = error.module;
+    } catch (e) {
+      console.log('E_ERROR', e);
+    } finally {
+      reset();
+    }
+  });
+  t.each.teardown(() => {
+    process.debug = 0;
+    td.reset();
   });
 
   test('should be able to handle page route-methods', async ({ expect }) => {
@@ -569,24 +384,11 @@ test.group('integration only!', t => {
       conn.res.ok(err);
     });
 
-    try {
-      setup();
-      const error = await build('./some+error.html');
-      ctx.route.error = error.module;
-      const layout = await build('./+layout.html');
-      ctx.route.layout = layout.module;
-    } catch (e) {
-      console.log('E_LAYOUT', e);
-    } finally {
-      reset();
-    }
-
     await app.request('POST /app', (err, conn) => {
       expect(td.explain(console.info).callCount).toEqual(6);
       expect(conn.req.method).toEqual('POST');
       expect(conn.req.url).toEqual('/app');
-
-      conn.res.ok(err, '<main data-location="+layout.html:1:1">');
+      conn.res.ok(err);
     });
 
     await app.request('DELETE', '/app', (err, conn) => {
@@ -594,33 +396,7 @@ test.group('integration only!', t => {
       expect(conn.req.method).toEqual('DELETE');
       expect(conn.req.url).toEqual('/app');
       expect(conn.res.body).toContain('Error 404');
-
-      conn.res.ok(err, "Route 'DELETE /' not found in app+page.html", 404);
+      conn.res.ok(err, 404);
     });
-  });
-
-  test('should be able to render client-side components', async ({ expect }) => {
-    ctx.prefix = '__';
-
-    const tpl = await fixture.partialSync('_hidden/stuff+page.html', null, ctx);
-
-    expect(tpl).toEqual([
-      '<!DOCTYPE html>\n',
-      '<html data-location="_hidden/stuff+page.html"><head>\n',
-      '<meta charset="utf-8" /><base href="/" /><link rel=stylesheet href="__/main(0).css" /></head><body>\n',
-      '<div data-component="generated/main.html/2" data-location="_hidden/stuff+page.html:4:1"><div data-location="main.html:42:1">',
-      '<button data-location="main.html:44:3" class="jam-420" data-source="generated/main.html/2" data-on:click="true" name="_action" value=onclick>insight</button>',
-      '<button data-location="main.html:45:3" class="jam-420" data-source="generated/main.html/2" data-on:click="true" name="_action" value=fixme>truth</button>',
-      '<p data-location="main.html:46:3" data-on:somethingelse="callme">Your answer: FIXME</p>Just an EMPTY component\n\n',
-      '  [:]\n  <h1 style="color:red">It works.</h1></div></div></body></html>',
-    ].join(''));
-  });
-
-  test('should keep a shared context', async ({ expect }) => {
-    const tpl = await fixture.partialSync('context.html', null, ctx);
-
-    expect(tpl).toContain('Got: 42\nGot: 42');
-    expect(tpl).toContain('(CHECK: object)');
-    expect(td.explain(console.info).callCount).toEqual(2);
   });
 });

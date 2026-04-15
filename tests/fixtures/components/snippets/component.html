@@ -1,0 +1,7 @@
+<script>
+  export let value = 42;
+</script>
+{#snippet children(target)}
+  Got: {value}{@render target?.()}
+{/snippet}
+{@render children($$props.other)}

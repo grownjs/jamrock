@@ -1,0 +1,6 @@
+<script>
+  import { get, after } from 'jamrock:hooks';
+  const test = get('OSOM');
+  after(() => console.info('GREAT!'));
+</script>
+Got: {test.value}

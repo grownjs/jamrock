@@ -1,0 +1,15 @@
+<style>
+  p { color: red; }
+  .foo { color: green; }
+  p .foo:not(.x) { color: yellow; }
+  p[data-root] .foo { color: black; }
+  ul li span { color: pink; }
+  .name { color: purple; }
+</style>
+<p data-root>
+  <span class="foo">OK</span>
+</p>
+<ul>
+  <li><span class="name {$$props.bar}">OSOM</span> <span>💣</span></li>
+</ul>
+<a class:name={1} />

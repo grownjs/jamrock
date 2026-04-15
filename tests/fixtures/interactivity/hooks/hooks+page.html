@@ -1,0 +1,17 @@
+<script context="module">
+  function test(_, params) {
+    console.info('IT WORKS!', params);
+  }
+  function doStuff(node, params) {
+    console.info(node, location.href);
+  }
+</script>
+<button use:test="foo|bar">FOO</button>
+<button use:doStuff>BAR</button>
+<script>
+  export default {
+    actions: {
+      truthy: () => 42,
+    },
+  };
+</script>

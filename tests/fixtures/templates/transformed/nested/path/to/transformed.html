@@ -1,0 +1,99 @@
+<script context="module">
+  import { inspect } from 'node:util';
+
+  function shouldFail() {
+    throw new Error('FAIL');
+  }
+
+  export const enabled = false;
+  export const name = 'OSOM';
+</script>
+
+<script>
+  import { Inspect } from 'jamrock:components';
+  import Test from './hello.html';
+  import Markup from './static.html';
+  import Test1 from './test.html';
+  import Test2 from '../inner.html';
+  import Test3 from '../../noop.html';
+  import Test4 from '../../../router.html';
+
+  export let ms = 60;
+  export let value = 42;
+
+  export const markup = `
+    <span>${name}</span>
+  `;
+
+  export function sum(a, b) {
+    return a + b;
+  }
+
+  export default {
+    as: 'Example',
+    use: ['web'],
+    routes: {
+      ['GET /fail']: shouldFail,
+    },
+  };
+
+  const props = {};
+</script>
+
+<html lang="es-MX" />
+
+<body class="main x-{value}">
+  <script scoped>
+    import { truth } from '../module.mjs';
+    console.log({ self, truth });
+  </script>
+
+  <script type="module">
+    import kindOf from 'kind-of';
+    console.log({ kindOf });
+  </script>
+
+  <script>
+    import isNumber from 'https://cdn.skypack.dev/is-number';
+    console.log({ isNumber });
+  </script>
+</body>
+
+<head>
+  <title>Untitled "{value}"</title>
+</head>
+
+<!-- some logic -->
+{#if Math.random() > 0.5}
+  <p {...props}>OK: {value / 1.5}</p>
+{/if}
+
+<!-- special tags -->
+{@html markup}
+{@html ['h1', Object.fromEntries([]), 'It works.']}
+
+<style lang="less">
+  @red: #ff0;
+  p { color: @red; }
+  @font-face {
+    font-family: Alpha;
+    src: url('../../../fonts/Bravo.otf');
+  }
+</style>
+
+<fragment name="test" interval={ms}>
+  OSOM: <Inspect {value} />
+</fragment>
+
+<Test name="PATEKE" />
+
+<pre>{inspect(value)}</pre>
+
+{#if enabled}<Inspect {value} />{/if}
+
+<Test1>FIXME</Test1>
+<Test2>FIXME</Test2>
+<Test3>FIXME</Test3>
+<Test4>FIXME</Test4>
+
+[HTML: <Markup>!!</Markup>]

@@ -117,7 +117,7 @@ export function fixture(str, ...splat) {
 fixture.fromFile = (name, alias) => {
   const fixturesDir = path.join(cwd, 'tests', 'fixtures');
   const source = fs.readFileSync(path.join(fixturesDir, name), 'utf-8');
-  const filepath = alias || `./${path.basename(name)}`;
+  const filepath = alias || `./${name}`;
   const destination = filepath.replace(/^\./, `${cwd}/generated`);
 
   fixture[filepath] = { source, filepath, destination };

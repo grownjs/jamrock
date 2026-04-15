@@ -1,0 +1,9 @@
+<script>
+  import { set, get } from 'jamrock:hooks';
+  set('OSOM', { value: 42 });
+
+  const check = get('OSOM');
+</script>
+<form>
+  {@render $$props.children?.()} (CHECK: {typeof check})
+</form>

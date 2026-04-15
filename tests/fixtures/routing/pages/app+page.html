@@ -1,0 +1,26 @@
+<script context="module">
+  console.info('It works.');
+</script>
+<head>
+  <title>OSOM</title>
+</head>
+<h1 class:active>Hello World</h1>
+<script>
+  import { someStuff, write, routes } from 'jamrock:conn';
+
+  console.info(someStuff());
+
+  const active = true;
+
+  $: if (write) write('NOPE');
+
+  export default {
+    as: 'PageName',
+    ['GET']: () => console.info('GET'),
+    ['POST /']: () => console.info('POST'),
+    ['PATCH /:id'] as namedRoute: () => console.info('PATCH'),
+  };
+</script>
+{#if routes}
+  <a href="{routes.namedRoute.url([['id', 123]])}">LINK</a>
+{/if}

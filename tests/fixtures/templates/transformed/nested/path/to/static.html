@@ -1,0 +1,8 @@
+<head>
+  <meta charset="{$$props.charset || 'utf8'}" />
+  <link rel="stylesheet" href="style.css" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+</head>
+<element tag="{$$props.random > 0.5 ? 'em' : 'del'}">
+  {@render $$props.children?.()}
+</element>

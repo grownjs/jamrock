@@ -1,0 +1,35 @@
+<script context="module">
+  import { y, bar } from '../../modules/test.mjs';
+  export let truth = 42;
+</script>
+
+<script>
+  export let value = 0;
+  function inc() {
+    value++;
+    truth--;
+  }
+  inc();
+</script>
+
+{#snippet sum(a, b)}
+  <data>{a} + {b} = {a + b}</data>
+  <button on:click={inc}>{value}</button>
+{/snippet}
+
+<p>Got: {y}</p>
+
+<button on:click={bar}>++</button>
+
+<fragment name="example">
+  {@render sum(1, 2)} ({truth})
+</fragment>
+
+<script>
+  export default {
+    DELETE: true,
+    ['GET /:stuff']() {
+      console.log('OSOM');
+    },
+  };
+</script>
