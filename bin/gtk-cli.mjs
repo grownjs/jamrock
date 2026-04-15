@@ -23,17 +23,18 @@ printLog(Util.$.bold(`■ Jamrock v${PKG_VERSION}`), Util.$.gray(`(${runtime}, $
 const USAGE_INFO = `
 Usage: ./bin/gjs <COMMAND> [OPTIONS]
 
-  init   Generates a new application into the given directory
-  serve  Starts the web-server on the given --port and --host
-  build  Compiles *.{md,html} sources into server-components
-  route  Prints the available routes found
-  window Opens page routes as GTK windows (GTK4 only)
-  explorer Opens Jamrock Explorer for testing components (GTK4 only)
+  init      Generates a new application into the given directory
+  serve     Starts the web-server on the given --port and --host
+  build     Compiles *.{md,html} sources into server-components
+  route     Prints the available routes found
+  window    Opens page routes as GTK windows (GTK4 only)
+  explorer  Opens Jamrock Explorer for testing components (GTK4 only)
+  devtools  Opens DevTools for a DSL app (GTK4 only)
 
  Options:
 
   --src      Directory of *.{md,html} files to compile (default is ./pages)
-  --dest     Destination for compiled files (default is ./build)
+  --dest     Destination for compiled files (default is ./generated)
 
   --watch    Enable file-watching on the web-server
   --window   Open pages as desktop windows (gjs only)
@@ -51,6 +52,7 @@ Examples:
   ./bin/gjs build --src ./pages --dest ./build
   ./bin/gjs serve --src ./pages --port 3000
   ./bin/gjs route --src ./pages
+  ./bin/gjs devtools playground/button.gtk.mjs
 `;
 
 function exit(message) {
@@ -214,6 +216,27 @@ export default async function cli(createEnv, argv, capabilities) {
     printLog('Opening explorer...');
 
     await createExplorer({ env, options: { src, dest } });
+
+    return;
+  }
+
+  if (cmd === 'devtools') {
+    if (!capabilities.devtools) {
+      exit('DevTools is not supported on this runtime');
+    }
+
+    const appArg = opts._[1];
+    if (!appArg) {
+      exit('Usage: bin/gjs devtools <app.gtk.mjs>\n  Example: bin/gjs devtools playground/button.gtk.mjs');
+    }
+
+    const { GLib } = await import('../dist/gtk.mjs');
+    const appPath = GLib.canonicalize_filename(appArg, GLib.get_current_dir());
+
+    printLog('Opening DevTools for:', appArg);
+
+    const { launch } = await import('../devtools/index.mjs');
+    await launch(appPath);
 
     return;
   }
