@@ -65,6 +65,15 @@ export class Block {
       return ['```', $1 || '', $2.replace(/\S/g, ' '), '```'].join('');
     });
 
+    // Strip inline code spans containing HTML tags before the HTML parser runs.
+    // Content is blanked (non-whitespace → space) to keep line/col identity intact,
+    // so that tags like `<style lang="less">` are not mistaken for real elements.
+    tpl = tpl.replace(/`([^`\n]+)`/g, (_: string, $1: string) => {
+      if (!$1.includes('<')) return _;
+      chunks.push({ code: $1, inline: true });
+      return `\`${$1.replace(/\S/g, ' ')}\``;
+    });
+
     Object.defineProperty(this, 'id', { value: id });
     Object.defineProperty(this, 'src', { value: src });
     Object.defineProperty(this, 'dest', { value: dest });
