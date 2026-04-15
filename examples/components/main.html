@@ -10,7 +10,8 @@
 
   const el = ref(null);
 
-  trap(e => { console.log('E_MAIN', e);
+  trap(e => {
+    console.log('E_MAIN', e);
     if (confirm('Are you OK?')) {
       fun.value = 'Thank you!';
     } else {
@@ -41,10 +42,10 @@
   {@render $$props.before?.()}
   <button on:click="{() => fun.value = prompt(message)}">insight</button>
   <button onclick="{fixme}">truth</button>
-  <p {el} onsomethingelse={callme}>Your answer: {$fun}</p>
+  <p {el} onsomethingelse={callme}>Your answer: {fun.value}</p>
   [{@render $$props.children?.()}:{@render $$props.after?.()}]
   {@html ['h1', Object.fromEntries([['style', 'color:red']]), 'It works.']}
-  {@html $html}
+  {@html html.value}
 </div>
 
 <style>
