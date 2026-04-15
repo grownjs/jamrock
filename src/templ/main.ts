@@ -715,7 +715,7 @@ export class Template {
   static client(ctx: any, body: any, props: any, parent: any, component: any): any {
     if (parent?.__context !== 'module') return;
 
-    ctx.cache?.set(ctx.uuid, ctx.ref, component.__exported.reduce((memo: any, key: string) => {
+    ctx.cache?.set(ctx.uuid || ctx.conn?.req?.uuid, ctx.ref, component.__exported.reduce((memo: any, key: string) => {
       if (Is.data(props[key])) memo[key] = props[key];
       return memo;
     }, {}));
