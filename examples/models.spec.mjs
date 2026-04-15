@@ -18,7 +18,7 @@ test.group('pocketbase', t => {
   });
 
   test('it should create users', async ({ expect }) => {
-    const { user, pending } = await User.addUser({ email, resend: true });
+    const { user, pending } = await User.addUser({ email });
 
     expect(user.verified).toBeFalsy();
     expect(pending).toBeTruthy();

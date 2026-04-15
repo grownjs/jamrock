@@ -83,7 +83,7 @@ export class User extends Model {
     const user = await this.create({ email, verified, password, passwordConfirm: password, emailVisibility: true });
 
     let pending = false;
-    if (resend === true && !user.verified) {
+    if (resend !== false && !user.verified) {
       pending = await this.self.requestVerification(email);
     }
     return { user, pending };
