@@ -104,6 +104,24 @@ function execCommand(cmd, win, registeredSignals) {
       }
       case 'snapshot':
         return { ok: true, tree: serializeWidget(win, win) };
+      case 'eval': {
+        try {
+          // Evaluate code in the target's global scope
+          // We expose a minimal context: win, findWidget, signals
+          const fn = new Function(
+            'win', 'findWidget', 'signals', 'print',
+            '"use strict";\n' + cmd.code
+          );
+          const result = fn(win, findWidget, registeredSignals, print);
+          const serialized = result === undefined ? undefined
+            : typeof result === 'object' && result !== null
+              ? JSON.parse(JSON.stringify(result))
+              : result;
+          return { ok: true, result: serialized };
+        } catch (e) {
+          return { ok: false, error: e.message };
+        }
+      }
       case 'highlight': {
         const w = findWidget(win, cmd.widget);
         if (w) {

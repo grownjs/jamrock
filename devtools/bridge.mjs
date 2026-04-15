@@ -104,6 +104,7 @@ export class DevToolsBridge {
   setSignal(name, value) { return this.send({ cmd: 'set_signal', name, value }); }
   snapshot() { return this.send({ cmd: 'snapshot' }); }
   highlight(widget, duration = 1500) { return this.send({ cmd: 'highlight', widget, duration }); }
+  eval(code) { return this.send({ cmd: 'eval', code }); }
   pause() { return this.send({ cmd: 'pause' }); }
   resume() { return this.send({ cmd: 'resume' }); }
 

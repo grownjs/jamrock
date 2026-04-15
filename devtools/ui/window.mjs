@@ -17,6 +17,7 @@ import { Gtk, Gdk, GLib } from '../../dist/gtk.mjs';
 import { createInspectorPanel } from './inspector.mjs';
 import { createSignalsPanel } from './signals.mjs';
 import { createEventsPanel } from './events.mjs';
+import { createConsolePanel } from './console.mjs';
 
 export function createDevToolsWindow(bridge, runner) {
   Gtk.init();
@@ -72,6 +73,7 @@ export function createDevToolsWindow(bridge, runner) {
     { id: 'inspector', label: 'Inspector' },
     { id: 'signals', label: 'Signals' },
     { id: 'events', label: 'Events' },
+    { id: 'console', label: 'Console' },
   ];
 
   let activeTab = 'inspector';
@@ -120,12 +122,14 @@ export function createDevToolsWindow(bridge, runner) {
   const inspectorPanel = createInspectorPanel(bridge);
   const signalsPanel = createSignalsPanel(bridge);
   const eventsPanel = createEventsPanel(bridge);
+  const consolePanel = createConsolePanel(bridge);
 
   const stack = new Gtk.Stack();
   stack.set_vexpand(true);
   stack.add_named(inspectorPanel, 'inspector');
   stack.add_named(signalsPanel, 'signals');
   stack.add_named(eventsPanel, 'events');
+  stack.add_named(consolePanel, 'console');
 
   function switchPanel(id) {
     activeTab = id;
