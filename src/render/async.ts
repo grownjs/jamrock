@@ -7,9 +7,14 @@ export async function execAsync(chunk: any, ctx: any[], isSsr: boolean = true): 
   if (Is.func(result)) {
     if (!isSsr && result.name === '$signal') {
       // Preserve $signal functions for client-side reactivity
-    } else {
+    } else if (!result.name) {
+      // Original behavior: only call unnamed functions in SSR
+      result = await result.apply(undefined, ctx);
+    } else if (!isSsr) {
+      // Client-side: call all named functions except $signal
       result = await result.apply(undefined, ctx);
     }
+    // SSR + named function (not $signal): pass through unchanged (original behavior)
   }
 
   if (Is.arr(result)) {
@@ -23,9 +28,14 @@ export function execSync(chunk: any, ctx: any[], isSsr: boolean = true): any {
   if (Is.func(chunk)) {
     if (!isSsr && (chunk as Function).name === '$signal') {
       // Preserve $signal functions for client-side reactivity
-    } else {
+    } else if (!(chunk as Function).name || (chunk as Function).name === '$signal') {
+      // Original behavior: call unnamed functions and $signal
+      chunk = (chunk as Function).apply(undefined, ctx);
+    } else if (!isSsr) {
+      // Client-side: call all named functions
       chunk = (chunk as Function).apply(undefined, ctx);
     }
+    // SSR + named function (not $signal): pass through unchanged (original behavior)
   }
 
   if (Is.arr(chunk)) {
