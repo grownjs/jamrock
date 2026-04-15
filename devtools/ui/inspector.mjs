@@ -6,7 +6,7 @@
  */
 
 import { Gtk, GLib } from '../../dist/gtk.mjs';
-import { flattenTree, findInTree } from '../lib/tree.mjs';
+import { flattenTree, findInTree, formatTree } from '../lib/tree.mjs';
 
 export function createInspectorPanel(bridge) {
   // ─── State ──────────────────────────────────────────────────────────────────
@@ -51,7 +51,7 @@ export function createInspectorPanel(bridge) {
 
   const btnClick = new Gtk.Button({ label: 'Click' });
   const btnHighlight = new Gtk.Button({ label: 'Highlight' });
-  const btnRefresh = new Gtk.Button({ label: '⟳' });
+  const btnRefresh = new Gtk.Button({ label: 'Refresh' });
 
   btnClick.set_name('btnClick');
   btnHighlight.set_name('btnHighlight');
@@ -198,14 +198,28 @@ export function createInspectorPanel(bridge) {
 
   // ─── Bridge Events ───────────────────────────────────────────────────────────
 
-  bridge.on('tree', msg => {
-    currentTree = msg.tree;
-    renderTree(currentTree);
+  let lastTreeSignature = '';
+  let renderPending = false;
 
-    // Keep props panel in sync if something is selected
-    if (selectedName) {
-      const node = findInTree(currentTree, selectedName);
-      renderProps(node);
+  bridge.on('tree', msg => {
+    // Throttle: only re-render if tree structure changed
+    const sig = formatTree(msg.tree);
+    if (sig === lastTreeSignature) return;
+    lastTreeSignature = sig;
+    currentTree = msg.tree;
+
+    // Defer to next GLib idle to avoid races with GTK layout
+    if (!renderPending) {
+      renderPending = true;
+      GLib.idle_add(GLib.PRIORITY_DEFAULT_IDLE, () => {
+        renderPending = false;
+        renderTree(currentTree);
+        if (selectedName) {
+          const node = findInTree(currentTree, selectedName);
+          renderProps(node);
+        }
+        return GLib.SOURCE_REMOVE;
+      });
     }
   });
 

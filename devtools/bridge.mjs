@@ -105,8 +105,20 @@ export class DevToolsBridge {
   snapshot() { return this.send({ cmd: 'snapshot' }); }
   highlight(widget, duration = 1500) { return this.send({ cmd: 'highlight', widget, duration }); }
   eval(code) { return this.send({ cmd: 'eval', code }); }
-  pause() { return this.send({ cmd: 'pause' }); }
-  resume() { return this.send({ cmd: 'resume' }); }
+
+  // Local pause/resume — suspends handler dispatch without touching target
+  #paused = false;
+  #pauseQueue = [];
+
+  pause() { this.#paused = true; }
+  resume() {
+    this.#paused = false;
+    const queue = this.#pauseQueue.splice(0);
+    for (const msg of queue) this.#dispatch(msg);
+  }
+
+  pauseTarget() { return this.send({ cmd: 'pause' }); }
+  resumeTarget() { return this.send({ cmd: 'resume' }); }
 
   // ─── Connection Handling ───────────────────────────────────────────────────
 
@@ -133,14 +145,24 @@ export class DevToolsBridge {
         const [line] = stream.read_line_finish_utf8(res);
         if (line) {
           const msg = JSON.parse(line);
-          this.#dispatch(msg);
+          GLib.idle_add(300, () => {
+            if (this.#paused) {
+              this.#pauseQueue.push(msg);
+            } else {
+              this.#dispatch(msg);
+            }
+            return GLib.SOURCE_REMOVE;
+          });
         }
         this.#readLoop(inn);
       } catch {
         print('[bridge] Target disconnected');
         this.#connection = null;
         this.#out = null;
-        this.#dispatch({ type: 'disconnected' });
+        GLib.idle_add(300, () => {
+          this.#dispatch({ type: 'disconnected' });
+          return GLib.SOURCE_REMOVE;
+        });
       }
     });
   }

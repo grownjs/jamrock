@@ -123,12 +123,12 @@ export function createConsolePanel(bridge) {
       : String(value);
     // Multi-line results
     for (const line of text.split('\n')) {
-      addLine('← ' + line, 'dim-label');
+      addLine('<- ' + line, 'dim-label');
     }
   }
 
   function addError(msg) {
-    addLine('✗ ' + msg, 'error');
+    addLine('! ' + msg, 'error');
   }
 
   // ─── REPL Logic ──────────────────────────────────────────────────────────────
@@ -208,13 +208,13 @@ export function createConsolePanel(bridge) {
   // ─── Bridge Events ────────────────────────────────────────────────────────────
 
   bridge.on('connected', () => {
-    addLine('── Connected to target ──', 'dim-label');
+    addLine('-- Connected to target --', 'dim-label');
     addLine('Available: win, findWidget(win, name), signals, print()', 'dim-label');
     addLine('', '');
   });
 
   bridge.on('disconnected', () => {
-    addLine('── Disconnected ──', 'error');
+    addLine('-- Disconnected --', 'error');
   });
 
   return root;

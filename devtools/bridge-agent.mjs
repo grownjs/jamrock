@@ -313,8 +313,8 @@ export function attachDevTools(win, { signals = {}, events = true } = {}) {
     return GLib.SOURCE_REMOVE;
   });
 
-  // Periodic tree snapshots
-  GLib.timeout_add(GLib.PRIORITY_DEFAULT, 100, () => {
+  // Periodic tree snapshots — 500ms is enough for a dev tool
+  GLib.timeout_add(GLib.PRIORITY_DEFAULT, 500, () => {
     if (send) send({ type: 'tree', tree: serializeWidget(win, win) });
     return GLib.SOURCE_CONTINUE;
   });

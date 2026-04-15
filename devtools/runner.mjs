@@ -86,12 +86,14 @@ export class AppRunner {
       this.#readOutput();
 
       // Watch for exit
-      this.#proc.wait_async(null, (_proc, res) => {
+      const watchedProc = this.#proc;
+      watchedProc.wait_async(null, (_proc, res) => {
         try {
-          this.#proc.wait_finish(res);
+          watchedProc.wait_finish(res);
         } catch { /* ignore */ }
-        const status = this.#proc.get_exit_status();
-        this.#proc = null;
+        let status = 0;
+        try { status = watchedProc.get_exit_status(); } catch { /* killed by signal */ }
+        if (this.#proc === watchedProc) this.#proc = null;
         this.#emit('exit', { status, path: this.#appPath });
       });
     } catch (e) {

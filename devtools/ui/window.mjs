@@ -104,7 +104,7 @@ export function createDevToolsWindow(bridge, runner) {
   statusBox.set_hexpand(true);
   statusBox.set_halign(Gtk.Align.END);
 
-  const statusDot = new Gtk.Label({ label: '●' });
+  const statusDot = new Gtk.Label({ label: '*' });
   statusDot.add_css_class('status-disconnected');
   statusDot.set_name('statusDot');
 
@@ -126,14 +126,25 @@ export function createDevToolsWindow(bridge, runner) {
 
   const stack = new Gtk.Stack();
   stack.set_vexpand(true);
+  stack.set_transition_type(Gtk.StackTransitionType.NONE);
+  stack.set_transition_duration(0);
   stack.add_named(inspectorPanel, 'inspector');
   stack.add_named(signalsPanel, 'signals');
   stack.add_named(eventsPanel, 'events');
   stack.add_named(consolePanel, 'console');
+  print('[devtools] panels created');
 
   function switchPanel(id) {
     activeTab = id;
+    // Pause bridge dispatching during tab switch to avoid
+    // widget mutations racing with GTK layout
+    bridge.pause?.();
     stack.set_visible_child_name(id);
+    // Resume after GTK has had one full layout cycle
+    GLib.timeout_add(GLib.PRIORITY_DEFAULT, 50, () => {
+      bridge.resume?.();
+      return GLib.SOURCE_REMOVE;
+    });
   }
 
   // ─── Status Bar ──────────────────────────────────────────────────────────────
@@ -151,11 +162,11 @@ export function createDevToolsWindow(bridge, runner) {
   appPathLbl.add_css_class('dim-label');
   appPathLbl.add_css_class('monospace');
 
-  const btnReload = new Gtk.Button({ label: '⟳ Reload' });
+  const btnReload = new Gtk.Button({ label: 'Reload' });
   btnReload.set_name('btnReload');
   btnReload.add_css_class('flat');
 
-  const btnStop = new Gtk.Button({ label: '■ Stop' });
+  const btnStop = new Gtk.Button({ label: 'Stop' });
   btnStop.set_name('btnStop');
   btnStop.add_css_class('flat');
   btnStop.add_css_class('destructive-action');
@@ -194,16 +205,16 @@ export function createDevToolsWindow(bridge, runner) {
   if (runner) {
     runner.on('start', ({ path }) => {
       const name = path.split('/').pop();
-      appPathLbl.set_label('▶ ' + name);
+      appPathLbl.set_label('> ' + name);
     });
 
     runner.on('exit', ({ status }) => {
-      appPathLbl.set_label('■ exited (' + status + ')');
+      appPathLbl.set_label('exited (' + status + ')');
     });
 
     runner.on('change', ({ file }) => {
       const name = file.split('/').pop();
-      appPathLbl.set_label('⟳ reloading: ' + name + '…');
+      appPathLbl.set_label('reloading: ' + name + '...');
     });
 
     btnReload.connect('clicked', () => runner.restart());

@@ -4,7 +4,7 @@
  * Real-time stream of widget events with pause/clear/filter.
  */
 
-import { Gtk } from '../../dist/gtk.mjs';
+import { Gtk, GLib } from '../../dist/gtk.mjs';
 
 const MAX_EVENTS = 500;
 
@@ -21,10 +21,10 @@ export function createEventsPanel(bridge) {
   toolbar.set_margin_top(4);
   toolbar.set_margin_bottom(4);
 
-  const btnPause = new Gtk.ToggleButton({ label: '⏸ Pause' });
+  const btnPause = new Gtk.ToggleButton({ label: 'Pause' });
   btnPause.add_css_class('flat');
 
-  const btnClear = new Gtk.Button({ label: '🗑 Clear' });
+  const btnClear = new Gtk.Button({ label: 'Clear' });
   btnClear.add_css_class('flat');
 
   const filterEntry = new Gtk.Entry({ placeholder_text: 'Filter…' });
@@ -41,7 +41,6 @@ export function createEventsPanel(bridge) {
   // Column headers
   const colHeader = new Gtk.Box({ orientation: Gtk.Orientation.HORIZONTAL, spacing: 8 });
   colHeader.set_margin_start(8);
-  colHeader.add_css_class('dim-label');
   colHeader.set_margin_end(8);
 
   const mkHdr = (text, w) => {
@@ -61,7 +60,7 @@ export function createEventsPanel(bridge) {
 
   const scroll = new Gtk.ScrolledWindow({
     vscrollbar_policy: Gtk.PolicyType.AUTOMATIC,
-    hscrollbar_policy: Gtk.PolicyType.AUTOMATIC,
+    hscrollbar_policy: Gtk.PolicyType.NEVER,
     vexpand: true,
   });
   scroll.set_child(listBox);
@@ -131,23 +130,42 @@ export function createEventsPanel(bridge) {
       listBox.remove(old);
     }
 
-    // Auto-scroll to bottom
-    const adj = scroll.get_vadjustment();
-    adj.set_value(adj.get_upper() - adj.get_page_size());
+    // Auto-scroll to bottom (only when visible/realized)
+    if (scroll.get_mapped()) {
+      const adj = scroll.get_vadjustment();
+      adj.set_value(adj.get_upper() - adj.get_page_size());
+    }
 
     countLbl.set_label(eventRows.length + ' events');
   }
 
   // ─── Bridge Events ───────────────────────────────────────────────────────────
 
-  bridge.on('event', addEvent);
-  bridge.on('signal', msg => addEvent({ ...msg, kind: 'signal', widget: msg.name }));
+  // Queue events and flush on next idle to avoid layout races
+  const pendingEvents = [];
+  let flushPending = false;
+
+  function queueEvent(msg) {
+    pendingEvents.push(msg);
+    if (!flushPending) {
+      flushPending = true;
+      GLib.idle_add(GLib.PRIORITY_DEFAULT_IDLE, () => {
+        flushPending = false;
+        const batch = pendingEvents.splice(0);
+        for (const e of batch) addEvent(e);
+        return GLib.SOURCE_REMOVE;
+      });
+    }
+  }
+
+  bridge.on('event', queueEvent);
+  bridge.on('signal', msg => queueEvent({ ...msg, kind: 'signal', widget: msg.name }));
 
   // ─── Actions ─────────────────────────────────────────────────────────────────
 
   btnPause.connect('toggled', () => {
     paused = btnPause.get_active();
-    btnPause.set_label(paused ? '▶ Resume' : '⏸ Pause');
+    btnPause.set_label(paused ? 'Resume' : 'Pause');
   });
 
   btnClear.connect('clicked', () => {
