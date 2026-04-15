@@ -260,7 +260,6 @@ export type Routes = ${['RouteMap'].concat(typedefs).join('\n& ')};\n`;
           type: 'module',
           version: '0.0.0',
           devDependencies: {
-            esbuild: 'latest',
             less: 'latest',
           },
         }, null, 2)}\n`);

@@ -98,18 +98,22 @@ export class Template {
     set.push(...this.partial.imports);
 
     if (Is.func(cb)) {
-      tasks.push(cb(this.partial.scripts
-        .filter((x: any) => x.root || x.attributes.scoped || x.attributes.global), 'js', options)
-        .then((js: any[]) => set.unshift(...js.map((x: any, i: number) => {
+      // JS first, then CSS — sequential to guarantee set.unshift order (CSS ends up first = correct)
+      tasks.push((async () => {
+        const js = await cb(this.partial.scripts
+          .filter((x: any) => x.root || x.attributes.scoped || x.attributes.global), 'js', options);
+
+        set.unshift(...js.map((x: any, i: number) => {
           const destFile = `${target.replace(/\.(?:md|html)/, '')}(${i}).js`;
 
           children.push(...x.children);
           resources.js.push([x.parent, destFile, x.children]);
           return { content: x.content, dest: destFile };
-        }))));
+        }));
 
-      tasks.push(cb(this.partial.styles, 'css', options)
-        .then((css: any[]) => set.unshift(...css.map((x: any, i: number) => {
+        const css = await cb(this.partial.styles, 'css', options);
+
+        set.unshift(...css.map((x: any, i: number) => {
           const destFile = `${target.replace(/\.(?:md|html)/, '')}(${i}).css`;
 
           if (defaults.src) {
@@ -130,7 +134,8 @@ export class Template {
           children.push(...x.children);
           resources.css.push([destFile, x.children]);
           return { content: cssify(styles), dest: destFile };
-        }))));
+        }));
+      })());
     }
 
     await Promise.all(tasks);

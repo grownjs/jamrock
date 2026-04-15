@@ -65,19 +65,15 @@ export async function createRedisConnection(env: any, options: any, getRedisModu
   env.cache = createCache(options);
 }
 
-export const createTranspiler = ({ fs, Readable, getESbuildModule }: any) => {
-  let esbuild: any;
-  let bundler: any;
+export const createTranspiler = ({ fs }: any) => {
+  const bundler = createBundler({ fs });
+
   return async function transpile(tpl: any, ext?: string, opts?: any): Promise<any> {
     if (Util.Is.arr(tpl)) {
       return Promise.all(tpl.map((x: any) => transpile(x, ext, opts)));
     }
 
-    esbuild = esbuild || await getESbuildModule();
-    bundler = bundler || createBundler({ Readable, esbuild, fs });
-
     const params = { ...tpl.attributes };
-
     tpl = await bundler.bundle(tpl, ext, opts);
 
     return {

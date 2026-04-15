@@ -68,6 +68,7 @@
   },
   "devDependencies": {
     "@grown/conn": "^0.0.44",
+    "esbuild": "^0.25.12",
     "@grown/test": "^0.0.19",
     "@japa/expect": "^3.0.7",
     "@japa/runner": "^4.5.0",
@@ -108,7 +109,6 @@
     "@grown/static": "^0.0.10",
     "@unocss/core": "^66.6.0",
     "chokidar": "^4.0.3",
-    "esbuild": "^0.25.12",
     "fast-glob": "^3.3.3",
     "grown": "^1.4.23",
     "open-editor": "^5.1.0",

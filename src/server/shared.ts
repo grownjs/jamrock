@@ -3,6 +3,7 @@ import { Template, Runtime, Handler, Markup, Render, Util } from '../main.ts';
 import { createBody } from './request.ts';
 import { createFSWatcher } from './helpers.ts';
 import { createConnection } from './connection.ts';
+import { rewriteImports } from './walker.ts';
 
 const $ = Util as any;
 
@@ -424,10 +425,15 @@ export const createCompiler = ({ fs, path }: any, options: any, external: any) =
 
               printLog(`  ${$.$.green('write')} ${$.$.gray(clientFile)}`);
 
-              tasks.push(() => Template.transpile({
-                filepath: destFile.replace('.mjs', '.js'),
-                content: `export * from '${Template.join(cwd, destFile)}'`,
-              }).then((params: any) => Template.write(clientFile, params.content)));
+              // .bundled.mjs is a thin shim: same content as .generated.mjs but with
+              // relative import specifiers rewritten to absolute browser-loadable URLs
+              // served under /<prefix>/. Written after Block.unwrap() so all /*@@*/__resolve
+              // sentinels are already resolved in destFile.
+              tasks.push(async () => {
+                const content = Template.read(destFile);
+                const rewritten = rewriteImports(content, destFile, base, options.prefix || '@');
+                Template.write(clientFile, rewritten);
+              });
             }
           }
         });

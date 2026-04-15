@@ -80,9 +80,7 @@ test.group('template transformation', t => {
     expect(tpl.module.name).toEqual('OSOM');
 
     expect(tpl.partial.assets.js).toEqual([
-      ['x', 'generated/templates/transformed/nested/path/to/transformed(0).js', [
-        'generated/templates/transformed/nested/path/to/generated/templates/transformed/nested/path/module.mjs',
-      ]],
+      ['x', 'generated/templates/transformed/nested/path/to/transformed(0).js', []],
       ['x', 'generated/templates/transformed/nested/path/to/transformed(1).js', []],
       ['x', 'generated/templates/transformed/nested/path/to/transformed(2).js', []],
     ]);
@@ -98,7 +96,7 @@ test.group('template transformation', t => {
     expect(css).toEqual(['templates/transformed/nested/path/to/transformed(0).css']);
 
     expect(Template.read('generated/templates/transformed/nested/path/to/transformed(0).css'))
-      .toContain('p:where(.jam-420){color:#ff0;}\n@font-face{font-family:Alpha;src:url(generated/templates/transformed/fonts/Bravo.otf);}');
+      .toContain("p:where(.jam-420){color:#ff0;}\n@font-face{font-family:Alpha;src:url('../../../fonts/Bravo.otf');}");
 
     expect(html).toContain(`<p data-location="templates/transformed/nested/path/to/transformed.html:68:3" class="jam-420">OK: 28</p>
     <span>OSOM</span>
@@ -251,7 +249,7 @@ ul:where(.jam-420) li span:where(.jam-420){color:pink;}
     expect(css).toEqual(['templates/transformed/nested(0).css', 'templates/transformed/nested(1).css']);
 
     expect(Template.read('generated/templates/transformed/nested(1).css'))
-      .toContain(`@font-face{font-family:Alpha;src:url(generated/templates/transformed/fonts/Bravo.otf);}
+      .toContain(`@font-face{font-family:Alpha;src:url('./fonts/Bravo.otf');}
 @supports (display: flex){.flex-container > *{text-shadow:0 0 2px blue;float:none;}
 .flex-container{display:flex;}}
 [class]{color:cyan;}`);
@@ -402,10 +400,10 @@ test.group('core utilties', t => {
 
     expect(mods.map(_ => (_.src ? [_.src, _.dest] : [_.dest]))).toEqual([
       ['templates/transformed/nested/path/to/transformed.html', 'generated/templates/transformed/nested/path/to/transformed.html'],
+      ['generated/templates/transformed/nested/path/to/transformed(0).css'],
       ['generated/templates/transformed/nested/path/to/transformed(0).js'],
       ['generated/templates/transformed/nested/path/to/transformed(1).js'],
       ['generated/templates/transformed/nested/path/to/transformed(2).js'],
-      ['generated/templates/transformed/nested/path/to/transformed(0).css'],
       ['templates/transformed/nested/path/to/test.html', 'generated/templates/transformed/nested/path/to/test.html'],
       ['templates/transformed/nested/path/inner.html', 'generated/templates/transformed/nested/path/inner.html'],
       ['templates/transformed/router.html', 'generated/templates/transformed/router.html'],
