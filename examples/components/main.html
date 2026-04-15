@@ -1,0 +1,52 @@
+<script context="client">
+  import { trap, ref, signal, effect } from 'jamrock';
+
+  export let message = 'Really?';
+  export let answer = 'OSOM';
+  export let markup = '';
+
+  const fun = signal('FIXME');
+  const html = signal(markup);
+
+  const el = ref(null);
+
+  trap(e => { console.log('E_MAIN', e);
+    if (confirm('Are you OK?')) {
+      fun.value = 'Thank you!';
+    } else {
+      fun.value = ':(';
+    }
+  });
+
+  effect(() => {
+    if (fun.value === 'D:') throw new Error(fun.value);
+    if (fun.value === '42') alert(el.current.outerHTML);
+    if (fun.value === 'FIXME') setTimeout(() => fun.value = 'FIXME', 150);
+  });
+
+  if (markup.includes('HTML')) {
+    markup += '!!';
+  }
+
+  function callme() {
+    console.log('HTML', html.value = markup = '<em>OSOM</em>');
+  }
+  function fixme() {
+    console.log('ANSWER?', answer);
+    fun.value = answer;
+  }
+</script>
+
+<div>
+  {@render $$props.before?.()}
+  <button on:click="{() => fun.value = prompt(message)}">insight</button>
+  <button onclick="{fixme}">truth</button>
+  <p {el} onsomethingelse={callme}>Your answer: {$fun}</p>
+  [{@render $$props.children?.()}:{@render $$props.after?.()}]
+  {@html ['h1', Object.fromEntries([['style', 'color:red']]), 'It works.']}
+  {@html $html}
+</div>
+
+<style>
+  button { color: red }
+</style>

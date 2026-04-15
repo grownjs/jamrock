@@ -6,7 +6,7 @@ export function run(test, driver, expect, createSandbox) {
     });
 
     test(`${driver}: ensure client-side components can be rendered`, async () => {
-      const mod = env.lookup('main.html');
+      const mod = env.lookup('components/main.html');
       const el = await env.mount(mod, {
         markup: '<b>OSOM</b>',
         default: () => [Math.random()],
@@ -15,8 +15,8 @@ export function run(test, driver, expect, createSandbox) {
       });
 
       expect([...el.querySelectorAll('button')].map(x => x.outerHTML)).toEqual([
-        '<button data-location="generated/main.html:44:3" class="jam-x1704ny8">insight</button>',
-        '<button data-location="generated/main.html:45:3" class="jam-x1704ny8">truth</button>',
+        '<button data-location="generated/components/main.html:42:3" class="jam-x1kixmrr">insight</button>',
+        '<button data-location="generated/components/main.html:43:3" class="jam-x1kixmrr">truth</button>',
       ]);
 
       expect(el.outerHTML).toContain('<root><div');
