@@ -17,6 +17,8 @@
     "net": "node:net",
     "tls": "node:tls",
     "querystring": "node:querystring",
-    "string_decoder": "node:string_decoder"
+    "string_decoder": "node:string_decoder",
+    "/~/main.ts": "./dist/main.mjs",
+    "/~/client.js": "./dist/client.mjs"
   }
 }

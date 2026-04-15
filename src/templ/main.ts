@@ -917,16 +917,16 @@ export class Template {
 
     if (mod.indexOf('node:') === 0) return mod;
     if (!mod.includes(':') && mod[0] === '/') paths.push(mod);
-    else if (Template.exists(`node_modules/${mod.split(':')[0]}/package.json`)) return mod;
+    else if (this.exists(`node_modules/${mod.split(':')[0]}/package.json`)) return mod;
 
     for (let i = 0; i < paths.length; i += 1) {
-      if (Template.exists(paths[i])) return paths[i];
-      if (Template.exists(`${paths[i]}.js`)) return `${paths[i]}.js`;
-      if (Template.exists(`${paths[i]}.mjs`)) return `${paths[i]}.mjs`;
-      if (Template.exists(`${paths[i]}.cjs`)) return `${paths[i]}.cjs`;
-      if (Template.exists(`${paths[i]}/index.js`)) return `${paths[i]}/index.js`;
-      if (Template.exists(`${paths[i]}/index.mjs`)) return `${paths[i]}/index.mjs`;
-      if (Template.exists(`${paths[i]}/index.cjs`)) return `${paths[i]}/index.cjs`;
+      if (this.exists(paths[i])) return paths[i];
+      if (this.exists(`${paths[i]}.js`)) return `${paths[i]}.js`;
+      if (this.exists(`${paths[i]}.mjs`)) return `${paths[i]}.mjs`;
+      if (this.exists(`${paths[i]}.cjs`)) return `${paths[i]}.cjs`;
+      if (this.exists(`${paths[i]}/index.js`)) return `${paths[i]}/index.js`;
+      if (this.exists(`${paths[i]}/index.mjs`)) return `${paths[i]}/index.mjs`;
+      if (this.exists(`${paths[i]}/index.cjs`)) return `${paths[i]}/index.cjs`;
     }
   }
 

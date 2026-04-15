@@ -15,10 +15,17 @@
     "skipLibCheck": true,
     "sourceMap": false,
     "allowImportingTsExtensions": true,
-    "noEmit": true
+    "noEmit": true,
+    "baseUrl": ".",
+    "paths": {
+      "jamrock": ["./src/main.ts"],
+      "jamrock/client": ["./src/client.js"],
+      "#main": ["./src/main.ts"]
+    }
   },
   "include": [
     "env.d.ts",
+    "types/**/*.d.ts",
     "*.js",
     "*.mjs",
     "src/**/*",
