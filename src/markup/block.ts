@@ -442,7 +442,7 @@ export const __attributes = ${this.$attributes};
       if (isGTK) {
         return `/* eslint-disable */
 ${this.$prefix}
-${this.buildGTKTemplate(template)}
+${this.buildGTKTemplate(template, [])}
 export default {${defaults.replace('__template', '__gtk')}};
 `.replace(/\(\$\$\)/g, '($$$$,$$$$props)');
       }
@@ -514,28 +514,29 @@ ${this.context === 'client'
 
 export const __routes = ${JSON.stringify(matched.routes)};
 ${this.$prefix}
-${isGTK ? this.buildGTKTemplate(template) : `export const __template = ($$) => [${Block.wrap(template)}];`}
+${isGTK ? this.buildGTKTemplate(template, lets) : `export const __template = ($$) => [${Block.wrap(template)}];`}
 export const __exported = ${JSON.stringify(exported)};
 export const __functions = {${calls.join(',')}};
-export default {${defaults},__functions,__exported,__handler,__routes};
+export default {${isGTK ? defaults.replace('__template', '__gtk') : defaults},__functions,__exported,__handler,__routes};
 for (const [, fn] of Object.entries(__functions)) fn.$ = __src;
 `;
 
     const code = lets.length > 0
-      ? js.replace(/\(\$\$\)/g, `($$$$,{${lets.join(',')},...$$$$props})`)
+      ? js.replace(/\(\$\$\)/g, `($$$$,{${lets.join(',')},..._props})`)
       : js;
 
     return code;
   }
 
-  buildGTKTemplate(template: string): string {
+  buildGTKTemplate(template: string, stateVars: string[] = []): string {
     const subs = getSubscriptions();
     
     const widgetCode = template.trim().startsWith('[')
       ? template.trim().slice(1, -1)
       : template.trim();
     
-    let code = `export const __gtk = ({ ${this.opts.gtkImports || 'vstack, hstack, box, label, button, entry, toggle, check, scroll, stack, overlay, paned, expander, revealer, frame, progress, level, spinner, image, dropdown, calendar, listview'} }) => {\n`;
+    const stateParams = stateVars.join(', ');
+    let code = `export const __gtk = ({ ${this.opts.gtkImports || 'vstack, hstack, box, label, button, entry, toggle, check, scroll, stack, overlay, paned, expander, revealer, frame, progress, level, spinner, image, dropdown, calendar, listview'} }, { ${stateParams} }) => {\n`;
     
     code += `\tconst self = {};\n`;
     code += `\tconst widget = ${widgetCode};\n`;
