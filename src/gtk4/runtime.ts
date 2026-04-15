@@ -4,6 +4,8 @@ import { GObject, Gio } from './deps.ts';
 // Signal System
 // =============
 
+let trackingContext: Set<Set<(v: any) => void>> | null = null;
+
 export interface Signal<T> {
   readonly value: T;
   subscribe(callback: (value: T) => void): () => void;
@@ -12,10 +14,11 @@ export interface Signal<T> {
 
 export interface Computed<T> {
   readonly value: T;
+  subscribe(callback: () => void): () => void;
 }
 
 /**
- * Create a reactive signal
+ * Create a reactive signal with automatic dependency tracking
  * 
  * @param initial - Initial value
  * @returns Signal object with value, subscribe, and peek
@@ -30,7 +33,12 @@ export function signal<T>(initial: T): Signal<T> {
   const subscribers = new Set<(v: T) => void>();
 
   return {
-    get value() { return value; },
+    get value() { 
+      if (trackingContext) {
+        trackingContext.add(subscribers);
+      }
+      return value; 
+    },
     set value(v: T) {
       if (value !== v) {
         value = v;
@@ -46,26 +54,47 @@ export function signal<T>(initial: T): Signal<T> {
 }
 
 /**
- * Create a computed signal that depends on other signals
+ * Create a computed signal with automatic dependency tracking
  * 
  * @param fn - Computation function
- * @param deps - Array of signals to track
  * @returns Computed signal
  * 
  * @example
- * const doubled = computed(() => count.value * 2, [count]);
+ * const doubled = computed(() => count.value * 2);
  */
-export function computed<T>(fn: () => T, deps: Signal<any>[]): Computed<T> {
-  let cached = fn();
+export function computed<T>(fn: () => T): Computed<T> {
+  const deps = new Set<Set<(v: any) => void>>();
+  const subscribers = new Set<() => void>();
+  let cached: T;
 
-  deps.forEach(sig => {
-    sig.subscribe(() => {
+  const compute = () => {
+    const prevContext = trackingContext;
+    trackingContext = deps;
+    try {
       cached = fn();
-    });
+    } finally {
+      trackingContext = prevContext;
+    }
+    subscribers.forEach(cb => cb());
+  };
+
+  compute();
+
+  deps.forEach(subscriberSet => {
+    subscriberSet.add(compute);
   });
 
   return {
-    get value() { return cached; }
+    get value() { 
+      if (trackingContext) {
+        trackingContext.add(subscribers);
+      }
+      return cached; 
+    },
+    subscribe(callback: () => void) {
+      subscribers.add(callback);
+      return () => subscribers.delete(callback);
+    }
   };
 }
 
