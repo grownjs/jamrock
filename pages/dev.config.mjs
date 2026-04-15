@@ -1,0 +1,1 @@
+export default { unocss: true, markdown: { emojify: true } };
