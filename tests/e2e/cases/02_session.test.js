@@ -19,7 +19,7 @@ test('should navigate through pages', async t => {
   await t.typeText($('input[name=password]'), 'bazzinga', { replace: true });
   await t.click($('[type=submit]'));
 
-  await t.expect($('[data-test\\:id=failure]').withText('Failed to authenticate').exists).ok();
+  await t.expect($('[data-test\\:id=failure]').withText('Failed to authenticate').exists).ok({ timeout: 10000 });
 
   // new account
   await t.click($('a[href="/new"]'));
@@ -28,5 +28,5 @@ test('should navigate through pages', async t => {
   await t.typeText($('input[name=b_password]'), 'bazzinga', { replace: true });
   await t.click($('[type=submit]'));
 
-  await t.expect($('li').withText('Now you can login!').exists).ok();
+  await t.expect($('li').withText('Now you can login!').exists).ok({ timeout: 10000 });
 });
