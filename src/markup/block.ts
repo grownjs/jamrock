@@ -522,7 +522,7 @@ for (const [, fn] of Object.entries(__functions)) fn.$ = __src;
 `;
 
     const code = lets.length > 0
-      ? js.replace(/\(\$\$\)/g, `($$$$,{${lets.join(',')},..._props})`)
+      ? js.replace(/\(\$\$\)/g, `($$$$,{${lets.join(',')},...$$$$props})`)
       : js;
 
     return code;
