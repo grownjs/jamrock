@@ -288,6 +288,7 @@ export class Template {
     context.depth = context.depth || 0;
     if (context.tag === undefined) context.tag = Template.tag(context);
     context.media = context.media || new Set<string>();
+    (globalThis as any).__JAMROCK_CONTEXT__ = context.conn;
   }
 
   static async reduce(component: any, filepath: string, context: any, props: any, cb: any): Promise<any> {

@@ -47,7 +47,8 @@ function createSelf(element: ElementFn | null, loader: LoaderFn, next: NextFn, r
       return [tag, { 'd:html': value, tag }];
     },
     if: (cond: unknown, then: () => unknown, ...branches: Array<(() => unknown) | undefined>): unknown => {
-      if (cond) return run(then(), []);
+      const value = cond !== null && typeof cond === 'object' && 'valueOf' in cond ? (cond as any).valueOf() : cond;
+      if (value) return run(then(), []);
 
       const fallback = branches.pop();
 
