@@ -15,12 +15,14 @@ export class AppRunner {
   #proc = null;
   #monitor = null;
   #appPath = null;
+  #opts = {};
   #handlers = new Map();
   #restarting = false;
   #restartTimer = 0;
 
-  constructor(appPath) {
+  constructor(appPath, opts = {}) {
     this.#appPath = appPath;
+    this.#opts = opts;
   }
 
   // ─── Lifecycle ─────────────────────────────────────────────────────────────
@@ -80,6 +82,7 @@ export class AppRunner {
       });
       launcher.setenv('DYLD_LIBRARY_PATH', LIB_PATH, true);
       launcher.setenv('JAMROCK_DEVTOOLS', '1', true);
+      if (this.#opts.headless) launcher.setenv('JAMROCK_HEADLESS', '1', true);
       this.#proc = launcher.spawnv([GJS_BIN, '-m', this.#appPath]);
 
       this.#emit('start', { pid: this.#proc.get_identifier(), path: this.#appPath });

@@ -2,7 +2,11 @@
  * E2E CLI runner
  *
  * Usage:
- *   DYLD_LIBRARY_PATH=/opt/homebrew/lib gjs -m devtools/e2e/run.mjs -- <test-file.e2e.mjs> [target-app.gtk.mjs]
+ *   DYLD_LIBRARY_PATH=/opt/homebrew/lib gjs -m devtools/e2e/run.mjs -- <test-file.e2e.mjs> [app.gtk.mjs] [--headless]
+ *   bin/gjs devtools/e2e/run.mjs -- <test.e2e.mjs> --headless
+ *
+ * Flags:
+ *   --headless   Run target app with opacity=0 (no visible window)
  *
  * If no target is specified, it's inferred from the test file name:
  *   test-target.e2e.mjs → devtools/test-target.gtk.mjs
@@ -18,11 +22,13 @@ import { setBridge, runTests } from './runner.mjs';
 // ─── Args ─────────────────────────────────────────────────────────────────────
 
 const rawArgs = typeof ARGV !== 'undefined' ? ARGV.filter(a => a !== '--') : [];
-const testFile = rawArgs[0];
-let appFile = rawArgs[1];
+const headless = rawArgs.includes('--headless');
+const positional = rawArgs.filter(a => !a.startsWith('--'));
+const testFile = positional[0];
+let appFile = positional[1];
 
 if (!testFile) {
-  print('Usage: gjs -m devtools/e2e/run.mjs -- <test.e2e.mjs> [app.gtk.mjs]');
+  print('Usage: gjs -m devtools/e2e/run.mjs -- <test.e2e.mjs> [app.gtk.mjs] [--headless]');
   imports.system.exit(1);
 }
 
@@ -60,12 +66,13 @@ if (!GLib.file_test(appPath, GLib.FileTest.EXISTS)) {
 // ─── Bridge + Runner ─────────────────────────────────────────────────────────
 
 print('=== Jamrock E2E ===');
-print('Test: ' + testPath.replace(cwd + '/', ''));
-print('App:  ' + appPath.replace(cwd + '/', ''));
+print('Test:     ' + testPath.replace(cwd + '/', ''));
+print('App:      ' + appPath.replace(cwd + '/', ''));
+if (headless) print('Mode:     headless (no visible window)');
 print('');
 
 const bridge = new DevToolsBridge();
-const runner = new AppRunner(appPath);
+const runner = new AppRunner(appPath, { headless });
 let exitCode = 0;
 
 bridge.start();
