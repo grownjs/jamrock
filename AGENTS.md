@@ -1,0 +1,1 @@
+/Users/alvaro/Workspace/_notes/journal/projects/jamrock/AGENTS.md
