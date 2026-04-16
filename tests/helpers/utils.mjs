@@ -9,6 +9,7 @@ import GrownTest from '@grown/test';
 import GrownConn from '@grown/conn';
 
 import { createTranspiler } from '../../src/server/helpers.ts';
+import { attachSourceMap } from '../../src/server/sourcemap.ts';
 import { stringify, debug } from '../../src/templ/utils.ts';
 import { executeAsync } from '../../src/render/async.ts';
 import { rebase } from '../../src/handler/utils.ts';
@@ -31,9 +32,18 @@ export function createView(loader) {
 let inc = 0;
 export async function transpile(code, src, save, prefix = 'generated/') {
   const file = `${cwd}/${prefix}${src.replace('.html', '.generated.mjs')}`;
+  const relFile = rebase(file, cwd);
 
   fs.mkdirSync(path.dirname(file), { recursive: true });
-  fs.writeFileSync(file, Block.unwrap(code, src, rebase(file, cwd)));
+
+  const unwrapped = Block.unwrap(code, src, relFile);
+  const srcPath = path.join(cwd, src.replace(/^\.\//, ''));
+  const final = fs.existsSync(srcPath)
+    ? attachSourceMap(unwrapped, relFile, src.replace(/^\.\//, ''), fs.readFileSync(srcPath, 'utf8'),
+        (f, c) => fs.writeFileSync(path.isAbsolute(f) ? f : path.join(cwd, f), c))
+    : unwrapped;
+
+  fs.writeFileSync(file, final);
 
   if (!save) {
     try {

@@ -459,11 +459,17 @@ export async function createModuleResponse(env: any, conn: any): Promise<any> {
     }
   }
 
+  const contentType = file.endsWith('.map')
+    ? 'application/json'
+    : file.includes('.css')
+      ? 'text/css'
+      : 'application/javascript';
+
   return {
     body,
     status,
     headers: new Headers({
-      'content-type': file.includes('css') ? 'text/css' : 'application/javascript',
+      'content-type': contentType,
       'content-length': body.length.toString(),
     }),
   };

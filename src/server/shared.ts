@@ -4,6 +4,7 @@ import { createBody } from './request.ts';
 import { createFSWatcher } from './helpers.ts';
 import { createConnection } from './connection.ts';
 import { rewriteImports } from './walker.ts';
+import { attachSourceMap } from './sourcemap.ts';
 
 const $ = Util as any;
 
@@ -441,7 +442,17 @@ export const createCompiler = ({ fs, path }: any, options: any, external: any) =
     }
 
     results.forEach(([chunk, destFile]: [any, string]) => {
-      Template.write(destFile, Markup.Block.unwrap(chunk.content, chunk.src, destFile));
+      const unwrapped = Markup.Block.unwrap(chunk.content, chunk.src, destFile);
+
+      // Attach source map sidecar (.generated.mjs.map) when sourcemap option is enabled.
+      // Parses embedded /*!#line:col*/ markers to build standard v3 mappings.
+      const sourcemap = options.sourcemap !== false;
+      const final = sourcemap && chunk.src && Template.exists(chunk.src)
+        ? attachSourceMap(unwrapped, destFile, chunk.src, Template.read(chunk.src), Template.write)
+        : unwrapped;
+
+      Template.write(destFile, final);
+
       if (chunk.src) {
         this[FILES_PROPERTY][chunk.src] = {
           filepath: destFile,
