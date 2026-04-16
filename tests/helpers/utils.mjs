@@ -38,9 +38,9 @@ export async function transpile(code, src, save, prefix = 'generated/') {
 
   const unwrapped = Block.unwrap(code, src, relFile);
   const srcPath = path.join(cwd, src.replace(/^\.\//, ''));
+  const writeMap = (f, c) => fs.writeFileSync(path.isAbsolute(f) ? f : path.join(cwd, f), c);
   const final = fs.existsSync(srcPath)
-    ? attachSourceMap(unwrapped, relFile, src.replace(/^\.\//, ''), fs.readFileSync(srcPath, 'utf8'),
-        (f, c) => fs.writeFileSync(path.isAbsolute(f) ? f : path.join(cwd, f), c))
+    ? attachSourceMap(unwrapped, relFile, src.replace(/^\.\//, ''), fs.readFileSync(srcPath, 'utf8'), writeMap)
     : unwrapped;
 
   fs.writeFileSync(file, final);
