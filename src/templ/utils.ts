@@ -11,7 +11,7 @@ import { attrs, taggify } from '../markup/html.ts';
 import { dump, stack, ignore } from '../utils/server.ts';
 
 const RE_MATCH_LINES = /(?:<anonymous>|[.+](?:page|error|layout|generated)\.m?[jt]s(?:[^:]+?)):(\d+)(?::(\d+))?/;
-const RE_MATCH_OFFSETS = /\/\*!#(\d+):(\d+)\*\//;
+
 
 const emphasize: any = createEmphasize();
 
@@ -88,9 +88,7 @@ export function sample(block: any, info: string, tail: string[], err: any, ok?: 
   if (match) {
     const genLine = +(match[1] as any);
 
-    // If a source map is available, use it to resolve generated line → original line/col.
-    // This avoids scanning block.code for /*!#line:col*/ markers and works even when
-    // the original .html file is not present on disk (production, containers).
+    // Source map path: precise generated→source mapping, no file reads at runtime.
     if (block.smap) {
       const pos = block.smap.lookup(genLine);
       if (pos) {
@@ -98,15 +96,17 @@ export function sample(block: any, info: string, tail: string[], err: any, ok?: 
       }
     }
 
-    // Fallback: walk backwards through block.code for nearest /*!#line:col*/ marker
-    const lines = block.code.split('\n');
-    let code: string;
-    for (let i = 1; i < lines.length; i += 1) {
-      code = lines[genLine - i];
-      if (code) {
-        const [, line, col] = code.match(RE_MATCH_OFFSETS) || [];
-        if (line && col) {
-          return `at ${block.file}:${line}:${col}\n${stack(block.html, line as any, col as any)}`;
+    // Inline path (no .map): scan block.code backwards for nearest /*!#line:col*/ marker.
+    // Used for in-memory compiled templates (tests, dynamic compilation).
+    if (block.code && block.html) {
+      const lines = block.code.split('\n');
+      for (let i = 1; i < lines.length; i += 1) {
+        const code = lines[genLine - i];
+        if (code) {
+          const marker = code.match(/\/\*!#(\d+):(\d+)\*\//);
+          if (marker) {
+            return `at ${block.file}:${marker[1]}:${marker[2]}\n${stack(block.html, +marker[1], +marker[2])}`;
+          }
         }
       }
     }

@@ -47,16 +47,12 @@ function normalizeViews(doc: any, body: any, head: any): void {
 function createRenderError(e: any, component: any): any {
   trace(e, 'E_RENDER');
 
-  // Try to load the source map sidecar (.generated.mjs.map) for the component.
-  // The map embeds sourcesContent so we don't need to read the original .html file.
   const mapFile = `${component.__dest}.map`;
   const smap = loadSourceMap(mapFile, Loader.read, Loader.exists);
 
   return debug({
     file: component.__src,
-    // Use sourcesContent from the map if available; fall back to reading the source file.
-    html: smap ? smap.sourceContent : (Loader.exists(component.__src) ? Loader.read(component.__src) : ''),
-    code: Loader.read(component.__dest),
+    html: smap?.sourceContent ?? '',
     smap,
   }, e);
 }
