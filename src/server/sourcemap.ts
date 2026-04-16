@@ -112,6 +112,98 @@ export function generateSourceMap(
 }
 
 // ---------------------------------------------------------------------------
+// VLQ decoding (for error location lookup)
+// ---------------------------------------------------------------------------
+
+function decodeVLQ(str: string, idx: number): { value: number; next: number } {
+  let result = 0;
+  let shift = 0;
+  let continuation: number;
+  do {
+    const digit = BASE64.indexOf(str[idx++]);
+    if (digit < 0) break;
+    continuation = digit & 32;
+    result |= (digit & 31) << shift;
+    shift += 5;
+  } while (continuation);
+  return { value: result & 1 ? -(result >> 1) : result >> 1, next: idx };
+}
+
+/**
+ * Load a source map and return a lookup function that maps a generated line
+ * number (1-indexed) to the original source line/col (1-indexed).
+ * Returns null if the map file doesn't exist or can't be parsed.
+ */
+export function loadSourceMap(
+  mapFile: string,
+  read: (path: string) => string,
+  exists: (path: string) => boolean,
+): {
+  sourceFile: string;
+  sourceContent: string;
+  lookup(genLine: number): { srcLine: number; srcCol: number } | null;
+} | null {
+  if (!exists(mapFile)) return null;
+
+  let map: SourceMapV3;
+  try {
+    map = JSON.parse(read(mapFile));
+  } catch {
+    return null;
+  }
+
+  const sourceFile = map.sources[0] || '';
+  const sourceContent = map.sourcesContent?.[0] || '';
+
+  // Build a flat array: mappingsByLine[genLine] = last { srcLine, srcCol } on that line (0-indexed)
+  const lines = map.mappings.split(';');
+  const mappingsByLine: ({ srcLine: number; srcCol: number } | null)[] = [];
+
+  let prevSrcLine = 0;
+  let prevSrcCol = 0;
+
+  for (const lineStr of lines) {
+    let lastMapping: { srcLine: number; srcCol: number } | null = null;
+
+    if (lineStr) {
+      let idx = 0;
+      while (idx < lineStr.length) {
+        const seg = lineStr.slice(idx);
+        const d0 = decodeVLQ(seg, 0); // genColDelta (unused for lookup)
+        const d1 = decodeVLQ(seg, d0.next);
+        const d2 = decodeVLQ(seg, d1.next);
+        const d3 = decodeVLQ(seg, d2.next);
+
+        prevSrcLine += d2.value;
+        prevSrcCol += d3.value;
+
+        lastMapping = { srcLine: prevSrcLine + 1, srcCol: prevSrcCol + 1 };
+
+        // advance past this segment
+        idx += d3.next;
+        if (idx < lineStr.length && lineStr[idx] === ',') idx++;
+        else break;
+      }
+    }
+
+    mappingsByLine.push(lastMapping);
+  }
+
+  return {
+    sourceFile,
+    sourceContent,
+    lookup(genLine: number) {
+      // genLine is 1-indexed; mappingsByLine is 0-indexed
+      // Walk backwards from genLine to find the nearest mapped line
+      for (let i = genLine - 1; i >= 0; i--) {
+        if (mappingsByLine[i]) return mappingsByLine[i];
+      }
+      return null;
+    },
+  };
+}
+
+// ---------------------------------------------------------------------------
 // Write source map sidecar and append sourceMappingURL to generated file
 // ---------------------------------------------------------------------------
 

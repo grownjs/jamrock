@@ -86,24 +86,33 @@ export function sample(block: any, info: string, tail: string[], err: any, ok?: 
   }
 
   if (match) {
-    const lines = block.code.split('\n');
+    const genLine = +(match[1] as any);
 
+    // If a source map is available, use it to resolve generated line → original line/col.
+    // This avoids scanning block.code for /*!#line:col*/ markers and works even when
+    // the original .html file is not present on disk (production, containers).
+    if (block.smap) {
+      const pos = block.smap.lookup(genLine);
+      if (pos) {
+        return `at ${block.file}:${pos.srcLine}:${pos.srcCol}\n${stack(block.html, pos.srcLine, pos.srcCol)}`;
+      }
+    }
+
+    // Fallback: walk backwards through block.code for nearest /*!#line:col*/ marker
+    const lines = block.code.split('\n');
     let code: string;
     for (let i = 1; i < lines.length; i += 1) {
-      code = lines[(match[1] as any) - i];
-
+      code = lines[genLine - i];
       if (code) {
         const [, line, col] = code.match(RE_MATCH_OFFSETS) || [];
-
         if (line && col) {
           return `at ${block.file}:${line}:${col}\n${stack(block.html, line as any, col as any)}`;
         }
       }
     }
 
-    const line = Math.max(1, (match[1] as any) - 11);
+    const line = Math.max(1, genLine - 11);
     const col = match[2];
-
     return `at ${block.file}:${line}\n${stack(block.html, line, col as any)}`;
   }
   return `at ${block.file}\n${stack(block.html, 1, 1, ok)}`;
