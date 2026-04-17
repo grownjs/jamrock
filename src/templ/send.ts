@@ -102,8 +102,10 @@ export function streamify(): any {
         if (process.env.HEADLESS || !done) next(values);
         $.stream.delete(`${ref}/${key}`);
         if ($.streamController && $.stream.size === 0) {
+          const controller = $.streamController;
+          $.streamController = null;
           try {
-            $.streamController.close();
+            controller.close();
           } catch {
             // Controller already closed
           }
