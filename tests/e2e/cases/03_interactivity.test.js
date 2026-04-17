@@ -34,7 +34,7 @@ test('should render interactive form', async t => {
   await t.expect($('input[type=submit]').exists).ok();
 });
 
-fixture`RPC and generators`
+fixture`Forms`
   .page`http://localhost:3000/forms`;
 
 test('should render form with validation', async t => {

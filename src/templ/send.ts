@@ -102,7 +102,11 @@ export function streamify(): any {
         if (process.env.HEADLESS || !done) next(values);
         $.stream.delete(`${ref}/${key}`);
         if ($.streamController && $.stream.size === 0) {
-          $.streamController.close();
+          try {
+            $.streamController.close();
+          } catch {
+            // Controller already closed
+          }
         }
       }
     };
