@@ -17,7 +17,7 @@ Consolidated pending work for the Jamrock project.
 
 ## Backlog
 
-- [ ] [Source map support for browser dev tools](.journal/2026-04-14/plans/03-source-maps.md)
+- [x] Source map support — fully implemented in `src/server/sourcemap.ts`
 - [x] Fix GTK4 Explorer crash with 50+ widgets — `sanitizeLabel()` strips 4-byte emoji before passing to GTK Pango; blocklist removed; all playground components accessible (ok)
 - [ ] Reduce `@ts-expect-error` usage in GTK4 code (22 in `src/gtk4/elements.ts`)
 - [ ] Reduce `eslint-disable` usage (67 total) — largest offenders: `src/client/livesocket.ts` (11), `tests/06_sockets.test.mjs` (8), `bin/cli.mjs` (4)
