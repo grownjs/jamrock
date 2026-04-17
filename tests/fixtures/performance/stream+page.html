@@ -1,0 +1,26 @@
+<script>
+  let count = 0;
+  let maxItems = 100;
+  
+  async function* streamItems() {
+    let i = 0;
+    while (i < maxItems) {
+      yield { id: i, value: Math.random() };
+      i++;
+      if (i % 10 === 0) {
+        await new Promise(r => setTimeout(r, 5));
+      }
+    }
+  }
+</script>
+
+<fragment name="items" limit="10" interval="10">
+  <ul data-test:id="list">
+    {#each streamItems as item}
+      <li data-test:id="item-{item.id}">Item {item.id}: {item.value.toFixed(2)}</li>
+    {/each}
+  </ul>
+</fragment>
+
+<p data-test:id="count">Rendered: {count}</p>
+<button onclick="maxItems = 10000" data-test:id="stress">Stress test (10k items)</button>

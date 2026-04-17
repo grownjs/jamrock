@@ -1,0 +1,20 @@
+<script>
+  export let shouldFail = false;
+  
+  function riskyOperation() {
+    if (shouldFail) {
+      throw new Error('Intentional error for testing');
+    }
+    return 'Success';
+  }
+</script>
+
+{#if shouldFail}
+  <p data-test:id="will-crash">{riskyOperation()}</p>
+{:else}
+  <p data-test:id="safe">{riskyOperation()}</p>
+{/if}
+
+<button onclick="shouldFail = !shouldFail" data-test:id="toggle">
+  Toggle failure
+</button>

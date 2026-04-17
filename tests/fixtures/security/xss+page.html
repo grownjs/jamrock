@@ -1,0 +1,17 @@
+<script>
+  export let userInput = '';
+  
+  function handleSubmit(e) {
+    e.preventDefault();
+    console.log('Submitted:', userInput);
+  }
+</script>
+
+<form on:submit={handleSubmit}>
+  <input type="text" bind:value={userInput} data-test:id="input" placeholder="Enter text..." />
+  <button type="submit" data-test:id="submit">Submit</button>
+</form>
+
+<div data-test:id="output">
+  {userInput}
+</div>
