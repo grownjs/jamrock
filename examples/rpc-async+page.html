@@ -17,27 +17,18 @@ export async function reset() {
 }
 </script>
 
-<script>
-let localCount = 0;
-</script>
-
 <h1>RPC Test</h1>
 
-<fragment name="display">
-<p>Server count: <span data-test:id="server-count">{serverCount}</span></p>
-<p>Local count: <span data-test:id="local-count">{localCount}</span></p>
-</fragment>
+<p>Server count: <span id="server-count">{serverCount}</span></p>
 
 <form @on:submit={increment}>
-<input type="hidden" name="step" value="1" />
-<button type="submit" data-test-id="increment">+1 Server</button>
+<button type="submit" id="increment">+1 Server</button>
 </form>
 
 <form @on:submit={decrement}>
-<input type="hidden" name="step" value="1" />
-<button type="submit" data-test-id="decrement">-1 Server</button>
+<button type="submit" id="decrement">-1 Server</button>
 </form>
 
 <form @on:submit={reset}>
-<button type="submit" data-test-id="reset">Reset</button>
+<button type="submit" id="reset">Reset</button>
 </form>
