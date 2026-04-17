@@ -22,4 +22,3 @@ Consolidated pending work for the Jamrock project.
 - [ ] Reduce `@ts-expect-error` usage in GTK4 code (22 in `src/gtk4/elements.ts`)
 - [ ] Reduce `eslint-disable` usage (67 total) — largest offenders: `src/client/livesocket.ts` (11), `tests/06_sockets.test.mjs` (8), `bin/cli.mjs` (4)
 - [ ] Update TypeScript (5.5.4 → 6.0.2) — ESLint 8 → 10 deferred (flat config required, airbnb-base has no ESLint 10 support)
-- [ ] Document WIP runtime adapters (txiki, winterjs, cloudflare, vercel-edge, llrt)

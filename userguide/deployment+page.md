@@ -142,49 +142,6 @@ For static hosting (GitHub Pages, Netlify, etc.):
 jamrock build --static
 ```
 
-## Cloudflare Workers
-
-Use the Cloudflare adapter:
-
-```js
-import createCloudflareEnvironment from 'jamrock/cloudflare';
-
-export default createCloudflareEnvironment({
-  src: 'pages',
-  dest: 'dist',
-});
-```
-
-Deploy with Wrangler:
-
-```bash
-wrangler deploy
-```
-
-## Vercel Edge
-
-Deploy to Vercel Edge Functions:
-
-```js
-import createVercelEdgeEnvironment from 'jamrock/vercel-edge';
-
-export default createVercelEdgeEnvironment({
-  src: 'pages',
-});
-```
-
-## AWS Lambda (LLRT)
-
-Use the LLRT adapter for low-latency Lambda:
-
-```js
-import createLLRTEnvironment from 'jamrock/llrt';
-
-export const handler = createLLRTEnvironment({
-  src: 'pages',
-});
-```
-
 ## Session Storage
 
 For production, configure a persistent session store:

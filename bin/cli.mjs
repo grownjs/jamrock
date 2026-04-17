@@ -30,7 +30,6 @@ printLog(Util.$.bold(`■ Jamrock v${PKG_VERSION}`), Util.$.gray(`(${runtime}, $
 
 const USAGE_INFO = `
 Usage: ./bin/{node,deno,bun,gjs} <COMMAND> [OPTIONS]
-       ./bin/{txiki,winterjs} serve [OPTIONS]
 
   init   Generates a new application into the given directory
   serve  Starts the web-server on the given --port and --host

@@ -370,11 +370,7 @@ lib/
 ├── nodejs/     # Primary adapter
 ├── deno/       # Deno-specific
 ├── bun/        # Bun-specific
-├── gtk4/       # GJS/SpiderMonkey
-├── txiki/      # QuickJS + libuv
-├── winterjs/   # wasmer-based
-├── cloudflare/ # Workers
-└── vercel-edge/# Edge functions
+└── gtk4/       # GJS/SpiderMonkey
 ```
 
 ### Entry Points
@@ -454,7 +450,6 @@ Pages:
 ## Known Issues
 
 - **`components/svg-icon.html`** — Not implemented; SVG icons are inlined in layouts
-- **`bin/winterjs`** — Requires `wasmer run wasmer/winterjs` wrapper
 - **GJS `btoa`/`atob`** — Implemented via `GLib.base64_encode/decode`
 - **GJS `crypto.subtle.sign`** — Mocked with `GLib.compute_hmac_for_string`
 
