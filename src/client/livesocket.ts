@@ -56,6 +56,8 @@ function createSSESocket(uuid: string, prefix: string, onMessage: (_msg: string)
   };
 }
 
+/* eslint-disable no-unused-vars */
+
 export class LiveSocket {
   declare uuid: string;
   declare ready: boolean;
@@ -63,31 +65,20 @@ export class LiveSocket {
   declare headless: boolean;
   declare document: string;
   declare location: string;
-  // eslint-disable-next-line no-unused-vars
   declare send: (...args: any[]) => void;
   declare close: () => void;
-  // eslint-disable-next-line no-unused-vars
   declare call: (msg: string, next?: () => void) => void;
   declare deferred: Promise<any>;
-  // eslint-disable-next-line no-unused-vars
   declare upload: (key: string, file: File) => Promise<void>;
-  // eslint-disable-next-line no-unused-vars
   declare unpack: (payload: any) => URLSearchParams;
-  // eslint-disable-next-line no-unused-vars
   declare submit: (el: any, url: string, body: any, method: string) => void;
-  // eslint-disable-next-line no-unused-vars
   declare trigger: (e: any, kind: string, source: string | null, trigger: any, payload: any, callback?: any) => void;
-  // eslint-disable-next-line no-unused-vars
   declare patchSVG: (src: string) => Promise<void>;
-  // eslint-disable-next-line no-unused-vars
   declare patchCSS: (src: string) => void;
-  // eslint-disable-next-line no-unused-vars
   declare patch: (sources: string[]) => boolean;
-  // eslint-disable-next-line no-unused-vars
   declare next: (uuid: string) => void;
   declare sync: () => void;
   declare start: () => void;
-  // eslint-disable-next-line no-unused-vars
   declare warn: (e: any, msg: string) => void;
 
   constructor(browser: any) {
