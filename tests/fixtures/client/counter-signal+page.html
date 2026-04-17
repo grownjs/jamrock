@@ -1,0 +1,26 @@
+<script context="client">
+  import { signal, computed, effect } from 'jamrock';
+
+  export let count = signal(0);
+  const doubled = computed(() => count.value * 2);
+
+  function increment() {
+    count.value++;
+  }
+
+  function decrement() {
+    count.value--;
+  }
+
+  function reset() {
+    count.value = 0;
+  }
+</script>
+
+<div data-test:id="counter">
+  <button data-test:id="increment" on:click={increment}>+1</button>
+  <button data-test:id="decrement" on:click={decrement}>-1</button>
+  <button data-test:id="reset" on:click={reset}>Reset</button>
+  <p data-test:id="count">Count: {count.value}</p>
+  <p data-test:id="doubled">Doubled: {doubled.value}</p>
+</div>

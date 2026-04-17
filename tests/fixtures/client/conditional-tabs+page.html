@@ -1,0 +1,21 @@
+<script>
+  export let activeTab = 'home';
+
+  function setTab(tab) {
+    activeTab = tab;
+  }
+</script>
+
+<div data-test:id="tabs">
+  <button on:click="{() => setTab('home')}" data-test:id="tab-home">Home</button>
+  <button on:click="{() => setTab('about')}" data-test:id="tab-about">About</button>
+  <button on:click="{() => setTab('settings')}" data-test:id="tab-settings">Settings</button>
+  
+  {#if activeTab === 'home'}
+    <div data-test:id="panel-home">Home content</div>
+  {:else if activeTab === 'about'}
+    <div data-test:id="panel-about">About content</div>
+  {:else if activeTab === 'settings'}
+    <div data-test:id="panel-settings">Settings content</div>
+  {/if}
+</div>

@@ -1,0 +1,32 @@
+<script context="client">
+  import { signal } from 'jamrock';
+
+  export let items = signal([]);
+  let nextId = 0;
+
+  function addItem() {
+    items.value = [...items.value, { id: nextId++, text: `Item ${nextId - 1}` }];
+  }
+
+  function removeItem(id) {
+    items.value = items.value.filter(item => item.id !== id);
+  }
+
+  function clearItems() {
+    items.value = [];
+  }
+</script>
+
+<div data-test:id="list-app">
+  <button data-test:id="add" on:click={addItem}>Add</button>
+  <button data-test:id="clear" on:click={clearItems}>Clear</button>
+  <p data-test:id="count">Items: {items.value.length}</p>
+  <ul data-test:id="list">
+    {#each items as item}
+      <li data-test:id="item-{item.id}">
+        {item.text}
+        <button on:click="{() => removeItem(item.id)}" data-test:id="remove-{item.id}">x</button>
+      </li>
+    {/each}
+  </ul>
+</div>

@@ -1,0 +1,13 @@
+<script context="client">
+  import { signal, computed } from 'jamrock';
+
+  export let input = signal('');
+  const charCount = computed(() => input.value.length);
+  const wordCount = computed(() => input.value.trim() ? input.value.trim().split(/\s+/).length : 0);
+</script>
+
+<div data-test:id="live-input">
+  <input type="text" bind:value={input} data-test:id="text-input" placeholder="Type something..." />
+  <p data-test:id="chars">Characters: {charCount.value}</p>
+  <p data-test:id="words">Words: {wordCount.value}</p>
+</div>
