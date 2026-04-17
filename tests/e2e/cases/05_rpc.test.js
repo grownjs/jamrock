@@ -7,6 +7,6 @@ import { $ } from '../selectors';
 fixture`RPC async functions`
   .page`http://localhost:3000/rpc-async`;
 
-test('should render any page', async t => {
+test('should render the home page', async t => {
   await t.expect($('body').exists).ok();
 });
