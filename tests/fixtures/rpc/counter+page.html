@@ -1,0 +1,31 @@
+<script context="module">
+  let count = 0;
+  
+  export function* increment({ step }) {
+    count += parseInt(step) || 1;
+    yield { count };
+  }
+  
+  export function* decrement({ step }) {
+    count -= parseInt(step) || 1;
+    yield { count };
+  }
+</script>
+
+<script>
+  let step = 1;
+</script>
+
+<fragment name="counter-display">
+  <span data-test:id="count">{count}</span>
+</fragment>
+
+<form data-test:id="increment-form">
+  <input type="hidden" name="step" value={step} />
+  <button type="submit" data-test:id="increment">+{step}</button>
+</form>
+
+<form data-test:id="decrement-form">
+  <input type="hidden" name="step" value={step} />
+  <button type="submit" data-test:id="decrement">-{step}</button>
+</form>

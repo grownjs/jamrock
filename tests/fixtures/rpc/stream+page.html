@@ -1,0 +1,21 @@
+<script>
+  let limit = 5;
+  
+  async function* numbers() {
+    let i = 0;
+    while (i < limit) {
+      await new Promise(r => setTimeout(r, 10));
+      yield i++;
+    }
+  }
+</script>
+
+<fragment name="numbers-list" interval="15" limit={limit}>
+  <ul data-test:id="list">
+    {#each numbers as n}
+      <li data-test:id="item-{n}">{n}</li>
+    {/each}
+  </ul>
+</fragment>
+
+<button onclick="limit = 10" data-test:id="extend">Extend</button>

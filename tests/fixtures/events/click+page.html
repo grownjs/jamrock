@@ -1,0 +1,26 @@
+<script>
+  let clicks = 0;
+  let lastAction = '';
+  
+  function handleClick() {
+    clicks++;
+    lastAction = 'click';
+  }
+  
+  function handleDblClick() {
+    clicks += 2;
+    lastAction = 'dblclick';
+  }
+  
+  function handleCustom(e) {
+    clicks += parseInt(e.detail?.amount) || 1;
+    lastAction = 'custom';
+  }
+</script>
+
+<button on:click={handleClick} data-test:id="click-btn">Click me</button>
+<button on:dblclick={handleDblClick} data-test:id="dblclick-btn">Double click</button>
+<button on:click={handleCustom} data-test:id="custom-btn" data-amount="5">Custom</button>
+
+<p data-test:id="clicks">Clicks: {clicks}</p>
+<p data-test:id="last-action">Last: {lastAction}</p>

@@ -1,0 +1,29 @@
+<script>
+  let textValue = '';
+  let checkedValue = false;
+  let numberValue = 0;
+  let textareaValue = '';
+  
+  function submit() {
+    console.log('Submitted:', { textValue, checkedValue, numberValue, textareaValue });
+  }
+</script>
+
+<form data-test:id="form" on:submit={submit}>
+  <input type="text" bind:value={textValue} data-test:id="text-input" />
+  <input type="checkbox" bind:checked={checkedValue} data-test:id="checkbox-input" />
+  <input type="number" bind:value={numberValue} data-test:id="number-input" />
+  <textarea bind:value={textareaValue} data-test:id="textarea-input"></textarea>
+  <button type="submit" data-test:id="submit-btn">Submit</button>
+</form>
+
+<dl data-test:id="output">
+  <dt>Text:</dt>
+  <dd data-test:id="text-output">{textValue || '(empty)'}</dd>
+  <dt>Checked:</dt>
+  <dd data-test:id="checked-output">{checkedValue ? 'yes' : 'no'}</dd>
+  <dt>Number:</dt>
+  <dd data-test:id="number-output">{numberValue}</dd>
+  <dt>Textarea:</dt>
+  <dd data-test:id="textarea-output">{textareaValue || '(empty)'}</dd>
+</dl>
