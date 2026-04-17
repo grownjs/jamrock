@@ -1,6 +1,7 @@
 import { toNodes, toAttrs } from '../utils/client.ts';
 import { LiveSocket } from './livesocket.ts';
 import { EventHub } from './events.ts';
+import { rpc, setPrefix } from './rpc.ts';
 
 export class Browser {
   declare paused: boolean;
@@ -40,6 +41,7 @@ export class Browser {
     this.version = version;
     this.actions = actions;
     this.csrf_token = state.csrf;
+    setPrefix(prefix);
     this.request_uuid = state.uuid;
     this.request_method = state.method;
 
@@ -48,8 +50,7 @@ export class Browser {
     this.call = async (key: string, ...args: any[]) => {
       for (const [mod, calls] of Object.entries((window as any).Jamrock.Components.calls)) {
         if ((calls as string[]).includes(key)) {
-          console.log('[REMOTE CALL]', mod, key, args);
-          return true;
+          return rpc(`${mod}/${key}`, ...args);
         }
       }
       throw new Error(`Invoked action is not defined, given '${key}'`);

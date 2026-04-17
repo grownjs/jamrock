@@ -1,0 +1,43 @@
+<script context="module">
+let serverCount = 0;
+
+export async function increment(step = 1) {
+  serverCount += step;
+  return { count: serverCount };
+}
+
+export async function decrement(step = 1) {
+  serverCount -= step;
+  return { count: serverCount };
+}
+
+export async function reset() {
+  serverCount = 0;
+  return { count: serverCount };
+}
+</script>
+
+<script>
+let localCount = 0;
+</script>
+
+<h1>RPC Test</h1>
+
+<fragment name="display">
+<p>Server count: <span data-test:id="server-count">{serverCount}</span></p>
+<p>Local count: <span data-test:id="local-count">{localCount}</span></p>
+</fragment>
+
+<form @on:submit={increment}>
+<input type="hidden" name="step" value="1" />
+<button type="submit" data-test-id="increment">+1 Server</button>
+</form>
+
+<form @on:submit={decrement}>
+<input type="hidden" name="step" value="1" />
+<button type="submit" data-test-id="decrement">-1 Server</button>
+</form>
+
+<form @on:submit={reset}>
+<button type="submit" data-test-id="reset">Reset</button>
+</form>

@@ -447,15 +447,29 @@ export async function createModuleResponse(env: any, conn: any): Promise<any> {
     body = Template.read(src);
     status = 200;
   } else {
-    const _mkd = file.replace('.hooks.mjs', '.md');
-    const _html = file.replace('.hooks.mjs', '.html');
+    const isRpc = file.endsWith('.rpc.mjs');
+    const ext = isRpc ? '.rpc.mjs' : '.hooks.mjs';
+    const srcExt = isRpc ? '.html' : '_';
+
+    const _mkd = file.replace(ext, '.md');
+    const _html = file.replace(ext, '.html');
     const _file = env.files[_mkd] || env.files[_html];
 
     if (_file) {
       const _mod = await Template.reload(_file.filepath);
 
       status = 200;
-      body = `/* ${file} */\n${Object.values(_mod.__functions).map((_: any) => `export ${_.toString()}\n`).join('')}`;
+
+      if (isRpc) {
+        const prefix = env.options.prefix || '@';
+        const entries = _mod.__rpc && Object.keys(_mod.__rpc).length
+          ? Object.entries(_mod.__rpc).map(([_fn, _path]: [string, any]) =>
+              `export async function ${_fn}(...args) { return rpc('${_path}/${_fn}', ...args); }`).join('\n')
+          : [];
+        body = `/* ${file} */\nimport { rpc } from '/${prefix}/rpc.mjs';\n${entries}\n`;
+      } else {
+        body = `/* ${file} */\n${Object.values(_mod.__functions).map((_: any) => `export ${_.toString()}\n`).join('')}`;
+      }
     }
   }
 
@@ -628,11 +642,72 @@ async function createRpcResponse(env: any, conn: any): Promise<Response> {
   }
 }
 
+export async function createRpcCallResponse(env: any, conn: any): Promise<Response> {
+  if (conn.method !== 'POST') {
+    return new Response('Method not allowed', { status: 405 });
+  }
+
+  const segments = conn.path_info.slice(2);
+  const fnName = segments.pop();
+  const modulePath = segments.join('/');
+
+  if (!fnName || !modulePath) {
+    return new Response(JSON.stringify({ ok: false, error: 'Invalid RPC path' }), {
+      status: 400,
+      headers: { 'content-type': 'application/json' },
+    });
+  }
+
+  try {
+    const _md = `${modulePath}.md`;
+    const _html = `${modulePath}.html`;
+    const _file = env.files[_md] || env.files[_html];
+
+    if (!_file) {
+      return new Response(JSON.stringify({ ok: false, error: `Module '${modulePath}' not found` }), {
+        status: 404,
+        headers: { 'content-type': 'application/json' },
+      });
+    }
+
+    const mod = await Template.reload(_file.filepath);
+    const fn = mod.__functions?.[fnName];
+
+    if (!fn) {
+      return new Response(JSON.stringify({ ok: false, error: `Function '${fnName}' not found` }), {
+        status: 404,
+        headers: { 'content-type': 'application/json' },
+      });
+    }
+
+    let args: any[] = [];
+    try {
+      const text = await new Response(conn.req.body).text();
+      if (text) args = JSON.parse(text);
+    } catch {}
+
+    const result = await fn(...args);
+    return new Response(JSON.stringify({ ok: true, data: result ?? null }), {
+      status: 200,
+      headers: { 'content-type': 'application/json' },
+    });
+  } catch (e: any) {
+    Util.trace('E_RPC_CALL', e);
+    return new Response(JSON.stringify({ ok: false, error: e.message }), {
+      status: 500,
+      headers: { 'content-type': 'application/json' },
+    });
+  }
+}
+
 export async function createResponse(env: any, conn: any, options: any): Promise<any> {
   if (conn.path_info[0] === options.prefix) {
     if (conn.path_info.length > 1) {
       if (conn.path_info[1] === 'rpc') {
         return createRpcResponse(env, conn);
+      }
+      if (conn.path_info[1] === '_rpc') {
+        return createRpcCallResponse(env, conn);
       }
       return createModuleResponse(env, conn);
     }

@@ -432,7 +432,7 @@ export const __attributes = ${this.$attributes};
   }
 
   toString(): string {
-    const defaults = '__src,__dest,__media,__context,__snippets,__fragments,__scripts,__styles,__doctype,__metadata,__attributes,__vdom';
+    const defaults = '__src,__dest,__media,__context,__snippets,__fragments,__scripts,__styles,__doctype,__metadata,__attributes,__vdom,__rpc';
     
     const isGTK = this.opts.target === 'gtk';
     
@@ -454,6 +454,7 @@ export const __attributes = ${this.$attributes};
         return `/* eslint-disable */
 ${this.$prefix}
 ${this.buildGTKTemplate(template, [])}
+export const __rpc = {};
 export default {${defaults.replace('__vdom', '__gtk')}};
 `.replace(/\(\$\$\)/g, '($$$$,$$$$props)');
       }
@@ -463,6 +464,7 @@ ${this.$prefix}
 export const __vdom = ($$,{${scope}}) => {
   return [${Block.wrap(template)}];
 };
+export const __rpc = {};
 export default {${defaults}};
 `.replace(/\(\$\$\)/g, '($$$$,$$$$props)');
     }
@@ -474,6 +476,13 @@ export default {${defaults}};
     const functions = this.module.deps.filter((_: string) => this.module.locals[_] === 'function');
     const exported = keys.filter((x: string) => ['let', 'const', 'export'].includes(locals[x])).map((x: string) => aliases[x] || x);
     const calls = [...this.calls].filter((_: string) => functions.includes(_));
+
+    const asyncFns: string[] = [];
+    const RE_ASYNC_FN = /\bexport\s+async\s+function\s+(\w+)/g;
+    let _m;
+    while ((_m = RE_ASYNC_FN.exec(this.module.code)) !== null) {
+      asyncFns.push(_m[1]);
+    }
 
     let { prelude, interlude, hasImports } = Block.script(this.script.code);
     if (!interlude && !hasImports) {
@@ -528,7 +537,8 @@ ${this.$prefix}
 ${isGTK ? this.buildGTKTemplate(template, lets) : `export const __vdom = ($$) => [${Block.wrap(template)}];`}
 export const __exported = ${JSON.stringify(exported)};
 export const __functions = {${calls.join(',')}};
-export default {${isGTK ? defaults.replace('__vdom', '__gtk') : defaults},__functions,__exported,__handler,__routes};
+export const __rpc = {${asyncFns.map(fn => `${fn}:'${this.src.replace(/\.(?:md|html)$/, '')}'`).join(',')}};
+export default {${isGTK ? defaults.replace('__vdom', '__gtk') : defaults},__functions,__rpc,__exported,__handler,__routes};
 for (const [, fn] of Object.entries(__functions)) fn.$ = __src;
 `;
 

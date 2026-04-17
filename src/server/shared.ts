@@ -645,6 +645,20 @@ export function createEnvironment({ fs, path }: any, options: any, external: any
         count++;
       }
 
+      for (const [file, mod] of Object.entries(files) as [string, any][]) {
+        if (!mod.module?.__rpc || !Object.keys(mod.module.__rpc).length) continue;
+
+        const key = file.replace('.generated.', '.rpc.');
+        const destFile = path.join(publicDest, options.prefix, path.relative(options.dest, key));
+        const prefix = options.prefix || '@';
+        const entries = Object.entries(mod.module.__rpc).map(([_fn, _path]: [string, any]) =>
+          `export async function ${_fn}(...args) { return rpc('${_path}/${_fn}', ...args); }`).join('\n');
+        const code = `/* ${key} */\nimport { rpc } from '/${prefix}/rpc.mjs';\n${entries}\n`;
+
+        write(destFile, code);
+        count++;
+      }
+
       for (const file of fs.readdirSync((import.meta as any).dirname)) {
         if (['client.mjs', 'server.mjs', 'main.mjs'].includes(file) || file.includes('.d.ts')) continue;
 
