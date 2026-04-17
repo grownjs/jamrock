@@ -670,7 +670,7 @@ export async function createRpcCallResponse(env: any, conn: any): Promise<Respon
       });
     }
 
-    const mod = await Template.reload(_file.filepath);
+    const mod = await Template.load(_file.filepath);
     const fn = mod.__functions?.[fnName];
 
     if (!fn) {
