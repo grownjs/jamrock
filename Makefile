@@ -142,7 +142,7 @@ e2e\:%:
 
 e2e:
 	@make dist
-	@bin/node serve --src examples/ --watch
+	@bin/node serve --src examples/ --port 3000 --watch
 dev: deps
 	@npm run dev
 shot:

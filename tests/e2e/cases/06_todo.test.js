@@ -5,7 +5,7 @@ import { $ } from '../selectors';
 /* global fixture, test */
 
 fixture`Todo List RPC`
-  .page`http://localhost:8080/todo`
+  .page`http://localhost:3000/todo`
   .before(async () => {
     await new Promise(r => setTimeout(r, 1000));
   });

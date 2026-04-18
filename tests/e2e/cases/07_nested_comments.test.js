@@ -6,7 +6,7 @@ import { $ } from '../selectors';
 /* global fixture, test */
 
 fixture`Nested Comments`
-  .page`http://localhost:8080/nested-comments`
+  .page`http://localhost:3000/nested-comments`
   .before(async () => {
     await new Promise(r => setTimeout(r, 1000));
   });
