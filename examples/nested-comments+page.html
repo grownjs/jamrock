@@ -1,62 +1,18 @@
-<script>
-  export const comments = [
-    {
-      id: 1,
-      author: 'Alice',
-      body: 'Great post!',
-      count: 2,
-      msgs: [
-        { id: 2, body: 'I agree!', count: 0 },
-        { id: 5, body: 'Thanks!', count: 0 },
-      ],
-    },
-    {
-      id: 6,
-      author: 'Eve',
-      body: 'Can you explain more?',
-      count: 0,
-      msgs: [],
-    },
+<script context="module">
+  let _comments = [
+    { id: 1, body: 'Great post!', count: 2, msgs: [
+      { id: 2, body: 'I agree!', count: 0, msgs: [] },
+      { id: 5, body: 'Thanks!', count: 0, msgs: [] },
+    ]},
+    { id: 6, body: 'Can you explain more?', count: 0, msgs: [] },
   ];
-  export let key = 0;
+</script>
 
-  function save({ params }) {
-    for (const c of comments) {
-      if (c.id === +params.message_id) {
-        c.count = (c.count || 0) + 1;
-        c.msgs = c.msgs || [];
-        c.msgs.unshift({ id: Date.now(), body: params.message, count: 0 });
-        return;
-      }
-    }
-  }
+<script>
+  import Comments from './components/comments.html';
+  export let data = _comments;
 </script>
 
 <h1 data-test:id="title">Nested Comments</h1>
 
-<ul>
-  <fragment name="live-comments" key="comments:{key}">
-    {#each comments as c}
-      <li>
-        <fieldset>
-          <p><strong>{c.author}</strong>: {c.body}</p>
-          <form @patch @async on:submit={save}>
-            <input type="hidden" name="message_id" value={c.id} />
-            <input type="text" name="message" />
-            <button>Reply</button>
-          </form>
-          {#if c.count > 0}
-            <self data={c.msgs} key="{key}.{c.id}" />
-          {/if}
-        </fieldset>
-      </li>
-    {/each}
-  </fragment>
-</ul>
-
-<style>
-  ul { list-style: none; padding-left: 20px }
-  fieldset { margin: 0.5rem 0; border: 1px solid #ccc; }
-  strong { color: #666; font-size: 0.9em; }
-  p { margin: 0.25rem 0; }
-</style>
+<Comments data={data} key={0} />

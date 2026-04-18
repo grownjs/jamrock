@@ -521,7 +521,7 @@ ${this.context === 'client'
 \t\treturn {__default,__callback};`}
 \t}`;
 
-    let mod = this.module?.code || '';
+let mod = this.module?.code || '';
     this.module?.children.forEach((_: string) => {
       mod = mod.replace(_, _.replace(/\.(?:md|html)/, '.generated.mjs'));
     });

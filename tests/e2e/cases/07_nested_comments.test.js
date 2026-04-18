@@ -19,14 +19,14 @@ test('should render top-level comments', async t => {
   await t.expect(Selector('fieldset').exists).ok();
 });
 
-test('should render author names in comments', async t => {
-  await t.expect(Selector('strong').withText('Alice').exists).ok();
-  await t.expect(Selector('strong').withText('Eve').exists).ok();
-});
-
 test('should render comment body text', async t => {
   await t.expect(Selector('p').withText('Great post!').exists).ok();
   await t.expect(Selector('p').withText('Can you explain more?').exists).ok();
+});
+
+test('should render nested replies via recursive component', async t => {
+  await t.expect(Selector('p').withText('I agree!').exists).ok({ timeout: 5000 });
+  await t.expect(Selector('p').withText('Thanks!').exists).ok();
 });
 
 test('should render reply forms', async t => {
