@@ -324,8 +324,8 @@ export function tag(context: any) {
 
     if (process.env.HEADLESS || process.env.NODE_ENV === 'production') {
       delete attrs['@location'];
-      delete attrs['@source'];
       delete attrs['@async'];
+      if (!attrs['@rpc:call']) delete attrs['@source'];
     }
 
     if (name === 'fragment') {
