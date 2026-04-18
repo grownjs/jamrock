@@ -7,7 +7,7 @@
   export async function divide(a, b) { if (b === 0) throw new Error('Cannot divide by zero'); return a / b; }
   export async function power(base, exponent) { return Math.pow(base, exponent); }
   export async function sqrt(n) { return Math.sqrt(n); }
-  export async function store(value) { memory = value; return { stored: memory }; }
+  export async function store(value) { memory = value; return { stored: value }; }
   export async function recall() { return memory; }
   export async function clearMemory() { memory = 0; return { cleared: true }; }
 </script>

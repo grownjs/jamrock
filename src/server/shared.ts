@@ -702,28 +702,20 @@ export function createEnvironment({ fs, path }: any, options: any, external: any
     if (!dest?.module) {
       throw new Error(`Could not locate '${key}' module (${mod.filepath})`);
     }
+
+    if (dest.namespace && dest.namespace !== dest.module) {
+      for (const key of Object.keys(dest.namespace)) {
+        if (key !== 'default' && !(key in dest.module)) {
+          dest.module[key] = dest.namespace[key];
+        }
+      }
+    }
+
     return dest.module;
   }
 
   function locateWithNamespace(src: string, query = false) {
-    const key = Handler.rebase(src)!;
-    let mod = compiler[FILES_PROPERTY][key];
-
-    if (!mod && query) {
-      const pages = Object.keys(compiler[FILES_PROPERTY]).filter(k => k.includes('+page'));
-      const result = pages.find(p => p.includes(src));
-      mod = compiler[FILES_PROPERTY][result];
-      return mod;
-    }
-
-    if (!mod) throw new Error(`Could not locate '${key}' file`);
-
-    const dest = Template.cache?.get(mod.filepath);
-
-    if (!dest?.module) {
-      throw new Error(`Could not locate '${key}' module (${mod.filepath})`);
-    }
-    return dest.namespace || dest.module;
+    return locate(src, query);
   }
 
   function request(params: any = {}) {

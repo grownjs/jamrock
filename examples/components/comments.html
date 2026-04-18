@@ -41,6 +41,13 @@
 
 <style>
   ul { list-style-type: none; padding-left: 20px }
+  p { margin: 0.3em 0; }
+  fieldset { border: none; padding: 0; }
+  .reply-form { display: flex; gap: 0.4em; align-items: center; margin: 0.3em 0; }
+  .reply-form input[type=text] { flex: 1; padding: 0.3em; font-size: 0.85em; }
+  .reply-form button { padding: 0.3em 0.7em; font-size: 0.85em; }
+  .reply-toggle { cursor: pointer; background: none; border: none; color: #79C551; font-size: 0.85em; padding: 2px 0; }
+  .reply-toggle:hover { text-decoration: underline; }
 </style>
 
 <ul>
@@ -49,10 +56,10 @@
       <li>
         <fieldset>
           <p>{c.body}</p>
-          <form rpc:call={addComment}>
+          <form class="reply-form" rpc:call={addComment}>
             <input type="hidden" name="message_id" value={c.id} />
             <input type="text" name="message" />
-            <button>Reply</button>
+            <button type="submit">Reply</button>
           </form>
           {#if c.count > 0}
             <Comments data={c.msgs} key="{key}.{c.id}" />

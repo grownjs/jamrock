@@ -216,10 +216,16 @@ export function client(ctx: any, body: any, props: any, parent: any, component: 
   }, {}));
 
   const fields = component.__exported.concat('tag');
-  const attrs = Object.keys(props).reduce((memo: any, key: string) => {
-    if ((Is.scalar(props[key]) || Is.arr(props[key])) && !fields.includes(key)) memo[key] = props[key];
-    return memo;
-  }, { 'data-component': ctx.ref });
+  const attrs: Record<string, unknown> = { 'data-component': ctx.ref };
+
+  for (const key of Object.keys(props)) {
+    const value = props[key];
+    if (fields.includes(key)) {
+      if (Is.scalar(value)) attrs[`data-${key}`] = value;
+      continue;
+    }
+    if (Is.scalar(value) || Is.arr(value)) attrs[key] = value;
+  }
 
   return [props.tag || 'div', attrs, body || []];
 }

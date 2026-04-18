@@ -70,7 +70,7 @@ export class LiveSocket {
   declare call: (msg: string, next?: () => void) => void;
   declare deferred: Promise<any>;
   declare upload: (key: string, file: File) => Promise<void>;
-  declare unpack: (payload: any) => URLSearchParams;
+  declare unpack: (payload: any) => string;
   declare submit: (el: any, url: string, body: any, method: string) => void;
   declare trigger: (e: any, kind: string, source: string | null, trigger: any, payload: any, callback?: any) => void;
   declare patchSVG: (src: string) => Promise<void>;
@@ -166,7 +166,7 @@ export class LiveSocket {
       setTimeout(() => ok(console.log('UPLOAD', key, file) as any), 300);
     });
     this.unpack = (payload: any) => {
-      const body = new FormData();
+      const data: Record<string, unknown> = {};
       const tasks: Promise<any>[] = [];
 
       if (payload instanceof FormData) {
@@ -174,13 +174,13 @@ export class LiveSocket {
           if (value instanceof File) {
             tasks.push(this.upload(key, value));
           } else {
-            body.append(key, value);
+            data[key] = value;
           }
         }
       }
 
       this.deferred = this.deferred.then(() => Promise.all(tasks));
-      return new URLSearchParams(body as any);
+      return JSON.stringify(data);
     };
 
     this.submit = (el: any, url: string, body: any, method: string) => {

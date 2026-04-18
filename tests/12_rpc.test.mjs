@@ -809,9 +809,9 @@ test.group('Recursive Comments RPC', t => {
 
     const results = await mod.searchComments('keyword');
     expect(results.length).toBeGreaterThanOrEqual(2);
-});
+  });
 
-test('should get comments by author', async ({ expect }) => {
+  test('should get comments by author', async ({ expect }) => {
     fixture.fromFile('rpc/comments+page.html');
     const ctx = useContext();
     await fixture.partial('rpc/comments+page.html', null, ctx);
@@ -833,7 +833,7 @@ test.group('dispatch trigger', () => {
     const { dispatch } = await import('../src/handler/dispatch.ts');
 
     const messages = [];
-    const ws = { identity: 'test-uuid', send: (msg) => { messages.push(msg); } };
+    const ws = { identity: 'test-uuid', send: msg => { messages.push(msg); } };
     const result = dispatch('hello world', ws, {}, null);
 
     expect(result).toBeUndefined();
@@ -877,7 +877,7 @@ test.group('dispatch trigger', () => {
     let handlerPayload = null;
     const state = { count: 0, items: ['a'] };
 
-    const mockFn = (payload) => {
+    const mockFn = payload => {
       handlerCalled = true;
       handlerPayload = payload;
       state.count++;
@@ -906,7 +906,7 @@ test.group('dispatch trigger', () => {
     };
 
     const messages = [];
-    const ws = { identity: 'test-uuid', send: (msg) => { messages.push(msg); }, module: mockModule };
+    const ws = { identity: 'test-uuid', send: msg => { messages.push(msg); }, module: mockModule };
 
     dispatch('rpc:trigger test-uuid components/comments click addComment:null\tmessage=hello&message_id=1', ws, env, null);
 
@@ -919,7 +919,7 @@ test.group('dispatch trigger', () => {
     const { dispatch } = await import('../src/handler/dispatch.ts');
 
     const messages = [];
-    const ws = { identity: 'test-uuid', send: (msg) => { messages.push(msg); } };
+    const ws = { identity: 'test-uuid', send: msg => { messages.push(msg); } };
 
     const state = { items: ['a'] };
 
@@ -954,7 +954,7 @@ test.group('dispatch trigger', () => {
     const { dispatch } = await import('../src/handler/dispatch.ts');
 
     const messages = [];
-    const ws = { identity: 'test-uuid', send: (msg) => { messages.push(msg); } };
+    const ws = { identity: 'test-uuid', send: msg => { messages.push(msg); } };
 
     const state = { count: 0 };
 
@@ -1075,5 +1075,275 @@ test.group('dispatch trigger', () => {
     dispatch('rpc:trigger test-uuid components/comments click testFn:null\t', ws, {}, null);
 
     expect(handlerCalled).toBe(true);
+  });
+
+test('rerenderFragment should produce vnode arrays from fragment render function', async ({ expect }) => {
+    const { dispatch } = await import('../src/handler/dispatch.ts');
+
+    const state = { items: ['a', 'b'] };
+
+    const mockFn = () => { state.items.push('c'); };
+
+    const messages = [];
+
+    const $$ = {
+      e: (tag, attrs, children) => [tag, attrs, children],
+      $: v => String(v ?? ''),
+      map: (items, body) => items.map(body),
+      if: (cond, then) => (cond ? then() : null),
+      block: (tpl, _name, _props, _children) => tpl,
+    };
+
+    const mockModule = {
+      __rpc_fns: { updateComments: mockFn },
+      __functions: {},
+      __handler: () => {
+        const __context = () => ({
+          __callback: () => state,
+        });
+        return { __context };
+      },
+      __fragments: {
+        'live-comments': {
+          s: ['items'],
+          r: ($$, props) => $$.e('ul', {}, props.items.map(item => $$.e('li', {}, [item]))),
+          a: () => ({}),
+        },
+      },
+      __src: 'test/comments.html',
+    };
+
+    const env = { locate: () => mockModule };
+
+    const ws = { identity: 'test-uuid', send: msg => { messages.push(msg); }, module: mockModule };
+
+    dispatch('rpc:trigger test-uuid test/comments click updateComments:null\t', ws, env, null);
+
+    expect(messages.length).toBe(1);
+    const msg = messages[0];
+    expect(msg).toContain('rpc:update');
+    expect(msg).toContain('live-comments');
+    const tabIdx = msg.indexOf('\t');
+    const payload = msg.substring(tabIdx + 1);
+    const decoded = JSON.parse(
+      decodeURIComponent(
+        payload
+          .replace(/&lt;/g, '<')
+          .replace(/&gt;/g, '>')
+          .replace(/&amp;/g, '&')
+          .replace(/&quot;/g, '"'),
+      ),
+    );
+    expect(decoded).toBeInstanceOf(Array);
+    expect(decoded[0]).toBe('ul');
+  });
+
+  test('normalizeVnode should strip @ attributes and remove null entries', async ({ expect }) => {
+    const { dispatch } = await import('../src/handler/dispatch.ts');
+
+    const state = { items: ['a'] };
+
+    const mockFn = () => { state.items.push('b'); };
+
+    const messages = [];
+
+    const mockModule = {
+      __rpc_fns: { addItem: mockFn },
+      __functions: {},
+      __handler: () => {
+        const __context = () => ({
+          __callback: () => state,
+        });
+        return { __context };
+      },
+      __fragments: {
+        'test-frag': {
+          s: ['items'],
+          r: ($$, props) => [
+            null,
+            $$.e('ul', {}, props.items.map(item => $$.e('li', {}, [item]))),
+          ],
+          a: () => ({}),
+        },
+      },
+      __src: 'test/frag.html',
+    };
+
+    const env = { locate: () => mockModule };
+
+    const ws = { identity: 'test-uuid', send: msg => { messages.push(msg); }, module: mockModule };
+
+    dispatch('rpc:trigger test-uuid test/frag click addItem:null\t', ws, env, null);
+
+    expect(messages.length).toBe(1);
+    const msg = messages[0];
+    const tabIdx = msg.indexOf('\t');
+    const payload = msg.substring(tabIdx + 1);
+    const decoded = JSON.parse(
+      decodeURIComponent(
+        payload
+          .replace(/&lt;/g, '<')
+          .replace(/&gt;/g, '>')
+          .replace(/&amp;/g, '&')
+          .replace(/&quot;/g, '"'),
+      ),
+    );
+
+    expect(decoded).toBeInstanceOf(Array);
+    const vnodeObj = Array.isArray(decoded[0]) ? decoded[0] : decoded;
+    expect(vnodeObj[0]).toBe('ul');
+    for (const attr of Object.keys(vnodeObj[1] || {})) {
+      expect(attr.startsWith('@')).toBe(false);
+    }
+  });
+
+  test('normalizeVnode preserves plain elements', async ({ expect }) => {
+    const { normalizeVnode } = await import('../src/handler/dispatch.ts');
+
+    const result = normalizeVnode(['div', { class: 'foo' }, [['p', {}, ['hello']]]]);
+    expect(result).toEqual(['div', { class: 'foo' }, [['p', {}, ['hello']]]]);
+  });
+
+  test('normalizeVnode strips @-prefixed attributes', async ({ expect }) => {
+    const { normalizeVnode } = await import('../src/handler/dispatch.ts');
+
+    const result = normalizeVnode(['li', { '@location': 'x:1', class: 'item' }, [['p', {}, ['text']]]]);
+    expect(result).toEqual(['li', { class: 'item' }, [['p', {}, ['text']]]]);
+  });
+
+  test('normalizeVnode strips function values from props', async ({ expect }) => {
+    const { normalizeVnode } = await import('../src/handler/dispatch.ts');
+
+    const result = normalizeVnode(['button', { onclick: () => {}, class: 'btn' }, ['Click']]);
+    expect(result).toEqual(['button', { class: 'btn' }, ['Click']]);
+    expect(typeof result[1].onclick).toBe('undefined');
+  });
+
+  test('normalizeVnode preserves fragment elements with name and key', async ({ expect }) => {
+    const { normalizeVnode } = await import('../src/handler/dispatch.ts');
+
+    const result = normalizeVnode(['fragment', { name: 'live-comments', key: 'c:0' }, [['li', {}, ['item']]]]);
+    expect(result).toEqual(['fragment', { name: 'live-comments', key: 'c:0' }, [['li', {}, ['item']]]]);
+  });
+
+  test('normalizeVnode preserves x-fragment elements', async ({ expect }) => {
+    const { normalizeVnode } = await import('../src/handler/dispatch.ts');
+
+    const result = normalizeVnode(['x-fragment', { name: 'live-comments', '@location': 'x:1' }, [['li', {}, ['item']]]]);
+    expect(result).toEqual(['x-fragment', { name: 'live-comments' }, [['li', {}, ['item']]]]);
+  });
+
+  test('normalizeVnode removes null and undefined from children', async ({ expect }) => {
+    const { normalizeVnode } = await import('../src/handler/dispatch.ts');
+
+    const result = normalizeVnode([null, ['li', {}, ['a']], undefined, ['li', {}, ['b']]]);
+    expect(result).toEqual([['li', {}, ['a']], ['li', {}, ['b']]]);
+  });
+
+  test('normalizeVnode flattens non-vnode arrays recursively', async ({ expect }) => {
+    const { normalizeVnode } = await import('../src/handler/dispatch.ts');
+
+    const inner = [undefined, ['span', {}, ['x']]];
+    const result = normalizeVnode([inner, ['li', {}, ['y']]]);
+    expect(result).toEqual([['span', {}, ['x']], ['li', {}, ['y']]]);
+  });
+
+  test('normalizeVnode handles deeply nested structure', async ({ expect }) => {
+    const { normalizeVnode } = await import('../src/handler/dispatch.ts');
+
+    const input = [
+      ['ul', { class: 'list' }, [
+        ['li', { '@location': 'a:1' }, [['p', {}, ['text']]]],
+        null,
+        ['li', {}, [
+          ['fragment', { name: 'child', key: 'k1' }, [['span', {}, ['inner']]]],
+        ]],
+      ]],
+    ];
+
+    const result = normalizeVnode(input);
+
+    expect(result).toEqual([
+      ['ul', { class: 'list' }, [
+        ['li', {}, [['p', {}, ['text']]]],
+        ['li', {}, [
+          ['fragment', { name: 'child', key: 'k1' }, [['span', {}, ['inner']]]],
+        ]],
+      ]],
+    ]);
+  });
+
+  test('normalizeVnode converts strings and numbers to text nodes', async ({ expect }) => {
+    const { normalizeVnode } = await import('../src/handler/dispatch.ts');
+
+    expect(normalizeVnode('hello')).toBe('hello');
+    expect(normalizeVnode(42)).toBe('42');
+    expect(normalizeVnode(null)).toBe(undefined);
+    expect(normalizeVnode(undefined)).toBe(undefined);
+  });
+
+  test('normalizeVnode strips empty props objects', async ({ expect }) => {
+    const { normalizeVnode } = await import('../src/handler/dispatch.ts');
+
+    const result = normalizeVnode(['p', { '@location': 'x:1' }, ['text']]);
+    expect(result).toEqual(['p', {}, ['text']]);
+  });
+
+  test('normalizeVnode handles empty children', async ({ expect }) => {
+    const { normalizeVnode } = await import('../src/handler/dispatch.ts');
+
+    const result = normalizeVnode(['br', {}, []]);
+    expect(result).toEqual(['br', {}, []]);
+  });
+
+test('rpc:update preserves fragment element in dispatched vnode', async ({ expect }) => {
+    const { dispatch } = await import('../src/handler/dispatch.ts');
+
+    let changed = false;
+    const data = [{ id: 1, body: 'hello' }];
+    const mockFn = () => { changed = true; data.push({ id: 2, body: 'world' }); };
+
+    const messages = [];
+
+    const mockModule = {
+      __rpc_fns: { addItem: mockFn },
+      __functions: {},
+      __handler: () => {
+        const __context = () => ({ __callback: () => ({ data, addItem: mockFn }) });
+        return { __context };
+      },
+      __fragments: {
+        'items': {
+          s: ['data', 'addItem'],
+          r: ($$) => [
+            ['fragment', { name: 'items', key: 'main' }, [
+              ['li', { '@location': 'test:1' }, ['hello']],
+            ]],
+          ],
+          a: () => ({}),
+        },
+      },
+      __src: 'test/items.html',
+    };
+
+    const env = { locate: () => mockModule };
+    const ws = { identity: 'test-uuid', send: msg => { messages.push(msg); }, module: mockModule };
+
+    dispatch('rpc:trigger test-uuid test/items click addItem:null\t', ws, env, null);
+
+    expect(messages.length).toBe(1);
+    const msg = messages[0];
+    expect(msg).toContain('rpc:update');
+    expect(msg).toContain('items');
+
+    const tabIdx = msg.indexOf('\t');
+    const payload = msg.substring(tabIdx + 1);
+    const decoded = JSON.parse(decodeURIComponent(payload.replace(/&lt;/g, '<').replace(/&gt;/g, '>').replace(/&amp;/g, '&').replace(/&quot;/g, '"')));
+
+    const vnodeStr = JSON.stringify(decoded);
+    expect(vnodeStr).toContain('"fragment"');
+    expect(vnodeStr).toContain('"name":"items"');
+    expect(vnodeStr).toContain('"key":"main"');
+    expect(vnodeStr).not.toContain('"@location"');
   });
 });

@@ -1,6 +1,6 @@
 import { Is, dump, trace, encodeText } from '../utils/server.ts';
 import { execute } from '../render/hooks.ts';
-import { taggify } from '../markup/html.ts';
+import { execSync as runSync } from '../render/async.ts';
 
 function encode(value: string): string {
   return encodeText(value, { quotes: false, unsafe: true })
@@ -26,12 +26,16 @@ export interface DispatchResult {
   dispose?: boolean;
 }
 
-function parseTriggerPayload(data: string): Record<string, string> {
+function parseTriggerPayload(data: string): Record<string, unknown> {
   if (!data) return {};
   try {
-    return Object.fromEntries(new URLSearchParams(data));
+    return JSON.parse(data);
   } catch {
-    return {};
+    try {
+      return Object.fromEntries(new URLSearchParams(data));
+    } catch {
+      return {};
+    }
   }
 }
 
@@ -96,10 +100,61 @@ function findAffectedFragments(mod: any, changedVars: string[]): string[] {
   return affected;
 }
 
+export function isVnode(v: any): boolean {
+  return Array.isArray(v) && v.length >= 2 && typeof v[0] === 'string' && (v[1] === null || v[1] === undefined || typeof v[1] === 'object');
+}
+
+export function normalizeChildren(children: any[]): any[] {
+  const result: any[] = [];
+  for (const child of children) {
+    const normalized = normalizeVnode(child);
+    if (normalized === undefined) continue;
+    if (Array.isArray(normalized) && !isVnode(normalized)) {
+      result.push(...normalized);
+    } else {
+      result.push(normalized);
+    }
+  }
+  return result;
+}
+
+export function normalizeVnode(vnode: any): any {
+  if (vnode === null || vnode === undefined) return undefined;
+  if (typeof vnode === 'string' || typeof vnode === 'number') return String(vnode);
+  if (typeof vnode === 'function') return undefined;
+
+  if (isVnode(vnode)) {
+    const [tag, props, children] = vnode;
+
+    const cleanProps: Record<string, unknown> = {};
+    if (props && typeof props === 'object') {
+      for (const [key, value] of Object.entries(props)) {
+        if (key.startsWith('@')) continue;
+        if (typeof value === 'function') continue;
+        cleanProps[key] = value;
+      }
+    }
+
+    const hasProps = Object.keys(cleanProps).length > 0;
+    const normalizedChildren = Array.isArray(children)
+      ? normalizeChildren(children)
+      : children ? normalizeVnode(children) : [];
+
+    return [tag, hasProps ? cleanProps : {}, normalizedChildren];
+  }
+
+  if (Array.isArray(vnode)) {
+    return normalizeChildren(vnode);
+  }
+
+  return undefined;
+}
+
 function rerenderFragment(
   mod: any,
   fragName: string,
   state: Record<string, any>,
+  env?: any,
 ): any {
   const fragment = mod?.__fragments?.[fragName];
   if (!fragment) return null;
@@ -108,13 +163,23 @@ function rerenderFragment(
   if (!Is.func(renderFn)) return null;
 
   try {
-    const element = (tag: string, props: Record<string, unknown>, children: unknown): unknown => {
-      return taggify([tag, props, children]);
+    const loader = env?.locate
+      ? (src: string) => { try { return env.locate(src); } catch { return null; } }
+      : () => null;
+
+    const next = (child: any, props: any) => {
+      if (child && child.__vdom) {
+        const childView = execute(null, loader, next, runSync);
+        return childView(child.__vdom, props, `${child.__src}#vdom`);
+      }
+      return child;
     };
 
-    const view = execute(element, () => null, async (tpl: any, props: unknown) => tpl, (chunk: unknown) => chunk);
+    const view = execute(null, loader, next, runSync);
 
-    return view(renderFn, state, `${mod.__src}#!${fragName}`);
+    const raw = view(renderFn, state, `${mod.__src}#!${fragName}`);
+    const vnode = normalizeVnode(raw);
+    return Array.isArray(vnode) ? vnode : vnode ? [vnode] : null;
   } catch (e) {
     trace(e, 'E_RPC_RENDER');
     return null;
@@ -123,7 +188,7 @@ function rerenderFragment(
 
 export function dispatch(
   payload: string,
-  ws: SSESocket,
+  sse: SSESocket,
   env: any,
   handler: any,
   // eslint-disable-next-line no-unused-vars
@@ -141,7 +206,7 @@ export function dispatch(
   const data = payload.substr(body.length + 1);
 
   if (msg === 'reconnect') {
-    ws.identity = args[0];
+    sse.identity = args[0];
     return { welcome: `welcome ${args[0]}` };
   }
 
@@ -150,8 +215,8 @@ export function dispatch(
   }
 
   if (msg === 'connect') {
-    ws.identity = args[0];
-    ws.source = args[1];
+    sse.identity = args[0];
+    sse.source = args[1];
     dump('CONNECTED', args);
     return { welcome: `welcome ${args[0]}` };
   }
@@ -167,12 +232,12 @@ export function dispatch(
       method: args[1],
     });
 
-    req.headers.set('request-uuid', ws.identity);
+    req.headers.set('request-uuid', sse.identity);
     req.headers.set('x-requested-with', 'XMLHttpRequest');
 
     handler.call(req, () => [])
       .then((resp: any) => {
-        ws.send(`rpc:response ${ws.identity} ${args[1]} ${resp[1]}\t${resp[0]}`);
+        sse.send(`rpc:response ${sse.identity} ${args[1]} ${resp[1]}\t${resp[0]}`);
       });
 
     return;
@@ -186,19 +251,18 @@ export function dispatch(
       const callKey = args[3];
       const payload_ = parseTriggerPayload(decodeURIComponent(data));
 
-      if (uuid !== ws.identity) return;
+      if (uuid !== sse.identity) return;
 
-      if (ws.context) {
-        ws.context.emit(decodeURIComponent(data), ...args);
+      if (sse.context) {
+        sse.context.emit(decodeURIComponent(data), ...args);
         return;
       }
 
       const [fnName] = (callKey || '').split(':');
       const srcPath = source ? source.replace(/\/\d+$/, '') : null;
 
-      const mod = (srcPath && env?.locateWithNamespace ? env.locateWithNamespace(srcPath) : null)
-        || (srcPath && env?.locate ? env.locate(srcPath) : null)
-        || ws.module;
+      const mod = (srcPath && env?.locate ? env.locate(srcPath) : null)
+        || sse.module;
 
       if (!fnName || !mod) return;
 
@@ -221,10 +285,10 @@ export function dispatch(
 
         for (const fragName of affectedFrags) {
           try {
-            const vnode = rerenderFragment(mod, fragName, currentState);
-            if (vnode && ws.send) {
+            const vnode = rerenderFragment(mod, fragName, currentState, env);
+            if (vnode && sse.send) {
               const encoded = encode(JSON.stringify(vnode));
-              ws.send(`rpc:update ${ws.identity} ${fragName} replace\t${encoded}`);
+              sse.send(`rpc:update ${sse.identity} ${fragName} replace\t${encoded}`);
             }
           } catch (e) {
             trace(e, 'E_RPC_FRAGMENT');
