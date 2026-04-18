@@ -189,7 +189,7 @@ test.group('Direct RPC round-trip', t => {
     reset();
   });
 
-test('should echo args back via _rpc endpoint', async ({ expect }) => {
+  test('should echo args back via _rpc endpoint', async ({ expect }) => {
     fixture.fromFile('rpc/echo+page.html');
     const ctx = useContext();
     await fixture.partial('rpc/echo+page.html', null, ctx);
@@ -303,7 +303,7 @@ test.group('Todo List RPC', t => {
     const cwd = process.cwd();
     const mod = await import(`file://${cwd}/generated/rpc/todo+page.generated.mjs`);
 
-    const added = await mod.addItem('To remove ' + Date.now());
+    const added = await mod.addItem(`To remove ${Date.now()}`);
     const listBefore = await mod.listItems();
     const beforeCount = listBefore.length;
 
@@ -322,8 +322,8 @@ test.group('Todo List RPC', t => {
     const cwd = process.cwd();
     const mod = await import(`file://${cwd}/generated/rpc/todo+page.generated.mjs`);
 
-    await mod.addItem('List test ' + Date.now());
-    await mod.addItem('List test 2 ' + Date.now());
+    await mod.addItem(`List test ${Date.now()}`);
+    await mod.addItem(`List test 2 ${Date.now()}`);
 
     const list = await mod.listItems();
     expect(list.length).toBeGreaterThan(1);
@@ -337,7 +337,7 @@ test.group('Todo List RPC', t => {
     const cwd = process.cwd();
     const mod = await import(`file://${cwd}/generated/rpc/todo+page.generated.mjs`);
 
-    const completed = await mod.addItem('Clear test ' + Date.now());
+    const completed = await mod.addItem(`Clear test ${Date.now()}`);
     await mod.toggleItem(completed.id);
 
     const result = await mod.clearCompleted();
@@ -467,7 +467,7 @@ test.group('Poll/Voting RPC', t => {
     const cwd = process.cwd();
     const mod = await import(`file://${cwd}/generated/rpc/poll+page.generated.mjs`);
 
-    const poll = await mod.createPoll('Best ' + Date.now(), ['JS', 'Python', 'Rust']);
+    const poll = await mod.createPoll(`Best ${Date.now()}`, ['JS', 'Python', 'Rust']);
     expect(poll.question).toContain('Best');
     expect(poll.options).toEqual(['JS', 'Python', 'Rust']);
     expect(poll.id).toBeDefined();
@@ -481,7 +481,7 @@ test.group('Poll/Voting RPC', t => {
     const cwd = process.cwd();
     const mod = await import(`file://${cwd}/generated/rpc/poll+page.generated.mjs`);
 
-    const poll = await mod.createPoll('Test ' + Date.now(), ['A', 'B']);
+    const poll = await mod.createPoll(`Test ${Date.now()}`, ['A', 'B']);
     const result = await mod.vote(poll.id, 'A');
     expect(result.ok).toBe(true);
     expect(result.votes.A).toBe(1);
@@ -495,7 +495,7 @@ test.group('Poll/Voting RPC', t => {
     const cwd = process.cwd();
     const mod = await import(`file://${cwd}/generated/rpc/poll+page.generated.mjs`);
 
-    const poll = await mod.createPoll('Test ' + Date.now(), ['X', 'Y']);
+    const poll = await mod.createPoll(`Test ${Date.now()}`, ['X', 'Y']);
     await mod.vote(poll.id, 'X');
     await mod.vote(poll.id, 'X');
     await mod.vote(poll.id, 'Y');
@@ -513,8 +513,8 @@ test.group('Poll/Voting RPC', t => {
     const cwd = process.cwd();
     const mod = await import(`file://${cwd}/generated/rpc/poll+page.generated.mjs`);
 
-    await mod.createPoll('Poll ' + Date.now() + '1', ['A']);
-    await mod.createPoll('Poll ' + Date.now() + '2', ['B']);
+    await mod.createPoll(`Poll ${Date.now()}1`, ['A']);
+    await mod.createPoll(`Poll ${Date.now()}2`, ['B']);
 
     const list = await mod.listPolls();
     expect(list.length).toBeGreaterThan(0);
@@ -695,7 +695,7 @@ test.group('Tic-Tac-Toe RPC', t => {
     const mod = await import(`file://${cwd}/generated/rpc/tictactoe+page.generated.mjs`);
 
     const game = await mod.createGame('Alice', 'Bob');
-    const moves = [[0,'X'],[1,'O'],[2,'X'],[4,'O'],[3,'X'],[5,'O'],[7,'X'],[6,'O'],[8,'X']];
+    const moves = [[0, 'X'], [1, 'O'], [2, 'X'], [4, 'O'], [3, 'X'], [5, 'O'], [7, 'X'], [6, 'O'], [8, 'X']];
     for (const [pos, player] of moves) {
       const result = await mod.makeMove(game.id, player, pos);
       if (result.winner) break;
@@ -803,15 +803,15 @@ test.group('Recursive Comments RPC', t => {
     const cwd = process.cwd();
     const mod = await import(`file://${cwd}/generated/rpc/comments+page.generated.mjs`);
 
-    await mod.addComment('unique keyword test ' + Date.now(), 'Kate');
-    await mod.addComment('No keyword here ' + Date.now(), 'Leo');
-    await mod.addComment('Another keyword test ' + Date.now(), 'Mike');
+    await mod.addComment(`unique keyword test ${Date.now()}`, 'Kate');
+    await mod.addComment(`No keyword here ${Date.now()}`, 'Leo');
+    await mod.addComment(`Another keyword test ${Date.now()}`, 'Mike');
 
     const results = await mod.searchComments('keyword');
     expect(results.length).toBeGreaterThanOrEqual(2);
-  });
+});
 
-  test('should get comments by author', async ({ expect }) => {
+test('should get comments by author', async ({ expect }) => {
     fixture.fromFile('rpc/comments+page.html');
     const ctx = useContext();
     await fixture.partial('rpc/comments+page.html', null, ctx);
@@ -825,5 +825,171 @@ test.group('Recursive Comments RPC', t => {
 
     const results = await mod.getCommentsByAuthor('Nancy');
     expect(results.length).toBe(2);
+  });
+});
+
+test.group('dispatch trigger', () => {
+  test('should ignore non-rpc payloads', async ({ expect }) => {
+    const { dispatch } = await import('../src/handler/dispatch.ts');
+
+    const messages = [];
+    const ws = { identity: 'test-uuid', send: (msg) => { messages.push(msg); } };
+    const result = dispatch('hello world', ws, {}, null);
+
+    expect(result).toBeUndefined();
+    expect(messages.length).toBe(0);
+  });
+
+  test('should return welcome on reconnect', async ({ expect }) => {
+    const { dispatch } = await import('../src/handler/dispatch.ts');
+
+    const ws = { identity: 'test-uuid', send: () => {} };
+    const result = dispatch('rpc:reconnect new-uuid', ws, {}, null);
+
+    expect(result.welcome).toBe('welcome new-uuid');
+    expect(ws.identity).toBe('new-uuid');
+  });
+
+  test('should return welcome on connect', async ({ expect }) => {
+    const { dispatch } = await import('../src/handler/dispatch.ts');
+
+    const ws = { identity: 'test-uuid', send: () => {} };
+    const result = dispatch('rpc:connect new-uuid my-source', ws, {}, null);
+
+    expect(result.welcome).toBe('welcome new-uuid');
+    expect(ws.identity).toBe('new-uuid');
+    expect(ws.source).toBe('my-source');
+  });
+
+  test('should dispose on disconnect message', async ({ expect }) => {
+    const { dispatch } = await import('../src/handler/dispatch.ts');
+
+    const ws = { identity: 'test-uuid', send: () => {} };
+    const result = dispatch('rpc:disconnect', ws, {}, null);
+
+    expect(result.dispose).toBe(true);
+  });
+
+  test('should invoke handler function when context is missing and source is present', async ({ expect }) => {
+    const { dispatch } = await import('../src/handler/dispatch.ts');
+
+    let handlerCalled = false;
+    let handlerPayload = null;
+    let handlerReply = null;
+
+    const mockFn = (payload, reply) => {
+      handlerCalled = true;
+      handlerPayload = payload;
+      handlerReply = reply;
+    };
+
+    const mockModule = {
+      __rpc_fns: { addComment: mockFn },
+      __functions: {},
+    };
+
+    const env = {
+      locate: _src => {
+        if (_src === 'components/comments') return mockModule;
+        throw new Error(`Module not found: ${_src}`);
+      },
+    };
+
+    const messages = [];
+    const ws = { identity: 'test-uuid', send: (msg) => { messages.push(msg); } };
+
+    dispatch('rpc:trigger test-uuid components/comments click addComment:null\tmessage=hello&message_id=1', ws, env, null);
+
+    expect(handlerCalled).toBe(true);
+    expect(handlerPayload.message_id).toBe('1');
+    expect(handlerPayload.message).toBe('hello');
+    expect(typeof handlerReply).toBe('function');
+  });
+
+  test('should send fragment updates via reply callback', async ({ expect }) => {
+    const { dispatch } = await import('../src/handler/dispatch.ts');
+
+    const messages = [];
+    const ws = { identity: 'test-uuid', send: (msg) => { messages.push(msg); } };
+
+    const mockFn = (payload, reply) => {
+      reply({
+        'live-comments': { items: [{ id: 1, body: 'Updated' }] },
+      });
+    };
+
+    const mockModule = {
+      __rpc_fns: { updateComments: mockFn },
+      __functions: {},
+    };
+
+    const env = {
+      locate: () => mockModule,
+    };
+
+    dispatch('rpc:trigger test-uuid components/comments click updateComments:null\tmessage=test', ws, env, null);
+
+    expect(messages.length).toBe(1);
+    expect(messages[0]).toContain('rpc:update test-uuid');
+    expect(messages[0]).toContain('live-comments');
+  });
+
+  test('should fall back to __functions when __rpc_fns does not have the function', async ({ expect }) => {
+    const { dispatch } = await import('../src/handler/dispatch.ts');
+
+    let handlerCalled = false;
+    const mockFn = () => { handlerCalled = true; };
+
+    const mockModule = {
+      __rpc_fns: {},
+      __functions: { doSomething: mockFn },
+    };
+
+    const env = { locate: () => mockModule };
+
+    const ws = { identity: 'test-uuid', send: () => {} };
+
+    dispatch('rpc:trigger test-uuid components/comments click doSomething:null\tdata=value', ws, env, null);
+
+    expect(handlerCalled).toBe(true);
+  });
+
+  test('should not invoke handler for mismatched uuid', async ({ expect }) => {
+    const { dispatch } = await import('../src/handler/dispatch.ts');
+
+    let handlerCalled = false;
+    const mockFn = () => { handlerCalled = true; };
+
+    const mockModule = {
+      __rpc_fns: { testFn: mockFn },
+      __functions: {},
+    };
+
+    const env = { locate: () => mockModule };
+
+    const ws = { identity: 'correct-uuid', send: () => {} };
+    dispatch('rpc:trigger wrong-uuid components/comments click testFn:null\t', ws, env, null);
+
+    expect(handlerCalled).toBe(false);
+  });
+
+  test('should use ws.context when available', async ({ expect }) => {
+    const { dispatch } = await import('../src/handler/dispatch.ts');
+
+    let emitted = false;
+    let emittedData = null;
+    const context = {
+      emit: (data, ...args) => {
+        emitted = true;
+        emittedData = data;
+      },
+    };
+
+    const ws = { identity: 'test-uuid', send: () => {}, context };
+
+    dispatch('rpc:trigger test-uuid some/ref click fn:null\tkey=val', ws, {}, null);
+
+    expect(emitted).toBe(true);
+    expect(emittedData).toContain('key=val');
   });
 });

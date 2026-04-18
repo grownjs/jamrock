@@ -1,18 +1,43 @@
-<script>
-  import Comments from './comments.html';
-  export const data = [];
-  export const key = 0;
+<script context="module">
+  const _comments = [
+    {
+      id: 1, body: 'Great post!', count: 2, msgs: [
+        { id: 2, body: 'I agree!', count: 0, msgs: [] },
+        { id: 5, body: 'Thanks!', count: 0, msgs: [] },
+      ],
+    },
+    { id: 6, body: 'Can you explain more?', count: 0, msgs: [] },
+  ];
 
-  function save({ params }) {
-    for (const c of data) {
-      if (c.id === +params.message_id) {
-        c.count = (c.count || 0) + 1;
-        c.msgs = c.msgs || [];
-        c.msgs.unshift({ id: Date.now(), body: params.message, count: 0, msgs: [] });
-        break;
+  export function addComment(payload, reply) {
+    const parent_id = +payload.message_id;
+    const message = payload.message;
+
+    function find_and_add(comments) {
+      for (const c of comments) {
+        if (c.id === parent_id) {
+          c.count = (c.count || 0) + 1;
+          c.msgs = c.msgs || [];
+          c.msgs.unshift({ id: Date.now(), body: message, count: 0, msgs: [] });
+          return true;
+        }
+        if (c.msgs && find_and_add(c.msgs)) return true;
       }
+      return false;
+    }
+
+    find_and_add(_comments);
+
+    if (reply) {
+      reply({ 'live-comments': null });
     }
   }
+</script>
+
+<script>
+  import Comments from './comments.html';
+  export const data = _comments;
+  export const key = 0;
 </script>
 
 <style>
@@ -25,7 +50,7 @@
       <li>
         <fieldset>
           <p>{c.body}</p>
-          <form @patch @async on:submit={save}>
+          <form rpc:call={addComment}>
             <input type="hidden" name="message_id" value={c.id} />
             <input type="text" name="message" />
             <button>Reply</button>

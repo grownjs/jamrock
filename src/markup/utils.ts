@@ -104,6 +104,10 @@ export function enhance(vnode: any[], parent?: any): void {
       delete props['@on:submit'];
     }
 
+    if (props['@rpc:call']) {
+      props['@trigger'] = true;
+    }
+
     if (props['@put']) props.method = 'PUT';
     if (props['@post']) props.method = 'POST';
     if (props['@patch']) props.method = 'PATCH';

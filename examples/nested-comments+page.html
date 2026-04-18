@@ -1,18 +1,7 @@
-<script context="module">
-  let _comments = [
-    { id: 1, body: 'Great post!', count: 2, msgs: [
-      { id: 2, body: 'I agree!', count: 0, msgs: [] },
-      { id: 5, body: 'Thanks!', count: 0, msgs: [] },
-    ]},
-    { id: 6, body: 'Can you explain more?', count: 0, msgs: [] },
-  ];
-</script>
-
 <script>
   import Comments from './components/comments.html';
-  export let data = _comments;
 </script>
 
 <h1 data-test:id="title">Nested Comments</h1>
 
-<Comments data={data} key={0} />
+<Comments />

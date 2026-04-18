@@ -15,6 +15,15 @@ export interface DispatchResult {
   dispose?: boolean;
 }
 
+function parseTriggerPayload(data: string): Record<string, string> {
+  if (!data) return {};
+  try {
+    return Object.fromEntries(new URLSearchParams(data));
+  } catch {
+    return {};
+  }
+}
+
 export function dispatch(
   payload: string,
   ws: SSESocket,
@@ -74,9 +83,40 @@ export function dispatch(
 
   if (msg === 'trigger') {
     try {
+      const uuid = args[0];
+      const source = args[1];
+      const kind = args[2];
+      const callKey = args[3];
+      const payload_ = parseTriggerPayload(decodeURIComponent(data));
+
+      if (uuid !== ws.identity) return;
+
       if (ws.context) {
-        if (args[0] === ws.identity) {
-          ws.context.emit(decodeURIComponent(data), ...args);
+        ws.context.emit(decodeURIComponent(data), ...args);
+      } else if (callKey && env) {
+        const [fnName, streamName] = callKey.split(':');
+        const srcPath = source ? source.replace(/\/\d+$/, '') : null;
+
+        if (fnName && srcPath && env.locate) {
+          try {
+            const mod = env.locate(srcPath);
+            const fn = mod?.__rpc_fns?.[fnName]
+              || mod?.__functions?.[fnName];
+
+            if (Is.func(fn)) {
+              const reply = (fragmentUpdates: Record<string, any>) => {
+                if (!ws.send) return;
+                for (const [name, vdom] of Object.entries(fragmentUpdates)) {
+                  const encoded = JSON.stringify(vdom);
+                  ws.send(`rpc:update ${ws.identity} ${name} replace\t${encodeURIComponent(encoded)}`);
+                }
+              };
+
+              fn(payload_, reply);
+            }
+          } catch (e) {
+            trace(e, 'E_RPC_TRIGGER');
+          }
         }
       }
     } catch (e) {

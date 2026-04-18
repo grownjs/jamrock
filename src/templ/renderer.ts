@@ -300,6 +300,14 @@ export function tag(context: any) {
       return [tagName, { ...restAttrs, [srcAttr]: result.path }, children || []];
     }
 
+    if (attrs['@rpc:call'] && Is.func(attrs['@rpc:call'])) {
+      attrs['@rpc:call'] = attrs['@rpc:call'].name || '';
+    }
+
+    if (attrs['@rpc:yield'] && Is.func(attrs['@rpc:yield'])) {
+      attrs['@rpc:yield'] = attrs['@rpc:yield'].name || '';
+    }
+
     if (
       ['form', 'select', 'textarea'].includes(name)
       || (name === 'input' && attrs.type !== 'hidden')
