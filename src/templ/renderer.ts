@@ -301,7 +301,13 @@ export function tag(context: any) {
     }
 
     if (attrs['@rpc:call'] && Is.func(attrs['@rpc:call'])) {
-      attrs['@rpc:call'] = attrs['@rpc:call'].name || '';
+      const fn = attrs['@rpc:call'];
+      const fnName = fn.name || '';
+      attrs['@rpc:call'] = fnName;
+      if (fnName && context.component) {
+        if (!context.component.__rpc_fns) context.component.__rpc_fns = {};
+        context.component.__rpc_fns[fnName] = fn;
+      }
     }
 
     if (attrs['@rpc:yield'] && Is.func(attrs['@rpc:yield'])) {
@@ -340,6 +346,7 @@ export async function render(component: any, parent: any, props: any, ctx: any, 
   const { scripts, styles, media: _media, loader } = prepare(component, parent, ctx);
 
   ctx.base = dirname(component.__src);
+  Object.defineProperty(ctx, 'component', { value: component, enumerable: false, writable: true, configurable: true });
 
   await settle(props);
 
@@ -415,6 +422,7 @@ export function renderSync(component: any, parent: any, props: any, ctx: any, cb
   const { scripts, styles, media: _media, loader } = prepare(component, parent, ctx);
 
   ctx.base = dirname(component.__src);
+  Object.defineProperty(ctx, 'component', { value: component, enumerable: false, writable: true, configurable: true });
 
   const self = component.__handler
     ? component.__handler(props, loader)

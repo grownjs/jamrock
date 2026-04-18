@@ -171,8 +171,8 @@ export function dispatch(
       const [fnName] = (callKey || '').split(':');
       const srcPath = source ? source.replace(/\/\d+$/, '') : null;
 
-      const mod = ws.module
-        || (srcPath && env?.locate ? env.locate(srcPath) : null);
+      const mod = (srcPath && env?.locate ? env.locate(srcPath) : null)
+        || ws.module;
 
       if (!fnName || !mod) return;
 

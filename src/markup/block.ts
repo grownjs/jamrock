@@ -40,6 +40,7 @@ export class Block {
   declare readonly children: any[];
   declare readonly imports: any[];
   declare readonly calls: Set<string>;
+  declare readonly rpcCalls: Set<string>;
 
   context?: string;
   markup: any;
@@ -189,6 +190,7 @@ export class Block {
     Object.defineProperty(this, 'children', { value: children });
     Object.defineProperty(this, 'imports', { value: imports });
     Object.defineProperty(this, 'calls', { value: new Set() });
+    Object.defineProperty(this, 'rpcCalls', { value: new Set() });
   }
 
   get $attributes(): string {
@@ -391,6 +393,11 @@ export const __attributes = ${this.$attributes};
     await visit(this.markup.content, async (node: any) => {
       Object.keys(node.attributes).forEach((key: string) => {
         if (key.indexOf('@use:') === 0) this.calls.add(key.split(':')[1]);
+        if (key === '@rpc:call') {
+          const val = node.attributes[key];
+          const name = typeof val === 'string' ? val : (val?.name || val?.toString?.()?.replace(/[{}]/g, '') || '');
+          if (name) this.rpcCalls.add(name);
+        }
       });
 
       switch (node.name) {
@@ -540,7 +547,7 @@ ${isGTK ? this.buildGTKTemplate(template, lets) : `export const __vdom = ($$) =>
 export const __exported = ${JSON.stringify(exported)};
 export const __functions = {${calls.join(',')}};
 export const __rpc = {${asyncFns.map(fn => `${fn}:'${this.src.replace(/\.(?:md|html)$/, '')}'`).join(',')}};
-export const __rpc_fns = {${asyncFns.join(',')}};
+export const __rpc_fns = {${[...asyncFns, ...this.rpcCalls].join(',')}};
 export default {${isGTK ? defaults.replace('__vdom', '__gtk') : defaults},__functions,__rpc,__rpc_fns,__exported,__handler,__routes};
 for (const [, fn] of Object.entries(__functions)) fn.$ = __src;
 `;
