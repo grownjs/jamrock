@@ -44,7 +44,7 @@ function createSSESocket(uuid: string, prefix: string, onMessage: (_msg: string)
   connect();
 
   return {
-    readyState,
+    get readyState() { return readyState; },
     OPEN: 1,
     CLOSED: 3,
     send,
