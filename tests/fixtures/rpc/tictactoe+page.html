@@ -1,0 +1,98 @@
+<script context="module">
+  const games = new Map();
+
+  export async function createGame(playerX, playerO) {
+    const id = 'game_' + Date.now();
+    games.set(id, {
+      board: Array(9).fill(null),
+      currentPlayer: 'X',
+      players: { X: playerX, O: playerO },
+      winner: null,
+      moves: 0
+    });
+    return { id, board: games.get(id).board, currentPlayer: 'X' };
+  }
+
+  export async function makeMove(gameId, player, position) {
+    const game = games.get(gameId);
+    if (!game) return { ok: false, error: 'Game not found' };
+    if (game.winner) return { ok: false, error: 'Game already over' };
+    if (game.currentPlayer !== player) return { ok: false, error: 'Not your turn' };
+    if (game.board[position] !== null) return { ok: false, error: 'Position taken' };
+
+    game.board[position] = player;
+    game.moves++;
+
+    const winPatterns = [
+      [0,1,2], [3,4,5], [6,7,8],
+      [0,3,6], [1,4,7], [2,5,8],
+      [0,4,8], [2,4,6]
+    ];
+
+    for (const [a, b, c] of winPatterns) {
+      if (game.board[a] && game.board[a] === game.board[b] && game.board[a] === game.board[c]) {
+        game.winner = player;
+        return { ok: true, winner: player, board: game.board };
+      }
+    }
+
+    if (game.moves >= 9) {
+      game.winner = 'draw';
+      return { ok: true, winner: 'draw', board: game.board };
+    }
+
+    game.currentPlayer = player === 'X' ? 'O' : 'X';
+    return { ok: true, board: game.board, currentPlayer: game.currentPlayer };
+  }
+
+  export async function getGame(gameId) {
+    const game = games.get(gameId);
+    if (!game) return null;
+    return {
+      board: game.board,
+      currentPlayer: game.currentPlayer,
+      winner: game.winner,
+      players: game.players
+    };
+  }
+
+  export async function resetGame(gameId) {
+    const game = games.get(gameId);
+    if (!game) return { ok: false, error: 'Game not found' };
+    game.board = Array(9).fill(null);
+    game.currentPlayer = 'X';
+    game.winner = null;
+    game.moves = 0;
+    return { ok: true, board: game.board };
+  }
+
+  export async function deleteGame(gameId) {
+    const deleted = games.delete(gameId);
+    return { ok: deleted };
+  }
+</script>
+
+<script>
+  let board = [null, null, null, null, null, null, null, null, null];
+  let currentPlayer = 'X';
+  let winner = null;
+</script>
+
+<h1>Tic-Tac-Toe</h1>
+
+<fragment name="game-board">
+  <div class="board" test:id="board">
+    {#each board as cell, i}
+      <button class="cell" disabled>{cell || '-'}</button>
+    {/each}
+  </div>
+</fragment>
+
+{#if winner}
+  <p test:id="winner">{winner === 'draw' ? "It's a draw!" : `Winner: ${winner}`}</p>
+{/if}
+
+<style>
+  .board { display: grid; grid-template-columns: repeat(3, 60px); gap: 5px; }
+  .cell { width: 60px; height: 60px; font-size: 24px; }
+</style>

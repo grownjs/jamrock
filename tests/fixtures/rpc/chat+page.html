@@ -1,0 +1,70 @@
+<script context="module">
+  const rooms = new Map();
+  let messageId = 0;
+
+  export async function createRoom(name) {
+    const id = 'room_' + Date.now();
+    rooms.set(id, { name, messages: [], users: new Set() });
+    return { id, name };
+  }
+
+  export async function joinRoom(roomId, username) {
+    const room = rooms.get(roomId);
+    if (!room) return { ok: false, error: 'Room not found' };
+    room.users.add(username);
+    return { ok: true, users: Array.from(room.users) };
+  }
+
+  export async function leaveRoom(roomId, username) {
+    const room = rooms.get(roomId);
+    if (!room) return { ok: false, error: 'Room not found' };
+    room.users.delete(username);
+    return { ok: true };
+  }
+
+  export async function sendMessage(roomId, username, text) {
+    const room = rooms.get(roomId);
+    if (!room) return { ok: false, error: 'Room not found' };
+    const msg = { id: ++messageId, username, text, timestamp: Date.now() };
+    room.messages.push(msg);
+    return { ok: true, message: msg };
+  }
+
+  export async function getMessages(roomId, since = 0) {
+    const room = rooms.get(roomId);
+    if (!room) return [];
+    return room.messages.filter(m => m.id > since);
+  }
+
+  export async function getRooms() {
+    return Array.from(rooms.entries()).map(([id, room]) => ({
+      id, name: room.name, userCount: room.users.size, messageCount: room.messages.length
+    }));
+  }
+
+  export async function deleteRoom(roomId) {
+    const deleted = rooms.delete(roomId);
+    return { ok: deleted };
+  }
+</script>
+
+<script>
+  let currentRoom = '';
+  let messages = [];
+</script>
+
+<h1>Chat</h1>
+
+<fragment name="chat-messages">
+  {#if messages.length > 0}
+    <div test:id="messages">
+      {#each messages as msg}
+        <p><strong>{msg.username}</strong>: {msg.text}</p>
+      {/each}
+    </div>
+  {/if}
+</fragment>
+
+<style>
+  p { margin: 0.25rem 0; }
+</style>

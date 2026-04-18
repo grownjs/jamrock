@@ -1,0 +1,74 @@
+<script context="module">
+  const polls = new Map();
+
+  export async function createPoll(question, options) {
+    const id = 'poll_' + Date.now();
+    const votes = {};
+    options.forEach(opt => votes[opt] = 0);
+    polls.set(id, { question, options, votes, voters: new Set() });
+    return { id, question, options };
+  }
+
+  export async function vote(pollId, option) {
+    const poll = polls.get(pollId);
+    if (!poll) return { ok: false, error: 'Poll not found' };
+    if (!(option in poll.votes)) return { ok: false, error: 'Invalid option' };
+    poll.votes[option]++;
+    return { ok: true, votes: poll.votes };
+  }
+
+  export async function getResults(pollId) {
+    const poll = polls.get(pollId);
+    if (!poll) return { ok: false, error: 'Poll not found' };
+    const total = Object.values(poll.votes).reduce((a, b) => a + b, 0);
+    const results = {};
+    for (const [opt, count] of Object.entries(poll.votes)) {
+      results[opt] = { count, percent: total > 0 ? (count / total * 100).toFixed(1) : 0 };
+    }
+    return { question: poll.question, results, total };
+  }
+
+  export async function listPolls() {
+    return Array.from(polls.entries()).map(([id, poll]) => ({
+      id, question: poll.question, options: poll.options
+    }));
+  }
+
+  export async function deletePoll(pollId) {
+    const deleted = polls.delete(pollId);
+    return { ok: deleted };
+  }
+</script>
+
+<script>
+  let question = '';
+  let options = '';
+  let activePoll = null;
+  let results = null;
+</script>
+
+<h1>Polls</h1>
+
+<form @on:submit={createPoll}>
+  <input type="text" bind:value={question} placeholder="Question" test:id="question" required />
+  <input type="text" bind:value={options} placeholder="Options (comma separated)" test:id="options" required />
+  <button type="submit" test:id="create">Create Poll</button>
+</form>
+
+<fragment name="poll-results">
+  {#if results}
+    <div test:id="results">
+      <h3>{results.question}</h3>
+      {#each Object.entries(results.results) as [opt, data]}
+        <p>{opt}: {data.count} ({data.percent}%)</p>
+      {/each}
+      <p>Total: {results.total}</p>
+    </div>
+  {/if}
+</fragment>
+
+<style>
+  form { display: flex; flex-direction: column; gap: 0.5rem; max-width: 400px; }
+  input, button { padding: 0.5rem; }
+  p { margin: 0.25rem 0; }
+</style>

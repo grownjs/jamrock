@@ -454,3 +454,254 @@ test.group('Calculator RPC', t => {
     expect(cleared).toBe(0);
   });
 });
+
+test.group('Poll/Voting RPC', t => {
+  t.each.setup(() => { setup(); });
+  t.each.teardown(() => { process.debug = 0; reset(); });
+
+  test('should create a poll', async ({ expect }) => {
+    fixture.fromFile('rpc/poll+page.html');
+    const ctx = useContext();
+    await fixture.partial('rpc/poll+page.html', null, ctx);
+
+    const cwd = process.cwd();
+    const mod = await import(`file://${cwd}/generated/rpc/poll+page.generated.mjs`);
+
+    const poll = await mod.createPoll('Best ' + Date.now(), ['JS', 'Python', 'Rust']);
+    expect(poll.question).toContain('Best');
+    expect(poll.options).toEqual(['JS', 'Python', 'Rust']);
+    expect(poll.id).toBeDefined();
+  });
+
+  test('should vote on poll', async ({ expect }) => {
+    fixture.fromFile('rpc/poll+page.html');
+    const ctx = useContext();
+    await fixture.partial('rpc/poll+page.html', null, ctx);
+
+    const cwd = process.cwd();
+    const mod = await import(`file://${cwd}/generated/rpc/poll+page.generated.mjs`);
+
+    const poll = await mod.createPoll('Test ' + Date.now(), ['A', 'B']);
+    const result = await mod.vote(poll.id, 'A');
+    expect(result.ok).toBe(true);
+    expect(result.votes.A).toBe(1);
+  });
+
+  test('should get poll results', async ({ expect }) => {
+    fixture.fromFile('rpc/poll+page.html');
+    const ctx = useContext();
+    await fixture.partial('rpc/poll+page.html', null, ctx);
+
+    const cwd = process.cwd();
+    const mod = await import(`file://${cwd}/generated/rpc/poll+page.generated.mjs`);
+
+    const poll = await mod.createPoll('Test ' + Date.now(), ['X', 'Y']);
+    await mod.vote(poll.id, 'X');
+    await mod.vote(poll.id, 'X');
+    await mod.vote(poll.id, 'Y');
+
+    const results = await mod.getResults(poll.id);
+    expect(results.total).toBe(3);
+    expect(results.results.X.count).toBe(2);
+  });
+
+  test('should list polls', async ({ expect }) => {
+    fixture.fromFile('rpc/poll+page.html');
+    const ctx = useContext();
+    await fixture.partial('rpc/poll+page.html', null, ctx);
+
+    const cwd = process.cwd();
+    const mod = await import(`file://${cwd}/generated/rpc/poll+page.generated.mjs`);
+
+    await mod.createPoll('Poll ' + Date.now() + '1', ['A']);
+    await mod.createPoll('Poll ' + Date.now() + '2', ['B']);
+
+    const list = await mod.listPolls();
+    expect(list.length).toBeGreaterThan(0);
+  });
+});
+
+test.group('Shopping Cart RPC', t => {
+  t.each.setup(() => { setup(); });
+  t.each.teardown(() => { process.debug = 0; reset(); });
+
+  test('should get products', async ({ expect }) => {
+    fixture.fromFile('rpc/cart+page.html');
+    const ctx = useContext();
+    await fixture.partial('rpc/cart+page.html', null, ctx);
+
+    const cwd = process.cwd();
+    const mod = await import(`file://${cwd}/generated/rpc/cart+page.generated.mjs`);
+
+    const products = await mod.getProducts();
+    expect(products.length).toBe(5);
+    expect(products[0].name).toBe('Apple');
+  });
+
+  test('should add to cart', async ({ expect }) => {
+    fixture.fromFile('rpc/cart+page.html');
+    const ctx = useContext();
+    await fixture.partial('rpc/cart+page.html', null, ctx);
+
+    const cwd = process.cwd();
+    const mod = await import(`file://${cwd}/generated/rpc/cart+page.generated.mjs`);
+
+    await mod.clearCart();
+    const result = await mod.addToCart(1, 3);
+    expect(result.ok).toBe(true);
+    expect(result.cart[0].quantity).toBe(3);
+  });
+
+  test('should calculate total', async ({ expect }) => {
+    fixture.fromFile('rpc/cart+page.html');
+    const ctx = useContext();
+    await fixture.partial('rpc/cart+page.html', null, ctx);
+
+    const cwd = process.cwd();
+    const mod = await import(`file://${cwd}/generated/rpc/cart+page.generated.mjs`);
+
+    await mod.clearCart();
+    await mod.addToCart(1, 2);
+    await mod.addToCart(2, 1);
+
+    const total = await mod.getTotal();
+    expect(total).toBeGreaterThan(0);
+  });
+
+  test('should checkout', async ({ expect }) => {
+    fixture.fromFile('rpc/cart+page.html');
+    const ctx = useContext();
+    await fixture.partial('rpc/cart+page.html', null, ctx);
+
+    const cwd = process.cwd();
+    const mod = await import(`file://${cwd}/generated/rpc/cart+page.generated.mjs`);
+
+    await mod.clearCart();
+    await mod.addToCart(1);
+    const result = await mod.checkout();
+
+    expect(result.ok).toBe(true);
+    expect(result.order.id).toBeDefined();
+  });
+});
+
+test.group('Chat/Messages RPC', t => {
+  t.each.setup(() => { setup(); });
+  t.each.teardown(() => { process.debug = 0; reset(); });
+
+  test('should create a room', async ({ expect }) => {
+    fixture.fromFile('rpc/chat+page.html');
+    const ctx = useContext();
+    await fixture.partial('rpc/chat+page.html', null, ctx);
+
+    const cwd = process.cwd();
+    const mod = await import(`file://${cwd}/generated/rpc/chat+page.generated.mjs`);
+
+    const room = await mod.createRoom('General');
+    expect(room.name).toBe('General');
+    expect(room.id).toBeDefined();
+  });
+
+  test('should join and leave room', async ({ expect }) => {
+    fixture.fromFile('rpc/chat+page.html');
+    const ctx = useContext();
+    await fixture.partial('rpc/chat+page.html', null, ctx);
+
+    const cwd = process.cwd();
+    const mod = await import(`file://${cwd}/generated/rpc/chat+page.generated.mjs`);
+
+    const room = await mod.createRoom('Test');
+    const join = await mod.joinRoom(room.id, 'Alice');
+    expect(join.ok).toBe(true);
+    expect(join.users).toContain('Alice');
+
+    const leave = await mod.leaveRoom(room.id, 'Alice');
+    expect(leave.ok).toBe(true);
+  });
+
+  test('should send and retrieve messages', async ({ expect }) => {
+    fixture.fromFile('rpc/chat+page.html');
+    const ctx = useContext();
+    await fixture.partial('rpc/chat+page.html', null, ctx);
+
+    const cwd = process.cwd();
+    const mod = await import(`file://${cwd}/generated/rpc/chat+page.generated.mjs`);
+
+    const room = await mod.createRoom('Test');
+    await mod.sendMessage(room.id, 'Alice', 'Hello!');
+
+    const messages = await mod.getMessages(room.id);
+    expect(messages.length).toBe(1);
+    expect(messages[0].text).toBe('Hello!');
+  });
+});
+
+test.group('Tic-Tac-Toe RPC', t => {
+  t.each.setup(() => { setup(); });
+  t.each.teardown(() => { process.debug = 0; reset(); });
+
+  test('should create a game', async ({ expect }) => {
+    fixture.fromFile('rpc/tictactoe+page.html');
+    const ctx = useContext();
+    await fixture.partial('rpc/tictactoe+page.html', null, ctx);
+
+    const cwd = process.cwd();
+    const mod = await import(`file://${cwd}/generated/rpc/tictactoe+page.generated.mjs`);
+
+    const game = await mod.createGame('Alice', 'Bob');
+    expect(game.id).toBeDefined();
+    expect(game.currentPlayer).toBe('X');
+    expect(game.board.every(c => c === null)).toBe(true);
+  });
+
+  test('should make moves', async ({ expect }) => {
+    fixture.fromFile('rpc/tictactoe+page.html');
+    const ctx = useContext();
+    await fixture.partial('rpc/tictactoe+page.html', null, ctx);
+
+    const cwd = process.cwd();
+    const mod = await import(`file://${cwd}/generated/rpc/tictactoe+page.generated.mjs`);
+
+    const game = await mod.createGame('Alice', 'Bob');
+    const move = await mod.makeMove(game.id, 'X', 0);
+    expect(move.ok).toBe(true);
+    expect(move.board[0]).toBe('X');
+  });
+
+  test('should detect win', async ({ expect }) => {
+    fixture.fromFile('rpc/tictactoe+page.html');
+    const ctx = useContext();
+    await fixture.partial('rpc/tictactoe+page.html', null, ctx);
+
+    const cwd = process.cwd();
+    const mod = await import(`file://${cwd}/generated/rpc/tictactoe+page.generated.mjs`);
+
+    const game = await mod.createGame('Alice', 'Bob');
+    await mod.makeMove(game.id, 'X', 0);
+    await mod.makeMove(game.id, 'O', 3);
+    await mod.makeMove(game.id, 'X', 1);
+    await mod.makeMove(game.id, 'O', 4);
+    const final = await mod.makeMove(game.id, 'X', 2);
+
+    expect(final.winner).toBe('X');
+  });
+
+  test('should detect draw', async ({ expect }) => {
+    fixture.fromFile('rpc/tictactoe+page.html');
+    const ctx = useContext();
+    await fixture.partial('rpc/tictactoe+page.html', null, ctx);
+
+    const cwd = process.cwd();
+    const mod = await import(`file://${cwd}/generated/rpc/tictactoe+page.generated.mjs`);
+
+    const game = await mod.createGame('Alice', 'Bob');
+    const moves = [[0,'X'],[1,'O'],[2,'X'],[4,'O'],[3,'X'],[5,'O'],[7,'X'],[6,'O'],[8,'X']];
+    for (const [pos, player] of moves) {
+      const result = await mod.makeMove(game.id, player, pos);
+      if (result.winner) break;
+    }
+
+    const final = await mod.getGame(game.id);
+    expect(final.winner).toBe('draw');
+  });
+});

@@ -1,0 +1,100 @@
+<script context="module">
+  const products = [
+    { id: 1, name: 'Apple', price: 1.50 },
+    { id: 2, name: 'Banana', price: 0.75 },
+    { id: 3, name: 'Orange', price: 2.00 },
+    { id: 4, name: 'Milk', price: 3.50 },
+    { id: 5, name: 'Bread', price: 2.50 },
+  ];
+
+  let cart = [];
+  let orderHistory = [];
+
+  export async function getProducts() {
+    return [...products];
+  }
+
+  export async function addToCart(productId, quantity = 1) {
+    const product = products.find(p => p.id === productId);
+    if (!product) return { ok: false, error: 'Product not found' };
+
+    const existing = cart.find(item => item.product.id === productId);
+    if (existing) {
+      existing.quantity += quantity;
+    } else {
+      cart.push({ product, quantity });
+    }
+    return { ok: true, cart };
+  }
+
+  export async function removeFromCart(productId) {
+    const index = cart.findIndex(item => item.product.id === productId);
+    if (index === -1) return { ok: false, error: 'Item not in cart' };
+    cart.splice(index, 1);
+    return { ok: true, cart };
+  }
+
+  export async function updateQuantity(productId, quantity) {
+    const item = cart.find(i => i.product.id === productId);
+    if (!item) return { ok: false, error: 'Item not in cart' };
+    if (quantity <= 0) {
+      cart = cart.filter(i => i.product.id !== productId);
+    } else {
+      item.quantity = quantity;
+    }
+    return { ok: true, cart };
+  }
+
+  export async function getCart() {
+    return cart.map(item => ({
+      ...item,
+      subtotal: item.product.price * item.quantity
+    }));
+  }
+
+  export async function getTotal() {
+    return cart.reduce((sum, item) => sum + item.product.price * item.quantity, 0);
+  }
+
+  export async function checkout() {
+    if (cart.length === 0) return { ok: false, error: 'Cart is empty' };
+    const order = {
+      id: 'order_' + Date.now(),
+      items: [...cart],
+      total: cart.reduce((sum, item) => sum + item.product.price * item.quantity, 0),
+      date: new Date().toISOString()
+    };
+    orderHistory.push(order);
+    cart = [];
+    return { ok: true, order };
+  }
+
+  export async function getOrderHistory() {
+    return [...orderHistory];
+  }
+
+  export async function clearCart() {
+    cart = [];
+    return { ok: true };
+  }
+</script>
+
+<script>
+  let cartItems = [];
+</script>
+
+<h1>Shop</h1>
+
+<fragment name="cart-items">
+  {#if cartItems.length > 0}
+    <div test:id="cart">
+      {#each cartItems as item}
+        <p>{item.product.name} x{item.quantity} = ${item.subtotal.toFixed(2)}</p>
+      {/each}
+    </div>
+  {/if}
+</fragment>
+
+<style>
+  p { margin: 0.25rem 0; }
+</style>
