@@ -1,7 +1,5 @@
 /* eslint-disable no-unused-expressions */
 
-import { $ } from '../selectors';
-
 /* global fixture, test */
 
 fixture`RPC async functions`
