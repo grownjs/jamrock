@@ -22,7 +22,8 @@ test.group('__rpc export', () => {
 
     const result = block.toString();
     expect(result).toContain('export const __rpc = {}');
-    expect(result).toContain('__vdom,__rpc}');
+    expect(result).toContain('export const __rpc_fns = {}');
+    expect(result).toContain('__vdom,__rpc,__rpc_fns}');
     reset();
   });
 
@@ -53,6 +54,7 @@ test.group('__rpc export', () => {
     const result = block.toString();
 
     expect(result).toContain("export const __rpc = {getData:'test/async-rpc',saveItem:'test/async-rpc'}");
+    expect(result).toContain('export const __rpc_fns = {getData,saveItem}');
     expect(result).not.toContain("notExported:'test/async-rpc'");
     expect(result).not.toContain("syncFn:'test/async-rpc'");
     reset();
@@ -71,7 +73,7 @@ test.group('__rpc export', () => {
     const block = new Block(code, 'test/default-export.html', { cwd: '.', dest: '.', generators: {} });
 
     const result = block.toString();
-    expect(result).toContain('__functions,__rpc,__exported,__handler,__routes');
+    expect(result).toContain('__functions,__rpc,__rpc_fns,__exported,__handler,__routes');
     reset();
   });
 });

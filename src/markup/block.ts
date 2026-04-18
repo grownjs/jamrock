@@ -432,7 +432,7 @@ export const __attributes = ${this.$attributes};
   }
 
   toString(): string {
-    const defaults = '__src,__dest,__media,__context,__snippets,__fragments,__scripts,__styles,__doctype,__metadata,__attributes,__vdom,__rpc';
+    const defaults = '__src,__dest,__media,__context,__snippets,__fragments,__scripts,__styles,__doctype,__metadata,__attributes,__vdom,__rpc,__rpc_fns';
     
     const isGTK = this.opts.target === 'gtk';
     
@@ -455,6 +455,7 @@ export const __attributes = ${this.$attributes};
 ${this.$prefix}
 ${this.buildGTKTemplate(template, [])}
 export const __rpc = {};
+export const __rpc_fns = {};
 export default {${defaults.replace('__vdom', '__gtk')}};
 `.replace(/\(\$\$\)/g, '($$$$,$$$$props)');
       }
@@ -465,6 +466,7 @@ export const __vdom = ($$,{${scope}}) => {
   return [${Block.wrap(template)}];
 };
 export const __rpc = {};
+export const __rpc_fns = {};
 export default {${defaults}};
 `.replace(/\(\$\$\)/g, '($$$$,$$$$props)');
     }
@@ -481,7 +483,7 @@ export default {${defaults}};
     const RE_ASYNC_FN = /\bexport\s+async\s+function\s+(\w+)/g;
     let _m;
     while ((_m = RE_ASYNC_FN.exec(this.module.code)) !== null) {
-      asyncFns.push(_m[1]);
+      if (!calls.includes(_m[1])) asyncFns.push(_m[1]);
     }
 
     let { prelude, interlude, hasImports } = Block.script(this.script.code);
@@ -538,7 +540,8 @@ ${isGTK ? this.buildGTKTemplate(template, lets) : `export const __vdom = ($$) =>
 export const __exported = ${JSON.stringify(exported)};
 export const __functions = {${calls.join(',')}};
 export const __rpc = {${asyncFns.map(fn => `${fn}:'${this.src.replace(/\.(?:md|html)$/, '')}'`).join(',')}};
-export default {${isGTK ? defaults.replace('__vdom', '__gtk') : defaults},__functions,__rpc,__exported,__handler,__routes};
+export const __rpc_fns = {${asyncFns.join(',')}};
+export default {${isGTK ? defaults.replace('__vdom', '__gtk') : defaults},__functions,__rpc,__rpc_fns,__exported,__handler,__routes};
 for (const [, fn] of Object.entries(__functions)) fn.$ = __src;
 `;
 

@@ -671,7 +671,7 @@ export async function createRpcCallResponse(env: any, conn: any): Promise<Respon
     }
 
     const mod = await Template.load(_file.filepath);
-    const fn = mod.__functions?.[fnName];
+    const fn = mod.__rpc_fns?.[fnName] || mod.__functions?.[fnName];
 
     if (!fn) {
       return new Response(JSON.stringify({ ok: false, error: `Function '${fnName}' not found` }), {
