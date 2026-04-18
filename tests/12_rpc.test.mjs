@@ -227,4 +227,31 @@ test('should echo args back via _rpc endpoint', async ({ expect }) => {
 
     expect(result).toBe('Hello, World!');
   });
+
+  test('should preserve argument types through RPC call', async ({ expect }) => {
+    fixture.fromFile('rpc/echo+page.html');
+    const ctx = useContext();
+    await fixture.partial('rpc/echo+page.html', null, ctx);
+
+    const cwd = process.cwd();
+    const mod = await import(`file://${cwd}/generated/rpc/echo+page.generated.mjs`);
+
+    const complexArgs = {
+      n: 42,
+      s: 'hi',
+      b: true,
+      nil: null,
+      arr: [1, 2],
+      nested: { a: { b: 1 } },
+    };
+
+    const result = await mod.echo(complexArgs);
+
+    expect(result.n).toBe(42);
+    expect(result.s).toBe('hi');
+    expect(result.b).toBe(true);
+    expect(result.nil).toBe(null);
+    expect(result.arr).toEqual([1, 2]);
+    expect(result.nested).toEqual({ a: { b: 1 } });
+  });
 });
