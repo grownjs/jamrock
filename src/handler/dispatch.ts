@@ -1,5 +1,13 @@
-import { Is, dump, trace } from '../utils/server.ts';
-import { Markup } from '../main.ts';
+import { Is, dump, trace, encodeText } from '../utils/server.ts';
+import { execute } from '../render/hooks.ts';
+import { taggify } from '../markup/html.ts';
+
+function encode(value: string): string {
+  return encodeText(value, { quotes: false, unsafe: true })
+    .replace(/&quot;/g, '\\"')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;');
+}
 
 export interface SSESocket {
   identity: string;
@@ -63,36 +71,25 @@ function findAffectedFragments(mod: any, changedVars: string[]): string[] {
   return affected;
 }
 
-async function rerenderFragment(
+function rerenderFragment(
   mod: any,
   fragName: string,
   state: Record<string, any>,
-): Promise<any> {
+): any {
   const fragment = mod?.__fragments?.[fragName];
   if (!fragment) return null;
-
-  const handler = mod.__handler?.({}, {});
-  const ctx = handler?.__context?.();
 
   const renderFn = fragment.r;
   if (!Is.func(renderFn)) return null;
 
   try {
-    const { execute } = await import('../render/hooks.ts');
-    const Markup_mod = await import('../markup/html.ts');
     const element = (tag: string, props: Record<string, unknown>, children: unknown): unknown => {
-      return Markup_mod.taggify([tag, props, children]);
+      return taggify([tag, props, children]);
     };
 
-    const tags = (tpl: any, props: unknown, label: string = 'unknown'): unknown => {
-      return tpl;
-    };
+    const view = execute(element, () => null, async (tpl: any, props: unknown) => tpl, (chunk: unknown) => chunk);
 
-    const run = (chunk: unknown, _ctx: unknown, _isSsr?: boolean): unknown => chunk;
-
-    const view = execute(element, () => null, tags, run);
-    const vnode = await view(renderFn, state, `${mod.__src}#!${fragName}`);
-    return vnode;
+    return view(renderFn, state, `${mod.__src}#!${fragName}`);
   } catch (e) {
     trace(e, 'E_RPC_RENDER');
     return null;
@@ -194,13 +191,15 @@ export function dispatch(
         const currentState = snapshotState(mod) || {};
 
         for (const fragName of affectedFrags) {
-          rerenderFragment(mod, fragName, currentState).then((vnode: any) => {
-            if (!vnode || !ws.send) return;
-            const encoded = Markup.encode(JSON.stringify(vnode));
-            ws.send(`rpc:update ${ws.identity} ${fragName} replace\t${encoded}`);
-          }).catch((e: any) => {
+          try {
+            const vnode = rerenderFragment(mod, fragName, currentState);
+            if (vnode && ws.send) {
+              const encoded = encode(JSON.stringify(vnode));
+              ws.send(`rpc:update ${ws.identity} ${fragName} replace\t${encoded}`);
+            }
+          } catch (e) {
             trace(e, 'E_RPC_FRAGMENT');
-          });
+          }
         }
       };
 

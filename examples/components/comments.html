@@ -12,7 +12,7 @@
     { id: 6, body: 'Can you explain more?', count: 0, msgs: [] },
   ];
 
-  export function addComment(payload, reply) {
+  export function addComment(payload) {
     const parent_id = +payload.message_id;
     const message = payload.message;
 
@@ -30,10 +30,6 @@
     }
 
     find_and_add(_comments);
-
-    if (reply) {
-      reply({ 'live-comments': null });
-    }
   }
 </script>
 
