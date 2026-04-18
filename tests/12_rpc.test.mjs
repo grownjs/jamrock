@@ -1,7 +1,21 @@
 import { test } from '@japa/runner';
+import * as td from 'testdouble';
+import * as path from 'path';
 
-import { setup, reset } from './helpers/utils.mjs';
+import { streamify } from '../src/templ/send.ts';
+import { fixture, setup, reset } from './helpers/utils.mjs';
 import { Block } from '../src/markup/block.ts';
+
+function useContext(overrides = {}) {
+  const uuid = `test-${Date.now()}-${Math.random().toString(36).slice(2)}`;
+  const ctx = {
+    publish: td.func('publish'),
+    ...overrides,
+  };
+  return Object.assign(ctx, {
+    stream: streamify().wrap(ctx, uuid),
+  });
+}
 
 const createMockConn = (method, pathInfo, body = null) => ({
   method,
@@ -150,5 +164,67 @@ test.group('createRpcCallResponse', () => {
 
     expect(resp.status).toBeGreaterThanOrEqual(400);
     reset();
+  });
+
+  test('should return 405 for GET request', async ({ expect }) => {
+    setup();
+    const { createRpcCallResponse } = await import('../src/server/request.ts');
+
+    const conn = createMockConn('GET', ['_rpc', 'test', 'fn']);
+    const env = createMockEnv();
+
+    const resp = await createRpcCallResponse(env, conn);
+
+    expect(resp.status).toBe(405);
+    reset();
+  });
+});
+
+test.group('Direct RPC round-trip', t => {
+  t.each.setup(() => {
+    setup();
+  });
+  t.each.teardown(() => {
+    process.debug = 0;
+    reset();
+  });
+
+test('should echo args back via _rpc endpoint', async ({ expect }) => {
+    fixture.fromFile('rpc/echo+page.html');
+    const ctx = useContext();
+    await fixture.partial('rpc/echo+page.html', null, ctx);
+
+    const cwd = process.cwd();
+    const mod = await import(`file://${cwd}/generated/rpc/echo+page.generated.mjs`);
+
+    const result = await mod.echo({ n: 42, s: 'hi' });
+
+    expect(result).toEqual({ n: 42, s: 'hi' });
+  });
+
+  test('should call add function correctly', async ({ expect }) => {
+    fixture.fromFile('rpc/echo+page.html');
+    const ctx = useContext();
+    await fixture.partial('rpc/echo+page.html', null, ctx);
+
+    const cwd = process.cwd();
+    const mod = await import(`file://${cwd}/generated/rpc/echo+page.generated.mjs`);
+
+    const result = await mod.add(10, 20);
+
+    expect(result).toBe(30);
+  });
+
+  test('should call greet function correctly', async ({ expect }) => {
+    fixture.fromFile('rpc/echo+page.html');
+    const ctx = useContext();
+    await fixture.partial('rpc/echo+page.html', null, ctx);
+
+    const cwd = process.cwd();
+    const mod = await import(`file://${cwd}/generated/rpc/echo+page.generated.mjs`);
+
+    const result = await mod.greet('World');
+
+    expect(result).toBe('Hello, World!');
   });
 });
