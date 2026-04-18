@@ -342,6 +342,11 @@ export async function createBody(env: any, conn: any, { client, matches, options
       return body;
     }
 
+    if (sseSocket && !Util.Is.str(body)) {
+      sseSocket.module = mod;
+      sseSocket.source = mod.__src;
+    }
+
     if (!Util.Is.str(body)) {
       const state: string[] = [];
 
@@ -555,6 +560,7 @@ function createSSEResponse(env: any, conn: any): Response {
           const output = lines.map(line => `data: ${line}`).join('\n') + '\n\n';
           controller.enqueue(encoder.encode(output));
         },
+        env,
       };
 
       if (!env.sseSockets) {

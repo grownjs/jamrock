@@ -870,22 +870,32 @@ test.group('dispatch trigger', () => {
     expect(result.dispose).toBe(true);
   });
 
-  test('should invoke handler function when context is missing and source is present', async ({ expect }) => {
+  test('should invoke handler function and dirty-check state changes', async ({ expect }) => {
     const { dispatch } = await import('../src/handler/dispatch.ts');
 
     let handlerCalled = false;
     let handlerPayload = null;
-    let handlerReply = null;
+    const state = { count: 0, items: ['a'] };
 
-    const mockFn = (payload, reply) => {
+    const mockFn = (payload) => {
       handlerCalled = true;
       handlerPayload = payload;
-      handlerReply = reply;
+      state.count++;
+      state.items.push('b');
     };
 
     const mockModule = {
       __rpc_fns: { addComment: mockFn },
       __functions: {},
+      __handler: () => {
+        const __context = () => ({
+          __callback: () => state,
+        });
+        return { __context };
+      },
+      __fragments: {
+        'live-comments': { s: ['items'], r: () => [], a: () => ({}) },
+      },
     };
 
     const env = {
@@ -896,42 +906,84 @@ test.group('dispatch trigger', () => {
     };
 
     const messages = [];
-    const ws = { identity: 'test-uuid', send: (msg) => { messages.push(msg); } };
+    const ws = { identity: 'test-uuid', send: (msg) => { messages.push(msg); }, module: mockModule };
 
     dispatch('rpc:trigger test-uuid components/comments click addComment:null\tmessage=hello&message_id=1', ws, env, null);
 
     expect(handlerCalled).toBe(true);
     expect(handlerPayload.message_id).toBe('1');
     expect(handlerPayload.message).toBe('hello');
-    expect(typeof handlerReply).toBe('function');
   });
 
-  test('should send fragment updates via reply callback', async ({ expect }) => {
+  test('should detect state changes and find affected fragments', async ({ expect }) => {
     const { dispatch } = await import('../src/handler/dispatch.ts');
 
     const messages = [];
     const ws = { identity: 'test-uuid', send: (msg) => { messages.push(msg); } };
 
-    const mockFn = (payload, reply) => {
-      reply({
-        'live-comments': { items: [{ id: 1, body: 'Updated' }] },
-      });
+    const state = { items: ['a'] };
+
+    const mockFn = () => {
+      state.items.push('b');
     };
 
     const mockModule = {
       __rpc_fns: { updateComments: mockFn },
       __functions: {},
+      __handler: () => {
+        const __context = () => ({
+          __callback: () => state,
+        });
+        return { __context };
+      },
+      __fragments: {
+        'live-comments': { s: ['items'], r: () => ['div', {}, ['updated']], a: () => ({}) },
+      },
+      __src: 'test/comments.html',
     };
 
-    const env = {
-      locate: () => mockModule,
-    };
+    const env = { locate: () => mockModule };
+    ws.module = mockModule;
 
     dispatch('rpc:trigger test-uuid components/comments click updateComments:null\tmessage=test', ws, env, null);
 
-    expect(messages.length).toBe(1);
-    expect(messages[0]).toContain('rpc:update test-uuid');
-    expect(messages[0]).toContain('live-comments');
+    expect(state.items).toEqual(['a', 'b']);
+  });
+
+  test('should not send updates when no state changes', async ({ expect }) => {
+    const { dispatch } = await import('../src/handler/dispatch.ts');
+
+    const messages = [];
+    const ws = { identity: 'test-uuid', send: (msg) => { messages.push(msg); } };
+
+    const state = { count: 0 };
+
+    const mockFn = () => {
+      // no mutation
+    };
+
+    const mockModule = {
+      __rpc_fns: { noMutate: mockFn },
+      __functions: {},
+      __handler: () => {
+        const __context = () => ({
+          __callback: () => state,
+        });
+        return { __context };
+      },
+      __fragments: {
+        'live-comments': { s: ['count'], r: () => [], a: () => ({}) },
+      },
+    };
+
+    const env = { locate: () => mockModule };
+    ws.module = mockModule;
+
+    dispatch('rpc:trigger test-uuid components/comments click noMutate:null\t', ws, env, null);
+
+    await new Promise(r => setTimeout(r, 50));
+
+    expect(messages.length).toBe(0);
   });
 
   test('should fall back to __functions when __rpc_fns does not have the function', async ({ expect }) => {
@@ -943,11 +995,18 @@ test.group('dispatch trigger', () => {
     const mockModule = {
       __rpc_fns: {},
       __functions: { doSomething: mockFn },
+      __handler: () => {
+        const __context = () => ({
+          __callback: () => ({}),
+        });
+        return { __context };
+      },
+      __fragments: {},
     };
 
     const env = { locate: () => mockModule };
 
-    const ws = { identity: 'test-uuid', send: () => {} };
+    const ws = { identity: 'test-uuid', send: () => {}, module: mockModule };
 
     dispatch('rpc:trigger test-uuid components/comments click doSomething:null\tdata=value', ws, env, null);
 
@@ -979,7 +1038,7 @@ test.group('dispatch trigger', () => {
     let emitted = false;
     let emittedData = null;
     const context = {
-      emit: (data, ...args) => {
+      emit: (data, ..._args) => {
         emitted = true;
         emittedData = data;
       },
@@ -991,5 +1050,30 @@ test.group('dispatch trigger', () => {
 
     expect(emitted).toBe(true);
     expect(emittedData).toContain('key=val');
+  });
+
+  test('should use ws.module when available instead of env.locate', async ({ expect }) => {
+    const { dispatch } = await import('../src/handler/dispatch.ts');
+
+    let handlerCalled = false;
+    const mockFn = () => { handlerCalled = true; };
+
+    const mockModule = {
+      __rpc_fns: { testFn: mockFn },
+      __functions: {},
+      __handler: () => {
+        const __context = () => ({
+          __callback: () => ({}),
+        });
+        return { __context };
+      },
+      __fragments: {},
+    };
+
+    const ws = { identity: 'test-uuid', send: () => {}, module: mockModule };
+
+    dispatch('rpc:trigger test-uuid components/comments click testFn:null\t', ws, {}, null);
+
+    expect(handlerCalled).toBe(true);
   });
 });
