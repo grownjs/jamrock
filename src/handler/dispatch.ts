@@ -47,10 +47,35 @@ function snapshotState(mod: any): Record<string, any> | null {
   }
 }
 
-function diffState(pre: Record<string, any>, post: Record<string, any>): string[] {
+function serializeState(mod: any): Record<string, string> | null {
+  if (!mod) return null;
+  try {
+    const handler = mod.__handler?.({}, {});
+    const ctx = handler?.__context?.();
+    const state = ctx?.__callback?.();
+    if (!state) return null;
+    const snap: Record<string, string> = {};
+    for (const key of Object.keys(state)) {
+      try {
+        const val = state[key];
+        if (typeof val === 'function' || (typeof val === 'object' && val?.__src)) {
+          continue;
+        }
+        snap[key] = JSON.stringify(val);
+      } catch {
+        continue;
+      }
+    }
+    return snap;
+  } catch {
+    return null;
+  }
+}
+
+function diffState(pre: Record<string, string>, post: Record<string, string>): string[] {
   const changed: string[] = [];
   for (const key of Object.keys(post)) {
-    if (!(key in pre) || JSON.stringify(pre[key]) !== JSON.stringify(post[key])) {
+    if (!(key in pre) || pre[key] !== post[key]) {
       changed.push(key);
     }
   }
@@ -171,19 +196,23 @@ export function dispatch(
       const [fnName] = (callKey || '').split(':');
       const srcPath = source ? source.replace(/\/\d+$/, '') : null;
 
-      const mod = (srcPath && env?.locate ? env.locate(srcPath) : null)
+      const mod = (srcPath && env?.locateWithNamespace ? env.locateWithNamespace(srcPath) : null)
+        || (srcPath && env?.locate ? env.locate(srcPath) : null)
         || ws.module;
 
       if (!fnName || !mod) return;
 
       const fn = mod.__rpc_fns?.[fnName]
-        || mod.__functions?.[fnName];
+        || mod.__functions?.[fnName]
+        || mod[fnName];
 
       if (!Is.func(fn)) return;
 
       const preState = snapshotState(mod);
+      const preSerialized = serializeState(mod);
       const result = fn(payload_);
       const postState = snapshotState(mod);
+      const postSerialized = serializeState(mod);
       const isAsync = Is.thenable(result);
 
       const sendUpdates = (changedVars: string[]) => {
@@ -203,14 +232,14 @@ export function dispatch(
         }
       };
 
-      if (preState && postState) {
-        const changedVars = diffState(preState, postState);
+      if (preSerialized && postSerialized) {
+        const changedVars = diffState(preSerialized, postSerialized);
 
         if (isAsync) {
           result.then(() => {
-            const postAsyncState = snapshotState(mod);
-            if (postAsyncState) {
-              const asyncChanged = diffState(preState, postAsyncState);
+            const postAsyncSerialized = serializeState(mod);
+            if (postAsyncSerialized) {
+              const asyncChanged = diffState(preSerialized, postAsyncSerialized);
               sendUpdates(asyncChanged.length > 0 ? asyncChanged : changedVars);
             }
           });

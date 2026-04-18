@@ -340,8 +340,10 @@ export const createCompiler = ({ fs, path }: any, options: any, external: any) =
 
       let mod = await Template.reload(path.resolve(v.filepath), true);
       if (!k.includes('+server')) {
+        const ns = mod;
         mod = {
           module: mod.default || mod,
+          namespace: ns,
           source: Template.read(k),
         };
       } else {
@@ -703,6 +705,27 @@ export function createEnvironment({ fs, path }: any, options: any, external: any
     return dest.module;
   }
 
+  function locateWithNamespace(src: string, query = false) {
+    const key = Handler.rebase(src)!;
+    let mod = compiler[FILES_PROPERTY][key];
+
+    if (!mod && query) {
+      const pages = Object.keys(compiler[FILES_PROPERTY]).filter(k => k.includes('+page'));
+      const result = pages.find(p => p.includes(src));
+      mod = compiler[FILES_PROPERTY][result];
+      return mod;
+    }
+
+    if (!mod) throw new Error(`Could not locate '${key}' file`);
+
+    const dest = Template.cache?.get(mod.filepath);
+
+    if (!dest?.module) {
+      throw new Error(`Could not locate '${key}' module (${mod.filepath})`);
+    }
+    return dest.namespace || dest.module;
+  }
+
   function request(params: any = {}) {
     return new Request(`http://${location.host}${params.url || '/'}`, {
       // @ts-expect-error
@@ -721,6 +744,7 @@ export function createEnvironment({ fs, path }: any, options: any, external: any
     serve,
     build,
     locate,
+    locateWithNamespace,
     request,
     context,
     compiler,

@@ -300,13 +300,22 @@ export function tag(context: any) {
       return [tagName, { ...restAttrs, [srcAttr]: result.path }, children || []];
     }
 
-    if (attrs['@rpc:call'] && Is.func(attrs['@rpc:call'])) {
-      const fn = attrs['@rpc:call'];
-      const fnName = fn.name || '';
-      attrs['@rpc:call'] = fnName;
-      if (fnName && context.component) {
-        if (!context.component.__rpc_fns) context.component.__rpc_fns = {};
-        context.component.__rpc_fns[fnName] = fn;
+    if (attrs['@rpc:call']) {
+      const rpcCallVal = attrs['@rpc:call'];
+      const rpcCallIsFunc = Is.func(rpcCallVal);
+
+      if (rpcCallIsFunc) {
+        const fnName = rpcCallVal.name || '';
+        attrs['@rpc:call'] = fnName;
+        if (fnName && context.component) {
+          if (!context.component.__rpc_fns) context.component.__rpc_fns = {};
+          context.component.__rpc_fns[fnName] = rpcCallVal;
+        }
+      } else {
+        attrs['@rpc:call'] = String(rpcCallVal);
+        if (rpcCallVal && context.component?.__src) {
+          const src = context.component.__src;
+        }
       }
     }
 
