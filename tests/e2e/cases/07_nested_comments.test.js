@@ -16,7 +16,7 @@ test('should render the nested comments page', async t => {
 });
 
 test('should render top-level comments', async t => {
-  await t.expect($('fieldset').exists).ok();
+  await t.expect(Selector('fieldset').exists).ok();
 });
 
 test('should render author names in comments', async t => {
@@ -27,4 +27,10 @@ test('should render author names in comments', async t => {
 test('should render comment body text', async t => {
   await t.expect(Selector('p').withText('Great post!').exists).ok();
   await t.expect(Selector('p').withText('Can you explain more?').exists).ok();
+});
+
+test('should render reply forms', async t => {
+  await t.expect(Selector('form').exists).ok();
+  await t.expect(Selector('input[name=message]').exists).ok();
+  await t.expect(Selector('form button').exists).ok();
 });

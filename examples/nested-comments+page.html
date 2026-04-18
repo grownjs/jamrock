@@ -4,10 +4,10 @@
       id: 1,
       author: 'Alice',
       body: 'Great post!',
-      count: 1,
+      count: 2,
       msgs: [
-        { id: 2, body: 'I agree!' },
-        { id: 5, body: 'Thanks!' },
+        { id: 2, body: 'I agree!', count: 0 },
+        { id: 5, body: 'Thanks!', count: 0 },
       ],
     },
     {
@@ -19,21 +19,39 @@
     },
   ];
   export let key = 0;
+
+  function save({ params }) {
+    for (const c of comments) {
+      if (c.id === +params.message_id) {
+        c.count = (c.count || 0) + 1;
+        c.msgs = c.msgs || [];
+        c.msgs.unshift({ id: Date.now(), body: params.message, count: 0 });
+        return;
+      }
+    }
+  }
 </script>
 
-<h1>Nested Comments</h1>
+<h1 data-test:id="title">Nested Comments</h1>
 
 <ul>
-  {#each comments as c}
-    <li>
-      <fieldset>
-        <p><strong>{c.author}</strong>: {c.body}</p>
-        {#if c.count > 0}
-          <self data={c.msgs} key="{key}.{c.id}" />
-        {/if}
-      </fieldset>
-    </li>
-  {/each}
+  <fragment name="live-comments" key="comments:{key}">
+    {#each comments as c}
+      <li>
+        <fieldset>
+          <p><strong>{c.author}</strong>: {c.body}</p>
+          <form @patch @async on:submit={save}>
+            <input type="hidden" name="message_id" value={c.id} />
+            <input type="text" name="message" />
+            <button>Reply</button>
+          </form>
+          {#if c.count > 0}
+            <self data={c.msgs} key="{key}.{c.id}" />
+          {/if}
+        </fieldset>
+      </li>
+    {/each}
+  </fragment>
 </ul>
 
 <style>
