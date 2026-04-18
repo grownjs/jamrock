@@ -1,0 +1,159 @@
+<script context="module">
+  const comments = new Map();
+  let commentId = 0;
+
+  function buildTree(flatComments, parentId = null) {
+    return flatComments
+      .filter(c => c.parentId === parentId)
+      .map(c => ({
+        ...c,
+        replies: buildTree(flatComments, c.id)
+      }));
+  }
+
+  export async function addComment(text, author = 'Anonymous', parentId = null) {
+    const id = ++commentId;
+    const comment = {
+      id,
+      text,
+      author,
+      parentId,
+      createdAt: Date.now(),
+      children: []
+    };
+
+    comments.set(id, comment);
+
+    if (parentId !== null) {
+      const parent = comments.get(parentId);
+      if (parent) {
+        parent.children.push(id);
+      }
+    }
+
+    return { id, text, author, parentId };
+  }
+
+  export async function getComment(id) {
+    return comments.get(id) || null;
+  }
+
+  export async function getThread(rootId, depth = 0, maxDepth = 10) {
+    const root = comments.get(rootId);
+    if (!root) return null;
+
+    if (depth >= maxDepth) {
+      return { ...root, replies: [] };
+    }
+
+    return {
+      ...root,
+      replies: await Promise.all(
+        (root.children || []).map(childId => getThread(childId, depth + 1, maxDepth))
+      )
+    };
+  }
+
+  export async function getAllComments() {
+    return Array.from(comments.values());
+  }
+
+  export async function getCommentCount(id) {
+    const comment = comments.get(id);
+    if (!comment) return 0;
+
+    let count = 0;
+    const stack = [...(comment.children || [])];
+    while (stack.length > 0) {
+      const childId = stack.pop();
+      const child = comments.get(childId);
+      if (child) {
+        count++;
+        stack.push(...(child.children || []));
+      }
+    }
+    return count;
+  }
+
+  export async function deleteComment(id) {
+    const comment = comments.get(id);
+    if (!comment) return { ok: false, error: 'Comment not found' };
+
+    const removeRecursive = (cid) => {
+      const c = comments.get(cid);
+      if (c && c.children) {
+        c.children.forEach(removeRecursive);
+      }
+      comments.delete(cid);
+    };
+
+    removeRecursive(id);
+
+    if (comment.parentId !== null) {
+      const parent = comments.get(comment.parentId);
+      if (parent) {
+        parent.children = parent.children.filter(c => c !== id);
+      }
+    }
+
+    return { ok: true };
+  }
+
+  export async function editComment(id, newText) {
+    const comment = comments.get(id);
+    if (!comment) return { ok: false, error: 'Comment not found' };
+
+    comment.text = newText;
+    comment.editedAt = Date.now();
+    return { ok: true, comment };
+  }
+
+  export async function getTopLevelComments(limit = 50, offset = 0) {
+    const all = Array.from(comments.values())
+      .filter(c => c.parentId === null)
+      .sort((a, b) => b.createdAt - a.createdAt);
+
+    return all.slice(offset, offset + limit);
+  }
+
+  export async function searchComments(query) {
+    const q = query.toLowerCase();
+    return Array.from(comments.values())
+      .filter(c => c.text.toLowerCase().includes(q))
+      .map(c => ({ id: c.id, text: c.text, author: c.author }));
+  }
+
+  export async function getCommentsByAuthor(author) {
+    return Array.from(comments.values())
+      .filter(c => c.author === author)
+      .sort((a, b) => b.createdAt - a.createdAt);
+  }
+</script>
+
+<script>
+  let comments = [];
+</script>
+
+<h1>Comments</h1>
+
+<fragment name="comments-tree">
+  {#if comments.length > 0}
+    <ul test:id="comments">
+      {#each comments as comment}
+        <li>
+          <div>
+            <strong>{comment.author}</strong>
+            <p>{comment.text}</p>
+          </div>
+        </li>
+      {/each}
+    </ul>
+  {/if}
+</fragment>
+
+<style>
+  ul { list-style: none; padding: 0; }
+  li { margin: 1rem 0; }
+  strong { display: block; color: #666; font-size: 0.9em; }
+  p { margin: 0.25rem 0; }
+</style>

@@ -705,3 +705,125 @@ test.group('Tic-Tac-Toe RPC', t => {
     expect(final.winner).toBe('draw');
   });
 });
+
+test.group('Recursive Comments RPC', t => {
+  t.each.setup(() => { setup(); });
+  t.each.teardown(() => { process.debug = 0; reset(); });
+
+  test('should add a top-level comment', async ({ expect }) => {
+    fixture.fromFile('rpc/comments+page.html');
+    const ctx = useContext();
+    await fixture.partial('rpc/comments+page.html', null, ctx);
+
+    const cwd = process.cwd();
+    const mod = await import(`file://${cwd}/generated/rpc/comments+page.generated.mjs`);
+
+    const comment = await mod.addComment('First comment!', 'Alice');
+    expect(comment.text).toBe('First comment!');
+    expect(comment.author).toBe('Alice');
+    expect(comment.parentId).toBeNull();
+  });
+
+  test('should add a nested reply', async ({ expect }) => {
+    fixture.fromFile('rpc/comments+page.html');
+    const ctx = useContext();
+    await fixture.partial('rpc/comments+page.html', null, ctx);
+
+    const cwd = process.cwd();
+    const mod = await import(`file://${cwd}/generated/rpc/comments+page.generated.mjs`);
+
+    const parent = await mod.addComment('Parent comment', 'Bob');
+    const reply = await mod.addComment('Reply to parent', 'Carol', parent.id);
+
+    expect(reply.parentId).toBe(parent.id);
+    expect(reply.text).toBe('Reply to parent');
+  });
+
+  test('should get recursive thread', async ({ expect }) => {
+    fixture.fromFile('rpc/comments+page.html');
+    const ctx = useContext();
+    await fixture.partial('rpc/comments+page.html', null, ctx);
+
+    const cwd = process.cwd();
+    const mod = await import(`file://${cwd}/generated/rpc/comments+page.generated.mjs`);
+
+    const root = await mod.addComment('Root comment', 'Dave');
+    const reply1 = await mod.addComment('First reply', 'Eve', root.id);
+    const reply2 = await mod.addComment('Second reply', 'Frank', root.id);
+    await mod.addComment('Reply to first', 'Grace', reply1.id);
+
+    const thread = await mod.getThread(root.id);
+
+    expect(thread.text).toBe('Root comment');
+    expect(thread.replies.length).toBe(2);
+    expect(thread.replies[0].replies.length).toBe(1);
+  });
+
+  test('should delete comment and its children', async ({ expect }) => {
+    fixture.fromFile('rpc/comments+page.html');
+    const ctx = useContext();
+    await fixture.partial('rpc/comments+page.html', null, ctx);
+
+    const cwd = process.cwd();
+    const mod = await import(`file://${cwd}/generated/rpc/comments+page.generated.mjs`);
+
+    const parent = await mod.addComment('To delete', 'Hank');
+    const child = await mod.addComment('Child comment', 'Ivy', parent.id);
+
+    await mod.deleteComment(parent.id);
+
+    const deletedParent = await mod.getComment(parent.id);
+    const deletedChild = await mod.getComment(child.id);
+
+    expect(deletedParent).toBeNull();
+    expect(deletedChild).toBeNull();
+  });
+
+  test('should edit comment', async ({ expect }) => {
+    fixture.fromFile('rpc/comments+page.html');
+    const ctx = useContext();
+    await fixture.partial('rpc/comments+page.html', null, ctx);
+
+    const cwd = process.cwd();
+    const mod = await import(`file://${cwd}/generated/rpc/comments+page.generated.mjs`);
+
+    const comment = await mod.addComment('Original text', 'Jack');
+    await mod.editComment(comment.id, 'Updated text');
+
+    const updated = await mod.getComment(comment.id);
+    expect(updated.text).toBe('Updated text');
+    expect(updated.editedAt).toBeDefined();
+  });
+
+  test('should search comments', async ({ expect }) => {
+    fixture.fromFile('rpc/comments+page.html');
+    const ctx = useContext();
+    await fixture.partial('rpc/comments+page.html', null, ctx);
+
+    const cwd = process.cwd();
+    const mod = await import(`file://${cwd}/generated/rpc/comments+page.generated.mjs`);
+
+    await mod.addComment('unique keyword test ' + Date.now(), 'Kate');
+    await mod.addComment('No keyword here ' + Date.now(), 'Leo');
+    await mod.addComment('Another keyword test ' + Date.now(), 'Mike');
+
+    const results = await mod.searchComments('keyword');
+    expect(results.length).toBeGreaterThanOrEqual(2);
+  });
+
+  test('should get comments by author', async ({ expect }) => {
+    fixture.fromFile('rpc/comments+page.html');
+    const ctx = useContext();
+    await fixture.partial('rpc/comments+page.html', null, ctx);
+
+    const cwd = process.cwd();
+    const mod = await import(`file://${cwd}/generated/rpc/comments+page.generated.mjs`);
+
+    await mod.addComment('Comment 1', 'Nancy');
+    await mod.addComment('Comment 2', 'Nancy');
+    await mod.addComment('Comment 3', 'Other');
+
+    const results = await mod.getCommentsByAuthor('Nancy');
+    expect(results.length).toBe(2);
+  });
+});
