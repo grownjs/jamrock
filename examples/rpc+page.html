@@ -79,13 +79,13 @@
 <hr />
 
 <div>
-  <form ws:call={sendMessage} ws:yield={aGenerator} style="width:50%">
+  <form rpc:call={sendMessage} rpc:yield={aGenerator} style="width:50%">
     <p>Type a number below, as it matches the current offset you'll notice:</p>
     Interval: <input type="number" name="interval" value={t} /><br />
     Your guess: <input type="text" name="message" @reset />
     <button :disabled>Send</button>
   </form>
-  <form ws:call={doSomething}>
+  <form rpc:call={doSomething}>
     <input type="text" name="sample" />
     <button :disabled>OK</button>
     <fragment name="target">

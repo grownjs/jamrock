@@ -169,7 +169,7 @@ export function extend(tagName: string, props: Record<string, any>, fn: any[]): 
   const css: string[] = [];
 
   Object.keys(props).forEach(key => {
-    if (key.indexOf('ws:') === 0) {
+    if (key.indexOf('rpc:') === 0) {
       props[`@${key}`] = props[key];
       delete props[key];
     }

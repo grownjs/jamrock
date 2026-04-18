@@ -129,7 +129,7 @@ test.group('RPC + Signal composition', t => {
     reset();
   });
 
-  test('should render ws:call directive on form', async ({ expect }) => {
+  test('should render rpc:call directive on form', async ({ expect }) => {
     fixture.fromFile('rpc/counter+page.html');
 
     const ctx = useContext();
@@ -140,7 +140,7 @@ test.group('RPC + Signal composition', t => {
     expect(markup).toContain('data-test:id="increment-form"');
   });
 
-  test('should render ws:yield with generator fragment', async ({ expect }) => {
+  test('should render rpc:yield with generator fragment', async ({ expect }) => {
     // eslint-disable-next-line no-unused-expressions
     fixture`./ws-yield-test.html
       <script>
@@ -167,7 +167,7 @@ test.group('RPC + Signal composition', t => {
     expect(markup).toContain('limit=10');
   });
 
-  test('should render bind:value alongside ws:call', async ({ expect }) => {
+  test('should render bind:value alongside rpc:call', async ({ expect }) => {
     fixture.fromFile('bindings/form+page.html');
 
     const ctx = useContext();

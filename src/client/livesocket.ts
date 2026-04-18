@@ -202,8 +202,8 @@ export class LiveSocket {
     this.trigger = (e: any, kind: string, source: string | null, trigger: any, payload: any, callback?: any) => {
       e.preventDefault();
 
-      const call = trigger.dataset['ws:call'];
-      const key = trigger.dataset['ws:yield'];
+      const call = trigger.dataset['rpc:call'];
+      const key = trigger.dataset['rpc:yield'];
       const data = this.unpack(payload);
 
       this.call(`rpc:trigger ${this.uuid} ${source} ${kind} ${call}:${key}\t${data}`, () => {
