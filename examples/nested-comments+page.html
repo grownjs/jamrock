@@ -1,0 +1,32 @@
+<script>
+  export const comments = [
+    { id: 1, author: 'Alice', body: 'Great post!', count: 1, msgs: [
+      { id: 2, body: 'I agree!' },
+      { id: 5, body: 'Thanks!' }
+    ]},
+    { id: 6, author: 'Eve', body: 'Can you explain more?', count: 0, msgs: [] }
+  ];
+  export let key = 0;
+</script>
+
+<h1>Nested Comments</h1>
+
+<ul>
+  {#each comments as c}
+    <li>
+      <fieldset>
+        <p><strong>{c.author}</strong>: {c.body}</p>
+        {#if c.count > 0}
+          <self data={c.msgs} key="{key}.{c.id}" />
+        {/if}
+      </fieldset>
+    </li>
+  {/each}
+</ul>
+
+<style>
+  ul { list-style: none; padding-left: 20px }
+  fieldset { margin: 0.5rem 0; border: 1px solid #ccc; }
+  strong { color: #666; font-size: 0.9em; }
+  p { margin: 0.25rem 0; }
+</style>
