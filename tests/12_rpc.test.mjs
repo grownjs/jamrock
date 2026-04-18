@@ -255,3 +255,202 @@ test('should echo args back via _rpc endpoint', async ({ expect }) => {
     expect(result.nested).toEqual({ a: { b: 1 } });
   });
 });
+
+test.group('Todo List RPC', t => {
+  t.each.setup(() => {
+    setup();
+  });
+  t.each.teardown(() => {
+    process.debug = 0;
+    reset();
+  });
+
+  test('should add item to todo list', async ({ expect }) => {
+    fixture.fromFile('rpc/todo+page.html');
+    const ctx = useContext();
+    await fixture.partial('rpc/todo+page.html', null, ctx);
+
+    const cwd = process.cwd();
+    const mod = await import(`file://${cwd}/generated/rpc/todo+page.generated.mjs`);
+
+    const result = await mod.addItem('Buy milk');
+
+    expect(result.text).toBe('Buy milk');
+    expect(result.completed).toBe(false);
+    expect(result.id).toBeDefined();
+  });
+
+  test('should toggle todo item completion', async ({ expect }) => {
+    fixture.fromFile('rpc/todo+page.html');
+    const ctx = useContext();
+    await fixture.partial('rpc/todo+page.html', null, ctx);
+
+    const cwd = process.cwd();
+    const mod = await import(`file://${cwd}/generated/rpc/todo+page.generated.mjs`);
+
+    const added = await mod.addItem('Toggle test');
+    const toggled = await mod.toggleItem(added.id);
+
+    expect(toggled.completed).toBe(true);
+    expect(toggled.id).toBe(added.id);
+  });
+
+  test('should remove item from todo list', async ({ expect }) => {
+    fixture.fromFile('rpc/todo+page.html');
+    const ctx = useContext();
+    await fixture.partial('rpc/todo+page.html', null, ctx);
+
+    const cwd = process.cwd();
+    const mod = await import(`file://${cwd}/generated/rpc/todo+page.generated.mjs`);
+
+    const added = await mod.addItem('To remove ' + Date.now());
+    const listBefore = await mod.listItems();
+    const beforeCount = listBefore.length;
+
+    const removed = await mod.removeItem(added.id);
+    expect(removed.ok).toBe(true);
+
+    const listAfter = await mod.listItems();
+    expect(listAfter.length).toBe(beforeCount - 1);
+  });
+
+  test('should list all items', async ({ expect }) => {
+    fixture.fromFile('rpc/todo+page.html');
+    const ctx = useContext();
+    await fixture.partial('rpc/todo+page.html', null, ctx);
+
+    const cwd = process.cwd();
+    const mod = await import(`file://${cwd}/generated/rpc/todo+page.generated.mjs`);
+
+    await mod.addItem('List test ' + Date.now());
+    await mod.addItem('List test 2 ' + Date.now());
+
+    const list = await mod.listItems();
+    expect(list.length).toBeGreaterThan(1);
+  });
+
+  test('should clear completed items', async ({ expect }) => {
+    fixture.fromFile('rpc/todo+page.html');
+    const ctx = useContext();
+    await fixture.partial('rpc/todo+page.html', null, ctx);
+
+    const cwd = process.cwd();
+    const mod = await import(`file://${cwd}/generated/rpc/todo+page.generated.mjs`);
+
+    const completed = await mod.addItem('Clear test ' + Date.now());
+    await mod.toggleItem(completed.id);
+
+    const result = await mod.clearCompleted();
+    expect(result.removed).toBeGreaterThanOrEqual(1);
+  });
+});
+
+test.group('Calculator RPC', t => {
+  t.each.setup(() => {
+    setup();
+  });
+  t.each.teardown(() => {
+    process.debug = 0;
+    reset();
+  });
+
+  test('should add numbers', async ({ expect }) => {
+    fixture.fromFile('rpc/calc+page.html');
+    const ctx = useContext();
+    await fixture.partial('rpc/calc+page.html', null, ctx);
+
+    const cwd = process.cwd();
+    const mod = await import(`file://${cwd}/generated/rpc/calc+page.generated.mjs`);
+
+    const result = await mod.add(10, 5);
+    expect(result).toBe(15);
+  });
+
+  test('should subtract numbers', async ({ expect }) => {
+    fixture.fromFile('rpc/calc+page.html');
+    const ctx = useContext();
+    await fixture.partial('rpc/calc+page.html', null, ctx);
+
+    const cwd = process.cwd();
+    const mod = await import(`file://${cwd}/generated/rpc/calc+page.generated.mjs`);
+
+    const result = await mod.subtract(10, 5);
+    expect(result).toBe(5);
+  });
+
+  test('should multiply numbers', async ({ expect }) => {
+    fixture.fromFile('rpc/calc+page.html');
+    const ctx = useContext();
+    await fixture.partial('rpc/calc+page.html', null, ctx);
+
+    const cwd = process.cwd();
+    const mod = await import(`file://${cwd}/generated/rpc/calc+page.generated.mjs`);
+
+    const result = await mod.multiply(10, 5);
+    expect(result).toBe(50);
+  });
+
+  test('should divide numbers', async ({ expect }) => {
+    fixture.fromFile('rpc/calc+page.html');
+    const ctx = useContext();
+    await fixture.partial('rpc/calc+page.html', null, ctx);
+
+    const cwd = process.cwd();
+    const mod = await import(`file://${cwd}/generated/rpc/calc+page.generated.mjs`);
+
+    const result = await mod.divide(10, 5);
+    expect(result).toBe(2);
+  });
+
+  test('should throw on divide by zero', async ({ expect }) => {
+    fixture.fromFile('rpc/calc+page.html');
+    const ctx = useContext();
+    await fixture.partial('rpc/calc+page.html', null, ctx);
+
+    const cwd = process.cwd();
+    const mod = await import(`file://${cwd}/generated/rpc/calc+page.generated.mjs`);
+
+    await expect(mod.divide(10, 0)).rejects.toThrow('Cannot divide by zero');
+  });
+
+  test('should calculate power', async ({ expect }) => {
+    fixture.fromFile('rpc/calc+page.html');
+    const ctx = useContext();
+    await fixture.partial('rpc/calc+page.html', null, ctx);
+
+    const cwd = process.cwd();
+    const mod = await import(`file://${cwd}/generated/rpc/calc+page.generated.mjs`);
+
+    const result = await mod.power(2, 8);
+    expect(result).toBe(256);
+  });
+
+  test('should calculate square root', async ({ expect }) => {
+    fixture.fromFile('rpc/calc+page.html');
+    const ctx = useContext();
+    await fixture.partial('rpc/calc+page.html', null, ctx);
+
+    const cwd = process.cwd();
+    const mod = await import(`file://${cwd}/generated/rpc/calc+page.generated.mjs`);
+
+    const result = await mod.sqrt(16);
+    expect(result).toBe(4);
+  });
+
+  test('should store and recall memory', async ({ expect }) => {
+    fixture.fromFile('rpc/calc+page.html');
+    const ctx = useContext();
+    await fixture.partial('rpc/calc+page.html', null, ctx);
+
+    const cwd = process.cwd();
+    const mod = await import(`file://${cwd}/generated/rpc/calc+page.generated.mjs`);
+
+    await mod.store(42);
+    const result = await mod.recall();
+    expect(result).toBe(42);
+
+    await mod.clearMemory();
+    const cleared = await mod.recall();
+    expect(cleared).toBe(0);
+  });
+});

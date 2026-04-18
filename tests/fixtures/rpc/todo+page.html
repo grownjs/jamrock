@@ -1,0 +1,64 @@
+<script context="module">
+  let todos = [];
+
+  export async function addItem(text) {
+    const id = Date.now();
+    todos.push({ id, text, completed: false });
+    return { id, text, completed: false };
+  }
+
+  export async function removeItem(id) {
+    const index = todos.findIndex(t => t.id === id);
+    if (index > -1) {
+      const removed = todos.splice(index, 1)[0];
+      return { ok: true, removed };
+    }
+    return { ok: false, error: 'Item not found' };
+  }
+
+  export async function toggleItem(id) {
+    const todo = todos.find(t => t.id === id);
+    if (todo) {
+      todo.completed = !todo.completed;
+      return todo;
+    }
+    return { ok: false, error: 'Item not found' };
+  }
+
+  export async function listItems() {
+    return [...todos];
+  }
+
+  export async function clearCompleted() {
+    const before = todos.length;
+    todos = todos.filter(t => !t.completed);
+    return { removed: before - todos.length };
+  }
+</script>
+
+<h1>Todo List</h1>
+
+<form @on:submit={addItem}>
+  <input type="text" name="text" placeholder="New item..." required />
+  <button type="submit" test:id="add">Add</button>
+</form>
+
+<fragment name="todo-list">
+  <ul data-test:id="todos">
+    {#each todos as todo}
+      <li data-test:id="item-{todo.id}">
+        <input type="checkbox" bind:checked={todo.completed} data-test:id="checkbox-{todo.id}" />
+        <span class:completed={todo.completed}>{todo.text}</span>
+        <button onclick="removeItem({todo.id})" test:id="delete-{todo.id}">Delete</button>
+      </li>
+    {/each}
+  </ul>
+</fragment>
+
+<button onclick="clearCompleted" test:id="clear">Clear Completed</button>
+
+<style>
+  .completed { text-decoration: line-through; }
+  ul { list-style: none; padding: 0; }
+  li { margin: 0.5rem 0; }
+</style>

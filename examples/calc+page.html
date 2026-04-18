@@ -1,0 +1,47 @@
+<script context="module">
+  let memory = 0;
+
+  export async function add(a, b) { return a + b; }
+  export async function subtract(a, b) { return a - b; }
+  export async function multiply(a, b) { return a * b; }
+  export async function divide(a, b) { if (b === 0) throw new Error('Cannot divide by zero'); return a / b; }
+  export async function power(base, exponent) { return Math.pow(base, exponent); }
+  export async function sqrt(n) { return Math.sqrt(n); }
+  export async function store(value) { memory = value; return { stored: memory }; }
+  export async function recall() { return memory; }
+  export async function clearMemory() { memory = 0; return { cleared: true }; }
+</script>
+
+<script>
+  let a = 0;
+  let b = 0;
+  let result = 0;
+</script>
+
+<h1>Calculator</h1>
+
+<div class="calculator">
+  <div class="inputs">
+    <input type="number" bind:value={a} test:id="input-a" placeholder="A" />
+    <input type="number" bind:value={b} test:id="input-b" placeholder="B" />
+  </div>
+
+  <div class="buttons">
+    <button onclick="result = add(a, b)" test:id="add">A + B</button>
+    <button onclick="result = subtract(a, b)" test:id="subtract">A - B</button>
+    <button onclick="result = multiply(a, b)" test:id="multiply">A × B</button>
+    <button onclick="result = divide(a, b)" test:id="divide">A ÷ B</button>
+    <button onclick="result = power(a, b)" test:id="power">A ^ B</button>
+    <button onclick="result = sqrt(a)" test:id="sqrt">√A</button>
+  </div>
+
+  <p>Result: <span test:id="result">{result}</span></p>
+</div>
+
+<style>
+  .calculator { max-width: 400px; }
+  .inputs { display: flex; gap: 0.5rem; margin: 1rem 0; }
+  .buttons { display: flex; gap: 0.5rem; flex-wrap: wrap; margin-bottom: 1rem; }
+  input { padding: 0.5rem; width: 80px; }
+  button { padding: 0.5rem 1rem; }
+</style>

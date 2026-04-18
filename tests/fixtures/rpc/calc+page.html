@@ -1,0 +1,73 @@
+<script context="module">
+  let memory = 0;
+
+  export async function add(a, b) {
+    return a + b;
+  }
+
+  export async function subtract(a, b) {
+    return a - b;
+  }
+
+  export async function multiply(a, b) {
+    return a * b;
+  }
+
+  export async function divide(a, b) {
+    if (b === 0) throw new Error('Cannot divide by zero');
+    return a / b;
+  }
+
+  export async function power(base, exponent) {
+    return Math.pow(base, exponent);
+  }
+
+  export async function sqrt(n) {
+    return Math.sqrt(n);
+  }
+
+  export async function store(value) {
+    memory = value;
+    return { stored: memory };
+  }
+
+  export async function recall() {
+    return memory;
+  }
+
+  export async function clearMemory() {
+    memory = 0;
+    return { cleared: true };
+  }
+</script>
+
+<h1>Calculator</h1>
+
+<div class="calculator">
+  <input type="number" id="a" placeholder="A" test:id="input-a" />
+  <input type="number" id="b" placeholder="B" test:id="input-b" />
+
+  <div class="buttons">
+    <form @on:submit={add}>
+      <button type="submit" test:id="add">A + B</button>
+    </form>
+    <form @on:submit={subtract}>
+      <button type="submit" test:id="subtract">A - B</button>
+    </form>
+    <form @on:submit={multiply}>
+      <button type="submit" test:id="multiply">A × B</button>
+    </form>
+    <form @on:submit={divide}>
+      <button type="submit" test:id="divide">A ÷ B</button>
+    </form>
+  </div>
+
+  <p>Result: <span test:id="result">{add(1,1)}</span></p>
+</div>
+
+<style>
+  .calculator { max-width: 400px; }
+  .buttons { display: flex; gap: 0.5rem; flex-wrap: wrap; margin: 1rem 0; }
+  input { padding: 0.5rem; margin: 0.25rem; width: 80px; }
+  button { padding: 0.5rem 1rem; }
+</style>
