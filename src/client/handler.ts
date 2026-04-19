@@ -82,9 +82,19 @@ export function handleEvent(this: any, e: any, kind: string): any {
     serializeBindings(e.target, payload, bindings, e.target.form);
   }
 
+  const trigger = findNodes('trigger', e.target);
+
+  if (trigger && !e.target.closest('form[data-trigger]')) {
+    payload = payload || new FormData(e.target.form || undefined);
+    if (e.target.name && e.target.value !== undefined && !e.target.form) {
+      payload.set(e.target.name, e.target.value);
+    }
+    const source = findNodes('source', e.target);
+    return this.sockets.trigger(e, kind, source ? (source as HTMLElement).dataset.source : null, trigger, payload);
+  }
+
   if (payload || headers) {
     const source = findNodes('source', e.target);
-    const trigger = findNodes('trigger', e.target);
 
     if (source) {
       headers = headers || {};
@@ -105,10 +115,6 @@ export function handleEvent(this: any, e: any, kind: string): any {
     });
 
     bindings.forEach(handleCleanup);
-
-    if (trigger) {
-      return this.sockets.trigger(e, kind, source ? (source as HTMLElement).dataset.source : null, trigger, payload);
-    }
 
     const form = e.target.tagName === 'FORM' || e.target.form
       ? (e.target.form || e.target)

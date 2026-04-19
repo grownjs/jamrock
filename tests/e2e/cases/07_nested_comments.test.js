@@ -21,6 +21,10 @@ test('should render reply forms with rpc:call and trigger', async t => {
   await t.expect($('form.reply-form button[type=submit]').exists).ok();
 });
 
+test('should render like buttons with rpc:call', async t => {
+  await t.expect($('.like-btn').exists).ok();
+});
+
 test('should submit reply via SSE rpc:call and see new comment', async t => {
   const form = Selector('form.reply-form').nth(0);
   const input = form.find('input[name=message]');
@@ -32,4 +36,14 @@ test('should submit reply via SSE rpc:call and see new comment', async t => {
 
   const newComment = Selector('p').withText('Hello from test');
   await t.expect(newComment.exists).ok({ timeout: 8000 });
+});
+
+test('should like a comment via SSE rpc:call on button', async t => {
+  const likeBtn = Selector('.like-btn').nth(0);
+
+  await t.expect(likeBtn.exists).ok({ timeout: 5000 });
+  await t.click(likeBtn);
+
+  const liked = Selector('.like-btn').nth(0).textContent;
+  await t.expect(liked).contains('Like (1)', { timeout: 8000 });
 });

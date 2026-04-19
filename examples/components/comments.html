@@ -31,6 +31,23 @@
 
     find_and_add(_comments);
   }
+
+  export function incrementLikes(payload) {
+    const comment_id = +payload.comment_id;
+
+    function find_and_like(comments) {
+      for (const c of comments) {
+        if (c.id === comment_id) {
+          c.likes = (c.likes || 0) + 1;
+          return true;
+        }
+        if (c.msgs && find_and_like(c.msgs)) return true;
+      }
+      return false;
+    }
+
+    find_and_like(_comments);
+  }
 </script>
 
 <script>
@@ -61,6 +78,7 @@
             <input type="text" name="message" />
             <button type="submit">Reply</button>
           </form>
+          <button class="like-btn" rpc:call={incrementLikes} value={c.id} name="comment_id">Like ({c.likes || 0})</button>
           {#if c.count > 0}
             <Comments data={c.msgs} key="{key}.{c.id}" />
           {/if}

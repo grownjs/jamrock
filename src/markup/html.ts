@@ -140,7 +140,7 @@ export function taggify(vnode: any, callback?: (chunk: any) => void): any {
   if (Is.vnode(vnode)) {
     const props: any = { ...vnode[1] };
 
-    if (vnode[0] === 'form' && ('@rpc:call' in props)) {
+    if ('@rpc:call' in props) {
       props['@trigger'] = true;
     }
 

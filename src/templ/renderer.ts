@@ -333,6 +333,7 @@ export function tag(context: any) {
       ['form', 'select', 'textarea'].includes(name)
       || (name === 'input' && attrs.type !== 'hidden')
       || (name === 'button' && (attrs.onclick || attrs.type === 'submit'))
+      || attrs['@rpc:call']
     ) {
       if (context.ref) attrs['@source'] = context.ref;
     }

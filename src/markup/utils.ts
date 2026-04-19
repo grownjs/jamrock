@@ -90,6 +90,10 @@ export function enhance(vnode: any[], parent?: any): void {
     if (value === test) props.selected = true;
   }
 
+  if (props['@rpc:call']) {
+    props['@trigger'] = true;
+  }
+
   if (name === 'form') {
     if (props['@multipart']) {
       props.enctype = 'multipart/form-data';
@@ -102,10 +106,6 @@ export function enhance(vnode: any[], parent?: any): void {
       vnode[2].unshift(['input', { type: 'hidden', name: '_action', value: props['@on:submit'] }]);
       props['@patch'] = true;
       delete props['@on:submit'];
-    }
-
-    if (props['@rpc:call']) {
-      props['@trigger'] = true;
     }
 
     if (props['@put']) props.method = 'PUT';
