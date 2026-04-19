@@ -178,6 +178,11 @@ export function extend(tagName: string, props: Record<string, any>, fn: any[]): 
       delete props[key];
     }
 
+    if (key.indexOf('test:') === 0) {
+      props[`@${key}`] = props[key];
+      delete props[key];
+    }
+
     if (key.indexOf('bind:') === 0) {
       if (!['form', 'input', 'select', 'textarea'].includes(tagName)) {
         throw new TypeError(`Element ${tagName} does not support bindings`);

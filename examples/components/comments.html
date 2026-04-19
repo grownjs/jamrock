@@ -73,12 +73,12 @@
       <li>
         <fieldset>
           <p>{c.body}</p>
-          <form class="reply-form" rpc:call={addComment}>
+          <form class="reply-form" rpc:call={addComment} test:id="reply-form">
             <input type="hidden" name="message_id" value={c.id} />
-            <input type="text" name="message" />
-            <button type="submit">Reply</button>
+            <input type="text" name="message" test:id="reply-input" />
+            <button type="submit" test:id="reply-submit">Reply</button>
           </form>
-          <button class="like-btn" rpc:call={incrementLikes} value={c.id} name="comment_id">Like ({c.likes || 0})</button>
+          <button class="like-btn" rpc:call={incrementLikes} value={c.id} name="comment_id" test:id="like-btn">Like ({c.likes || 0})</button>
           {#if c.count > 0}
             <Comments data={c.msgs} key="{key}.{c.id}" />
           {/if}

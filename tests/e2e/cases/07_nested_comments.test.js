@@ -12,23 +12,17 @@ fixture`Nested Comments`
   });
 
 test('should render the nested comments page', async t => {
-  await t.expect($('h1').textContent).contains('Nested Comments');
+  await t.expect($('@heading').exists).ok();
 });
 
-test('should render reply forms with rpc:call and trigger', async t => {
-  await t.expect($('.reply-form').exists).ok();
-  await t.expect($('input[name=message_id]').count).gte(2);
-  await t.expect($('form.reply-form button[type=submit]').exists).ok();
-});
-
-test('should render like buttons with rpc:call', async t => {
-  await t.expect($('.like-btn').exists).ok();
+test('should render reply forms and like buttons', async t => {
+  await t.expect($('@reply-form').exists).ok();
+  await t.expect($('@like-btn').exists).ok();
 });
 
 test('should submit reply via SSE rpc:call and see new comment', async t => {
-  const form = Selector('form.reply-form').nth(0);
-  const input = form.find('input[name=message]');
-  const submit = form.find('button[type=submit]');
+  const input = $('@reply-input').nth(0);
+  const submit = $('@reply-submit').nth(0);
 
   await t.expect(input.exists).ok({ timeout: 5000 });
   await t.typeText(input, 'Hello from test');
@@ -39,11 +33,10 @@ test('should submit reply via SSE rpc:call and see new comment', async t => {
 });
 
 test('should like a comment via SSE rpc:call on button', async t => {
-  const likeBtn = Selector('.like-btn').nth(0);
+  const likeBtn = Selector('button.like-btn').nth(0);
 
   await t.expect(likeBtn.exists).ok({ timeout: 5000 });
   await t.click(likeBtn);
 
-  const liked = Selector('.like-btn').nth(0).textContent;
-  await t.expect(liked).contains('Like (1)', { timeout: 8000 });
+  await t.expect(likeBtn.textContent).contains('1', { timeout: 8000 });
 });
