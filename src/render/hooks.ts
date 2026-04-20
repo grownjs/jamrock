@@ -16,7 +16,7 @@ type LoaderFn = (name: string) => unknown;
 type NextFn = (tpl: unknown, props: unknown, loader: LoaderFn, self: ReturnType<typeof createSelf>) => unknown;
 type ElementFn = (tag: string, props: Record<string, unknown>, children: unknown) => unknown;
 
-function createSelf(element: ElementFn | null, loader: LoaderFn, next: NextFn, run: RunFn) {
+function createSelf(element: ElementFn | null, loader: LoaderFn, next: NextFn, run: RunFn, isSsr: boolean) {
   const self = {
     $: (value: any): unknown => {
       if (value === null || value === false || typeof value === 'undefined') return '';
@@ -33,7 +33,7 @@ function createSelf(element: ElementFn | null, loader: LoaderFn, next: NextFn, r
       if (typeof window === 'undefined') console.debug('E_DEBUG', value);
       return ents(JSON.stringify(value, null, 2));
     },
-    r: (value: unknown): unknown => {
+    r: (value: unknown, tag: string = 'fragment'): unknown => {
       if (Is.empty(value)) return;
       return Is.func(value) ? value : () => value;
     },
@@ -47,7 +47,11 @@ function createSelf(element: ElementFn | null, loader: LoaderFn, next: NextFn, r
       return [tag, { 'd:html': value, tag }];
     },
     if: (cond: unknown, then: () => unknown, ...branches: Array<(() => unknown) | undefined>): unknown => {
-      const value = cond !== null && typeof cond === 'object' && 'valueOf' in cond ? (cond as any).valueOf() : cond;
+      if (Is.func(cond) && !isSsr) {
+        return ['__if__', { __cond: cond, __then: then, __else: branches.pop(), __branches: branches.filter(Boolean) }, []];
+      }
+
+      const value = Is.func(cond) ? (cond as Function)() : (cond !== null && typeof cond === 'object' && 'valueOf' in cond ? (cond as any).valueOf() : cond);
       if (value) return run(then(), []);
 
       const fallback = branches.pop();
@@ -65,6 +69,10 @@ function createSelf(element: ElementFn | null, loader: LoaderFn, next: NextFn, r
       return run(otherwise || (fallback && fallback()), []);
     },
     map: (subj: any, body: (...args: unknown[]) => unknown, fallback?: () => unknown): unknown => {
+      if (Is.func(subj) && !isSsr) {
+        return ['__each__', { __subj: subj, __body: body, __fallback: fallback }, []];
+      }
+
       function it(_: unknown, offset: unknown) {
         return run(body, [_, offset]);
       }
@@ -104,7 +112,7 @@ export const execute = (element: ElementFn | null, loader: LoaderFn, next: NextF
     }
     const isSsr = element !== null;
     const wrappedRun: RunFn = (chunk, ctx) => run(chunk, ctx, isSsr);
-    const self = createSelf(element, loader, next, wrappedRun);
+    const self = createSelf(element, loader, next, wrappedRun, isSsr);
     return wrappedRun(tpl(self, props), []);
   };
 };

@@ -1,6 +1,57 @@
 import { Is } from '../utils/client.ts';
 import { execute } from './hooks.ts';
 
+const REACTIVE_TAGS = ['__if__', '__each__'];
+
+function resolveReactiveVnode(result: any, isSsr: boolean): any {
+  if (Is.arr(result) && result.length >= 2 && REACTIVE_TAGS.includes(result[0])) {
+    if (!isSsr) return result;
+
+    const [, props] = result;
+
+    if (result[0] === '__if__') {
+      const cond = (props as any).__cond;
+      const then = (props as any).__then;
+      const else_ = (props as any).__else;
+      const branches = (props as any).__branches || [];
+
+      const value = Is.func(cond) ? (cond as Function)() : cond;
+
+      if (value) return then ? then() : undefined;
+
+      for (const block of branches) {
+        const branchResult = Is.func(block) ? block() : block;
+        if (branchResult) return branchResult;
+      }
+
+      return else_ ? else_() : undefined;
+    }
+
+    if (result[0] === '__each__') {
+      const subj = (props as any).__subj;
+      const body = (props as any).__body;
+      const fallback = (props as any).__fallback;
+
+      let items: any[] = [];
+      const resolved = Is.func(subj) ? (subj as Function)() : subj;
+
+      if (Is.plain(resolved)) {
+        items = Object.entries(resolved);
+      } else if (Is.iterable(resolved) || Is.arr(resolved)) {
+        items = [...resolved as any];
+      } else if (Is.num(resolved)) {
+        items = Array.from({ length: resolved as number }, (_, i) => i);
+      }
+
+      return items.length
+        ? items.map((v: any, i: number) => body(v, i))
+        : (fallback ? fallback() : undefined);
+    }
+  }
+
+  return result;
+}
+
 export async function execAsync(chunk: any, ctx: any[], isSsr: boolean = true): Promise<any> {
   let result: any = await chunk;
 
@@ -16,6 +67,7 @@ export async function execAsync(chunk: any, ctx: any[], isSsr: boolean = true): 
   }
 
   if (Is.arr(result)) {
+    result = resolveReactiveVnode(result, isSsr);
     result = await Promise.all(result.map((item: any) => execAsync(item, ctx, isSsr)));
   }
 
@@ -37,6 +89,7 @@ export function execSync(chunk: any, ctx: any[], isSsr: boolean = true): any {
   }
 
   if (Is.arr(chunk)) {
+    chunk = resolveReactiveVnode(chunk, isSsr);
     chunk = chunk.map((item: any) => execSync(item, ctx, isSsr));
   }
 

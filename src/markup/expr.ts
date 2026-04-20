@@ -16,6 +16,14 @@ function unwrapSignal(expr: string): string {
   return trimmed;
 }
 
+function wrapSignal(expr: string): string {
+  const unwrapped = unwrapSignal(expr);
+  if (unwrapped !== expr.trim() || /\$[\w]/.test(expr)) {
+    return `() => ${unwrapped.replace(/\$(\w+)/g, '$1.value')}`;
+  }
+  return unwrapped;
+}
+
 export class Expr {
   raw: string[];
   expr: any[];
@@ -128,9 +136,9 @@ export class Expr {
       if (_expr.indexOf('#each') === 0) {
         const [subj, locals] = _expr.replace(RE_CLEAN_BLOCKS, '').split(RE_AS_LOCAL);
 
-        _expr = `$$.map(${unwrapSignal(subj)}, (${locals || ''}) => { ${ctx}return [`;
+        _expr = `$$.map(${wrapSignal(subj)}, (${locals || ''}) => { ${ctx}return [`;
       } else if (_expr.indexOf('#if') === 0) {
-        _expr = `$$.if(${unwrapSignal(_expr.replace(RE_CLEAN_BLOCKS, ''))}, () => { ${ctx}return [`;
+        _expr = `$$.if(${wrapSignal(_expr.replace(RE_CLEAN_BLOCKS, ''))}, () => { ${ctx}return [`;
       } else if (_expr.indexOf('/each') === 0) {
         _expr = ']; /*each*/ }),';
         _ref = null;
