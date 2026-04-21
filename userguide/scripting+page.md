@@ -188,7 +188,7 @@ Use `s:*` attributes for reactive DOM updates:
 
 | Old (useEffect) | New (effect) |
 |-----------------|--------------|
-| `useEffect(() => { ... }, [dep])` | `effect(() => { dep.value; ... })` |
+| `useEffect(() => &lbrace; ... }, [dep])` | `effect(() => &lbrace; dep.value; ... })` |
 
 | Old (useMemo) | New (computed) |
 |---------------|-----------------|

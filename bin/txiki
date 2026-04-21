@@ -1,7 +1,0 @@
-#!/usr/bin/env tjs
-import('../lib/txiki/main.mjs').then(env =>
-  import('./cli.mjs').then(cli => {
-    const argv = tjs.args.slice(1);
-    return cli.default(env.default, argv, env.capabilities);
-  })
-).catch(console.error);

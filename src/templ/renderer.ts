@@ -296,10 +296,25 @@ export function tag(context: any) {
           const svgContent = Loader.read(result.file)
             .trim()
             .replace(/>\s*</g, '><');
+
+          // Extract outer SVG attributes (viewBox, xmlns, etc.) and merge into restAttrs
+          // Component props (width, height) already in restAttrs take precedence
+          const mergedAttrs = { ...restAttrs };
+          const outerMatch = svgContent.match(/<svg([^>]*)>/);
+          if (outerMatch) {
+            const attrRegex = /([\w:]+)="([^"]*)"/g;
+            let m: RegExpExecArray | null;
+            // eslint-disable-next-line no-cond-assign
+            while ((m = attrRegex.exec(outerMatch[1])) !== null) {
+              const [, attrName, attrValue] = m;
+              if (!mergedAttrs[attrName]) mergedAttrs[attrName] = attrValue;
+            }
+          }
+
           const innerContent = svgContent
             .replace(/<svg[^>]*>/, '')
             .replace(/<\/svg>$/, '');
-          return ['svg', { ...restAttrs, '@html': innerContent }, []];
+          return ['svg', { ...mergedAttrs, '@html': innerContent }, []];
         }
         return ['svg', restAttrs, [['use', { 'xlink:href': `#${result.id}` }]]];
       }

@@ -295,6 +295,23 @@ export const __attributes = ${this.$attributes};
             .trim()
             .replace(/>\s*</g, '><');
 
+          // Extract attributes from source SVG outer tag and merge into node
+          const outerMatch = svgContent.match(/<svg([^>]*)>/);
+          if (outerMatch) {
+            const outerAttrs = outerMatch[1];
+            // Preserve viewBox, xmlns, and other source SVG attributes
+            // (component props like width/height take precedence if already set)
+            const attrRegex = /([\w:]+)="([^"]*)"/g;
+            let m: RegExpExecArray | null;
+            // eslint-disable-next-line no-cond-assign
+            while ((m = attrRegex.exec(outerAttrs)) !== null) {
+              const [, attrName, attrValue] = m;
+              if (!node.attributes[attrName]) {
+                node.attributes[attrName] = attrValue;
+              }
+            }
+          }
+
           const innerContent = svgContent
             .replace(/<svg[^>]*>/, '')
             .replace(/<\/svg>$/, '');

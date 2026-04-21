@@ -315,7 +315,7 @@ details {
 
 .meteorite {
   text-align: center;
-  svg { max-width: 87%; }
+  svg { max-width: min(87%, 420px); }
   a {
     transition: color .5s;
     color: @spring-bud;
@@ -380,16 +380,179 @@ details {
 main + nav { margin-top: 30px; }
 
 // ===========================================================================
+// Heading Colors — fix near-invisible @darker on dark background
+// ===========================================================================
+
+h1 { color: @white; }
+h2 { color: @lighter; }
+h3 { color: @lighter; }
+h4 { color: @mantis; }
+
+// ===========================================================================
 // Pagefind Overrides
 // ===========================================================================
 
 .pagefind-ui__result-thumb:empty { display: none; }
 
 // ===========================================================================
+// Homepage
+// ===========================================================================
+
+.hero-words {
+  text-align: center;
+  padding: 1rem 0 2rem;
+
+  .tagline {
+    font-size: 2rem;
+    font-weight: bold;
+    line-height: 1.15;
+    color: @white;
+    margin: 0 0 1.2rem;
+    letter-spacing: -.01em;
+  }
+
+  .tagline-accent {
+    color: @mantis;
+  }
+
+  .hero-sub {
+    color: @lighter;
+    max-width: 34em;
+    margin: 0 auto;
+    font-size: .95rem;
+    line-height: 1.6;
+  }
+}
+
+.layer {
+  border: 1px solid @gunmetal;
+  border-bottom: none;
+  border-radius: 6px 6px 0 0;
+  padding: 1.25rem 1.25rem .75rem;
+  background-color: rgba(0, 0, 0, .2);
+  display: flex;
+  flex-direction: column;
+  gap: .6rem;
+  margin-top: 2rem;
+
+  h3 {
+    margin: 0;
+    font-size: 1rem;
+    color: @white;
+  }
+
+  p {
+    margin: 0;
+    font-size: .85rem;
+    line-height: 1.55;
+    color: @lighter;
+  }
+
+  & + pre.hljs {
+    margin: 0;
+    border: 1px solid @gunmetal;
+    border-top: none;
+    border-radius: 0 0 6px 6px;
+    font-size: .72rem;
+    background-color: rgba(0, 0, 0, .25);
+  }
+}
+
+.layer-server   { border-color: fade(@mantis, 25%);      & + pre.hljs { border-color: fade(@mantis, 25%);      } }
+.layer-fragment { border-color: fade(@information, 25%); & + pre.hljs { border-color: fade(@information, 25%); } }
+.layer-client   { border-color: fade(@important, 25%);   & + pre.hljs { border-color: fade(@important, 25%);   } }
+
+.layer-marker {
+  font-size: .7rem;
+  font-weight: bold;
+  letter-spacing: .1em;
+  padding: 2px 7px;
+  border-radius: 3px;
+  display: inline-block;
+  width: fit-content;
+  margin-bottom: .2rem;
+}
+
+.layer-marker-server   { background-color: fade(@mantis, 15%);      color: @mantis;      }
+.layer-marker-fragment { background-color: fade(@information, 15%); color: @information; }
+.layer-marker-client   { background-color: fade(@important, 15%);   color: @important;   }
+
+@media (min-width: 800px) {
+  body:not(.not_home) .content {
+    column-count: 3;
+    column-gap: 1.5rem;
+
+    .hero-words, hr, .quickstart, .install-out, .home-nav, p:has(+ pre[data-lang=shell]) { column-span: all; }
+
+    .layer { margin-top: 0; break-inside: avoid; }
+    .layer + pre.hljs { break-inside: avoid; break-before: avoid; }
+  }
+}
+
+.quickstart {
+  h2 { margin-top: 0; }
+
+  .install-cmd {
+    font-size: .85rem;
+    padding: .75rem 1rem;
+  }
+
+  .install-steps {
+    font-size: .82rem;
+    padding: .75rem 1rem;
+  }
+
+  .install-out {
+    font-size: .8rem;
+    line-height: 1.7;
+    font-family: monospace;
+    color: @light;
+    background-color: rgba(0, 0, 0, .2);
+    border-radius: 4px;
+    padding: .6rem 1rem;
+    border: 1px solid @gunmetal;
+    margin-top: .75rem;
+  }
+}
+
+.out-dim { color: @darker; }
+
+.home-nav {
+  padding: .5rem 0 2rem;
+  .out-dim { font-size: .85rem; }
+}
+
+.home-cta {
+  font-weight: bold;
+  font-size: .95rem;
+  color: @spring-bud;
+  text-decoration: none;
+  padding: .5rem 1.1rem;
+  border: 1px solid fade(@spring-bud, 35%);
+  border-radius: 4px;
+  transition: background-color .2s, color .2s;
+
+  &:hover {
+    background-color: fade(@spring-bud, 10%);
+    color: @white;
+  }
+}
+
+// ===========================================================================
 // Responsive Breakpoints
 // ===========================================================================
 
+@media screen and (min-width: 640px) {
+  .hero-words .tagline { font-size: 2.6rem; }
+}
+
+@media screen and (min-width: 800px) {
+  .layers { grid-template-columns: repeat(3, 1fr); }
+}
+
 @media screen and (min-width: 960px) {
+  body:not(.not_home) .body { max-width: 58em; }
+
   .not_home {
     .body { max-width: 42em; }
     .main {

@@ -1,45 +1,85 @@
 <head>
-  <title>Jamrock | The herbsman's web framework</title>
+  <title>Jamrock | Server-first web framework</title>
 </head>
 
-**Jamrock** is a framework for authoring web pages.
+<section class="hero-words">
+  <p class="tagline">Server-first.<br />Fragment-driven.<br /><span class="tagline-accent">No SPA required.</span></p>
+  <p class="hero-sub">Write HTML components that run on the server. Add interactivity exactly where you need it — with fragments, signals, or server functions. Nothing more.</p>
+</section>
 
-Runs everything on the server and keep JavaScript usage on the browser low.
+<div class="layer layer-server">
+<div class="layer-marker layer-marker-server">01</div>
+<h3>Server Render</h3>
+<p>Components run on the server. Request data, session, params — all available at render time. Full HTML shipped, zero JS by default.</p>
+</div>
 
-_&mdash; it ain't much but it's honest work!_
+```html
+<script>
+  import { params } from 'jamrock:conn';
+  const { name } = params;
+</script>
 
-## Give it a try!! 🤪
-
-Install **jamrock** in your `$HOME`:
-
-```
-<b>curl</b> -L get.jamrock.dev | <b>bash</b>
-```
-
-The installer will ask you for a runtime: `node`, `deno` or `bun`.
-
-Let's try `node` and create a sample application:
-
-```
-<b>jamrock</b> init <em>my-app</em>
-<b>cd</b> <em>my-app</em>
-<b>npm</b> install
-<b>npm</b> run dev
+<h1>Hello, {name}!</h1>
 ```
 
-You should get something like this:
+<div class="layer layer-fragment">
+<div class="layer-marker layer-marker-fragment">02</div>
+<h3>Fragments</h3>
+<p>Named regions of the page that can be updated live via SSE — without a full reload, without a client router, without any boilerplate.</p>
+</div>
 
+```html
+<fragment name="feed" interval="5">
+  {#each posts as post}
+    <article>{post.title}</article>
+  {/each}
+</fragment>
 ```
-<b>■ Jamrock v0.0.0</b> (node v23.6.0)
-Processing ./pages to ./build
-Listening on <a href="http://localhost:8080" target="_blank">http://localhost:8080</a>
+
+<div class="layer layer-client">
+<div class="layer-marker layer-marker-client">03</div>
+<h3>Client Signals</h3>
+<p>When you genuinely need client reactivity, reach for signals. Declare them in a client script, reference them with <code>$</code> in templates.</p>
+</div>
+
+```html
+<script context="client">
+  import { signal } from 'jamrock';
+  const count = signal(0);
+</script>
+
+<button onclick={() => $count++}>
+  Clicked {$count} times
+</button>
 ```
 
-Open that URL in your browser and explore.
+---
 
-<blockquote>
-  <p class="gap-sm flex centered">
-    <svg src="./images/beaker.svg" size="16" />
-    <span>See the <a href="/introduction#top">available documentation here.</a></span>
-  </p>
-</blockquote>
+<section class="quickstart">
+<h2>Try it now</h2>
+<p>Install <strong>jamrock</strong> and pick a runtime — <code>node</code>, <code>deno</code>, or <code>bun</code>:</p>
+</section>
+
+```shell
+curl -L get.jamrock.dev | bash
+```
+
+<p>Then scaffold your first app:</p>
+
+```shell
+jamrock init my-app
+cd my-app && npm install
+npm run dev
+```
+
+<p class="install-out"><span class="out-dim">■</span> <strong>Jamrock v0.0.0</strong> <span class="out-dim">(node v23)</span><br />
+  <span class="out-dim">Processing</span> ./pages <span class="out-dim">→</span> ./build<br />
+  <span class="out-dim">Listening on</span> <a href="http://localhost:8080" target="_blank">http://localhost:8080</a>
+</p>
+
+---
+
+<nav class="home-nav flex between centered">
+  <p class="out-dim"><em>&mdash; it ain't much, but it's honest work.</em></p>
+  <a href="/introduction#top" class="home-cta">Read the docs &rarr;</a>
+</nav>
