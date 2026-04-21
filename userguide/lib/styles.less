@@ -655,18 +655,41 @@ pre.hljs.terminal {
     .main {
       display: flex;
       gap: 20px;
+
       aside {
         margin: 0;
         width: 180px;
+        flex-shrink: 0;
       }
+
       aside > footer {
-        top: 0;
-        margin: 0;
         position: sticky;
+        top: 1rem;
+        margin: 0;
+        overflow-y: auto;
+        max-height: calc(100vh - 2rem);
+
+        // sidebar overrides — undo the homepage footer treatment
+        border-top: none;
+        padding-top: 0;
+        padding-bottom: 2rem;
+
+        .footer-nav {
+          grid-template-columns: 1fr;
+          justify-content: start;
+          gap: 1.2rem 0;
+
+          > li > h3 { color: @light; }
+          li:has([aria-current]) > h3 { color: @mantis; }
+        }
       }
+
       .content { min-width: 29em; }
       .content > nav { margin-top: 20px; }
       .pagefind-ui__drawer { max-height: calc(100vh - 5rem); overflow: auto; }
     }
+
+    // compact header on inner pages
+    .meteorite svg { max-width: min(70%, 220px); }
   }
 }
