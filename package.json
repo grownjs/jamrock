@@ -99,7 +99,7 @@
     "redis": "^5.10.0",
     "rewrite-exports": "^0.0.28",
     "rewrite-imports": "^3.0.0",
-    "somedom": "^0.9.5",
+    "somedom": "^0.9.9",
     "testdouble": "^3.20.2",
     "tiny-dedent": "^1.0.2",
     "twemoji": "^14.0.2",

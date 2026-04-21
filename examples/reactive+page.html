@@ -1,8 +1,10 @@
 <script context="client">
-  import { signal } from 'jamrock';
+  import { signal, computed } from 'jamrock';
 
   const open = signal(false);
   const count = signal(0);
+  const items = signal(['Apple', 'Banana', 'Cherry']);
+  const filter = signal('');
 
   function toggle() {
     open.value = !open.value;
@@ -11,11 +13,35 @@
   function increment() {
     count.value++;
   }
+
+  function addItem() {
+    items.value = [...items.value, 'Item ' + (items.value.length + 1)];
+  }
+
+  function removeItem() {
+    if (items.value.length > 0) {
+      items.value = items.value.slice(0, -1);
+    }
+  }
+
+  const filtered = computed(() => {
+    const f = filter.value.toLowerCase();
+    return f ? items.value.filter(i => i.toLowerCase().includes(f)) : items.value;
+  });
+
+  const label = computed(() => {
+    if (count.value === 0) return 'zero';
+    if (count.value === 1) return 'one';
+    return 'many';
+  });
 </script>
 
 <style>
   .panel { padding: 1em; border: 1px solid #ccc; margin: 0.5em 0; }
   button { padding: 0.3em 0.7em; cursor: pointer; }
+  input { padding: 0.3em 0.5em; }
+  .item-list { list-style: none; padding: 0; }
+  .item-list li { padding: 0.2em 0; }
 </style>
 
 <h1 test:id="heading">Reactive Signal Test</h1>
@@ -33,4 +59,29 @@
 <p test:id="high-count">Count is high!</p>
 {:else}
 <p test:id="low-count">Count is low</p>
+{/if}
+
+{#if $count === 0}
+<span test:id="label-zero">No items yet</span>
+{:else if $count === 1}
+<span test:id="label-one">Just one</span>
+{:else}
+<span test:id="label-many">Several items</span>
+{/if}
+
+<p>Computed label: <strong test:id="computed-label">{label}</strong></p>
+
+<hr />
+<h2 test:id="list-heading">Item List</h2>
+
+<input type="text" bind:value={filter} test:id="filter-input" placeholder="Filter items..." />
+<button type="button" onclick={addItem} test:id="add-btn">Add Item</button>
+<button type="button" onclick={removeItem} test:id="remove-btn">Remove Last</button>
+
+{#each $filtered as item}
+<li class="item-list">{item}</li>
+{/each}
+
+{#if $items.length === 0}
+<p test:id="empty-list">No items</p>
 {/if}
