@@ -208,7 +208,7 @@ export function prepare(component: any, parent: any, ctx: any): any {
 }
 
 export function client(ctx: any, body: any, props: any, parent: any, component: any): any {
-  if (parent?.__context !== 'module') return;
+  if (parent && parent.__context !== 'module') return;
 
   ctx.cache?.set(ctx.uuid || ctx.conn?.req?.uuid, ctx.ref, component.__exported.reduce((memo: any, key: string) => {
     if (Is.data(props[key])) memo[key] = props[key];
@@ -392,6 +392,9 @@ export async function render(component: any, parent: any, props: any, ctx: any, 
     const actions = { [ctx.ref]: calls };
 
     let state = { ...props, ...data };
+    if (component.__context === 'client' && main?.__default) {
+      state = { ...state, ...main.__default };
+    }
     if (ctx.stream) {
       const frags = await Promise.all(Object.entries(component.__fragments).map(async ([k, v]: [string, any]) => ({
         target: k,
@@ -461,6 +464,9 @@ export function renderSync(component: any, parent: any, props: any, ctx: any, cb
     const actions = { [ctx.ref]: calls };
 
     let state = { ...props, ...data };
+    if (component.__context === 'client' && main?.__default) {
+      state = { ...state, ...main.__default };
+    }
     let [doc, body, head, attrs]: any[] = [
       view(component.__doctype, state, `${component.__src}#doctype`),
       view(component.__vdom, state, `${component.__src}#vdom`),

@@ -1,11 +1,14 @@
+import { computed } from 'somedom';
+import * as somedom from 'somedom';
+
+const hydrateElement: any = (somedom as any).hydrate;
 import {
   bind, mount, patch, render, styles, classes, listeners, attributes,
 } from '../utils/client.ts';
-import { effect } from 'somedom';
 
 export * from './fragment.ts';
 
-export function createRender(): { patchNode: any; createElement: any; renderToElement: any } {
+export function createRender(): { patchNode: any; createElement: any; renderToElement: any; hydrateToElement: any } {
   const $ = bind(render, listeners(), attributes({
     class: classes,
     style: styles,
@@ -38,68 +41,41 @@ export function createRender(): { patchNode: any; createElement: any; renderToEl
       return children;
     },
   }, {
-    __if__: (props: any, children: any) => {
-      const anchor = document.createComment('if') as Comment & { _signalDispose?: any };
+    'if-block': (props: any) => {
       const cond = props.__cond;
       const then = props.__then;
       const else_ = props.__else;
       const branches = props.__branches || [];
-      let currentNodes: Node[] = [];
 
-      const update = () => {
+      return computed(() => {
         const value = cond();
-
-        let branchThunk: (() => unknown) | undefined;
+        let result;
         if (value) {
-          branchThunk = then;
+          result = then();
         } else {
           for (const block of branches) {
-            const result = block && block();
-            if (result) {
-              branchThunk = () => result;
+            const r = block && block();
+            if (r) {
+              result = typeof r === 'function' ? r() : r;
               break;
             }
           }
-          if (!branchThunk && else_) branchThunk = else_;
+          if (result === undefined) result = else_ ? else_() : null;
         }
 
-        for (const node of currentNodes) {
-          if (node.parentNode) node.parentNode.removeChild(node);
-        }
-        currentNodes = [];
-
-        if (branchThunk) {
-          const result = branchThunk();
-          const container = document.createElement('div');
-          mount(container, result, null, $);
-          while (container.firstChild) {
-            currentNodes.push(container.firstChild);
-            anchor.parentNode?.insertBefore(container.firstChild, anchor.nextSibling);
-          }
-        }
-      };
-
-      const dispose = effect(() => {
-        cond();
-        update();
+        if (result === undefined || result === null || result === false) return null;
+        if (Array.isArray(result) && result.length === 0) return null;
+        if (Array.isArray(result) && result.length === 1) return result[0];
+        return ['slot', {}, ...result];
       });
-      anchor._signalDispose = dispose;
-      return anchor;
     },
-    __each__: (props: any, children: any) => {
-      const anchor = document.createComment('each') as Comment & { _signalDispose?: any };
+    'each-block': (props: any) => {
       const subj = props.__subj;
       const body = props.__body;
       const fallback = props.__fallback;
-      let currentNodes: Node[] = [];
 
-      const update = () => {
+      return computed(() => {
         const items = subj();
-
-        for (const node of currentNodes) {
-          if (node.parentNode) node.parentNode.removeChild(node);
-        }
-        currentNodes = [];
 
         let input: any[] = [];
         if (typeof items === 'object' && !Array.isArray(items)) {
@@ -110,48 +86,32 @@ export function createRender(): { patchNode: any; createElement: any; renderToEl
           input = Array.from({ length: items }, (_, i) => i);
         }
 
-        if (input.length === 0 && fallback) {
-          const result = fallback();
-          const container = document.createElement('div');
-          mount(container, result, null, $);
-          while (container.firstChild) {
-            currentNodes.push(container.firstChild);
-            anchor.parentNode?.insertBefore(container.firstChild, anchor.nextSibling);
-          }
-        } else {
-          for (let i = 0; i < input.length; i++) {
-            const result = body(input[i] instanceof Array ? input[i][1] : input[i], i);
-            const container = document.createElement('div');
-            if (Array.isArray(result)) {
-              for (const item of result) {
-                mount(container, item, null, $);
-              }
-            } else if (result != null && result !== false) {
-              mount(container, result, null, $);
-            }
-            while (container.firstChild) {
-              currentNodes.push(container.firstChild);
-              anchor.parentNode?.insertBefore(container.firstChild, anchor.nextSibling);
-            }
+        if (input.length === 0 && fallback) return fallback();
+
+        const results: any[] = [];
+        for (let i = 0; i < input.length; i++) {
+          const result = body(input[i] instanceof Array ? input[i][1] : input[i], i);
+          if (result != null && result !== false) {
+            if (Array.isArray(result)) results.push(...result);
+            else results.push(result);
           }
         }
-      };
 
-      const dispose = effect(() => {
-        subj();
-        update();
+        if (results.length === 0) return null;
+        if (results.length === 1) return results[0];
+        return ['slot', {}, ...results];
       });
-      anchor._signalDispose = dispose;
-      return anchor;
     },
   }]);
 
   const $$ = (target: any, prev: any, next: any, svg?: any) => patch(target, prev, next, svg, $);
   const $$$ = (el: any, vnode: any) => mount(el, vnode, null, $);
+  const $$$$ = (el: any, vnode: any) => hydrateElement(el, vnode, null, $);
 
   return {
     patchNode: $$,
     createElement: $,
     renderToElement: $$$,
+    hydrateToElement: $$$$,
   };
 }

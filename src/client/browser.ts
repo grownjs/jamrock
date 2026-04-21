@@ -176,7 +176,7 @@ export class Browser {
     this.runtime = async () => {
       if (!(window as any).Jamrock.Runtime) {
         const { createRender, createFragment } = await import('./elements.ts');
-        const { patchNode, createElement, renderToElement } = createRender();
+        const { patchNode, createElement, renderToElement, hydrateToElement } = createRender();
 
         (window as any).Jamrock.Fragment = createFragment({
           browser: this,
@@ -186,6 +186,7 @@ export class Browser {
 
         (window as any).Jamrock.Runtime = {
           renderToElement,
+          hydrateToElement,
           createElement,
           patchNode,
         };

@@ -9,6 +9,9 @@ const RE_EXPR_STRICT = /^\{[^{}]+\}$/;
 
 function unwrapSignal(expr: string): string {
   const trimmed = expr.trim();
+  if (/\$[\w]/.test(trimmed)) {
+    return trimmed.replace(/\$(\w+)/g, '$1.value');
+  }
   if (trimmed.startsWith('$')) {
     const ident = trimmed.slice(1);
     return `${ident}.value`;
@@ -17,11 +20,11 @@ function unwrapSignal(expr: string): string {
 }
 
 function wrapSignal(expr: string): string {
-  const unwrapped = unwrapSignal(expr);
-  if (unwrapped !== expr.trim() || /\$[\w]/.test(expr)) {
-    return `() => ${unwrapped.replace(/\$(\w+)/g, '$1.value')}`;
+  const hasSignal = /\$[\w]/.test(expr);
+  if (hasSignal) {
+    return `() => ${expr.trim().replace(/\$(\w+)/g, '$1.value')}`;
   }
-  return unwrapped;
+  return expr.trim();
 }
 
 export class Expr {

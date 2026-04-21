@@ -1,52 +1,51 @@
 import { Is } from '../utils/client.ts';
 import { execute } from './hooks.ts';
 
-const REACTIVE_TAGS = ['__if__', '__each__'];
+const REACTIVE_TAGS = ['if-block', 'each-block'];
 
 function resolveReactiveVnode(result: any, isSsr: boolean): any {
-  if (Is.arr(result) && result.length >= 2 && REACTIVE_TAGS.includes(result[0])) {
-    if (!isSsr) return result;
+  if (!Is.arr(result) || result.length < 2 || !REACTIVE_TAGS.includes(result[0])) return result;
+  if (!isSsr) return result;
 
-    const [, props] = result;
+  const [, props] = result;
 
-    if (result[0] === '__if__') {
-      const cond = (props as any).__cond;
-      const then = (props as any).__then;
-      const else_ = (props as any).__else;
-      const branches = (props as any).__branches || [];
+  if (result[0] === 'if-block') {
+    const cond = (props as any).__cond;
+    const then = (props as any).__then;
+    const else_ = (props as any).__else;
+    const branches = (props as any).__branches || [];
 
-      const value = Is.func(cond) ? (cond as Function)() : cond;
+    const value = Is.func(cond) ? (cond as Function)() : cond;
 
-      if (value) return then ? then() : undefined;
+    if (value) return then ? then() : undefined;
 
-      for (const block of branches) {
-        const branchResult = Is.func(block) ? block() : block;
-        if (branchResult) return branchResult;
-      }
-
-      return else_ ? else_() : undefined;
+    for (const block of branches) {
+      const branchResult = Is.func(block) ? block() : block;
+      if (branchResult) return branchResult;
     }
 
-    if (result[0] === '__each__') {
-      const subj = (props as any).__subj;
-      const body = (props as any).__body;
-      const fallback = (props as any).__fallback;
+    return else_ ? else_() : undefined;
+  }
 
-      let items: any[] = [];
-      const resolved = Is.func(subj) ? (subj as Function)() : subj;
+  if (result[0] === 'each-block') {
+    const subj = (props as any).__subj;
+    const body = (props as any).__body;
+    const fallback = (props as any).__fallback;
 
-      if (Is.plain(resolved)) {
-        items = Object.entries(resolved);
-      } else if (Is.iterable(resolved) || Is.arr(resolved)) {
-        items = [...resolved as any];
-      } else if (Is.num(resolved)) {
-        items = Array.from({ length: resolved as number }, (_, i) => i);
-      }
+    let items: any[] = [];
+    const resolved = Is.func(subj) ? (subj as Function)() : subj;
 
-      return items.length
-        ? items.map((v: any, i: number) => body(v, i))
-        : (fallback ? fallback() : undefined);
+    if (Is.plain(resolved)) {
+      items = Object.entries(resolved);
+    } else if (Is.iterable(resolved) || Is.arr(resolved)) {
+      items = [...resolved as any];
+    } else if (Is.num(resolved)) {
+      items = Array.from({ length: resolved as number }, (_, i) => i);
     }
+
+    return items.length
+      ? items.map((v: any, i: number) => body(v, i))
+      : (fallback && fallback());
   }
 
   return result;

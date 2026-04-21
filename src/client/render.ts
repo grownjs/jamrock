@@ -1,6 +1,6 @@
 import { executeAsync } from '../render/async.ts';
 
-export function clientComponent(this: any, mod: any, context: any, filepath?: string): { mount: (el: any, props?: any, _events?: any) => Promise<any> } {
+export function clientComponent(this: any, mod: any, context: any): { mount: (el: any, props?: any, _events?: any) => Promise<any> } {
   if (!mod) {
     return { mount: (el: any) => el };
   }
@@ -38,16 +38,20 @@ export function clientComponent(this: any, mod: any, context: any, filepath?: st
 
     vnode = await next(el.__state);
 
-    if (context?.sync) {
-      context.sync(vnode, _events);
-    } else {
+    if (!el.__vnode) {
+      while (el.firstChild) el.removeChild(el.firstChild);
       this.renderToElement(el, vnode);
+      el.__vnode = vnode;
+    } else if (context?.sync) {
+      context.sync(vnode, _events);
+      el.__vnode = vnode;
     }
+
     return el;
   };
   return { mount };
 }
 
-export function mountableComponent(this: any, mod: any, context: any, filepath?: string): { mount: (el: any, props?: any, _events?: any) => Promise<any> } {
-  return clientComponent.call(this, mod, context, filepath);
+export function mountableComponent(this: any, mod: any, context: any): { mount: (el: any, props?: any, _events?: any) => Promise<any> } {
+  return clientComponent.call(this, mod, context);
 }

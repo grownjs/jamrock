@@ -1,0 +1,36 @@
+<script context="client">
+  import { signal } from 'jamrock';
+
+  const open = signal(false);
+  const count = signal(0);
+
+  function toggle() {
+    open.value = !open.value;
+  }
+
+  function increment() {
+    count.value++;
+  }
+</script>
+
+<style>
+  .panel { padding: 1em; border: 1px solid #ccc; margin: 0.5em 0; }
+  button { padding: 0.3em 0.7em; cursor: pointer; }
+</style>
+
+<h1 test:id="heading">Reactive Signal Test</h1>
+
+<button type="button" onclick={toggle} test:id="toggle-btn">Toggle Panel</button>
+<button type="button" onclick={increment} test:id="count-btn">Count: {count}</button>
+
+{#if $open}
+<div class="panel" test:id="panel">
+  <p test:id="panel-text">Panel is visible! Count is {count}</p>
+</div>
+{/if}
+
+{#if $count > 2}
+<p test:id="high-count">Count is high!</p>
+{:else}
+<p test:id="low-count">Count is low</p>
+{/if}

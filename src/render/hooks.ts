@@ -1,4 +1,4 @@
-import { Is } from '../utils/client.ts';
+import { Is, isSignal } from '../utils/client.ts';
 
 export function str(value: unknown): string {
   if (!Is.value(value)) value = Object.prototype.toString.call(value);
@@ -17,15 +17,21 @@ type NextFn = (tpl: unknown, props: unknown, loader: LoaderFn, self: ReturnType<
 type ElementFn = (tag: string, props: Record<string, unknown>, children: unknown) => unknown;
 
 function createSelf(element: ElementFn | null, loader: LoaderFn, next: NextFn, run: RunFn, isSsr: boolean) {
+  let _blockIdx = 0;
   const self = {
     $: (value: any): unknown => {
       if (value === null || value === false || typeof value === 'undefined') return '';
+      if (isSignal(value)) {
+        if (!isSsr) return value;
+        value = value.value;
+      } else if (value !== null && typeof value === 'object' && 'value' in value && typeof value.value !== 'function') {
+        if (!isSsr) return value;
+        value = value.value;
+      }
       if (value.current) value = value.current;
       if (Is.func(value) && value.name === '$signal') value = value();
       if (!Is.scalar(value)) {
-        return Is.arr(value)
-          ? value.map(self.$).join('')
-          : Object.prototype.toString.call(value);
+        return Is.arr(value) ? value.map(self.$).join('') : Object.prototype.toString.call(value);
       }
       return Is.str(value) ? ents(value) : value.toString();
     },
@@ -33,7 +39,7 @@ function createSelf(element: ElementFn | null, loader: LoaderFn, next: NextFn, r
       if (typeof window === 'undefined') console.debug('E_DEBUG', value);
       return ents(JSON.stringify(value, null, 2));
     },
-    r: (value: unknown, tag: string = 'fragment'): unknown => {
+    r: (value: unknown, _tag: string = 'fragment'): unknown => {
       if (Is.empty(value)) return;
       return Is.func(value) ? value : () => value;
     },
@@ -48,10 +54,23 @@ function createSelf(element: ElementFn | null, loader: LoaderFn, next: NextFn, r
     },
     if: (cond: unknown, then: () => unknown, ...branches: Array<(() => unknown) | undefined>): unknown => {
       if (Is.func(cond) && !isSsr) {
-        return ['__if__', { __cond: cond, __then: then, __else: branches.pop(), __branches: branches.filter(Boolean) }, []];
+        return ['if-block', {
+          __cond: cond,
+          __then: then,
+          __else: branches.pop(),
+          __branches: branches.filter(Boolean),
+          __index: _blockIdx++,
+        }, []];
       }
 
-      const value = Is.func(cond) ? (cond as Function)() : (cond !== null && typeof cond === 'object' && 'valueOf' in cond ? (cond as any).valueOf() : cond);
+      let value: any;
+      if (Is.func(cond)) {
+        value = (cond as Function)();
+      } else if (cond !== null && typeof cond === 'object' && 'valueOf' in cond) {
+        value = (cond as any).valueOf();
+      } else {
+        value = cond;
+      }
       if (value) return run(then(), []);
 
       const fallback = branches.pop();
@@ -70,7 +89,7 @@ function createSelf(element: ElementFn | null, loader: LoaderFn, next: NextFn, r
     },
     map: (subj: any, body: (...args: unknown[]) => unknown, fallback?: () => unknown): unknown => {
       if (Is.func(subj) && !isSsr) {
-        return ['__each__', { __subj: subj, __body: body, __fallback: fallback }, []];
+        return ['each-block', { __subj: subj, __body: body, __fallback: fallback, __index: _blockIdx++ }, []];
       }
 
       function it(_: unknown, offset: unknown) {

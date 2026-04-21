@@ -155,6 +155,7 @@ export class Components {
   declare modules: Map<string, any>;
   declare imports: any[];
   declare elements: Set<any>;
+  declare _runtimeReady: boolean;
 
   constructor(browser: any, prefix: string, { __defaults, __scripts, __calls }: { __defaults?: any; __scripts?: any; __calls?: any }) {
     this.headless = browser.headless;
@@ -163,6 +164,7 @@ export class Components {
     this.calls = __calls || {};
     this.scripts = __scripts || {};
     this.defaults = __defaults || {};
+    this._runtimeReady = false;
 
     this.observer = new MutationObserver(list => {
       for (const mutation of list) {
@@ -193,15 +195,19 @@ export class Components {
   }
 
   async import(url: string, reload?: boolean): Promise<any> {
-    console.log('[ESM]', url);
-
     const path = this.rebase(url, reload);
 
     if (!(this.imports as any)[path]) {
       const src = path.replace(/\.(?:md|html)(?:\/\d+)?/, '.bundled.mjs');
 
       (this.imports as any)[path] = Date.now();
-      let mod = await import(src);
+      let mod;
+      try {
+        mod = await import(src);
+      } catch (e: any) {
+        console.error('[ESM ERROR]', src, e.message);
+        throw e;
+      }
       mod = mod.default || mod;
       this.modules.set(url, mod);
       if (url.includes('.md') || url.includes('.html')) {
@@ -232,7 +238,7 @@ export class Components {
         }
         requestAnimationFrame(() => this.hooks(node, events));
       } catch (e: any) {
-        console.warn(e.message);
+        console.error('[LOAD ERROR]', key, e.message);
       }
     } else if ('enhance' in node.dataset) {
       requestAnimationFrame(() => this.hooks(node, events));
@@ -244,8 +250,10 @@ export class Components {
   on(): void {
     this.elements = new Set([...document.querySelectorAll('[data-component],[data-enhance],[data-reset],[data-use]')]);
 
-    requestAnimationFrame(() => this.elements.forEach(node => Conditions.is(node) && this.append(node)));
-    requestAnimationFrame(() => this.browser.scripts(this.scripts));
+    requestAnimationFrame(() => {
+      this.elements.forEach(node => Conditions.is(node) && this.append(node));
+      this.browser.scripts(this.scripts);
+    });
 
     this.observer.observe(document.documentElement, {
       attributes: true,
@@ -259,8 +267,7 @@ export class Components {
     this.elements.forEach(node => this.delete(node));
   }
 
-  set(defaults: any, calls: any, scripts: any, fragments: any): void {
-    console.log('[FRAGMENTS]', fragments);
+  set(defaults: any, calls: any, scripts: any, _fragments: any): void {
     if (calls) Object.assign(this.calls, calls);
     if (scripts) Object.assign(this.scripts, scripts);
     if (defaults) Object.assign(this.defaults, defaults);
@@ -308,14 +315,18 @@ export class Components {
   }
 
   refetch(): void {
-    console.log('[REFETCH]');
     this.reload(undefined as any);
   }
 
-  attach(mod: any, node: any, state: any, filepath: string): Promise<any> {
-    if (!((window as any).Jamrock.Runtime && (window as any).Jamrock.Runtime.mountableComponent)) {
-      return sleep(undefined as any).then(() => this.attach(mod, node, state, filepath));
+  // eslint-disable-next-line class-methods-use-this
+  async waitForRuntime() {
+    while (!((window as any).Jamrock.Runtime && (window as any).Jamrock.Runtime.mountableComponent)) {
+      await new Promise(r => setTimeout(r, 50));
     }
+  }
+
+  async attach(mod: any, node: any, state: any, filepath: string): Promise<any> {
+    await this.waitForRuntime();
 
     const component = (window as any).Jamrock.Runtime.mountableComponent(mod, {
       sync: (vdom: any) => this.browser.patch(node, vdom),
@@ -325,12 +336,18 @@ export class Components {
   }
 
   append(node: any): void {
-    if (!this.loaded) {
-      this.loaded = true;
+    if (!this._runtimeReady) {
+      this._runtimeReady = true;
       this.browser.runtime().then(() => {
         Object.assign((window as any).Jamrock.Runtime, {
-          ref, useMemo, mountableComponent,
-          signal, computed, effect, batch, untracked,
+          ref,
+          useMemo,
+          mountableComponent,
+          signal,
+          computed,
+          effect,
+          batch,
+          untracked,
         });
       });
     }
