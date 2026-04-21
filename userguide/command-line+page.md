@@ -30,7 +30,7 @@ Run `jamrock --help` for a quick glance:
 
 <pre class="hljs terminal"><code><b>■ Jamrock v0.0.0</b> <span class="out-dim">(node v22.4.0, HEAD)</span>
 
-<span class="out-dim">Usage:</span> ./bin/{node,deno,bun} <b>&lt;COMMAND&gt;</b> <var>[OPTIONS]</var>
+<span class="out-dim">Usage:</span> ./bin/&lbrace;node,deno,bun} <b>&lt;COMMAND&gt;</b> <var>[OPTIONS]</var>
 
   <b>init</b>   Generates a new application into the given directory
   <b>serve</b>  Starts the web-server on the given <var>--port</var> and <var>--host</var>
