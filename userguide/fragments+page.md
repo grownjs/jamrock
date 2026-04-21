@@ -4,6 +4,8 @@
 
 # Fragments
 
+Fragments are the targets of [RPC updates](/rpc#top). When a server function runs via `rpc:call`, the framework re-renders any fragments in the component that reference dirty data and pushes the diff to the browser via SSE.
+
 They are markup containers that render as other HTML elements,
 they can outlive the serve-side render and can be updated later.
 
