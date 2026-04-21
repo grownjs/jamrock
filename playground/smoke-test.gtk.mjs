@@ -1,6 +1,8 @@
 import {
-  createWindow, vstack, hstack, label, button, entry,
-  signal, computed, GLib,
+  signal, computed,
+  createTestWindow, findButtons, clickButton,
+  vstack, label, button,
+  GLib,
 } from '../dist/gtk.mjs';
 
 let passed = 0;
@@ -62,25 +64,20 @@ const items = signal(['a', 'b', 'c']);
 assert(items.value.length === 3, 'initial length');
 assert(items.value[0] === 'a', 'first item');
 
-// push
 items.value = [...items.value, 'd'];
 assert(items.value.length === 4, 'after push');
 assert(items.value[3] === 'd', 'pushed item');
 
-// pop
 items.value = items.value.slice(0, -1);
 assert(items.value.length === 3, 'after pop');
 
-// remove by index
 items.value = items.value.filter((_, i) => i !== 1);
 assert(items.value.length === 2, 'after remove');
 assert(items.value[1] === 'c', 'remaining items');
 
-// replace item
 items.value = items.value.map((v, i) => i === 0 ? 'x' : v);
 assert(items.value[0] === 'x', 'after replace');
 
-// empty
 items.value = [];
 assert(items.value.length === 0, 'after clear');
 
@@ -120,43 +117,21 @@ assert(doneCount.value === 0, 'no done items');
 toggleTodo(2);
 assert(doneCount.value === 1, 'one done item');
 
-// --- GTK widget click simulation ---
+// --- GTK widget click simulation via createTestWindow ---
 print('\nGTK click simulation:');
 const clicks = signal(0);
 
-const { open, close, win } = createWindow({ title: 'Smoke Test', width: 300, height: 200 });
+const { open, close, win, scheduleTest } = createTestWindow({ title: 'Smoke Test' });
 
-GLib.timeout_add(GLib.PRIORITY_DEFAULT, 500, () => {
-  const child = win.get_child();
-  const btns = [];
-  function findButtons(widget) {
-    if (widget.get_first_child) {
-      let c = widget.get_first_child();
-      while (c) { findButtons(c); c = c.get_next_sibling(); }
-    }
-    const typeName = widget.constructor.$gtype?.name || widget.constructor.name || '';
-    if (typeName === 'GtkButton') {
-      btns.push(widget);
-    }
-  }
-  findButtons(child);
+scheduleTest((w, h) => {
+  const found = clickButton(w, 'Click Me');
+  assert(found && clicks.value === 1, 'first click');
 
-  // Find the "Click Me" button
-  const clickBtn = btns.find(b => b.get_label?.() === 'Click Me');
-  if (clickBtn) {
-    clickBtn.emit('clicked');
-    assert(clicks.value === 1, 'first click');
-    clickBtn.emit('clicked');
-    assert(clicks.value === 2, 'second click');
-    clickBtn.emit('clicked');
-    assert(clicks.value === 3, 'third click');
-  } else {
-    print('  SKIP: button not found');
-  }
+  clickButton(w, 'Click Me');
+  assert(clicks.value === 2, 'second click');
 
-  print('\nResults: ' + passed + ' passed, ' + failed + ' failed');
-  close();
-  return GLib.SOURCE_REMOVE;
+  clickButton(w, 'Click Me');
+  assert(clicks.value === 3, 'third click');
 });
 
 open(() => vstack([

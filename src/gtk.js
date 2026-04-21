@@ -3,3 +3,4 @@ export * from './gtk4/core.ts';
 export * from './gtk4/deps.ts';
 export * from './gtk4/main.ts';
 export * from './gtk4/fetch.ts';
+export * from './gtk4/test.ts';
