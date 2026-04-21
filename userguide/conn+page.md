@@ -4,6 +4,43 @@
 
 # The `jamrock:conn` module
 
+The connection context wraps the current request and response. Import only what you need:
+
+```html
+<script>
+  import { method, params, session, redirect, flash } from 'jamrock:conn';
+</script>
+```
+
+**Quick reference:**
+
+| Export | Type | Description |
+|--------|------|-------------|
+| `req` | object | Standard `Request` object |
+| `method` | string | `GET`, `POST`, `PUT`, `PATCH`, `DELETE` |
+| `params` | object | Merged query + body + path params |
+| `path_params` | object | Route parameters only (`:name` → `{ name }`) |
+| `query_params` | object | URL query string as object |
+| `body_params` | object | Parsed request body |
+| `request_path` | string | URL pathname (`/path/to/x`) |
+| `query_string` | string | Raw query string |
+| `headers` | object | Request headers |
+| `cookies` | object | Request cookies |
+| `session` | object | Session store (Redis or memory) |
+| `csrf_token` | string | Current CSRF token |
+| `status_code` | number | Get/set response status |
+| `resp_headers` | Headers | Response headers |
+| `resp_cookies` | Map | Response cookies |
+| `redirect(url)` | fn | End request with redirect |
+| `flash(type, msg)` | fn | Write flash message to session |
+| `cookie(key, val)` | fn | Set response cookie |
+| `header(key, val)` | fn | Set response header |
+| `status(code)` | fn | Set status without closing response |
+| `raise(code, msg)` | fn | End request with error |
+| `send(code, body)` | fn | End request with explicit response |
+
+---
+
 The connection context wraps the current request and response,
 also providing some useful stuff.
 

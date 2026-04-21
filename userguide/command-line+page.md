@@ -11,12 +11,10 @@ ensure that destination is within you `$PATH` to enable the binary.
 
 ## Installation
 
-```
-<b>curl</b> -L get.jamrock.dev | <b>bash</b>
+<pre class="hljs terminal"><code><b>curl</b> -L get.jamrock.dev | <b>bash</b>
 ...
 <b>jamrock</b> --version
-■ Jamrock v0.0.0 (node v23.6.0, HEAD)
-```
+<span class="out-dim">■ Jamrock v0.0.0 (node v23.6.0, HEAD)</span></code></pre>
 
 ## Parameters
 
@@ -30,17 +28,16 @@ e.g. `jamrock build NODE_ENV=production PORT=80`
 
 Run `jamrock --help` for a quick glance:
 
-```
-<b>■ Jamrock v0.0.0</b> (node v22.4.0, HEAD)
+<pre class="hljs terminal"><code><b>■ Jamrock v0.0.0</b> <span class="out-dim">(node v22.4.0, HEAD)</span>
 
-<span>Usage:</span> ./bin/{node,deno,bun} <b>&lt;COMMAND&gt;</b> <var>[OPTIONS]</var>
+<span class="out-dim">Usage:</span> ./bin/{node,deno,bun} <b>&lt;COMMAND&gt;</b> <var>[OPTIONS]</var>
 
   <b>init</b>   Generates a new application into the given directory
   <b>serve</b>  Starts the web-server on the given <var>--port</var> and <var>--host</var>
   <b>build</b>  Compiles *.{md,html} sources into server-components
   <b>route</b>  Prints the available routes found
 
-<span>Options:</span>
+<span class="out-dim">Options:</span>
 
   <var>--src</var>      Directory of *.{md,html} files to compile <em>(default is ./pages)</em>
   <var>--dest</var>     Destination for compiled files <em>(default is ./build)</em>
@@ -59,16 +56,13 @@ Run `jamrock --help` for a quick glance:
   <var>--dts</var>      Produce the .d.ts definitions from web-server routes
   <var>--name</var>     Filter routes by name <em>(contains)</em>
   <var>--path</var>     Filter routes by path <em>(contains)</em>
-  <var>--method</var>   Filter routes by method <em>(exact match)</em>
-```
+  <var>--method</var>   Filter routes by method <em>(exact match)</em></code></pre>
 
 ### <b>init</b>
 
 This action create a new project into the target directory, e.g.
 
-```
-<b>jamrock</b> init <em>my-app</em>
-```
+<pre class="hljs terminal"><code><b>jamrock</b> init <em>my-app</em></code></pre>
 
 > [!WARNING]
 > If the directory already exists you'll be warned, but you can `--force`

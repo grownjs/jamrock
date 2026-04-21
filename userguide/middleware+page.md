@@ -12,14 +12,14 @@ Create a `+server.mjs` file in any directory. Exported functions become middlewa
 
 ```js
 export function auth(conn) {
-  const token = conn.req.headers.get('authorization');
+  const token = conn.headers.get('authorization');
   if (!token) {
-    return conn.req.redirect('/login');
+    return conn.redirect('/login');
   }
 }
 
 export function log(conn) {
-  console.log(`${conn.req.method} ${conn.req.path}`);
+  console.log(`${conn.method} ${conn.request_path}`);
 }
 
 export default {
@@ -88,9 +88,9 @@ Sessions are available through `conn.req.session`:
 
 ```js
 export function session(conn) {
-  const user = conn.req.session.get('user');
+  const user = conn.session.user;
   if (!user) {
-    return conn.req.redirect('/login');
+    return conn.redirect('/login');
   }
 }
 ```
@@ -151,7 +151,7 @@ export default {
   <span>
     ➯ Next: <a href="/conn#top">Request API</a>
   </span>
-  <a href="/#top">
+  <a href="/middleware#top">
     &uarr; Back to the top
   </a>
 </nav>

@@ -8,23 +8,18 @@
 
 # Components
 
-We have three types of components:
+Every `.{html,md}` file in your `pages/` directory is a component. What a component *does* depends on which script context it uses:
 
-1. Dynamic server-side or page components
-2. Client-side components with some functionality
-3. Static components with some functionality or markup
+| Context | Runs | Has access to |
+|---------|------|--------------|
+| *(none)* | Server, per request | `jamrock:conn`, session, params, request data |
+| `context="module"` | Server, once on load | Shared state, DB connections, module-level setup |
+| `context="client"` | Browser | DOM, signals, events, client-side interactivity |
 
-Server-side components will have a `&lt;script&gt;` tag without context,
-or `&lt;script context="module"&gt;` for module-level functionality.
+A component can have more than one `<script>` block — one server, one module, one client — each serving a distinct role.
 
-Client-side components will have a `&lt;script context="client"&gt;`
-
-> [!IMPORTANT]
-> Static components may not contain script tags,
-> but can access their props through the `$$props` variable.
->
-> We explore [other kind of scripts](./scripts) later,
-> for now we'll focus on static or dynamic components with or without context.
+> [!NOTE]
+> Components without any `<script>` block are **static** — they receive props through `$$props` and render pure markup. No runtime overhead.
 
 ## File-naming
 
