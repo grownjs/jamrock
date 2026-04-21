@@ -535,12 +535,43 @@ h4 { color: @mantis; }
 }
 
 // ===========================================================================
+// Exhaust
+// ===========================================================================
+
+@keyframes exhaust-flicker {
+  0%   { opacity: .55; transform: translateX(-50%) scaleY(.93); }
+  50%  { opacity: .85; transform: translateX(-50%) scaleY(1.04); }
+  100% { opacity: .65; transform: translateX(-50%) scaleY(.97); }
+}
+
+body { position: relative; }
+
+#fx-exhaust {
+  display: none;
+  position: absolute;
+  bottom: 0;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 500px;
+  height: 220px;
+  pointer-events: none;
+  z-index: 0;
+  background:
+    radial-gradient(ellipse 55px 160px at 38% 100%, fade(@mantis, 30%) 0%, fade(@spring-bud, 10%) 45%, transparent 100%),
+    radial-gradient(ellipse 55px 160px at 62% 100%, fade(@mantis, 30%) 0%, fade(@spring-bud, 10%) 45%, transparent 100%);
+  animation: exhaust-flicker 2s ease-in-out infinite;
+}
+
+body:not(.not_home) #fx-exhaust { display: block; }
+
+// ===========================================================================
 // Footer
 // ===========================================================================
 
 footer {
   margin-top: 2rem;
   padding-top: 1.5rem;
+  padding-bottom: 6rem;
   border-top: 2px solid @gunmetal;
 }
 
