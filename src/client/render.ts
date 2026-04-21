@@ -39,7 +39,11 @@ export function clientComponent(this: any, mod: any, context: any): { mount: (el
     vnode = await next(el.__state);
 
     if (!el.__vnode) {
-      this.hydrateToElement(el, vnode);
+      if (el.childNodes.length > 0) {
+        this.hydrateToElement(el, vnode);
+      } else {
+        this.renderToElement(el, vnode);
+      }
       el.__vnode = vnode;
     } else if (context?.sync) {
       context.sync(vnode, _events);
