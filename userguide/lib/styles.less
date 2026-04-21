@@ -535,6 +535,42 @@ h4 { color: @mantis; }
 }
 
 // ===========================================================================
+// Footer
+// ===========================================================================
+
+footer {
+  margin-top: 2rem;
+  padding-top: 1.5rem;
+  border-top: 2px solid @gunmetal;
+}
+
+.footer-nav {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(8em, max-content));
+  justify-content: center;
+  gap: 1.5rem 2rem;
+  list-style: none;
+
+  > li > h3 {
+    font-size: .62rem;
+    text-transform: uppercase;
+    letter-spacing: .1em;
+    color: @light;
+    margin: 0 0 .5rem;
+    text-align: left;
+  }
+
+  li {
+    text-align: left;
+    &::before { content: none; }
+  }
+
+  a::before { content: none !important; }
+
+  a[aria-current=page]::before { content: none !important; }
+}
+
+// ===========================================================================
 // Terminal Frame
 // ===========================================================================
 
