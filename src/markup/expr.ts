@@ -22,7 +22,7 @@ function unwrapSignal(expr: string): string {
 function wrapSignal(expr: string): string {
   const hasSignal = /\$[\w]/.test(expr);
   if (hasSignal) {
-    return `() => ${expr.trim().replace(/\$(\w+)/g, '$1.value')}`;
+    return `$$._(() => ${expr.trim().replace(/\$(\w+)/g, '$1.value')})`;
   }
   return expr.trim();
 }

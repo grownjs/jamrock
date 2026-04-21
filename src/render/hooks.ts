@@ -19,6 +19,10 @@ type ElementFn = (tag: string, props: Record<string, unknown>, children: unknown
 function createSelf(element: ElementFn | null, loader: LoaderFn, next: NextFn, run: RunFn, isSsr: boolean) {
   let _blockIdx = 0;
   const self = {
+    _: (fn: () => unknown) => {
+      (fn as any).__reactive = true;
+      return fn;
+    },
     $: (value: any): unknown => {
       if (value === null || value === false || typeof value === 'undefined') return '';
       if (isSignal(value)) {
@@ -53,7 +57,8 @@ function createSelf(element: ElementFn | null, loader: LoaderFn, next: NextFn, r
       return [tag, { 'd:html': value, tag }];
     },
     if: (cond: unknown, then: () => unknown, ...branches: Array<(() => unknown) | undefined>): unknown => {
-      if (Is.func(cond) && !isSsr) {
+      const isReactive = Is.func(cond) && (cond as any).__reactive;
+      if (isReactive && !isSsr) {
         return ['if-block', {
           __cond: cond,
           __then: then,
@@ -71,48 +76,66 @@ function createSelf(element: ElementFn | null, loader: LoaderFn, next: NextFn, r
       } else {
         value = cond;
       }
-      if (value) return run(then(), []);
 
-      const fallback = branches.pop();
-
-      let otherwise: unknown;
-      for (const block of branches) {
-        const result = block && block();
-
-        if (result) {
-          otherwise = result;
-          break;
+      let result: any;
+      if (value) {
+        result = then();
+      } else {
+        const fallback = branches.pop();
+        let otherwise: unknown;
+        for (const block of branches) {
+          const r = block && block();
+          if (r) { otherwise = r; break; }
         }
+        result = otherwise || (fallback && fallback());
       }
 
-      return run(otherwise || (fallback && fallback()), []);
+      const resolved = run(result, []);
+      if (isReactive && isSsr) {
+        return [{ __hydrate: '[' }, ...Array.isArray(resolved) ? resolved : [resolved], { __hydrate: ']' }];
+      }
+      return resolved;
     },
     map: (subj: any, body: (...args: unknown[]) => unknown, fallback?: () => unknown): unknown => {
-      if (Is.func(subj) && !isSsr) {
+      const isReactive = Is.func(subj) && (subj as any).__reactive;
+      if (isReactive && !isSsr) {
         return ['each-block', { __subj: subj, __body: body, __fallback: fallback, __index: _blockIdx++ }, []];
       }
-
       function it(_: unknown, offset: unknown) {
         return run(body, [_, offset]);
       }
 
-      if (Is.plain(subj)) {
-        const items = Object.entries(subj);
-
-        return items.length
-          ? run(items.map(([k, v]) => it(v, k)), [])
-          : run(fallback && fallback(), []);
+      let items: unknown[] = [];
+      if (isReactive) {
+        let resolved: any;
+        try { resolved = (subj as Function)(); } catch { resolved = subj; }
+        if (resolved?.value !== undefined && typeof resolved.value !== 'function') resolved = resolved.value;
+        if (Is.plain(resolved)) {
+          items = Object.entries(resolved);
+        } else if (Is.arr(resolved)) {
+          items = resolved;
+        } else if (Is.iterable(resolved)) {
+          try { items = [...resolved as any]; } catch { items = []; }
+        } else if (Is.num(resolved)) {
+          items = Array.from({ length: resolved as number }, (_, i) => i);
+        }
+      } else if (Is.plain(subj)) {
+        items = Object.entries(subj);
+      } else {
+        let input: unknown[] = [];
+        if (subj?.current) subj = subj.current;
+        if (subj?.value !== undefined && typeof subj.value !== 'function') subj = subj.value;
+        if (Is.iterable(subj) || Is.arr(subj)) input = [...subj];
+        else if (Is.num(subj)) input = Array.from({ length: subj }).map((_, i) => i);
+        items = input;
       }
 
-      let input: unknown[] = [];
-      if (subj?.current) subj = subj.current;
-      if (subj?.value !== undefined && typeof subj.value !== 'function') subj = subj.value;
-      if (Is.iterable(subj) || Is.arr(subj)) input = [...subj];
-      else if (Is.num(subj)) input = Array.from({ length: subj }).map((_, i) => i);
-
-      return input.length
-        ? run(input.map(it), [])
-        : run(fallback && fallback(), []);
+      const result = items.length ? items.map(it) : (fallback && fallback());
+      const resolved = run(result, []);
+      if (isReactive && isSsr) {
+        return [{ __hydrate: '[' }, ...Array.isArray(resolved) ? resolved : [resolved], { __hydrate: ']' }];
+      }
+      return resolved;
     },
     block: (tpl: unknown, name: string, props: Record<string, unknown>, _children?: unknown): unknown => {
       if (!tpl) throw new Error(`Missing '${name}' component`);

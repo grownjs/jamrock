@@ -39,8 +39,7 @@ export function clientComponent(this: any, mod: any, context: any): { mount: (el
     vnode = await next(el.__state);
 
     if (!el.__vnode) {
-      while (el.firstChild) el.removeChild(el.firstChild);
-      this.renderToElement(el, vnode);
+      this.hydrateToElement(el, vnode);
       el.__vnode = vnode;
     } else if (context?.sync) {
       context.sync(vnode, _events);

@@ -134,6 +134,10 @@ export function cssify(styles: any[]): string {
 
 export function taggify(vnode: any, callback?: (chunk: any) => void): any {
   if (Is.not(vnode)) return;
+  if (Is.plain(vnode) && (vnode as any).__hydrate) {
+    const marker = `<!--${(vnode as any).__hydrate}-->`;
+    return Is.func(callback) ? callback(marker) : marker;
+  }
   if (!Is.arr(vnode)) {
     return Is.func(callback) ? callback(str(vnode)) : str(vnode);
   }
