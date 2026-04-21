@@ -58,9 +58,9 @@
 <section class="quickstart">
 <h2>Try it now</h2>
 <p>Install <strong>jamrock</strong> and pick a runtime — <code>node</code>, <code>deno</code>, or <code>bun</code>:</p>
-<pre class="hljs"><code><b>curl</b> -L get.jamrock.dev | <b>bash</b></code></pre>
+<pre class="hljs terminal"><code><b>curl</b> -L get.jamrock.dev | <b>bash</b></code></pre>
 <p>Then scaffold your first app:</p>
-<pre class="hljs"><code><b>jamrock</b> init <em>my-app</em>
+<pre class="hljs terminal"><code><b>jamrock</b> init <em>my-app</em>
 <b>cd</b> <em>my-app</em> &amp;&amp; <b>npm</b> install
 <b>npm</b> run dev
 <br />

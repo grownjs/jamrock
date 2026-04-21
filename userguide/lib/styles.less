@@ -535,6 +535,40 @@ h4 { color: @mantis; }
 }
 
 // ===========================================================================
+// Terminal Frame
+// ===========================================================================
+
+pre.hljs.terminal {
+  position: relative;
+  padding-top: 2.4rem;
+  border-radius: 6px;
+
+  &::before {
+    content: '';
+    position: absolute;
+    inset: 0 0 auto 0;
+    height: 2rem;
+    background-color: rgba(255, 255, 255, .04);
+    border-bottom: 1px solid rgba(255, 255, 255, .07);
+    border-radius: 6px 6px 0 0;
+    pointer-events: none;
+  }
+
+  &::after {
+    content: '';
+    position: absolute;
+    top: .66rem;
+    left: .8rem;
+    width: .68rem;
+    height: .68rem;
+    border-radius: 50%;
+    background-color: #FF5F57;
+    box-shadow: 1.1rem 0 0 #FEBC2E, 2.2rem 0 0 #28C840;
+    pointer-events: none;
+  }
+}
+
+// ===========================================================================
 // Responsive Breakpoints
 // ===========================================================================
 
