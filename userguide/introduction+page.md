@@ -2,6 +2,22 @@
   <title>Jamrock | Introduction</title>
 </head>
 
+# Introduction
+
+Jamrock is built on one idea: **the server should do as much as possible, and the browser only what it must.**
+
+This leads to a three-layer model. Each layer is optional — use only what you need:
+
+| Layer | Runs on | Purpose |
+|-------|---------|---------|
+| **Server** | Server, at request time | Render HTML, handle data, auth, routing |
+| **Fragment** | Server, via SSE | Live-update named regions without a full reload |
+| **Client** | Browser | Fine-grained reactivity when the server isn't enough |
+
+Most pages only ever touch the first layer. A live feed adds the second. A counter or autocomplete field adds the third. There is no "app shell", no client router, no hydration tax unless you opt in.
+
+---
+
 # The building blocks
 
 Everything starts from somewhere,
@@ -174,7 +190,7 @@ The framework will handle the response for you in such cases.
   <span>
     ➯ Next: <a href="/command-line#top">Command Line</a>
   </span>
-  <a href="/#top">
+  <a href="/introduction#top">
     &uarr; Back to the top
   </a>
 </nav>
