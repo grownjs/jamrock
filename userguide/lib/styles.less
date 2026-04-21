@@ -482,7 +482,7 @@ h4 { color: @mantis; }
     column-count: 3;
     column-gap: 1.5rem;
 
-    .hero-words, hr, .quickstart, .install-out, .home-nav, p:has(+ pre[data-lang=shell]) { column-span: all; }
+    .hero-words, hr, .quickstart, .home-nav { column-span: all; }
 
     .layer { margin-top: 0; break-inside: avoid; }
     .layer + pre.hljs { break-inside: avoid; break-before: avoid; }
@@ -490,32 +490,15 @@ h4 { color: @mantis; }
 }
 
 .quickstart {
+  max-width: 32em;
+  margin-left: auto;
+  margin-right: auto;
   h2 { margin-top: 0; }
-
-  .install-cmd {
-    font-size: .85rem;
-    padding: .75rem 1rem;
-  }
-
-  .install-steps {
-    font-size: .82rem;
-    padding: .75rem 1rem;
-  }
-
-  .install-out {
-    font-size: .8rem;
-    line-height: 1.7;
-    font-family: monospace;
-    color: @light;
-    background-color: rgba(0, 0, 0, .2);
-    border-radius: 4px;
-    padding: .6rem 1rem;
-    border: 1px solid @gunmetal;
-    margin-top: .75rem;
-  }
 }
 
-.out-dim { color: @darker; }
+.out-dim { color: @light; }
+
+.hljs .out-dim { color: @light; font-style: normal; }
 
 .home-nav {
   padding: .5rem 0 2rem;

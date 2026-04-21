@@ -58,24 +58,16 @@
 <section class="quickstart">
 <h2>Try it now</h2>
 <p>Install <strong>jamrock</strong> and pick a runtime — <code>node</code>, <code>deno</code>, or <code>bun</code>:</p>
-</section>
-
-```shell
-curl -L get.jamrock.dev | bash
-```
-
+<pre class="hljs"><code><b>curl</b> -L get.jamrock.dev | <b>bash</b></code></pre>
 <p>Then scaffold your first app:</p>
-
-```shell
-jamrock init my-app
-cd my-app && npm install
-npm run dev
-```
-
-<p class="install-out"><span class="out-dim">■</span> <strong>Jamrock v0.0.0</strong> <span class="out-dim">(node v23)</span><br />
-  <span class="out-dim">Processing</span> ./pages <span class="out-dim">→</span> ./build<br />
-  <span class="out-dim">Listening on</span> <a href="http://localhost:8080" target="_blank">http://localhost:8080</a>
-</p>
+<pre class="hljs"><code><b>jamrock</b> init <em>my-app</em>
+<b>cd</b> <em>my-app</em> &amp;&amp; <b>npm</b> install
+<b>npm</b> run dev
+<br />
+<span class="out-dim">■ Jamrock v0.0.0 (node v24)</span>
+<span class="out-dim">Processing ./pages → ./build</span>
+<span class="out-dim">Listening on</span> http://localhost:8080</code></pre>
+</section>
 
 ---
 
