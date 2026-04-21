@@ -1,6 +1,6 @@
 /* eslint-disable no-unused-expressions */
 
-/* global fixture, test */
+/* global fixture */
 
 fixture`RPC async functions`
   .page`http://localhost:3000/rpc-async`

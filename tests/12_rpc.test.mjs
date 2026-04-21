@@ -1,6 +1,5 @@
 import { test } from '@japa/runner';
 import * as td from 'testdouble';
-import * as path from 'path';
 
 import { streamify } from '../src/templ/send.ts';
 import { fixture, setup, reset } from './helpers/utils.mjs';
@@ -749,7 +748,7 @@ test.group('Recursive Comments RPC', t => {
 
     const root = await mod.addComment('Root comment', 'Dave');
     const reply1 = await mod.addComment('First reply', 'Eve', root.id);
-    const reply2 = await mod.addComment('Second reply', 'Frank', root.id);
+    const _reply2 = await mod.addComment('Second reply', 'Frank', root.id);
     await mod.addComment('Reply to first', 'Grace', reply1.id);
 
     const thread = await mod.getThread(root.id);
@@ -1077,7 +1076,7 @@ test.group('dispatch trigger', () => {
     expect(handlerCalled).toBe(true);
   });
 
-test('rerenderFragment should produce vnode arrays from fragment render function', async ({ expect }) => {
+  test('rerenderFragment should produce vnode arrays from fragment render function', async ({ expect }) => {
     const { dispatch } = await import('../src/handler/dispatch.ts');
 
     const state = { items: ['a', 'b'] };
@@ -1086,7 +1085,7 @@ test('rerenderFragment should produce vnode arrays from fragment render function
 
     const messages = [];
 
-    const $$ = {
+    const _$1 = {
       e: (tag, attrs, children) => [tag, attrs, children],
       $: v => String(v ?? ''),
       map: (items, body) => items.map(body),
@@ -1106,7 +1105,7 @@ test('rerenderFragment should produce vnode arrays from fragment render function
       __fragments: {
         'live-comments': {
           s: ['items'],
-          r: ($$, props) => $$.e('ul', {}, props.items.map(item => $$.e('li', {}, [item]))),
+          r: (_$x, props) => _$x.e('ul', {}, props.items.map(item => _$x.e('li', {}, [item]))),
           a: () => ({}),
         },
       },
@@ -1296,12 +1295,12 @@ test('rerenderFragment should produce vnode arrays from fragment render function
     expect(result).toEqual(['br', {}, []]);
   });
 
-test('rpc:update preserves fragment element in dispatched vnode', async ({ expect }) => {
+  test('rpc:update preserves fragment element in dispatched vnode', async ({ expect }) => {
     const { dispatch } = await import('../src/handler/dispatch.ts');
 
-    let changed = false;
+    let _changed = false;
     const data = [{ id: 1, body: 'hello' }];
-    const mockFn = () => { changed = true; data.push({ id: 2, body: 'world' }); };
+    const mockFn = () => { _changed = true; data.push({ id: 2, body: 'world' }); };
 
     const messages = [];
 
@@ -1313,9 +1312,9 @@ test('rpc:update preserves fragment element in dispatched vnode', async ({ expec
         return { __context };
       },
       __fragments: {
-        'items': {
+        items: {
           s: ['data', 'addItem'],
-          r: ($$) => [
+          r: _$2 => [
             ['fragment', { name: 'items', key: 'main' }, [
               ['li', { '@location': 'test:1' }, ['hello']],
             ]],
@@ -1338,7 +1337,15 @@ test('rpc:update preserves fragment element in dispatched vnode', async ({ expec
 
     const tabIdx = msg.indexOf('\t');
     const payload = msg.substring(tabIdx + 1);
-    const decoded = JSON.parse(decodeURIComponent(payload.replace(/&lt;/g, '<').replace(/&gt;/g, '>').replace(/&amp;/g, '&').replace(/&quot;/g, '"')));
+    const decoded = JSON.parse(
+      decodeURIComponent(
+        payload
+          .replace(/&lt;/g, '<')
+          .replace(/&gt;/g, '>')
+          .replace(/&amp;/g, '&')
+          .replace(/&quot;/g, '"'),
+      ),
+    );
 
     const vnodeStr = JSON.stringify(decoded);
     expect(vnodeStr).toContain('"fragment"');
