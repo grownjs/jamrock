@@ -87,6 +87,32 @@ Display: `label`, `image`, `spinner`, `progress`, `level`, `calendar`, `clock`, 
 > [!NOTE]
 > GTK4 apps use the same component syntax as web apps, but with GTK widget elements instead of HTML.
 
+### Layout Utilities
+
+The `class` attribute on GTK widgets expands shorthand tokens into native widget properties — similar to Tailwind, but mapping directly to GTK:
+
+| Class | GTK property |
+| - | - |
+| `hx` | `hexpand: true` |
+| `vx` | `vexpand: true` |
+| `m-2` | all margins × `2 * 8px` |
+| `mx-1` / `my-1` | horizontal / vertical margins |
+| `mt-1` / `mb-1` / `ms-1` / `me-1` | individual margin edges |
+| `sp-2` | `spacing: 2 * 8px` |
+| `w-200` / `h-100` | `width_request` / `height_request` in px |
+| `o-5` | `opacity: 0.5` (value ÷ 10) |
+| `ha-start` / `ha-end` / `ha-center` / `ha-fill` | `halign` |
+| `va-start` / `va-end` / `va-center` / `va-fill` | `valign` |
+| `bo-vertical` / `bo-horizontal` | `orientation` |
+
+Any unrecognized token is passed through as a CSS class name via `add_css_class`. You can mix both in one attribute:
+
+```html
+<vstack class="hx sp-2">
+  <label class="ha-center my-widget-label">Hello</label>
+</vstack>
+```
+
 ---
 
 ## Static Export
