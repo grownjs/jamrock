@@ -14,10 +14,6 @@ Jamrock supports multiple runtimes and deployment targets. Choose the one that f
 | Deno | Stable | TypeScript-native, secure defaults |
 | Bun | Stable | Fast startup, Node-compatible |
 | GTK4/GJS | Experimental | Desktop applications |
-| WinterJS | WIP | Serverless, WinterCG compatible |
-| Cloudflare Workers | WIP | Edge deployment |
-| Vercel Edge | WIP | Vercel platform |
-| AWS LLRT | WIP | AWS Lambda |
 
 ## Building for Production
 
