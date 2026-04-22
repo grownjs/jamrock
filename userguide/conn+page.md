@@ -19,7 +19,7 @@ The connection context wraps the current request and response. Import only what 
 | `req` | object | Standard `Request` object |
 | `method` | string | `GET`, `POST`, `PUT`, `PATCH`, `DELETE` |
 | `params` | object | Merged query + body + path params |
-| `path_params` | object | Route parameters only (`:name` → `{ name }`) |
+| `path_params` | object | Route parameters only (`:name` → `&lbrace; name }`) |
 | `query_params` | object | URL query string as object |
 | `body_params` | object | Parsed request body |
 | `request_path` | string | URL pathname (`/path/to/x`) |

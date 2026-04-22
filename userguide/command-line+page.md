@@ -34,12 +34,12 @@ Run `jamrock --help` for a quick glance:
 
   <b>init</b>   Generates a new application into the given directory
   <b>serve</b>  Starts the web-server on the given <var>--port</var> and <var>--host</var>
-  <b>build</b>  Compiles *.{md,html} sources into server-components
+  <b>build</b>  Compiles *.&lbrace;md,html} sources into server-components
   <b>route</b>  Prints the available routes found
 
 <span class="out-dim">Options:</span>
 
-  <var>--src</var>      Directory of *.{md,html} files to compile <em>(default is ./pages)</em>
+  <var>--src</var>      Directory of *.&lbrace;md,html} files to compile <em>(default is ./pages)</em>
   <var>--dest</var>     Destination for compiled files <em>(default is ./build)</em>
 
   <var>--watch</var>    Enable file-watching on the web-server

@@ -202,7 +202,7 @@ For client-side scripts that need to call server functions directly, import `rpc
 <button onclick={handleClick}>Like</button>
 ```
 
-This sends a `POST` to `/_rpc/{module}/{fn}` and returns the server function's return value. Fragments are still re-rendered server-side — the client just receives confirmation.
+This sends a `POST` to `/_rpc/&lbrace;module}/&lbrace;fn}` and returns the server function's return value. Fragments are still re-rendered server-side — the client just receives confirmation.
 
 > [!TIP]
 > Prefer `rpc:call` for most cases — it's declarative and wires directly to DOM events with no client script required. Reach for `rpc()` when you need async control flow on the client.

@@ -8,7 +8,7 @@ Jamrock supports four event patterns, each at a different layer. Pick the one th
 
 | Pattern | Runs on | Use when |
 |---------|---------|----------|
-| `onclick={fn}` | Browser | Pure client interaction, no server needed |
+| `onclick=&lbrace;fn}` | Browser | Pure client interaction, no server needed |
 | `on:click` + hydration | Browser, lazy | Same, but loaded on demand |
 | `@on:submit` | Server | Form submission handled server-side, no full reload |
 | `rpc:call` | Server (SSE) | Trigger a server function, patch live fragments |

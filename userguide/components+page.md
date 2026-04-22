@@ -8,7 +8,7 @@
 
 # Components
 
-Every `.{html,md}` file in your `pages/` directory is a component. What a component *does* depends on which script context it uses:
+Every `.&lbrace;html,md}` file in your `pages/` directory is a component. What a component *does* depends on which script context it uses:
 
 | Context | Runs | Has access to |
 |---------|------|--------------|

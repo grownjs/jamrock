@@ -152,9 +152,9 @@ Create a mutable reference (useful for DOM references):
 
 | Template | Compiled |
 |----------|----------|
-| `{$count}` | `count.value` |
-| `{$count + 1}` | `count.value + 1` |
-| `class="btn-{$count}"` | `"btn-" + count.value` |
+| `&lbrace;$count}` | `count.value` |
+| `&lbrace;$count + 1}` | `count.value + 1` |
+| `class="btn-&lbrace;$count}"` | `"btn-" + count.value` |
 
 <nav class="flex gap-sm between">
   <span>
