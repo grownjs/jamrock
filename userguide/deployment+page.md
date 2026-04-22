@@ -87,32 +87,6 @@ Display: `label`, `image`, `spinner`, `progress`, `level`, `calendar`, `clock`, 
 > [!NOTE]
 > GTK4 apps use the same component syntax as web apps, but with GTK widget elements instead of HTML.
 
-### Server Handlers
-
-GJS uses a synchronous request path (`createResponseSync`) — the GLib main loop drives async, but server handlers must return a response directly. No `async/await` or Promises in `+server.mjs`:
-
-```js
-// OK — synchronous
-export default {
-  ['GET /data']() {
-    return Response.json({ items: [1, 2, 3] });
-  },
-};
-```
-
-```js
-// Not supported — async handlers won't resolve
-export default {
-  async ['GET /data']() {
-    const data = await fetchSomething(); // will not work
-    return Response.json(data);
-  },
-};
-```
-
-> [!NOTE]
-> Component `<script>` blocks can still use signals and reactive state — the async limitation applies to HTTP route handlers only.
-
 ### Layout Utilities
 
 The `class` attribute on GTK widgets expands shorthand tokens into native widget properties — similar to Tailwind, but mapping directly to GTK:
