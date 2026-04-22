@@ -28,15 +28,11 @@ This creates a `dist/` directory with compiled templates, bundled assets, and st
 ## Node.js
 
 <pre class="hljs terminal"><code><span class="out-dim"># Development</span>
-<b>jamrock</b> dev
+<b>./bin/node</b> dev
 
 <span class="out-dim"># Production</span>
-<b>jamrock</b> build
-<b>node</b> dist/server.mjs</code></pre>
-
-Or use the CLI directly:
-
-<pre class="hljs terminal"><code><b>jamrock</b> serve --port 3000</code></pre>
+<b>./bin/node</b> build
+<b>./bin/node</b> serve</code></pre>
 
 ### Docker
 
@@ -46,9 +42,9 @@ WORKDIR /app
 COPY package*.json ./
 RUN npm ci --omit=dev
 COPY . .
-RUN npx jamrock build
+RUN ./bin/node build
 EXPOSE 3000
-CMD ["node", "dist/server.mjs"]
+CMD ["./bin/node", "serve"]
 ```
 
 ---
@@ -56,20 +52,22 @@ CMD ["node", "dist/server.mjs"]
 ## Deno
 
 <pre class="hljs terminal"><code><span class="out-dim"># Development</span>
-<b>deno</b> run --allow-all lib/deno/main.mjs
+<b>./bin/deno</b> dev
 
 <span class="out-dim"># Production</span>
-<b>deno</b> run --allow-all dist/server.mjs</code></pre>
+<b>./bin/deno</b> build
+<b>./bin/deno</b> serve</code></pre>
 
 ---
 
 ## Bun
 
 <pre class="hljs terminal"><code><span class="out-dim"># Development</span>
-<b>bun</b> run lib/bun/main.mjs
+<b>./bin/bun</b> dev
 
 <span class="out-dim"># Production</span>
-<b>bun</b> run dist/server.mjs</code></pre>
+<b>./bin/bun</b> build
+<b>./bin/bun</b> serve</code></pre>
 
 ---
 
