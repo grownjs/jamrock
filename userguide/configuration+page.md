@@ -105,9 +105,7 @@ Access environment variables in your components:
 
 Set variables during build:
 
-```bash
-GIT_REVISION=$(git rev-parse HEAD) jamrock build
-```
+<pre class="hljs terminal"><code><b>GIT_REVISION</b>=$(git rev-parse HEAD) <b>jamrock</b> build</code></pre>
 
 ## Runtime-Specific Config
 

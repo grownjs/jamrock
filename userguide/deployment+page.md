@@ -4,7 +4,7 @@
 
 # Deployment
 
-Jamrock supports multiple runtimes and deployment targets. Choose the one that fits your infrastructure.
+Jamrock supports multiple runtimes. Choose the one that fits your infrastructure.
 
 ## Supported Runtimes
 
@@ -19,37 +19,28 @@ Jamrock supports multiple runtimes and deployment targets. Choose the one that f
 
 Build your application before deployment:
 
-```bash
-jamrock build
-```
+<pre class="hljs terminal"><code><b>jamrock</b> build</code></pre>
 
-This creates a `dist/` directory with:
-- Compiled templates
-- Bundled assets
-- Static files
+This creates a `dist/` directory with compiled templates, bundled assets, and static files.
+
+---
 
 ## Node.js
 
-The primary deployment target:
+<pre class="hljs terminal"><code><span class="out-dim"># Development</span>
+<b>jamrock</b> dev
 
-```bash
-# Development
-jamrock dev
+<span class="out-dim"># Production</span>
+<b>jamrock</b> build
+<b>node</b> dist/server.mjs</code></pre>
 
-# Production
-jamrock build
-node dist/server.mjs
-```
+Or use the CLI directly:
 
-Or use the CLI:
-
-```bash
-jamrock serve --port 3000
-```
+<pre class="hljs terminal"><code><b>jamrock</b> serve --port 3000</code></pre>
 
 ### Docker
 
-```dockerfile
+```html
 FROM node:20-alpine
 WORKDIR /app
 COPY package*.json ./
@@ -60,47 +51,37 @@ EXPOSE 3000
 CMD ["node", "dist/server.mjs"]
 ```
 
+---
+
 ## Deno
 
-```bash
-# Development
-deno run --allow-all --unstable lib/deno/main.mjs
+<pre class="hljs terminal"><code><span class="out-dim"># Development</span>
+<b>deno</b> run --allow-all lib/deno/main.mjs
 
-# Production
-deno run --allow-all --unstable dist/server.mjs
-```
+<span class="out-dim"># Production</span>
+<b>deno</b> run --allow-all dist/server.mjs</code></pre>
 
-### Deno Deploy
-
-Deno Deploy works with minimal configuration:
-
-```js
-import { createEnvironment } from './dist/server.mjs';
-
-Deno.serve(handler);
-```
+---
 
 ## Bun
 
-```bash
-# Development
-bun run lib/bun/main.mjs
+<pre class="hljs terminal"><code><span class="out-dim"># Development</span>
+<b>bun</b> run lib/bun/main.mjs
 
-# Production
-bun run dist/server.mjs
-```
+<span class="out-dim"># Production</span>
+<b>bun</b> run dist/server.mjs</code></pre>
+
+---
 
 ## GTK4 Desktop Apps
 
 Build native desktop applications with GTK4 widgets:
 
-```bash
-# Development
-./bin/gjs serve --src playground
+<pre class="hljs terminal"><code><span class="out-dim"># Development server</span>
+<b>./bin/gjs</b> serve --src playground
 
-# Run the explorer
-./bin/gjs explorer
-```
+<span class="out-dim"># Widget explorer</span>
+<b>./bin/gjs</b> explorer</code></pre>
 
 ### Available Widgets
 
@@ -125,18 +106,17 @@ Display: `label`, `image`, `spinner`, `progress`, `level`, `calendar`, `clock`, 
 ```
 
 > [!NOTE]
-> GTK4 apps use the same component syntax as web apps, but with GTK-specific elements instead of HTML.
+> GTK4 apps use the same component syntax as web apps, but with GTK widget elements instead of HTML.
+
+---
 
 ## Static Export
 
-For static hosting (GitHub Pages, Netlify, etc.):
+Pre-render all routes to static HTML for hosting on GitHub Pages, Netlify, or any CDN:
 
-1. Pre-render routes at build time
-2. Serve as static HTML
+<pre class="hljs terminal"><code><b>jamrock</b> build &amp;&amp; <b>jamrock</b> write</code></pre>
 
-```bash
-jamrock build && jamrock write
-```
+---
 
 ## Session Storage
 
@@ -144,19 +124,18 @@ For production, configure a persistent session store:
 
 ```js
 export default {
-  session: {
-    store: 'redis',
+  redis: {
     url: process.env.REDIS_URL,
   },
 };
 ```
 
 > [!NOTE]
-> In serverless environments, use external session storage like Redis, DynamoDB, or Upstash.
+> The default memory store is fine for development. Use Redis for any multi-instance or persistent production setup.
 
 ## Health Checks
 
-Add a health endpoint:
+Add a health endpoint in your `+server.mjs`:
 
 ```js
 export default {
