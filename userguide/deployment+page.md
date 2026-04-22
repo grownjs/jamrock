@@ -25,14 +25,17 @@ This creates a `dist/` directory with compiled templates, bundled assets, and st
 
 ---
 
-## Node.js
+## Running the Server
 
-<pre class="hljs terminal"><code><span class="out-dim"># Development</span>
+Use the `./bin/RUNTIME` wrapper for your preferred runtime — the commands are identical across all three:
+
+<pre class="hljs terminal"><code><span class="out-dim"># Development (pick your runtime)</span>
 <b>./bin/node</b> dev
+<b>./bin/deno</b> dev
+<b>./bin/bun</b>  dev
 
 <span class="out-dim"># Production</span>
-<b>./bin/node</b> build
-<b>./bin/node</b> serve</code></pre>
+<b>./bin/node</b> build &amp;&amp; <b>./bin/node</b> serve</code></pre>
 
 ### Docker
 
@@ -46,28 +49,6 @@ RUN ./bin/node build
 EXPOSE 3000
 CMD ["./bin/node", "serve"]
 ```
-
----
-
-## Deno
-
-<pre class="hljs terminal"><code><span class="out-dim"># Development</span>
-<b>./bin/deno</b> dev
-
-<span class="out-dim"># Production</span>
-<b>./bin/deno</b> build
-<b>./bin/deno</b> serve</code></pre>
-
----
-
-## Bun
-
-<pre class="hljs terminal"><code><span class="out-dim"># Development</span>
-<b>./bin/bun</b> dev
-
-<span class="out-dim"># Production</span>
-<b>./bin/bun</b> build
-<b>./bin/bun</b> serve</code></pre>
 
 ---
 
