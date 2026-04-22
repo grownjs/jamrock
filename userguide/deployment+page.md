@@ -29,7 +29,7 @@ This creates a `dist/` directory with compiled templates, bundled assets, and st
 
 Use the `./bin/RUNTIME` wrapper for your preferred runtime — the commands are identical across all three:
 
-<pre class="hljs terminal"><code><span class="out-dim"># Development (pick your runtime)</span>
+<pre class="hljs terminal"><code><span class="out-dim"># Development (pick your poison)</span>
 <b>./bin/node</b> dev
 <b>./bin/deno</b> dev
 <b>./bin/bun</b>  dev
