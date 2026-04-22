@@ -145,7 +145,7 @@ Detect the environment in your code:
   <span>
     ➯ Next: <a href="/deployment#top">Deployment</a>
   </span>
-  <a href="/#top">
+  <a href="/configuration#top">
     &uarr; Back to the top
   </a>
 </nav>

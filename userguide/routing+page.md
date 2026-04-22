@@ -107,7 +107,7 @@ Use `[.ext]` to preserve file extensions in routes:
   <span>
     ➯ Next: <a href="/configuration#top">Configuration</a>
   </span>
-  <a href="/#top">
+  <a href="/routing#top">
     &uarr; Back to the top
   </a>
 </nav>

@@ -139,7 +139,7 @@ For static hosting (GitHub Pages, Netlify, etc.):
 2. Serve as static HTML
 
 ```bash
-jamrock build --static
+jamrock build && jamrock write
 ```
 
 ## Session Storage
@@ -174,7 +174,7 @@ export default {
   <span>
     ➯ Next: <a href="/styling#top">Styling</a>
   </span>
-  <a href="/#top">
+  <a href="/deployment#top">
     &uarr; Back to the top
   </a>
 </nav>
