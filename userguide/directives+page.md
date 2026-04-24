@@ -4,10 +4,22 @@
 
 # Directives
 
-In **Jamrock** you can do some progressive enhancement just by using html attributes.
+Directives are special HTML attributes that tell the framework how to handle an element — on the server, in the browser, or both.
 
-Those will tell the framework how to behave and decorate as needed,
-either on the server or client-side.
+## Attribute Conventions
+
+| Prefix | Rendered as | Purpose |
+| - | - | - |
+| `class:name` | `class="name"` (conditional) | Toggle a CSS class |
+| `style:prop` | `style="prop: ..."` | Set a single style property |
+| `bind:value` | `data-bind="value"` | Two-way client binding |
+| `on:event` | `data-on="event"` | Hydration strategy or delegated event |
+| `use:action` | `data-use="action"` | Attach a client-side action |
+| `rpc:call` | `data-rpc:call="fn"` | Wire a server function to an event |
+| `@attr` | `data-attr` | Arbitrary `data-*` decoration |
+
+> [!NOTE]
+> Prefixed attributes become `data-*` in the output — they carry no runtime cost until JavaScript reads them.
 
 ## Special attributes
 
@@ -142,6 +154,37 @@ this is the dumbest way to make it conditional.
 > that's what a progressive enhancement is.
 >
 > We're about to dig into that, let's continue!
+
+---
+
+## RPC Directives
+
+### rpc:call
+
+Wires a DOM event to a `context="module"` server export. When the event fires, the function runs on the server and any dirty fragments in the component are re-rendered and pushed via SSE.
+
+```html
+<button rpc:call="addItem">Add</button>
+```
+
+```html
+<!-- Pass a value alongside the call -->
+<button rpc:call="removeItem" name="id" value="42">Remove</button>
+```
+
+> [!TIP]
+> See [RPC](/rpc#top) for the full cycle and how to define the server function.
+
+### rpc:yield
+
+Marks an element as a yield target — a named slot where the server can push out-of-band HTML updates independently of the surrounding fragment.
+
+```html
+<span rpc:yield="status">Pending</span>
+```
+
+> [!NOTE]
+> `rpc:yield` is used for fine-grained partial updates within a fragment, without re-rendering the whole fragment.
 
 <nav class="flex gap-sm between">
   <span>

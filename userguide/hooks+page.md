@@ -4,9 +4,9 @@
 
 # Hooks
 
-Jamrock uses **signals** from somedom for fine-grained reactivity in both SSR and client-side contexts.
+Reactive primitives from **somedom** — available in all script contexts. Server renders use them for HTML output; the client uses them for live DOM updates.
 
-## Available APIs
+## Signals API
 
 ### signal
 
@@ -140,18 +140,19 @@ Create a mutable reference (useful for DOM references):
 
 ## SSR vs Client Behavior
 
-| Context | Behavior |
-|---------|----------|
-| SSR | Signals are evaluated to their values for HTML stringification |
-| Client | `$signal` functions are preserved for somedom reactivity |
+| | SSR | Client |
+| - | - | - |
+| `signal(x)` | Stringified as `x` | Reactive — triggers DOM patches |
+| `computed(fn)` | Evaluated once | Re-evaluates when deps change |
+| `effect(fn)` | Not executed | Runs and re-runs on dep change |
 
 > [!IMPORTANT]
-> `$$props` is NOT a signal — it's the props object. Never use `.value` on it.
+> `$$props` is NOT a signal — it's the component props object. Never call `.value` on it.
 
 ## Template Syntax
 
-| Template | Compiled |
-|----------|----------|
+| Template | Compiles to |
+| - | - |
 | `&lbrace;$count}` | `count.value` |
 | `&lbrace;$count + 1}` | `count.value + 1` |
 | `class="btn-&lbrace;$count}"` | `"btn-" + count.value` |

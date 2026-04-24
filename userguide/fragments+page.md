@@ -116,21 +116,42 @@ The framework will resume the iterators and new items will be sent to the browse
 
 ---
 
-## Patching components
+## Initial Load
 
-**Jamrock** will handle these updates for you.
-
-i.e, you may have a client-side component this way:
+On first render, fragment content is inlined into the page as a JSON snapshot so the browser can hydrate without an extra round-trip:
 
 ```html
-<Example value="42" on:interaction />
+<script>
+  window.__f = window.__f || {};
+  window.__f["a-list"] = { html: "...", key: "..." };
+</script>
 ```
 
+Queued updates that arrive before the SSE connection is ready are buffered in `window.__fq` and flushed automatically once the socket opens.
+
+---
+
+## Cross-tab Sync
+
+Fragments with a `name` attribute participate in cross-tab synchronization via `BroadcastChannel`. When the server pushes an update, all open tabs showing the same fragment receive the patch — no extra setup required.
+
+> [!NOTE]
+> This works automatically for same-origin tabs. Each fragment name is the channel identifier.
+
+---
+
+## Patching components
+
+Components included with a custom `tag` attribute are also fragments and can be re-rendered the same way:
+
+```html
+<Example tag="article" value="42" on:interaction />
+```
+
+This renders as `<article data-component="...">` and participates in the same dirty-check + SSE push cycle as named fragments.
+
 > [!TIP]
-> These components are always server-side rendered,
-> and optionally instantiated on the client-side if needed.
->
-> We'll explore that on the [next section](/directives#top)!
+> Components are always server-rendered first. The `on:` attribute controls when (and whether) the client-side script is instantiated.
 
 <nav class="flex gap-sm between">
   <span>
