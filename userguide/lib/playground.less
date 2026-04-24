@@ -1,0 +1,238 @@
+// ===========================================================================
+// Playground — full-screen overlay, three-panel layout
+// ===========================================================================
+
+@pg-bg:      @rich-black;
+@pg-border:  fade(@lighter, 12%);
+@pg-active:  fade(@mantis, 12%);
+@pg-toolbar: #0a1c2a;
+
+.pg {
+  position: fixed;
+  inset: 0;
+  z-index: 100;
+  display: grid;
+  grid-template-rows: 2.6rem 1fr 10rem;
+  background: @pg-bg;
+  font-family: 'Montserrat', sans-serif;
+  font-size: .85rem;
+  color: @lighter;
+}
+
+// ---------------------------------------------------------------------------
+// Toolbar
+// ---------------------------------------------------------------------------
+
+.pg-toolbar {
+  display: flex;
+  align-items: center;
+  gap: .5rem;
+  padding: 0 .75rem;
+  background: @pg-toolbar;
+  border-bottom: 1px solid @pg-border;
+}
+
+.pg-starters {
+  display: flex;
+  gap: .25rem;
+  margin-right: .5rem;
+  border-right: 1px solid @pg-border;
+  padding-right: .75rem;
+}
+
+.pg-starter {
+  padding: .2rem .65rem;
+  border-radius: 3px;
+  border: 1px solid transparent;
+  background: none;
+  color: @lighter;
+  cursor: pointer;
+  font-size: .78rem;
+  font-family: inherit;
+  transition: background .15s, color .15s;
+
+  &:hover { background: fade(@lighter, 8%); color: @white; }
+  &.active {
+    background: @pg-active;
+    border-color: fade(@mantis, 30%);
+    color: @mantis;
+  }
+}
+
+.pg-filetabs {
+  display: flex;
+  gap: .25rem;
+  flex: 1;
+  overflow: hidden;
+}
+
+.pg-filetab {
+  padding: .2rem .65rem;
+  border-radius: 3px;
+  border: 1px solid transparent;
+  background: none;
+  color: @light;
+  cursor: pointer;
+  font-size: .78rem;
+  font-family: 'Courier New', monospace;
+  white-space: nowrap;
+  transition: background .15s, color .15s;
+
+  &:hover { background: fade(@lighter, 8%); color: @white; }
+  &.active {
+    background: fade(@lighter, 6%);
+    border-color: @pg-border;
+    color: @white;
+  }
+}
+
+.pg-run {
+  margin-left: auto;
+  padding: .25rem .8rem;
+  border-radius: 4px;
+  border: 1px solid fade(@mantis, 40%);
+  background: fade(@mantis, 10%);
+  color: @mantis;
+  font-size: .78rem;
+  font-family: inherit;
+  font-weight: bold;
+  cursor: pointer;
+  transition: background .15s;
+
+  &:hover { background: fade(@mantis, 20%); }
+  &:disabled { opacity: .45; cursor: not-allowed; }
+}
+
+.pg-urlbar {
+  flex: 0 0 16rem;
+  padding: .2rem .5rem;
+  border-radius: 3px;
+  border: 1px solid @pg-border;
+  background: fade(@lighter, 4%);
+  color: @lighter;
+  font-size: .75rem;
+  font-family: 'Courier New', monospace;
+  outline: none;
+
+  &:focus { border-color: fade(@mantis, 40%); }
+}
+
+.pg-open {
+  color: @light;
+  text-decoration: none;
+  font-size: .9rem;
+  padding: .1rem .3rem;
+  border-radius: 3px;
+  transition: color .15s;
+
+  &:hover { color: @white; }
+}
+
+// ---------------------------------------------------------------------------
+// Body — three columns
+// ---------------------------------------------------------------------------
+
+.pg-body {
+  display: grid;
+  grid-template-columns: 11rem 1fr 1fr;
+  overflow: hidden;
+  border-bottom: 1px solid @pg-border;
+}
+
+// ---------------------------------------------------------------------------
+// File tree
+// ---------------------------------------------------------------------------
+
+.pg-tree {
+  list-style: none;
+  margin: 0;
+  padding: .5rem 0;
+  border-right: 1px solid @pg-border;
+  overflow-y: auto;
+  background: fade(@lighter, 2%);
+}
+
+.pg-tree-item {
+  display: flex;
+  align-items: center;
+  gap: .4rem;
+  padding: .3rem .8rem;
+  cursor: pointer;
+  color: @lighter;
+  font-size: .78rem;
+  font-family: 'Courier New', monospace;
+  border-left: 2px solid transparent;
+  transition: background .1s, color .1s;
+
+  &:hover { background: fade(@lighter, 5%); color: @white; }
+
+  &.active {
+    background: @pg-active;
+    border-left-color: @mantis;
+    color: @white;
+  }
+
+  &.dir {
+    color: @information;
+    cursor: default;
+    font-weight: bold;
+    padding-top: .6rem;
+    &:hover { background: none; }
+  }
+}
+
+// ---------------------------------------------------------------------------
+// Editor (CodeMirror host)
+// ---------------------------------------------------------------------------
+
+.pg-editor {
+  overflow: hidden;
+  border-right: 1px solid @pg-border;
+
+  .cm-editor {
+    height: 100%;
+    font-size: .83rem;
+    &.cm-focused { outline: none; }
+  }
+
+  .cm-scroller { overflow: auto; }
+}
+
+// ---------------------------------------------------------------------------
+// Preview iframe
+// ---------------------------------------------------------------------------
+
+.pg-iframe {
+  width: 100%;
+  height: 100%;
+  border: none;
+  background: #fff;
+}
+
+// ---------------------------------------------------------------------------
+// Terminal
+// ---------------------------------------------------------------------------
+
+.pg-terminal {
+  margin: 0;
+  padding: .5rem .8rem;
+  overflow-y: auto;
+  font-family: 'Courier New', monospace;
+  font-size: .78rem;
+  line-height: 1.5;
+  background: #020d17;
+  border-top: 1px solid @pg-border;
+  color: @lighter;
+  white-space: pre-wrap;
+  word-break: break-all;
+}
+
+.pg-loading {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+  color: @light;
+  font-size: .85rem;
+  grid-column: 1 / -1;
+}

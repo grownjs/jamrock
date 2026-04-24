@@ -1,0 +1,362 @@
+<head>
+  <title>Jamrock | Playground</title>
+  <script src="/coi-serviceworker.js"></script>
+  <script type="importmap">{
+    "imports": {
+      "codemirror":                    "https://esm.sh/codemirror@6.0.1",
+      "@codemirror/lang-html":         "https://esm.sh/@codemirror/lang-html@6.4.9",
+      "@codemirror/lang-javascript":   "https://esm.sh/@codemirror/lang-javascript@6.2.2",
+      "@codemirror/theme-one-dark":    "https://esm.sh/@codemirror/theme-one-dark@6.1.2",
+      "@webcontainer/api":             "https://esm.sh/@webcontainer/api@1.5.4",
+      "ansi_up":                       "https://esm.sh/ansi_up@6.0.2"
+    }
+  }</script>
+</head>
+
+<style global src="./lib/playground.less" />
+
+<div class="pg" id="playground">
+
+  <div class="pg-toolbar">
+    <div class="pg-starters">
+      <button class="pg-starter active" data-starter="hello">Hello</button>
+      <button class="pg-starter" data-starter="counter">Counter</button>
+      <button class="pg-starter" data-starter="todo">Todo</button>
+    </div>
+    <div class="pg-filetabs" id="pg-filetabs"></div>
+    <button class="pg-run" id="pg-run" disabled>▶ Run</button>
+    <input class="pg-urlbar" id="pg-urlbar" readonly placeholder="http://localhost:3000" />
+    <a class="pg-open" id="pg-open" target="_blank" title="Open in new tab">↗</a>
+  </div>
+
+  <div class="pg-body">
+    <ul class="pg-tree" id="pg-tree"></ul>
+    <div class="pg-editor" id="pg-editor"></div>
+    <iframe class="pg-iframe" id="pg-iframe"
+      allow="cross-origin-isolated"
+      sandbox="allow-scripts allow-same-origin allow-forms allow-popups allow-modals">
+    </iframe>
+  </div>
+
+  <pre class="pg-terminal" id="pg-terminal"></pre>
+
+</div>
+
+<script context="client">
+import { EditorView, basicSetup } from 'codemirror';
+import { html as langHtml } from '@codemirror/lang-html';
+import { javascript as langJs } from '@codemirror/lang-javascript';
+import { oneDark } from '@codemirror/theme-one-dark';
+import { WebContainer } from '@webcontainer/api';
+import AnsiUp from 'ansi_up';
+
+// ---------------------------------------------------------------------------
+// Starter templates
+// ---------------------------------------------------------------------------
+
+const STARTERS = {
+  hello: {
+    'pages/index+page.html': [
+      '<script>',
+      "  const greeting = 'Hello, World!';",
+      '<\/script>',
+      '',
+      '<h1>{greeting}</h1>',
+      '<p>Edit this file and click <strong>Run</strong> to see changes.</p>',
+    ].join('\n'),
+    'package.json': JSON.stringify({
+      name: 'playground',
+      type: 'module',
+      scripts: { dev: 'node ./node_modules/jamrock/bin/node dev --port 3000' },
+      dependencies: { jamrock: 'latest' },
+    }, null, 2),
+  },
+
+  counter: {
+    'pages/index+page.html': [
+      '<script context="client">',
+      "  import { signal } from 'jamrock';",
+      '  const count = signal(0);',
+      '<\/script>',
+      '',
+      '<h1>Counter</h1>',
+      '<button onclick={() => count.value--}>−<\/button>',
+      '<span> {$count} <\/span>',
+      '<button onclick={() => count.value++}>+<\/button>',
+    ].join('\n'),
+    'package.json': JSON.stringify({
+      name: 'playground',
+      type: 'module',
+      scripts: { dev: 'node ./node_modules/jamrock/bin/node dev --port 3000' },
+      dependencies: { jamrock: 'latest' },
+    }, null, 2),
+  },
+
+  todo: {
+    'pages/index+page.html': [
+      '<script context="module">',
+      '  let todos = [];',
+      '',
+      '  export async function addItem(text) {',
+      '    todos.push({ id: Date.now(), text });',
+      '  }',
+      '',
+      '  export async function removeItem(id) {',
+      '    todos = todos.filter(t => t.id !== +id);',
+      '  }',
+      '<\/script>',
+      '',
+      '<h1>Todo<\/h1>',
+      '',
+      '<form @on:submit={addItem}>',
+      '  <input type="text" name="text" placeholder="New item..." required \/>',
+      '  <button>Add<\/button>',
+      '<\/form>',
+      '',
+      '<fragment name="list">',
+      '  <ul>',
+      '    {#each todos as todo}',
+      '    <li>',
+      '      {todo.text}',
+      '      <button onclick="removeItem({todo.id})">✕<\/button>',
+      '    <\/li>',
+      '    {/each}',
+      '  <\/ul>',
+      '<\/fragment>',
+    ].join('\n'),
+    'package.json': JSON.stringify({
+      name: 'playground',
+      type: 'module',
+      scripts: { dev: 'node ./node_modules/jamrock/bin/node dev --port 3000' },
+      dependencies: { jamrock: 'latest' },
+    }, null, 2),
+  },
+};
+
+// ---------------------------------------------------------------------------
+// State
+// ---------------------------------------------------------------------------
+
+const ansi = new AnsiUp();
+ansi.use_classes = true;
+
+let wc = null;
+let editor = null;
+let activeFile = null;
+let currentStarter = 'hello';
+let files = {};
+
+// ---------------------------------------------------------------------------
+// DOM refs
+// ---------------------------------------------------------------------------
+
+const $ = id => document.getElementById(id);
+const tree     = $('pg-tree');
+const filetabs = $('pg-filetabs');
+const editorEl = $('pg-editor');
+const iframe   = $('pg-iframe');
+const terminal = $('pg-terminal');
+const runBtn   = $('pg-run');
+const urlbar   = $('pg-urlbar');
+const openLink = $('pg-open');
+
+// ---------------------------------------------------------------------------
+// Terminal helpers
+// ---------------------------------------------------------------------------
+
+function termWrite(text) {
+  terminal.innerHTML += ansi.ansi_to_html(text);
+  terminal.scrollTop = terminal.scrollHeight;
+}
+
+function termClear() {
+  terminal.innerHTML = '';
+}
+
+// ---------------------------------------------------------------------------
+// CodeMirror setup
+// ---------------------------------------------------------------------------
+
+function langFor(filename) {
+  if (filename.endsWith('.html')) return langHtml();
+  if (filename.endsWith('.mjs') || filename.endsWith('.js')) return langJs();
+  return [];
+}
+
+function createEditor(content, filename) {
+  if (editor) editor.destroy();
+  editor = new EditorView({
+    doc: content,
+    extensions: [
+      basicSetup,
+      oneDark,
+      langFor(filename),
+      EditorView.updateListener.of(update => {
+        if (update.docChanged && activeFile) {
+          files[activeFile] = update.state.doc.toString();
+        }
+      }),
+    ],
+    parent: editorEl,
+  });
+}
+
+// ---------------------------------------------------------------------------
+// File tree + tabs
+// ---------------------------------------------------------------------------
+
+function renderTree() {
+  tree.innerHTML = '';
+  filetabs.innerHTML = '';
+
+  const dirs = {};
+  for (const path of Object.keys(files)) {
+    const parts = path.split('/');
+    if (parts.length > 1) dirs[parts[0]] = true;
+  }
+
+  const dirNames = Object.keys(dirs);
+  if (dirNames.length) {
+    for (const dir of dirNames) {
+      const li = document.createElement('li');
+      li.className = 'pg-tree-item dir';
+      li.textContent = dir + '/';
+      tree.appendChild(li);
+
+      for (const path of Object.keys(files).filter(p => p.startsWith(dir + '/'))) {
+        renderTreeItem(path, path.slice(dir.length + 1));
+      }
+    }
+    for (const path of Object.keys(files).filter(p => !p.includes('/'))) {
+      renderTreeItem(path, path);
+    }
+  } else {
+    for (const path of Object.keys(files)) {
+      renderTreeItem(path, path);
+    }
+  }
+
+  // file tabs for top-level files
+  for (const path of Object.keys(files).filter(p => !p.startsWith('pages/'))) {
+    const btn = document.createElement('button');
+    btn.className = 'pg-filetab' + (path === activeFile ? ' active' : '');
+    btn.textContent = path;
+    btn.onclick = () => openFile(path);
+    filetabs.appendChild(btn);
+  }
+}
+
+function renderTreeItem(path, label) {
+  const li = document.createElement('li');
+  li.className = 'pg-tree-item' + (path === activeFile ? ' active' : '');
+  li.textContent = label;
+  li.onclick = () => openFile(path);
+  tree.appendChild(li);
+}
+
+function openFile(path) {
+  activeFile = path;
+  createEditor(files[path], path);
+  renderTree();
+}
+
+// ---------------------------------------------------------------------------
+// Load starter
+// ---------------------------------------------------------------------------
+
+function loadStarter(name) {
+  currentStarter = name;
+  files = Object.assign({}, STARTERS[name]);
+  const firstPage = Object.keys(files).find(p => p.endsWith('.html')) || Object.keys(files)[0];
+  activeFile = firstPage;
+  createEditor(files[firstPage], firstPage);
+  renderTree();
+
+  document.querySelectorAll('.pg-starter').forEach(b => {
+    b.classList.toggle('active', b.dataset.starter === name);
+  });
+}
+
+// ---------------------------------------------------------------------------
+// WebContainer
+// ---------------------------------------------------------------------------
+
+function filesToWC(flat) {
+  const out = {};
+  for (const [path, content] of Object.entries(flat)) {
+    const parts = path.split('/');
+    let node = out;
+    for (let i = 0; i < parts.length - 1; i++) {
+      if (!node[parts[i]]) node[parts[i]] = { directory: {} };
+      node = node[parts[i]].directory;
+    }
+    node[parts[parts.length - 1]] = { file: { contents: content } };
+  }
+  return out;
+}
+
+async function runPlayground() {
+  runBtn.disabled = true;
+  termClear();
+  iframe.src = 'about:blank';
+  urlbar.value = '';
+  openLink.href = '';
+
+  termWrite('\x1b[32m▶ Booting WebContainer...\x1b[0m\n');
+
+  if (!wc) {
+    wc = await WebContainer.boot();
+
+    wc.on('server-ready', (port, url) => {
+      termWrite(`\x1b[32m✓ Server ready at ${url}\x1b[0m\n`);
+      iframe.src = url;
+      urlbar.value = url;
+      openLink.href = url;
+      runBtn.disabled = false;
+    });
+
+    wc.on('error', ({ message }) => {
+      termWrite(`\x1b[31m✗ ${message}\x1b[0m\n`);
+      runBtn.disabled = false;
+    });
+  }
+
+  await wc.mount(filesToWC(files));
+
+  termWrite('\x1b[33m$ npm install\x1b[0m\n');
+  const install = await wc.spawn('npm', ['install', '--prefer-offline']);
+  install.output.pipeTo(new WritableStream({ write: chunk => termWrite(chunk) }));
+  const installCode = await install.exit;
+
+  if (installCode !== 0) {
+    termWrite(`\x1b[31m✗ npm install failed (exit ${installCode})\x1b[0m\n`);
+    runBtn.disabled = false;
+    return;
+  }
+
+  termWrite('\x1b[33m$ npm run dev\x1b[0m\n');
+  const dev = await wc.spawn('npm', ['run', 'dev']);
+  dev.output.pipeTo(new WritableStream({ write: chunk => termWrite(chunk) }));
+}
+
+// ---------------------------------------------------------------------------
+// Init
+// ---------------------------------------------------------------------------
+
+document.querySelectorAll('.pg-starter').forEach(btn => {
+  btn.addEventListener('click', () => loadStarter(btn.dataset.starter));
+});
+
+runBtn.addEventListener('click', runPlayground);
+
+loadStarter('hello');
+
+// Enable run button after WebContainer API is available
+if (typeof SharedArrayBuffer !== 'undefined') {
+  runBtn.disabled = false;
+  runBtn.title = '';
+} else {
+  runBtn.title = 'Cross-Origin Isolation required — reload after service worker installs';
+  termWrite('\x1b[33m⚠ Reload the page once the service worker has installed to enable Run.\x1b[0m\n');
+}
+</script>
