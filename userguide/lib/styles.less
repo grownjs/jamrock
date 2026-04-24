@@ -485,7 +485,7 @@ h4 { color: @mantis; }
     column-count: 3;
     column-gap: 1.5rem;
 
-    .hero-words, hr, .quickstart, .home-nav { column-span: all; }
+    .hero-words, hr, .quickstart, .demo, .home-nav { column-span: all; }
 
     .layer { margin-top: 0; break-inside: avoid; }
     .layer + pre.hljs { break-inside: avoid; break-before: avoid; }
@@ -507,6 +507,53 @@ h4 { color: @mantis; }
   margin-left: auto;
   margin-right: auto;
   h2 { margin-top: 0; }
+}
+
+.demo {
+  max-width: 32em;
+  margin-left: auto;
+  margin-right: auto;
+  h2 { margin-top: 0; }
+
+  pre.hljs { margin-top: 1.2rem; font-size: .8rem; }
+}
+
+.demo-counter {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 1.5rem;
+  padding: 1.5rem;
+  border: 1px solid fade(@mantis, 20%);
+  border-radius: 8px;
+  background: fade(@mantis, 4%);
+  margin: 1rem 0;
+}
+
+.demo-btn {
+  width: 2.4rem;
+  height: 2.4rem;
+  border-radius: 50%;
+  border: 1px solid fade(@mantis, 40%);
+  background: fade(@mantis, 8%);
+  color: @mantis;
+  font-size: 1.2rem;
+  line-height: 1;
+  cursor: pointer;
+  transition: background-color .15s, border-color .15s;
+
+  &:hover {
+    background: fade(@mantis, 18%);
+    border-color: @mantis;
+  }
+}
+
+.demo-value {
+  font-size: 2.5rem;
+  font-weight: bold;
+  color: @white;
+  min-width: 2ch;
+  text-align: center;
 }
 
 .out-dim { color: @light; }

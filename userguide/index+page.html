@@ -2,6 +2,18 @@
   <title>Jamrock | Server-first web framework</title>
 </head>
 
+<script context="module">
+  let _count = 0;
+
+  export async function increment() {
+    _count++;
+  }
+
+  export async function decrement() {
+    if (_count > 0) _count--;
+  }
+</script>
+
 <section class="hero-words">
   <p class="tagline">Server-first.<br />Fragment-driven.<br /><span class="tagline-accent">No SPA required.</span></p>
   <p class="hero-sub">Write HTML components that run on the server. Add interactivity exactly where you need it — with fragments, signals, or server functions. Nothing more.</p>
@@ -13,14 +25,12 @@
 <p>Components run on the server. Request data, session, params — all available at render time. Full HTML shipped, zero JS by default.</p>
 </div>
 
-```html
-<script>
-  import { params } from 'jamrock:conn';
-  const { name } = params;
-</script>
+<pre class="hljs html"><code>&lt;script&gt;
+  import &lbrace; params } from 'jamrock:conn';
+  const &lbrace; name } = params;
+&lt;/script&gt;
 
-<h1>Hello, {name}!</h1>
-```
+&lt;h1&gt;Hello, &lbrace;name}!&lt;/h1&gt;</code></pre>
 
 <div class="layer layer-fragment">
 <div class="layer-marker layer-marker-fragment">02</div>
@@ -28,13 +38,11 @@
 <p>Named regions of the page that can be updated live via SSE — without a full reload, without a client router, without any boilerplate.</p>
 </div>
 
-```html
-<fragment name="feed" interval="5">
-  {#each posts as post}
-    <article>{post.title}</article>
-  {/each}
-</fragment>
-```
+<pre class="hljs html"><code>&lt;fragment name="feed" interval="5"&gt;
+  &lbrace;#each posts as post}
+    &lt;article&gt;&lbrace;post.title}&lt;/article&gt;
+  &lbrace;/each}
+&lt;/fragment&gt;</code></pre>
 
 <div class="layer layer-client">
 <div class="layer-marker layer-marker-client">03</div>
@@ -42,21 +50,44 @@
 <p>When you genuinely need client reactivity, reach for signals. Declare them in a client script, reference them with <code>$</code> in templates.</p>
 </div>
 
-```html
-<script context="client">
-  import { signal } from 'jamrock';
+<pre class="hljs html"><code>&lt;script context="client"&gt;
+  import &lbrace; signal } from 'jamrock';
   const count = signal(0);
-</script>
+&lt;/script&gt;
 
-<button onclick={() => $count++}>
-  Clicked {$count} times
-</button>
-```
+&lt;button onclick={() =&gt; count.value++}&gt;
+  Clicked &lbrace;$count} times
+&lt;/button&gt;</code></pre>
+
+---
+
+<section class="demo">
+  <h2>Try it live</h2>
+  <p class="out-dim">This counter runs on the server. Click a button — the fragment re-renders via SSE, no page reload.</p>
+  <fragment name="counter">
+    <div class="demo-counter">
+      <button rpc:call="decrement" class="demo-btn">−</button>
+      <span class="demo-value">{_count}</span>
+      <button rpc:call="increment" class="demo-btn">+</button>
+    </div>
+  </fragment>
+  <pre class="hljs html"><code>&lt;script context="module"&gt;
+  let count = 0;
+  export async function increment() &lbrace; count++; }
+  export async function decrement() &lbrace; if (count &gt; 0) count--; }
+&lt;/script&gt;
+
+&lt;fragment name="counter"&gt;
+  &lt;button rpc:call="decrement"&gt;−&lt;/button&gt;
+  &lt;span&gt;&lbrace;count}&lt;/span&gt;
+  &lt;button rpc:call="increment"&gt;+&lt;/button&gt;
+&lt;/fragment&gt;</code></pre>
+</section>
 
 ---
 
 <section class="quickstart">
-<h2>Try it now</h2>
+<h2>Get started</h2>
 <p>Install <strong>jamrock</strong> and pick a runtime — <code>node</code>, <code>deno</code>, or <code>bun</code>:</p>
 <pre class="hljs terminal"><code><b>curl</b> -L get.jamrock.dev | <b>bash</b></code></pre>
 <p>Then scaffold your first app:</p>
