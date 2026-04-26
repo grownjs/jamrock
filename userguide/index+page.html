@@ -66,9 +66,9 @@
   <p class="out-dim">This counter runs on the server. Click a button — the fragment re-renders via SSE, no page reload.</p>
   <fragment name="counter">
     <div class="demo-counter">
-      <form rpc:call="decrement"><button class="demo-btn" type="submit">−</button></form>
+      <form rpc:call={decrement}><button class="demo-btn" type="submit">−</button></form>
       <span class="demo-value">{count}</span>
-      <form rpc:call="increment"><button class="demo-btn" type="submit">+</button></form>
+      <form rpc:call={increment}><button class="demo-btn" type="submit">+</button></form>
     </div>
   </fragment>
   <pre class="hljs html"><code>&lt;script context="module"&gt;
@@ -78,9 +78,9 @@
 &lt;/script&gt;
 
 &lt;fragment name="counter"&gt;
-  &lt;form rpc:call="decrement"&gt;&lt;button&gt;−&lt;/button&gt;&lt;/form&gt;
+  &lt;form rpc:call=&lbrace;decrement}&gt;&lt;button&gt;−&lt;/button&gt;&lt;/form&gt;
   &lt;span&gt;&lbrace;count}&lt;/span&gt;
-  &lt;form rpc:call="increment"&gt;&lt;button&gt;+&lt;/button&gt;&lt;/form&gt;
+  &lt;form rpc:call=&lbrace;increment}&gt;&lt;button&gt;+&lt;/button&gt;&lt;/form&gt;
 &lt;/fragment&gt;</code></pre>
 </section>
 
