@@ -24,7 +24,14 @@ export async function handleSubmit(this: any, e: any): Promise<void> {
       if ('trigger' in e.target.dataset) {
         const source = findNodes('source', e.target);
 
-        await this.sockets.trigger(e, 'form', source ? (source as HTMLElement).dataset.source : null, e.target, data);
+        // If no data-source found (e.g. initial SSR before first re-render), fall back to
+        // deriving the module path from data-location on the form element itself.
+        let sourcePath: string | null = source ? (source as HTMLElement).dataset.source! : null;
+        if (!sourcePath && e.target.dataset.location) {
+          sourcePath = e.target.dataset.location.split(':')[0];
+        }
+
+        await this.sockets.trigger(e, 'form', sourcePath, e.target, data);
       } else {
         const url = e.target.action;
         const headers = { 'request-type': 'bind' };

@@ -203,7 +203,7 @@ export class LiveSocket {
       e.preventDefault();
 
       const call = trigger.getAttribute('data-rpc:call') || trigger.dataset.rpcCall;
-      const key = trigger.getAttribute('data-rpc:yield') || trigger.dataset.rpcYield;
+      const key = trigger.getAttribute('data-rpc:yield') || trigger.dataset.rpcYield || null;
       const data = this.unpack(payload);
 
       this.call(`rpc:trigger ${this.uuid} ${source} ${kind} ${call}:${key}\t${data}`, () => {

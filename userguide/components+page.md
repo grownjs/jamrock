@@ -16,10 +16,10 @@ Every `.&lbrace;html,md}` file in your `pages/` directory is a component. What a
 | `context="module"` | Server, once on load | Shared state, DB connections, module-level setup |
 | `context="client"` | Browser | DOM, signals, events, client-side interactivity |
 
-A component can have more than one `<script>` block — one server, one module, one client — each serving a distinct role.
+A component can have more than one `&lt;script>` block — one server, one module, one client — each serving a distinct role.
 
 > [!NOTE]
-> Components without any `<script>` block are **static** — they receive props through `$$props` and render pure markup. No runtime overhead.
+> Components without any `&lt;script>` block are **static** — they receive props through `$$props` and render pure markup. No runtime overhead.
 
 ## File-naming
 

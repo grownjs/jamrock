@@ -32,3 +32,13 @@ export async function reset() {
 <form @on:submit={reset}>
 <button type="submit" test:id="reset">Reset</button>
 </form>
+
+<hr />
+
+<h2>Fragment counter (SSE patch)</h2>
+<fragment name="counter">
+  <span test:id="fragment-count">{serverCount}</span>
+  <form rpc:call={increment}><button type="submit" test:id="fragment-increment">+1</button></form>
+  <form rpc:call={decrement}><button type="submit" test:id="fragment-decrement">-1</button></form>
+  <form rpc:call={reset}><button type="submit" test:id="fragment-reset">Reset</button></form>
+</fragment>

@@ -3,14 +3,14 @@
 </head>
 
 <script context="module">
-  let _count = 0;
+  let count = 0;
 
   export async function increment() {
-    _count++;
+    count++;
   }
 
   export async function decrement() {
-    if (_count > 0) _count--;
+    if (count > 0) count--;
   }
 </script>
 
@@ -55,7 +55,7 @@
   const count = signal(0);
 &lt;/script&gt;
 
-&lt;button onclick={() =&gt; count.value++}&gt;
+&lt;button onclick=&lbrace;() =&gt; count.value++}&gt;
   Clicked &lbrace;$count} times
 &lt;/button&gt;</code></pre>
 
@@ -66,9 +66,9 @@
   <p class="out-dim">This counter runs on the server. Click a button — the fragment re-renders via SSE, no page reload.</p>
   <fragment name="counter">
     <div class="demo-counter">
-      <button rpc:call="decrement" class="demo-btn">−</button>
-      <span class="demo-value">{_count}</span>
-      <button rpc:call="increment" class="demo-btn">+</button>
+      <form rpc:call="decrement"><button class="demo-btn" type="submit">−</button></form>
+      <span class="demo-value">{count}</span>
+      <form rpc:call="increment"><button class="demo-btn" type="submit">+</button></form>
     </div>
   </fragment>
   <pre class="hljs html"><code>&lt;script context="module"&gt;
@@ -78,9 +78,9 @@
 &lt;/script&gt;
 
 &lt;fragment name="counter"&gt;
-  &lt;button rpc:call="decrement"&gt;−&lt;/button&gt;
+  &lt;form rpc:call="decrement"&gt;&lt;button&gt;−&lt;/button&gt;&lt;/form&gt;
   &lt;span&gt;&lbrace;count}&lt;/span&gt;
-  &lt;button rpc:call="increment"&gt;+&lt;/button&gt;
+  &lt;form rpc:call="increment"&gt;&lt;button&gt;+&lt;/button&gt;&lt;/form&gt;
 &lt;/fragment&gt;</code></pre>
 </section>
 

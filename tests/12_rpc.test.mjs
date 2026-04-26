@@ -1133,8 +1133,14 @@ test.group('dispatch trigger', () => {
           .replace(/&quot;/g, '"'),
       ),
     );
+    // decoded is now wrapped: ['x-fragment', {name}, children]
+    // children may be the inner vnode directly or an array of children
     expect(decoded).toBeInstanceOf(Array);
-    expect(decoded[0]).toBe('ul');
+    expect(decoded[0]).toBe('x-fragment');
+    expect(decoded[1]).toEqual({ name: 'live-comments' });
+    // decoded[2] is the children (ul vnode or array containing it)
+    const ulVnode = Array.isArray(decoded[2]) && decoded[2][0] === 'ul' ? decoded[2] : decoded[2][0];
+    expect(ulVnode[0]).toBe('ul');
   });
 
   test('normalizeVnode should strip @ attributes and remove null entries', async ({ expect }) => {
@@ -1188,10 +1194,13 @@ test.group('dispatch trigger', () => {
       ),
     );
 
+    // decoded is now wrapped: ['x-fragment', {name}, [children]]
     expect(decoded).toBeInstanceOf(Array);
-    const vnodeObj = Array.isArray(decoded[0]) ? decoded[0] : decoded;
-    expect(vnodeObj[0]).toBe('ul');
-    for (const attr of Object.keys(vnodeObj[1] || {})) {
+    expect(decoded[0]).toBe('x-fragment');
+    expect(decoded[1]).toEqual({ name: 'test-frag' });
+    const ulVnode = decoded[2][0]; // first child in fragment content
+    expect(ulVnode[0]).toBe('ul');
+    for (const attr of Object.keys(ulVnode[1] || {})) {
       expect(attr.startsWith('@')).toBe(false);
     }
   });
@@ -1203,7 +1212,7 @@ test.group('dispatch trigger', () => {
     expect(result).toEqual(['div', { class: 'foo' }, [['p', {}, ['hello']]]]);
   });
 
-  test('normalizeVnode strips @-prefixed attributes', async ({ expect }) => {
+  test('normalizeVnode strips @-prefixed attributes (except @rpc:*)', async ({ expect }) => {
     const { normalizeVnode } = await import('../src/handler/dispatch.ts');
 
     const result = normalizeVnode(['li', { '@location': 'x:1', class: 'item' }, [['p', {}, ['text']]]]);
@@ -1216,6 +1225,16 @@ test.group('dispatch trigger', () => {
     const result = normalizeVnode(['button', { onclick: () => {}, class: 'btn' }, ['Click']]);
     expect(result).toEqual(['button', { class: 'btn' }, ['Click']]);
     expect(typeof result[1].onclick).toBe('undefined');
+  });
+
+  test('normalizeVnode keeps @rpc:call, injects @trigger and @source', async ({ expect }) => {
+    const { normalizeVnode } = await import('../src/handler/dispatch.ts');
+
+    const result = normalizeVnode(['form', { '@rpc:call': 'increment', '@location': 'userguide/index+page.html:69:7' }, [['button', {}, ['+']]]]);
+    expect(result[1]['@rpc:call']).toBe('increment');
+    expect(result[1]['@trigger']).toBe(true);
+    expect(result[1]['@source']).toBe('userguide/index+page.html');
+    expect(result[1]['@location']).toBeUndefined();
   });
 
   test('normalizeVnode preserves fragment elements with name and key', async ({ expect }) => {

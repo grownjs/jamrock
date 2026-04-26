@@ -520,11 +520,15 @@ export default {${defaults}};
 
     matched.code = Block.exports(matched.code);
 
-    const scope = keys.concat(this.script.deps)
+    const moduleLets = Object.entries(this.module?.locals || {})
+      .filter(([, type]) => type === 'var')
+      .map(([name]) => name);
+
+    const scope = keys.concat(this.script.deps).concat(moduleLets)
       .reduce((memo: any[], key: string) => {
         if (aliases[key] && locals[key] === 'export') {
           memo.push([aliases[key], key]);
-        } else {
+        } else if (!memo.includes(key)) {
           memo.push(key);
         }
         return memo;

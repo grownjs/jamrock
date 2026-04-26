@@ -101,7 +101,11 @@ function findAffectedFragments(mod: any, changedVars: string[]): string[] {
 }
 
 export function isVnode(v: any): boolean {
-  return Array.isArray(v) && v.length >= 2 && typeof v[0] === 'string' && (v[1] === null || v[1] === undefined || typeof v[1] === 'object');
+  return Array.isArray(v) && v.length >= 2
+    && typeof v[0] === 'string'
+    && /^[0-9A-Za-z:-]+$/.test(v[0])
+    && !Array.isArray(v[1])
+    && (v[1] === null || v[1] === undefined || typeof v[1] === 'object');
 }
 
 export function normalizeChildren(children: any[]): any[] {
@@ -128,10 +132,31 @@ export function normalizeVnode(vnode: any): any {
 
     const cleanProps: Record<string, unknown> = {};
     if (props && typeof props === 'object') {
+      // Derive @source from @location before stripping — @location has the file path
+      // which becomes data-source on the element so the client trigger can find the module.
+      if (props['@rpc:call'] && props['@location'] && typeof props['@location'] === 'string') {
+        const src = (props['@location'] as string).split(':')[0];
+        cleanProps['@source'] = src;
+      }
       for (const [key, value] of Object.entries(props)) {
-        if (key.startsWith('@')) continue;
-        if (typeof value === 'function') continue;
+        // Strip @location — it's a dev-only source annotation and adds noise to the wire format.
+        // Keep all other @-prefixed props: somedom converts them to data-* attributes (e.g.
+        // @test:id → data-test:id, @rpc:call → data-rpc:call, @source → data-source).
+        if (key === '@location') continue;
+        // Mirror renderer.ts: rpc:call/rpc:yield accept function refs — serialize to .name.
+        if (typeof value === 'function') {
+          if (key === '@rpc:call' || key === '@rpc:yield') {
+            cleanProps[key] = (value as any).name || '';
+          }
+          // All other function props (event handlers etc.) are skipped.
+          continue;
+        }
         cleanProps[key] = value;
+      }
+      // Ensure forms with @rpc:call also get @trigger so somedom sets data-trigger,
+      // which is required for the submit handler to use the SSE path instead of a native POST.
+      if ('@rpc:call' in cleanProps && !('@trigger' in cleanProps)) {
+        cleanProps['@trigger'] = true;
       }
     }
 
@@ -259,10 +284,21 @@ export function dispatch(
       }
 
       const [fnName] = (callKey || '').split(':');
-      const srcPath = source ? source.replace(/\/\d+$/, '') : null;
+      // source may be the string "null" when the client couldn't find a data-source element,
+      // or a path like "userguide/index+page" or "userguide/index+page.html".
+      const rawSrc = source && source !== 'null' ? source.replace(/\/\d+$/, '') : null;
 
-      const mod = (srcPath && env?.locate ? env.locate(srcPath) : null)
-        || sse.module;
+      const mod = (() => {
+        if (!rawSrc || !env?.locate) return null;
+        // Try the path as-is, then without extension (handles .html/.md suffixes)
+        for (const path of [rawSrc, rawSrc.replace(/\.(html|md)$/, '')]) {
+          try {
+            const result = env.locate(path);
+            if (result) return result;
+          } catch { /* try next variant */ }
+        }
+        return null;
+      })() || sse.module;
 
       if (!fnName || !mod) return;
 
@@ -274,7 +310,7 @@ export function dispatch(
 
       const preState = snapshotState(mod);
       const preSerialized = serializeState(mod);
-      const result = fn(payload_);
+      const result = Object.keys(payload_).length > 0 ? fn(payload_) : fn();
       const postState = snapshotState(mod);
       const postSerialized = serializeState(mod);
       const isAsync = Is.thenable(result);
@@ -285,8 +321,12 @@ export function dispatch(
 
         for (const fragName of affectedFrags) {
           try {
-            const vnode = rerenderFragment(mod, fragName, currentState, env);
-            if (vnode && sse.send) {
+            const children = rerenderFragment(mod, fragName, currentState, env);
+            if (children && sse.send) {
+              // Wrap in a full x-fragment vnode so the client's patchNode receives the same
+              // shape as el.__vnode (which is toNodes(xFragmentEl, true) — a full element vnode).
+              // This allows upgradeNode to diff same-tag elements instead of replacing.
+              const vnode = ['x-fragment', { name: fragName }, children];
               const encoded = encode(JSON.stringify(vnode));
               sse.send(`rpc:update ${sse.identity} ${fragName} replace\t${encoded}`);
             }
