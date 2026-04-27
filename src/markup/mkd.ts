@@ -45,17 +45,14 @@ export async function render(content: any[], inline: boolean | null, chunks: any
 
   const renderer = new (kramed as any).Renderer();
 
+  // Fenced code blocks are pre-extracted as code-fence AST nodes by the Block constructor
+  // and resolved later by resolveCodeFences.  This renderer.code path handles the rare case
+  // of a raw markdown code block that reaches kramed directly (e.g. inside a <mkd> element
+  // whose source was not pre-processed, or a code block written directly in raw markdown
+  // without going through the Block pipeline).
   renderer.code = (text: string, language: string) => {
-    if (text === '\n' && chunks && chunks.length > 0) {
-      text = chunks.shift()!.code;
-      text = text.charAt(0) !== ' '
-        ? text.trim()
-        : s(text);
-    }
-
     if (!language) {
       const label = text.match(/^\w+\s*\|\s*[^\n]+?\n/);
-
       if (label) {
         language = label[0].trim();
         text = text.substr(label[0].length);
@@ -63,7 +60,6 @@ export async function render(content: any[], inline: boolean | null, chunks: any
     }
 
     const [lang, label] = language ? language.split('|') : [];
-
     const code = lang ? hljs.highlight(decodeEnts(text), { language: lang.trim() }).value : text;
     const attrs = lang ? ` data-lang="${lang.trim()}"` : '';
 
@@ -115,5 +111,44 @@ export async function render(content: any[], inline: boolean | null, chunks: any
   const tree = parseMarkup(await kramed(input, { renderer }));
   const result = traverse(tree as any[], '', null, { stack: nodes, file: '+page.md' });
 
+  // Resolve any code-fence nodes that survived the kramed pass as \0-restored elements.
+  resolveCodeFences(result);
+
   return result;
+}
+
+// Minimal traverse context for reconstituting highlighted code HTML into Jamrock AST nodes.
+// file must include '+page' so that traverse preserves whitespace-only text nodes (needed
+// for correct indentation inside <pre><code>).
+const CODE_FENCE_CTX = {
+  file: '+page',
+  response: { rules: [], scripts: [], styles: [], media: [], markup: {}, fragments: {}, snippets: {} },
+};
+
+function renderCodeFenceNode(langSpec: string, rawCode: string): any {
+  const text = rawCode.charAt(0) !== ' ' ? rawCode.trim() : s(rawCode);
+  const [lang, label] = langSpec ? langSpec.split('|').map((p: string) => p.trim()) : ['', ''];
+  const code = lang ? hljs.highlight(decodeEnts(text), { language: lang }).value : text;
+  const attrs = lang ? ` data-lang="${lang}"` : '';
+  const html = label
+    ? `<details><summary>${label}</summary><pre class="hljs"${attrs}><code>${unsafe(code)}</code></pre></details>`
+    : `<pre class="hljs"${attrs}><code>${unsafe(code)}</code></pre>`;
+  const parsed = traverse(parseMarkup(html) as any[], '', null, CODE_FENCE_CTX);
+  return parsed[0];
+}
+
+// Walk the AST in-place and replace every { type: 'code-fence' } node produced by
+// walk.ts traverse (from <x-fence> placeholders) with a proper highlighted <pre> element.
+// Because the nodes are indexed by the Block constructor, ordering is guaranteed regardless
+// of nesting depth — nested fenced blocks are found here even inside <section>, <div>, etc.
+export function resolveCodeFences(nodes: any[]): void {
+  for (let i = 0; i < nodes.length; i++) {
+    const node = nodes[i];
+    if (!node || typeof node !== 'object') continue;
+    if (node.type === 'code-fence') {
+      nodes[i] = renderCodeFenceNode(node.lang, node.code);
+    } else if (Array.isArray(node.elements)) {
+      resolveCodeFences(node.elements);
+    }
+  }
 }

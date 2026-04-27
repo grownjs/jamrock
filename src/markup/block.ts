@@ -2,7 +2,7 @@ import { blocks, vars } from 'eslint-plugin-jamrock/util.js';
 import { RE_MATCH_ROUTES } from 'eslint-plugin-jamrock/const.js';
 
 import { Expr } from './expr.ts';
-import { render } from './mkd.ts';
+import { render, resolveCodeFences } from './mkd.ts';
 import { traverse } from './walk.ts';
 import { lexer } from '../templ/utils.ts';
 import { reduce, visit } from './utils.ts';
@@ -16,6 +16,7 @@ import { refetch } from '../templ/compiler.ts';
 const RE_EXPORT_DEFAULT = /\nexport default[\s{]/;
 const RE_RESOLVE_IMPORTS = /\/\*@@\*\/__resolve\('(.+?)'\)/g;
 const RE_MATCH_IMPORTS = /\bimport([^;]+?)from\s*(['""])(.+?)\2[\n;]?/g;
+
 
 interface BlockAssets {
   js: any[];
@@ -63,9 +64,14 @@ export class Block {
     const __dirname = dirname(`${base}/${src}`);
     const chunks: any[] = [];
 
-    tpl = tpl.replace(/```(\w+\n)?([^]*?)```/g, (_: string, $1: string, $2: string) => {
+    tpl = tpl.replace(/```([^\n]*)\n([^]*?)```/g, (_: string, $1: string, $2: string) => {
+      const n = chunks.length;
+      const lang = $1.trim().replace(/"/g, '&quot;');
       chunks.push({ code: $2 });
-      return ['```', $1 || '', $2.replace(/\S/g, ' '), '```'].join('');
+      // Pad with newlines so the total line count of the replacement matches the original.
+      // This keeps source positions (data-location) accurate for everything after the fence.
+      const padding = '\n'.repeat(Math.max(0, _.split('\n').length - 1));
+      return `<x-fence n="${n}" l="${lang}"></x-fence>${padding}`;
     });
 
     // Strip inline code spans containing HTML tags before the HTML parser runs.
@@ -113,6 +119,7 @@ export class Block {
       locate,
       lexer,
       file: this.src,
+      chunks,
     };
 
     const tree = parseMarkup(this.code, { includePositions: true }) as any[];
@@ -380,7 +387,7 @@ export const __attributes = ${this.$attributes};
 
   async transform(elements: any, resources: any): Promise<void> {
     if (this.src.includes('+page')) {
-      this.markup.content = await render(this.markup.content, null, this.chunks, this.opts.markdown);
+      this.markup.content = await render(this.markup.content, null, null, this.opts.markdown);
     }
 
     await this.traverse();

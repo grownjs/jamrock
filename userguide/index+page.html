@@ -25,12 +25,14 @@
 <p>Components run on the server. Request data, session, params — all available at render time. Full HTML shipped, zero JS by default.</p>
 </div>
 
-<pre class="hljs html"><code>&lt;script&gt;
-  import &lbrace; params } from 'jamrock:conn';
-  const &lbrace; name } = params;
-&lt;/script&gt;
+```html
+<script>
+  import { params } from 'jamrock:conn';
+  const { name } = params;
+</script>
 
-&lt;h1&gt;Hello, &lbrace;name}!&lt;/h1&gt;</code></pre>
+<h1>Hello, {name}!</h1>
+```
 
 <div class="layer layer-fragment">
 <div class="layer-marker layer-marker-fragment">02</div>
@@ -38,11 +40,13 @@
 <p>Named regions of the page that can be updated live via SSE — without a full reload, without a client router, without any boilerplate.</p>
 </div>
 
-<pre class="hljs html"><code>&lt;fragment name="feed" interval="5"&gt;
-  &lbrace;#each posts as post}
-    &lt;article&gt;&lbrace;post.title}&lt;/article&gt;
-  &lbrace;/each}
-&lt;/fragment&gt;</code></pre>
+```html
+<fragment name="feed" interval="5">
+  {#each posts as post}
+    <article>{post.title}</article>
+  {/each}
+</fragment>
+```
 
 <div class="layer layer-client">
 <div class="layer-marker layer-marker-client">03</div>
@@ -50,14 +54,16 @@
 <p>When you genuinely need client reactivity, reach for signals. Declare them in a client script, reference them with <code>$</code> in templates.</p>
 </div>
 
-<pre class="hljs html"><code>&lt;script context="client"&gt;
-  import &lbrace; signal } from 'jamrock';
+```html
+<script context="client">
+  import { signal } from 'jamrock';
   const count = signal(0);
-&lt;/script&gt;
+</script>
 
-&lt;button onclick=&lbrace;() =&gt; count.value++}&gt;
-  Clicked &lbrace;$count} times
-&lt;/button&gt;</code></pre>
+<button onclick={() => count.value++}>
+  Clicked {$count} times
+</button>
+```
 
 ---
 
@@ -71,17 +77,21 @@
       <form rpc:call={increment}><button class="demo-btn" type="submit">+</button></form>
     </div>
   </fragment>
-  <pre class="hljs html"><code>&lt;script context="module"&gt;
-  let count = 0;
-  export async function increment() &lbrace; count++; }
-  export async function decrement() &lbrace; if (count &gt; 0) count--; }
-&lt;/script&gt;
 
-&lt;fragment name="counter"&gt;
-  &lt;form rpc:call=&lbrace;decrement}&gt;&lt;button&gt;−&lt;/button&gt;&lt;/form&gt;
-  &lt;span&gt;&lbrace;count}&lt;/span&gt;
-  &lt;form rpc:call=&lbrace;increment}&gt;&lt;button&gt;+&lt;/button&gt;&lt;/form&gt;
-&lt;/fragment&gt;</code></pre>
+```html
+<script context="module">
+  let count = 0;
+  export async function increment() { count++; }
+  export async function decrement() { if (count > 0) count--; }
+</script>
+
+<fragment name="counter">
+  <form rpc:call={decrement}><button>−</button></form>
+  <span>{count}</span>
+  <form rpc:call={increment}><button>+</button></form>
+</fragment>
+```
+
 </section>
 
 ---

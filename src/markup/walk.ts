@@ -25,6 +25,18 @@ export function traverse(obj: any[], html: string, parent: any, context: any, co
     const tokenStart = { ...node.position?.start };
 
     if (node.type === 'element') {
+      // x-fence elements are placeholders created by the Block constructor for fenced code
+      // blocks.  Pull the corresponding chunk by index (not by sequential pop) so that
+      // ordering is guaranteed regardless of nesting depth.
+      if (node.rawTagName === 'x-fence') {
+        const attrs: Record<string, string> = {};
+        node.attributes.forEach((a: any) => { attrs[a.key] = a.value; });
+        const n = parseInt(attrs.n ?? '0', 10);
+        const lang = attrs.l ?? '';
+        copy.push({ type: 'code-fence', lang, code: context.chunks?.[n]?.code ?? '' });
+        return;
+      }
+
       if (NOT_SUPPORTED.includes(node.rawTagName)) {
         throw new ReferenceError(`Element '${node.rawTagName}' should not be used`);
       }
