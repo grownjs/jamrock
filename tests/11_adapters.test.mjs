@@ -12,12 +12,12 @@
 import { test } from '@japa/runner';
 import * as td from 'testdouble';
 
-import AnsiUp from '../src/adapters/ansi_up.ts';
-import { EditorView, basicSetup } from '../src/adapters/codemirror.ts';
-import { html } from '../src/adapters/codemirror-lang-html.ts';
-import { javascript } from '../src/adapters/codemirror-lang-javascript.ts';
-import { oneDark } from '../src/adapters/codemirror-theme-one-dark.ts';
-import { WebContainer } from '../src/adapters/webcontainer.ts';
+import AnsiUp from '../userguide/adapters/ansi_up.mjs';
+import { EditorView, basicSetup } from '../userguide/adapters/codemirror.mjs';
+import { html } from '../userguide/adapters/codemirror-lang-html.mjs';
+import { javascript } from '../userguide/adapters/codemirror-lang-javascript.mjs';
+import { oneDark } from '../userguide/adapters/codemirror-theme-one-dark.mjs';
+import { WebContainer } from '../userguide/adapters/webcontainer.mjs';
 
 test.group('adapters — server-side no-ops', () => {
   test('AnsiUp: constructor does not throw', ({ expect }) => {
