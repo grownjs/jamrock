@@ -17,6 +17,16 @@ const RE_EXPORT_DEFAULT = /\nexport default[\s{]/;
 const RE_RESOLVE_IMPORTS = /\/\*@@\*\/__resolve\('(.+?)'\)/g;
 const RE_MATCH_IMPORTS = /\bimport([^;]+?)from\s*(['""])(.+?)\2[\n;]?/g;
 
+const CLIENT_IMPORT_STUB = [
+  'var __noopModule = globalThis.__jamrockNoopModule || (globalThis.__jamrockNoopModule = name => new Proxy(',
+  'function noopModule(value) { return value; }, {',
+  '  apply: (_target, _this, args) => args.length === 1 ? args[0] : undefined,',
+  '  construct: () => __noopModule(name),',
+  '  get: (_target, key) => key === Symbol.toStringTag ? name : __noopModule(`${name}.${String(key)}`),',
+  '  set: () => true,',
+  '}));',
+].join('\n');
+
 
 interface BlockAssets {
   js: any[];
@@ -517,7 +527,7 @@ export default {${defaults}};
       if (!calls.includes(_m[1])) asyncFns.push(_m[1]);
     }
 
-    let { prelude, interlude, hasImports } = Block.script(this.script.code);
+    let { prelude, interlude, hasImports } = Block.script(this.script.code, false, undefined, this.context === 'client');
     if (!interlude && !hasImports) {
       interlude = prelude;
       prelude = '';
@@ -546,8 +556,22 @@ export default {${defaults}};
       .filter((local: string) => !shared.includes(local))
       .concat(Object.keys(this.snippets))
       .concat(this.opts.props || []);
+    const clientServerScope = this.context === 'client'
+      ? Block.clientServerScope(exported, aliases, Block.componentImportBindings(this.script.code))
+      : [];
+    const clientServerExports = this.context === 'client'
+      ? Block.clientServerExports(matched.code, exported, aliases)
+      : '';
 
     const main = `\tfunction __context(__default = {}) {
+${this.context === 'client'
+    // Client scripts only run in the browser. On the server, expose exported props
+    // and component imports so SSR can render markup without invoking DOM/package code.
+    ? `\t\tif (typeof window === 'undefined') {
+${clientServerExports}
+\t\t\treturn {__default,__scope:{${clientServerScope.join(',')}}};
+\t\t}`
+    : ''}
 ${Object.keys(this.snippets).map((_: string) => `const ${_} = $$props.${_} ?? __snippets.${_};`)}
 ${matched.code}
 ${this.context === 'client'
@@ -640,7 +664,60 @@ for (const [, fn] of Object.entries(__functions)) fn.$ = __src;
       .replace(/\bexport\b/g, ignore);
   }
 
-  static script(code: string, inline?: boolean, basedir: string = loaderRuntime.shared): { prelude: string; interlude: string; hasImports?: boolean } {
+  static clientImportBindings(expr: string): string[] {
+    const input = expr.trim();
+    const bindings: string[] = [];
+    const named = input.match(/\{([^}]+)\}/);
+    const defaultImport = input.split('{')[0].split(',')[0].replace(/[*]\s*as/, '').trim();
+    const namespace = input.match(/[*]\s*as\s+(\w+)/);
+
+    if (namespace?.[1]) bindings.push(namespace[1]);
+    if (defaultImport && !defaultImport.startsWith('*')) bindings.push(defaultImport);
+    if (named?.[1]) {
+      named[1].split(',').forEach((part: string) => {
+        const alias = part.match(/\bas\s+(\w+)/);
+        const name = alias ? alias[1] : part.trim();
+        if (name) bindings.push(name);
+      });
+    }
+
+    return [...new Set(bindings)];
+  }
+
+  static clientImportStub(expr: string): string {
+    const bindings = Block.clientImportBindings(expr);
+    if (!bindings.length) return '';
+    const declarations = bindings.map((name: string) => `${name} = __noopModule('${name}')`).join(', ');
+    return `${CLIENT_IMPORT_STUB}\nconst ${declarations};`;
+  }
+
+  static componentImportBindings(code: string): string[] {
+    const bindings: string[] = [];
+    code.replace(RE_MATCH_IMPORTS, (_: string, $1: string, _2: string, $3: string) => {
+      if ($3.includes('.md') || $3.includes('.html')) bindings.push(...Block.clientImportBindings($1));
+      return _;
+    });
+    return [...new Set(bindings)];
+  }
+
+  static clientServerExports(code: string, exported: string[], aliases: Record<string, string>): string {
+    return exported.map((name: string) => {
+      const source = Object.entries(aliases).find(([, alias]) => alias === name)?.[0] || name;
+      const re = new RegExp(`\\b(?:let|const|var)\\s+${source}\\s*=\\s*([^;]+);`);
+      const value = code.match(re)?.[1] || `$$props.${name}`;
+      return `let ${source} = ${value};`;
+    }).join('\n');
+  }
+
+  static clientServerScope(exported: string[], aliases: Record<string, string>, imports: string[]): string[] {
+    const names = exported.map((name: string) => {
+      const source = Object.entries(aliases).find(([, alias]) => alias === name)?.[0] || name;
+      return source === name ? name : `${name}:${source}`;
+    });
+    return [...new Set(names.concat(imports))];
+  }
+
+  static script(code: string, inline?: boolean, basedir: string = loaderRuntime.shared, clientOnly?: boolean): { prelude: string; interlude: string; hasImports?: boolean } {
     const internals: string[] = [];
 
     let lastChunk = '';
@@ -673,6 +750,13 @@ for (const [, fn] of Object.entries(__functions)) fn.$ = __src;
         return lastChunk = inline
           ? `${symbols} = import('${$3}');`
           : _.replace(/\.(?:md|html)/, `.generated.mjs${suffix}`);
+      }
+
+      // For client-only context: external package imports (importmap / browser-only)
+      // become no-op modules so SSR and Node tests can instantiate them safely.
+      // The real imports are resolved in the browser via the page's importmap.
+      if (clientOnly) {
+        return lastChunk = Block.clientImportStub($1);
       }
 
       return lastChunk = _;

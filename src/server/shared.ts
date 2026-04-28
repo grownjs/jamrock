@@ -336,7 +336,7 @@ export const createCompiler = ({ fs, path }: any, options: any, external: any) =
     });
 
     for (const [k, v] of Object.entries(this[FILES_PROPERTY]) as [string, any][]) {
-      if (!v.filepath || !fs.existsSync(k)) continue;
+      if (!v.filepath || !fs.existsSync(k) || !fs.existsSync(v.filepath)) continue;
 
       let mod = await Template.reload(path.resolve(v.filepath), true);
       if (!k.includes('+server')) {

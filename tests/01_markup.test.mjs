@@ -221,6 +221,21 @@ test.group('parsing', t => {
     });
   });
 
+  test('should stub browser package imports in client scripts', ({ expect }) => {
+    const result = Block.script([
+      "import { EditorView, basicSetup } from 'codemirror';\n",
+      "import { html as langHtml } from '@codemirror/lang-html';\n",
+      "import AnsiUp from 'ansi_up';\n",
+      'const ansi = new AnsiUp();',
+    ].join(''), false, '/path/to', true);
+
+    expect(result.prelude).toContain('globalThis.__jamrockNoopModule');
+    expect(result.prelude).toContain("const EditorView = __noopModule('EditorView'), basicSetup = __noopModule('basicSetup');");
+    expect(result.prelude).toContain("const langHtml = __noopModule('langHtml');");
+    expect(result.prelude).toContain("const AnsiUp = __noopModule('AnsiUp');");
+    expect(result.interlude).toBe('\nconst ansi = new AnsiUp();');
+  });
+
   test('should rewrite modules', ({ expect }) => {
     const code = Block.module(`
       let messages = [];
