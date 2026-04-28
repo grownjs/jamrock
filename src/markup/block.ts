@@ -567,7 +567,11 @@ export default {${defaults}};
 ${this.context === 'client'
     // Client scripts only run in the browser. On the server, expose exported props
     // and component imports so SSR can render markup without invoking DOM/package code.
-    ? `\t\tif (typeof window === 'undefined') {
+    // Note: somedom/ssr's patchWindow() sets globalThis.window but NOT globalThis.document.
+    // Some environments expose a partial document stub without getElementById, so check
+    // via globalThis.document (safe — no ReferenceError if document is undeclared) and
+    // verify getElementById is a real function to confirm a browser DOM is available.
+    ? `\t\tif (typeof globalThis.document?.getElementById !== 'function') {
 ${clientServerExports}
 \t\t\treturn {__default,__scope:{${clientServerScope.join(',')}}};
 \t\t}`
