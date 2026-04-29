@@ -85,6 +85,70 @@ Signals work in both environments, but behave differently:
 > [!NOTE]
 > See [Hooks](/hooks#top) for the full signals API reference — `signal`, `computed`, `effect`, `batch`, `untracked`, `trap`.
 
+---
+
+## Browser-Only Packages
+
+Packages resolved via an `<script type="importmap">` (e.g. `codemirror`, `ansi_up`,
+`@webcontainer/api`) are available in the browser but do not exist in `node_modules`. On the
+server Jamrock replaces their imports with a **no-op proxy** so SSR never crashes.
+
+```html
+<script type="importmap">{
+  "imports": {
+    "codemirror": "https://esm.sh/codemirror@6.0.1"
+  }
+}</script>
+
+<script context="client">
+  import { EditorView } from 'codemirror';   // ← importmap-only package
+
+  const view = new EditorView({ doc: '' });  // safe — proxy handles `new X()`
+</script>
+```
+
+The proxy handles property access, method calls, and `new` — it simply returns `undefined`
+or another proxy, so initialization code that only runs in the browser causes no server crash.
+
+### Adapter Modules for Testing
+
+For unit tests you need a real object you can inspect and stub. Create an **adapter module** — a
+thin wrapper that returns a no-op implementation on the server and exposes the full API surface:
+
+```javascript
+// my-project/adapters/codemirror.mjs
+export class EditorView {
+  constructor(_config) {}
+  destroy() {}
+  static updateListener = { of: () => null };
+}
+export const basicSetup = null;
+```
+
+Then import the adapter in your page instead of the bare specifier:
+
+```html
+<script context="client">
+  import { EditorView, basicSetup } from './adapters/codemirror.mjs';
+</script>
+```
+
+In tests, import the adapter directly and replace methods with spies:
+
+```javascript
+import { EditorView } from './adapters/codemirror.mjs';
+import * as td from 'testdouble';
+
+const view = new EditorView({ doc: '' });
+td.replace(view, 'destroy', td.func());
+
+view.destroy();
+td.verify(view.destroy());
+```
+
+Jamrock ships adapters for the packages used in the userguide playground under
+`userguide/adapters/`. Copy any of them as a starting point for your own.
+
 <nav class="flex gap-sm between">
   <span>
     ➯ Next: <a href="/hooks#top">Hooks</a>

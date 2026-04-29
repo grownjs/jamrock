@@ -6,6 +6,22 @@ import {
   bind, mount, patch, render, styles, classes, listeners, attributes,
 } from '../utils/client.ts';
 
+// Normalize vdom from Jamrock's [tag, props, children_array] format to
+// somedom's expected [tag, props, child1, child2, ...] (spread) format.
+// Jamrock's $$.e always produces [tag, props, childrenArray] (3 elements),
+// but somedom's hydrateElement uses vnode.slice(2) to get children, which
+// returns [[childrenArray]] instead of [child1, child2, ...].
+function normalizeForHydrate(vnode: any): any {
+  if (!Array.isArray(vnode)) return vnode;
+  if (typeof vnode[0] === 'string'
+    && vnode[1] !== null && typeof vnode[1] === 'object' && !Array.isArray(vnode[1])
+    && vnode.length === 3 && Array.isArray(vnode[2])) {
+    const [tag, props, children] = vnode;
+    return [tag, props, ...children.map(normalizeForHydrate)];
+  }
+  return vnode.map(normalizeForHydrate);
+}
+
 export * from './fragment.ts';
 
 export function createRender(): { patchNode: any; createElement: any; renderToElement: any; hydrateToElement: any } {
@@ -106,7 +122,7 @@ export function createRender(): { patchNode: any; createElement: any; renderToEl
 
   const $$ = (target: any, prev: any, next: any, svg?: any) => patch(target, prev, next, svg, $);
   const $$$ = (el: any, vnode: any) => mount(el, vnode, null, $);
-  const $$$$ = (el: any, vnode: any) => hydrateElement(el, vnode, null, $);
+  const $$$$ = (el: any, vnode: any) => hydrateElement(el, normalizeForHydrate(vnode), null, $);
 
   return {
     patchNode: $$,

@@ -22,7 +22,20 @@ export function clientComponent(this: any, mod: any, context: any): { mount: (el
 
     let vnode: any;
     if (mod.__handler) {
-      const main = await mod.__handler({ ...props }, loader, el);
+      // Pre-load browser-only package imports (declared in __imports metadata) via the
+      // page's importmap and inject them as $$props so __context() stays synchronous.
+      let importedDeps: Record<string, any> = {};
+      if (mod.__imports) {
+        const bySource: Record<string, [string, string][]> = {};
+        for (const [local, info] of Object.entries(mod.__imports as Record<string, { from: string; name: string }>)) {
+          (bySource[info.from] ??= []).push([info.name, local]);
+        }
+        for (const [src, bindings] of Object.entries(bySource)) {
+          const m = await import(src);
+          for (const [name, local] of bindings) importedDeps[local] = m[name];
+        }
+      }
+      const main = await mod.__handler({ ...props, ...importedDeps }, loader, el);
       const data = main.__context ? main.__context() : { __scope: {}, __default: null };
 
       el.current = data.__default;

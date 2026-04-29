@@ -221,7 +221,7 @@ test.group('parsing', t => {
     });
   });
 
-  test('should stub browser package imports in client scripts', ({ expect }) => {
+  test('should collect browser package imports as __imports metadata in client scripts', ({ expect }) => {
     const result = Block.script([
       "import { EditorView, basicSetup } from 'codemirror';\n",
       "import { html as langHtml } from '@codemirror/lang-html';\n",
@@ -229,11 +229,17 @@ test.group('parsing', t => {
       'const ansi = new AnsiUp();',
     ].join(''), false, '/path/to', true);
 
-    expect(result.prelude).toContain('globalThis.__jamrockNoopModule');
-    expect(result.prelude).toContain("const EditorView = __noopModule('EditorView'), basicSetup = __noopModule('basicSetup');");
-    expect(result.prelude).toContain("const langHtml = __noopModule('langHtml');");
-    expect(result.prelude).toContain("const AnsiUp = __noopModule('AnsiUp');");
+    // Prelude no longer has noops — they live inside __handler as $$props destructuring
+    expect(result.prelude).toBe('');
     expect(result.interlude).toBe('\nconst ansi = new AnsiUp();');
+
+    // clientImports holds structured descriptors for the runtime to pre-load
+    expect(result.clientImports).toEqual([
+      { local: 'EditorView', from: 'codemirror', name: 'EditorView' },
+      { local: 'basicSetup', from: 'codemirror', name: 'basicSetup' },
+      { local: 'langHtml', from: '@codemirror/lang-html', name: 'html' },
+      { local: 'AnsiUp', from: 'ansi_up', name: 'default' },
+    ]);
   });
 
   test('should rewrite modules', ({ expect }) => {

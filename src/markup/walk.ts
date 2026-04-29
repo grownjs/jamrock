@@ -62,7 +62,8 @@ export function traverse(obj: any[], html: string, parent: any, context: any, co
         const inline = node.attributes.find((x: any) => x.key === 'inline');
         const src = node.attributes.find((x: any) => x.key === 'src');
 
-        if ((src || inline) && node.rawTagName === 'script') {
+        const typeAttr = node.attributes.find((x: any) => x.key === 'type');
+        if ((src || inline || typeAttr?.value === 'importmap') && node.rawTagName === 'script') {
           copy.push({
             type: 'element',
             name: 'script',

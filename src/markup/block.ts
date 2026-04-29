@@ -527,7 +527,7 @@ export default {${defaults}};
       if (!calls.includes(_m[1])) asyncFns.push(_m[1]);
     }
 
-    let { prelude, interlude, hasImports } = Block.script(this.script.code, false, undefined, this.context === 'client');
+    let { prelude, interlude, hasImports, clientImports } = Block.script(this.script.code, false, undefined, this.context === 'client');
     if (!interlude && !hasImports) {
       interlude = prelude;
       prelude = '';
@@ -563,6 +563,17 @@ export default {${defaults}};
       ? Block.clientServerExports(matched.code, exported, aliases)
       : '';
 
+    // Client imports: browser-only packages pre-loaded by runtime and injected via $$props.
+    // Destructure from $$props with noop fallbacks so SSR is unaffected (early-return fires first).
+    const clientDepsDestructure = clientImports?.length
+      ? `\t${CLIENT_IMPORT_STUB}\n\tconst {${clientImports.map(d => `${d.local}=__noopModule('${d.local}')`).join(',')}} = $$props;`
+      : '';
+    // Always emit __imports (empty {} when none) so mod.default.__imports is always accessible.
+    const clientImportsMap = clientImports?.length
+      ? clientImports.reduce((acc: Record<string, unknown>, d) => { acc[d.local] = { from: d.from, name: d.name }; return acc; }, {})
+      : {};
+    const clientImportsExport = `export const __imports = ${JSON.stringify(clientImportsMap)};`;
+
     const main = `\tfunction __context(__default = {}) {
 ${this.context === 'client'
     // Client scripts only run in the browser. On the server, expose exported props
@@ -591,12 +602,14 @@ let mod = this.module?.code || '';
 
     const js = `/* eslint-disable */${mod}${prelude}
 export const __handler = ($$props, __loader${this.context === 'client' ? ', self' : ''}) => {
+${clientDepsDestructure}
 ${main}
 ${this.context === 'client'
     ? '\treturn {__context};'
     : '\treturn {__context};'}
 };
 
+${clientImportsExport}
 export const __routes = ${JSON.stringify(matched.routes)};
 ${this.$prefix}
 ${isGTK ? this.buildGTKTemplate(template, lets) : `export const __vdom = ($$) => [${Block.wrap(template)}];`}
@@ -604,7 +617,7 @@ export const __exported = ${JSON.stringify(exported)};
 export const __functions = {${calls.join(',')}};
 export const __rpc = {${asyncFns.map(fn => `${fn}:'${this.src.replace(/\.(?:md|html)$/, '')}'`).join(',')}};
 export const __rpc_fns = {${[...asyncFns, ...this.rpcCalls].join(',')}};
-export default {${isGTK ? defaults.replace('__vdom', '__gtk') : defaults},__functions,__rpc,__rpc_fns,__exported,__handler,__routes};
+export default {${isGTK ? defaults.replace('__vdom', '__gtk') : defaults},__functions,__rpc,__rpc_fns,__exported,__handler,__imports,__routes};
 for (const [, fn] of Object.entries(__functions)) fn.$ = __src;
 `;
 
@@ -721,8 +734,32 @@ for (const [, fn] of Object.entries(__functions)) fn.$ = __src;
     return [...new Set(names.concat(imports))];
   }
 
-  static script(code: string, inline?: boolean, basedir: string = loaderRuntime.shared, clientOnly?: boolean): { prelude: string; interlude: string; hasImports?: boolean } {
+  static clientImportDescriptors(expr: string, source: string): Array<{ local: string; from: string; name: string }> {
+    const input = expr.trim();
+    const result: Array<{ local: string; from: string; name: string }> = [];
+
+    const nsMatch = input.match(/[*]\s*as\s+(\w+)/);
+    if (nsMatch?.[1]) { result.push({ local: nsMatch[1], from: source, name: '*' }); return result; }
+
+    const namedMatch = input.match(/\{([^}]+)\}/);
+    const beforeBraces = input.split('{')[0].replace(/[*]\s*as\s+\w+/, '').replace(/,\s*$/, '').trim();
+
+    if (beforeBraces && !beforeBraces.includes('*')) result.push({ local: beforeBraces, from: source, name: 'default' });
+
+    if (namedMatch?.[1]) {
+      namedMatch[1].split(',').forEach((part: string) => {
+        const asMatch = part.trim().match(/^(\w+)\s+as\s+(\w+)$/);
+        if (asMatch) result.push({ local: asMatch[2], from: source, name: asMatch[1] });
+        else { const name = part.trim(); if (name) result.push({ local: name, from: source, name }); }
+      });
+    }
+
+    return result;
+  }
+
+  static script(code: string, inline?: boolean, basedir: string = loaderRuntime.shared, clientOnly?: boolean): { prelude: string; interlude: string; hasImports?: boolean; clientImports?: Array<{ local: string; from: string; name: string }> } {
     const internals: string[] = [];
+    const clientImports: Array<{ local: string; from: string; name: string }> = [];
 
     let lastChunk = '';
     code = code.replace(RE_MATCH_IMPORTS, (_: string, $1: string, _2: string, $3: string) => {
@@ -757,10 +794,11 @@ for (const [, fn] of Object.entries(__functions)) fn.$ = __src;
       }
 
       // For client-only context: external package imports (importmap / browser-only)
-      // become no-op modules so SSR and Node tests can instantiate them safely.
-      // The real imports are resolved in the browser via the page's importmap.
+      // are collected as __imports metadata. The browser runtime pre-loads them and
+      // passes the resolved modules as $$props so __context() stays synchronous.
       if (clientOnly) {
-        return lastChunk = Block.clientImportStub($1);
+        clientImports.push(...Block.clientImportDescriptors($1, $3));
+        return lastChunk = '';
       }
 
       return lastChunk = _;
@@ -782,7 +820,7 @@ for (const [, fn] of Object.entries(__functions)) fn.$ = __src;
 
     interlude = internals.concat(interlude).join('\n').replace(/\n+/g, '\n');
 
-    return { prelude, interlude };
+    return { prelude, interlude, clientImports: clientImports.length ? clientImports : undefined };
   }
 
   static unwrap(code: string, source: string, target: string): string {

@@ -7,7 +7,7 @@
       "@codemirror/lang-html":         "https://esm.sh/@codemirror/lang-html@6.4.9",
       "@codemirror/lang-javascript":   "https://esm.sh/@codemirror/lang-javascript@6.2.2",
       "@codemirror/theme-one-dark":    "https://esm.sh/@codemirror/theme-one-dark@6.1.2",
-      "@webcontainer/api":             "https://esm.sh/@webcontainer/api@1.5.4",
+      "@webcontainer/api":             "https://esm.sh/@webcontainer/api@1.6.4",
       "ansi_up":                       "https://esm.sh/ansi_up@6.0.2"
     }
   }</script>
@@ -49,89 +49,6 @@ import { javascript as langJs } from '@codemirror/lang-javascript';
 import { oneDark } from '@codemirror/theme-one-dark';
 import { WebContainer } from '@webcontainer/api';
 import AnsiUp from 'ansi_up';
-
-// ---------------------------------------------------------------------------
-// Starter templates
-// ---------------------------------------------------------------------------
-
-const STARTERS = {
-  hello: {
-    'pages/index+page.html': [
-      '<script>',
-      "  const greeting = 'Hello, World!';",
-      '<\/script>',
-      '',
-      '<h1>{greeting}</h1>',
-      '<p>Edit this file and click <strong>Run</strong> to see changes.</p>',
-    ].join('\n'),
-    'package.json': JSON.stringify({
-      name: 'playground',
-      type: 'module',
-      scripts: { dev: 'node ./node_modules/jamrock/bin/node dev --port 3000' },
-      dependencies: { jamrock: 'latest' },
-    }, null, 2),
-  },
-
-  counter: {
-    'pages/index+page.html': [
-      '<script context="client">',
-      "  import { signal } from 'jamrock';",
-      '  const count = signal(0);',
-      '<\/script>',
-      '',
-      '<h1>Counter</h1>',
-      '<button onclick={() => count.value--}>−<\/button>',
-      '<span> {$count} <\/span>',
-      '<button onclick={() => count.value++}>+<\/button>',
-    ].join('\n'),
-    'package.json': JSON.stringify({
-      name: 'playground',
-      type: 'module',
-      scripts: { dev: 'node ./node_modules/jamrock/bin/node dev --port 3000' },
-      dependencies: { jamrock: 'latest' },
-    }, null, 2),
-  },
-
-  todo: {
-    'pages/index+page.html': [
-      '<script context="module">',
-      '  let todos = [];',
-      '',
-      '  export async function addItem(text) {',
-      '    todos.push({ id: Date.now(), text });',
-      '  }',
-      '',
-      '  export async function removeItem(id) {',
-      '    todos = todos.filter(t => t.id !== +id);',
-      '  }',
-      '<\/script>',
-      '',
-      '<h1>Todo<\/h1>',
-      '',
-      '<form @on:submit={addItem}>',
-      '  <input type="text" name="text" placeholder="New item..." required \/>',
-      '  <button>Add<\/button>',
-      '<\/form>',
-      '',
-      '<fragment name="list">',
-      '  <ul>',
-      '    {#each todos as todo}',
-      '    <li>',
-      '      {todo.text}',
-      '      <button onclick="removeItem({todo.id})">✕<\/button>',
-      '    <\/li>',
-      '    {/each}',
-      '  <\/ul>',
-      '<\/fragment>',
-    ].join('\n'),
-    'package.json': JSON.stringify({
-      name: 'playground',
-      type: 'module',
-      scripts: { dev: 'node ./node_modules/jamrock/bin/node dev --port 3000' },
-      dependencies: { jamrock: 'latest' },
-    }, null, 2),
-  },
-};
 
 // ---------------------------------------------------------------------------
 // State
@@ -199,6 +116,7 @@ function createEditor(content, filename) {
     ],
     parent: editorEl,
   });
+  console.log({editor,editorEl});
 }
 
 // ---------------------------------------------------------------------------
@@ -264,17 +182,20 @@ function openFile(path) {
 // Load starter
 // ---------------------------------------------------------------------------
 
-function loadStarter(name) {
+async function loadStarter(name) {
   currentStarter = name;
-  files = Object.assign({}, STARTERS[name]);
-  const firstPage = Object.keys(files).find(p => p.endsWith('.html')) || Object.keys(files)[0];
-  activeFile = firstPage;
-  createEditor(files[firstPage], firstPage);
-  renderTree();
 
   document.querySelectorAll('.pg-starter').forEach(b => {
     b.classList.toggle('active', b.dataset.starter === name);
   });
+
+  const res = await fetch(`/starters/${name}.json`);
+  files = await res.json();
+
+  const firstPage = Object.keys(files).find(p => p.endsWith('.html')) || Object.keys(files)[0];
+  activeFile = firstPage;
+  createEditor(files[firstPage], firstPage);
+  renderTree();
 }
 
 // ---------------------------------------------------------------------------
@@ -359,4 +280,5 @@ if (typeof SharedArrayBuffer !== 'undefined') {
   runBtn.title = 'Cross-Origin Isolation required — reload after service worker installs';
   termWrite('\x1b[33m⚠ Reload the page once the service worker has installed to enable Run.\x1b[0m\n');
 }
+console.log(typeof SharedArrayBuffer);
 </script>

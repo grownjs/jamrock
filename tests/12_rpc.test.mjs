@@ -86,7 +86,7 @@ test.group('__rpc export', () => {
     const block = new Block(code, 'test/default-export.html', { cwd: '.', dest: '.', generators: {} });
 
     const result = block.toString();
-    expect(result).toContain('__functions,__rpc,__rpc_fns,__exported,__handler,__routes');
+    expect(result).toContain('__functions,__rpc,__rpc_fns,__exported,__handler,__imports,__routes');
     reset();
   });
 });
