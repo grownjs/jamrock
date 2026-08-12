@@ -1,0 +1,17 @@
+{
+  "name": "jamrock-sdl-sandbox",
+  "private": true,
+  "type": "module",
+  "description": "Spike: SDL2 render target for Jamrock via bun:ffi",
+  "scripts": {
+    "spike": "bun run sdl-spike.ts",
+    "demo": "bun run demo.ts",
+    "demo:headless": "bun run demo.ts --headless",
+    "bench": "bun run bench.ts",
+    "test": "bun test layout.test.ts",
+    "verify": "bun run verify.ts",
+    "verify:atlas": "bun run verify-atlas.ts",
+    "verify:ink": "bun run verify-ink.ts",
+    "verify:events": "bun run verify-events.ts"
+  }
+}
