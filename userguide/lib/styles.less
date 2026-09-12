@@ -120,6 +120,8 @@ pre code {
   padding: 0;
   border-radius: 3px;
   background-color: rgba(0, 0, 0, .3);
+  overflow-x: auto;
+  max-width: 100%;
   code { background-color: unset; }
   span:not([class]) {
     color: @attention;
@@ -363,7 +365,7 @@ details {
 #search { margin-top: 1rem; min-width: 165px; }
 
 .body {
-  max-width: calc(42em - 180px);
+  max-width: min(42em, 100%);
   padding: 1rem;
   margin: auto;
   > header { position: relative; }
@@ -424,6 +426,13 @@ h4 { color: @mantis; }
   }
 }
 
+.layer-card {
+  margin-top: 2rem;
+  transform-origin: bottom center;
+  transition: transform .3s cubic-bezier(.2, .8, .3, 1), box-shadow .3s ease, z-index 0s;
+  position: relative;
+}
+
 .layer {
   border: 1px solid @gunmetal;
   border-bottom: none;
@@ -433,10 +442,6 @@ h4 { color: @mantis; }
   display: flex;
   flex-direction: column;
   gap: .6rem;
-  margin-top: 2rem;
-  position: relative;
-  transform-origin: bottom center;
-  transition: transform .3s cubic-bezier(.2, .8, .3, 1), box-shadow .3s ease, z-index 0s;
 
   h3 {
     margin: 0;
@@ -487,14 +492,13 @@ h4 { color: @mantis; }
 
     .hero-words, hr, .quickstart, .demo, .home-nav { column-span: all; }
 
-    .layer { margin-top: 0; break-inside: avoid; }
-    .layer + pre.hljs { break-inside: avoid; break-before: avoid; }
+    .layer-card { margin-top: 0; break-inside: avoid; }
 
-    .layer-server   { transform: rotate(-6deg) translateY(12px); }
-    .layer-fragment { transform: rotate(-1deg) translateY(4px); }
-    .layer-client   { transform: rotate(5deg)  translateY(10px); }
+    .layer-card-server   { transform: rotate(-6deg) translateY(12px); }
+    .layer-card-fragment { transform: rotate(-1deg) translateY(4px); }
+    .layer-card-client   { transform: rotate(5deg)  translateY(10px); }
 
-    .layer:hover {
+    .layer-card:hover {
       transform: rotate(0deg) translateY(-4px) !important;
       z-index: 10;
       box-shadow: 0 16px 40px rgba(0, 0, 0, .55);
@@ -599,7 +603,7 @@ body { position: relative; }
   bottom: 0;
   left: 50%;
   transform: translateX(-50%);
-  width: 500px;
+  width: min(500px, 100vw);
   height: 220px;
   pointer-events: none;
   z-index: 0;
