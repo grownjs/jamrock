@@ -237,6 +237,7 @@ export async function createBody(env: any, conn: any, { client, matches, options
       socket: sseSocket || null,
       stream: null,
       streamController: null,
+      streamClosed: false,
       called: true,
       route: matches,
       cache: env.cache,
@@ -248,6 +249,7 @@ export async function createBody(env: any, conn: any, { client, matches, options
         if (ctx.socket) {
           ctx.socket.send(`rpc:update ${ctx.socket.identity} ${target} ${mode}\t${Markup.encode(payload)}`);
         } else if (ctx.streamController) {
+          if (ctx.streamClosed) return;
           // eslint-disable-next-line no-nested-ternary
           const modeArg = mode === 'replace' ? '0' : mode === 'append' ? '1' : '-1';
           const chunk = `<script>__f(${JSON.stringify(target)},${payload},${modeArg})</script>`;
@@ -408,9 +410,11 @@ export async function createBody(env: any, conn: any, { client, matches, options
             controller.enqueue(encoder.encode(initialBody));
 
             ctx.streamController = controller;
+            ctx.streamClosed = false;
 
             const checkDone = () => {
-              if (ctx.stream.size === 0) {
+              if (ctx.stream.size === 0 && !ctx.streamClosed) {
+                ctx.streamClosed = true;
                 controller.close();
               }
             };
@@ -427,6 +431,7 @@ export async function createBody(env: any, conn: any, { client, matches, options
             setTimeout(checkDone, 0);
           },
           cancel() {
+            ctx.streamClosed = true;
             ctx.stream.forEach((entry: any) => entry.cancel());
           },
         }), { status, headers });
