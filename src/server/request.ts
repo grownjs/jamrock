@@ -541,6 +541,15 @@ export async function createPageResponse(env: any, conn: any, options: any): Pro
     body = result.body || body;
   }
 
+  // Merge headers set by http middleware (e.g., COOP/COEP for WebContainer)
+  const respHeaders = conn.resp_headers;
+  if (respHeaders && respHeaders.size > 0) {
+    if (!headers) headers = new Headers();
+    respHeaders.forEach((value: string, key: string) => {
+      headers.set(key, value);
+    });
+  }
+
   return defaultResponse(env, conn, client, { body, status, headers, cookies });
 }
 
