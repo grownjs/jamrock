@@ -3,8 +3,11 @@
 import { test } from '@japa/runner';
 import * as td from 'testdouble';
 
+import { createBody } from '../src/server/request.ts';
 import { streamify } from '../src/templ/send.ts';
-import { fixture } from './helpers/utils.mjs';
+import {
+  build, fixture, reset, setup,
+} from './helpers/utils.mjs';
 import { sleep, flatten } from '../src/utils/shared.ts';
 
 function useContext(overrides) {
@@ -245,6 +248,82 @@ test.group('streaming support', () => {
     expect(sseMessages.length).toBe(2);
     expect(sseMessages[0]).toContain('rpc:update');
     expect(sseMessages[0]).toContain('stream');
+  });
+
+  test('should tolerate a client disconnect during an active streamed fragment', async ({ expect }) => {
+    // eslint-disable-next-line no-unused-expressions
+    fixture`./disconnect-stream.html
+      <script>
+        function* items() {
+          let i = 0;
+          while (true) yield i++;
+        }
+      </script>
+      <fragment name="stream" interval="5">
+        {#each items as item}
+          <p>{item}</p>
+        {/each}
+      </fragment>
+    `;
+
+    setup();
+    const template = await build('./disconnect-stream.html');
+    const src = 'disconnect-stream.html';
+    const conn = {
+      req: { uuid: 'disconnect-test', fields: {}, params: {} },
+      method: 'GET',
+      headers: {},
+      status_code: 200,
+      is_json: false,
+    };
+    const env = {
+      cache: null,
+      context: streamify(),
+      files: { [src]: { filepath: src } },
+      locate: () => template.module,
+      routes: [],
+    };
+    const matches = { src, params: {}, path: '/', layout: null, error: null };
+
+    const NativeReadableStream = globalThis.ReadableStream;
+    let disconnecting = false;
+
+    globalThis.ReadableStream = class extends NativeReadableStream {
+      constructor(source) {
+        super({
+          start(controller) {
+            return source.start(new Proxy(controller, {
+              get(target, key) {
+                if (key === 'close') {
+                  return () => {
+                    if (disconnecting) throw new TypeError('Controller is already closed');
+                    return target.close();
+                  };
+                }
+                const value = Reflect.get(target, key);
+                return typeof value === 'function' ? value.bind(target) : value;
+              },
+            }));
+          },
+          cancel(reason) {
+            disconnecting = true;
+            return source.cancel(reason);
+          },
+        });
+      }
+    };
+
+    try {
+      const response = await createBody(env, conn, { client: 'this', matches, options: { prefix: '/' } });
+      const reader = response.body.getReader();
+
+      await reader.read();
+      expect(env.context.get('disconnect-test').size).toBeGreaterThan(0);
+      await expect(reader.cancel()).resolves.toBeUndefined();
+    } finally {
+      globalThis.ReadableStream = NativeReadableStream;
+      reset();
+    }
   });
 
   test('cleanup fixtures', ({ expect }) => {
